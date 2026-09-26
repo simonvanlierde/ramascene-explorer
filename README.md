@@ -6,8 +6,9 @@ the region where the impact occurs. Nothing here is a live calculation, and
 nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
-The repository ships **no result data**. `data/results.json` exists only after
-the precompute below has run against the real dataset. `tests/fixture.json` is
+`data/results.json` is the output of one run of the precompute below against
+the real dataset; its `provenance` block records the engine commit, the dataset
+checksums and the command. Nothing else in the repository is a result. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
 "SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
 not `exiobase-v3`.
