@@ -1,0 +1,50 @@
+name: hygiene
+
+# The git hooks, enforced. `prek install` is opt-in per clone, so without this job
+# a commit made without hooks reaches main unchecked.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hooks:
+    name: git hooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # prek is this action author's own binary, so the digest pin above is the
+      # trust anchor. The hook revs, which decide the results, are pinned in
+      # .pre-commit-config.yaml.
+      - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
+        env:
+          # gitleaks scans staged changes only, and CI stages nothing: GitHub
+          # secret scanning is the server-side check.
+          SKIP: gitleaks
+          # Enables zizmor's online audits (impostor commits, known-vulnerable
+          # actions). Read-only, like the workflow's permissions.
+          GH_TOKEN: ${{ github.token }}
+
+  dependency-review:
+    name: dependency review
+    # Fails a PR that adds a dependency with a known advisory. Needs the
+    # dependency graph: on by default for public repos, GitHub Advanced
+    # Security for private ones.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0

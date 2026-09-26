@@ -1,0 +1,24 @@
+extends: default
+
+# Copier writes this file's formatting; ours to consume, not to lint.
+ignore: |
+  .copier-answers.yml
+
+rules:
+  # No file in this repo opens with a `---` document marker, and comments
+  # (not code) are what occasionally run long — not worth a hard cap.
+  document-start: disable
+  line-length: disable
+  # House style, used throughout .github/dependabot.yml: `{ key: value }` flow
+  # mappings take a single space of padding.
+  braces:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+  # `on:` is GitHub Actions' trigger key, not a YAML 1.1 boolean.
+  truthy:
+    ignore: |
+      .github/workflows/
+  # `uses: ... # v1.2.3` pin comments use a single space, not two.
+  comments:
+    ignore: |
+      .github/workflows/
