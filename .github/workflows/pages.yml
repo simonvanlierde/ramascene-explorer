@@ -1,0 +1,56 @@
+name: pages
+
+# Manual only: nothing publishes on push. Ships index.html, explorer.js and
+# data/results.json, and refuses to ship without real precompute output.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: assemble
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The page shows a banner over synthetic data, but it must never go out at
+      # all: only output that passed precompute.py's checks is marked exiobase-v3.
+      - name: assemble the site
+        run: |
+          set -euo pipefail
+          test -f data/results.json || { echo "data/results.json is missing: run precompute.py first"; exit 1; }
+          jq -e '.data_kind == "exiobase-v3"' data/results.json >/dev/null \
+            || { echo "data/results.json is not exiobase-v3 output"; exit 1; }
+          mkdir -p _site/data
+          cp index.html explorer.js _site/
+          cp data/results.json _site/data/
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    name: deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Job-level permissions replace the workflow-level grant.
+    permissions:
+      pages: write # publish the artifact to Pages
+      id-token: write # deploy-pages proves the run's identity over OIDC
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

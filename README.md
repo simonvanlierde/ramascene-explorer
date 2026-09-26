@@ -82,3 +82,18 @@ Any static server, for example `python3 -m http.server`, then open
 `http://localhost:8000/?scenario=steel-in-vehicles-europe&indicator=5`.
 Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
 selection lives in the query string, so a view is shareable.
+
+## CI and publishing
+
+`.github/workflows/ci.yml` runs `uv run pytest` and `node --test` on every push
+and pull request. Neither needs the dataset: the engine checks skip without
+`--engine`, and the page tests read `tests/fixture.json`. `hygiene.yml` runs the
+git hooks in `.pre-commit-config.yaml` and reviews new dependencies on pull
+requests.
+
+`pages.yml` publishes to GitHub Pages only when started by hand (Actions →
+pages → Run workflow). It ships `index.html`, `explorer.js` and
+`data/results.json`, and nothing else. It stops if `data/results.json` is
+missing or isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can
+never go out. Commit the precompute output first, and set the repository's
+Pages source to GitHub Actions.
