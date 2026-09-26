@@ -16,6 +16,7 @@ import {
 	regionForIso,
 	regionValues,
 } from "./map.js";
+import { SECTOR_SHORT, sankeyLayout, tween } from "./sankey.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const el = (tag, attrs = {}, text) => {
@@ -338,4 +339,175 @@ function drawMapTable(view, unit, selected) {
 		])
 			tr.append(el("td", {}, text));
 	}
+}
+
+// --- Sankey -----------------------------------------------------------------------
+
+const short = (id) => SECTOR_SHORT[id] ?? id;
+
+export function renderSankey(ctx, t = 1) {
+	const { docs, state, indicator } = ctx;
+	const regionName = EXIOBASE_REGIONS.find(
+		(r) => r.code === state.region,
+	)?.name;
+	const section = $("sankey-section");
+	const result = docs.flows?.results?.[state.scenario]?.[state.indicator];
+	if (!result) {
+		section.hidden = true;
+		return;
+	}
+	section.hidden = false;
+	const f = indicator.factor;
+	const flows = result.flows.map((x) => ({ ...x, delta: x.delta * f }));
+	const unit = indicator.unit;
+	const svg = $("sankey");
+	const width = Math.max(320, svg.clientWidth || 960);
+	const narrow = width < 560;
+	const labelW = narrow ? 118 : 250;
+	const rows = Math.max(
+		new Set(flows.map((x) => x.sector)).size,
+		new Set(flows.map((x) => x.region)).size,
+	);
+	const height = Math.max(narrow ? 420 : 380, rows * (narrow ? 38 : 34));
+	const scaleAbs = flows.reduce((s, x) => s + Math.abs(x.delta), 0);
+	const layout = sankeyLayout(t === 1 ? flows : tween(flows, t), {
+		width,
+		height,
+		left: labelW,
+		right: labelW,
+		nodeWidth: narrow ? 8 : 12,
+		gap: narrow ? 12 : 10,
+		scaleAbs,
+	});
+	svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+	svg.setAttribute("height", height);
+	svg.replaceChildren();
+	const add = (parent, tag, attrs, text) =>
+		parent.appendChild(svgEl(tag, attrs, text));
+	const bands = add(svg, "g", {});
+	for (const l of layout.links) {
+		const path = add(bands, "path", {
+			d: l.path,
+			class: `band ${l.delta < 0 ? "decrease" : "increase"}${l.region === regionName ? " selected" : ""}`,
+		});
+		path.append(
+			svgEl(
+				"title",
+				{},
+				`${l.sector} → ${l.region}: ${signed(l.delta, unit)} ${unit}${l.named ? "" : ` (${l.cells} cells lumped)`}`,
+			),
+		);
+	}
+	const nodes = add(svg, "g", {});
+	const labels = (list, anchorLeft) => {
+		let floor = -Infinity;
+		for (const n of list) {
+			add(nodes, "rect", {
+				x: n.x0,
+				y: n.y0,
+				width: n.x1 - n.x0,
+				height: Math.max(1, n.y1 - n.y0),
+				class: "node",
+			});
+			// labels keep a minimum spacing; a label then sits a little off its node
+			const y = Math.max((n.y0 + n.y1) / 2, floor);
+			floor = y + (narrow ? 34 : 30);
+			const x = anchorLeft ? n.x0 - 8 : n.x1 + 8;
+			const anchor = anchorLeft ? "end" : "start";
+			const name = anchorLeft ? short(n.id) : n.id;
+			add(
+				nodes,
+				"text",
+				{ x, y: y - 2, "text-anchor": anchor, class: "label" },
+				name,
+			);
+			add(
+				nodes,
+				"text",
+				{ x, y: y + (narrow ? 14 : 15), "text-anchor": anchor, class: "value" },
+				`${signed(n.net, unit)}`,
+			);
+		}
+	};
+	labels(layout.sources, true);
+	labels(layout.targets, false);
+
+	if (t !== 1) return;
+	const scenario = ctx.data.scenarios.find((s) => s.id === state.scenario);
+	const named = result.flows.filter((x) => x.named).length;
+	$("sankey-caption").textContent =
+		`Change in ${indicator.name} (${unit}), ${scenario.label}: from the sector whose production emits or employs (left) to the region where that happens (right). ` +
+		`Band width is the size of the change; blue bands are decreases, red increases. ` +
+		`The ${named} largest sector × region cells of ${result.cells} are drawn by name; every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
+		`so the bands sum to the total change, ${signed(result.total_delta * f, unit)} ${unit}.`;
+	$("sankey-source").textContent =
+		`Method: ${docs.flows.breakdown}. ${docs.flows.method}`;
+	drawSankeyTable(result, f, unit);
+}
+
+function drawSankeyTable(result, f, unit) {
+	const table = $("sankey-table");
+	table.replaceChildren();
+	const head = el("tr");
+	for (const h of [
+		"Sector",
+		"Region",
+		`Change (${unit})`,
+		"Share of total",
+		"Cells",
+	])
+		head.append(el("th", { scope: "col" }, h));
+	table.appendChild(el("thead")).append(head);
+	const body = table.appendChild(el("tbody"));
+	const total = result.total_delta;
+	for (const x of result.flows) {
+		const tr = body.appendChild(el("tr"));
+		tr.append(el("th", { scope: "row" }, x.sector));
+		for (const text of [
+			x.region,
+			signed(x.delta * f, unit),
+			total ? fmtPct((100 * x.delta) / total).replace("+", "") : "—",
+			x.named ? "1" : String(x.cells),
+		])
+			tr.append(el("td", {}, text));
+	}
+	const foot = table.appendChild(el("tfoot")).appendChild(el("tr"));
+	const sum = result.flows.reduce((s, x) => s + x.delta, 0);
+	foot.append(el("th", { scope: "row" }, "Sum of the bands"), el("td", {}, ""));
+	for (const text of [
+		`${signed(sum * f, unit)} (total ${signed(total * f, unit)})`,
+		"100%",
+		String(result.cells),
+	])
+		foot.append(el("td", {}, text));
+}
+
+// --- baseline → intervention -------------------------------------------------------
+
+const reduced = () =>
+	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// The map fades from the neutral baseline (CSS transition on fill) while the
+// Sankey bands grow from nothing; with reduced motion, the end state at once.
+export function animateFromBaseline(ctx, ms = 1400) {
+	if (reduced()) {
+		renderMap(ctx);
+		renderSankey(ctx);
+		return;
+	}
+	const svg = $("map");
+	svg.classList.add("slow");
+	renderMap({ ...ctx, baselineView: true });
+	svg.getBoundingClientRect(); // commit the baseline fills before the transition
+	requestAnimationFrame(() => renderMap(ctx));
+	setTimeout(() => svg.classList.remove("slow"), ms + 100);
+	const start = performance.now();
+	const frame = (now) => {
+		const p = Math.min(1, (now - start) / ms);
+		const t = 1 - (1 - p) ** 3; // ease out
+		renderSankey(ctx, Math.max(t, 0.001));
+		if (p < 1) requestAnimationFrame(frame);
+		else renderSankey(ctx);
+	};
+	requestAnimationFrame(frame);
 }

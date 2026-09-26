@@ -97,6 +97,23 @@
   tr.selected th, tr.selected td { background: var(--surface-2); font-weight: 700; }
   details.table-fallback { margin-top: 16px; }
   details.table-fallback summary { font-size: 1rem; }
+  #map.slow path.country { transition-duration: 1.4s; }
+  #sankey { overflow: visible; }
+  #sankey .band { opacity: .5; }
+  #sankey .band.decrease { fill: var(--decrease); }
+  #sankey .band.increase { fill: var(--increase); }
+  #sankey .band:hover, #sankey .band.selected { opacity: .85; }
+  #sankey .node { fill: var(--text-2); }
+  #sankey text { font-size: 15px; font-variant-numeric: tabular-nums; }
+  #sankey .label { fill: var(--text); font-weight: 600; }
+  #sankey .value { fill: var(--text-2); }
+  @media (max-width: 560px) { #sankey text { font-size: 13px; } }
+  .swatch.decrease { background: color-mix(in srgb, var(--decrease) 50%, var(--surface)); }
+  .swatch.increase { background: color-mix(in srgb, var(--increase) 50%, var(--surface)); }
+  button.replay { font: inherit; font-size: 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+                  border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+  button.replay:hover { border-color: var(--axis); }
+  tfoot th, tfoot td { font-weight: 700; border-top: 2px solid var(--border); }
   @media (prefers-reduced-motion: reduce) { #map path.country { transition: none; } }
 </style>
 </head>
@@ -119,11 +136,12 @@
       <figcaption id="caption"></figcaption>
     </figure>
     <h2>Values</h2>
-    <div class="table-wrap"><table id="table"></table></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Values table"><table id="table"></table></div>
     <section id="map-section" aria-labelledby="map-heading" hidden>
       <h2 id="map-heading">Where the change occurs, by EXIOBASE region</h2>
       <div class="map-controls">
         <label for="map-region">Highlight a region <select id="map-region"></select></label>
+        <button type="button" class="replay" id="replay">Replay from the baseline</button>
       </div>
       <figure class="visual">
         <svg id="map" role="img" aria-labelledby="map-heading" aria-describedby="map-caption"></svg>
@@ -134,7 +152,23 @@
       </figure>
       <details class="table-fallback">
         <summary>Map values as a table</summary>
-        <div class="table-wrap"><table id="map-table"></table></div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Map values table"><table id="map-table"></table></div>
+      </details>
+    </section>
+    <section id="sankey-section" aria-labelledby="sankey-heading" hidden>
+      <h2 id="sankey-heading">Where the change comes from: sector → region</h2>
+      <figure class="visual">
+        <svg id="sankey" role="img" aria-labelledby="sankey-heading" aria-describedby="sankey-caption"></svg>
+        <div class="legend" aria-label="Sankey legend"><div class="legend-extra">
+          <span class="legend-item"><span class="swatch decrease"></span><span>decrease</span></span>
+          <span class="legend-item"><span class="swatch increase"></span><span>increase</span></span>
+        </div></div>
+        <figcaption id="sankey-caption"></figcaption>
+        <p class="source" id="sankey-source"></p>
+      </figure>
+      <details class="table-fallback">
+        <summary>Sankey flows as a table</summary>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Sankey flows table"><table id="sankey-table"></table></div>
       </details>
     </section>
     <details id="provenance-panel" open>
@@ -153,7 +187,7 @@
 <script type="module">
 import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, niceTicks, parseState, signed, stateToSearch } from "./explorer.js";
 import { regionParam, withRegion } from "./map.js";
-import { loadVisuals, renderMap } from "./visuals.js";
+import { animateFromBaseline, loadVisuals, renderMap, renderSankey } from "./visuals.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
@@ -237,6 +271,8 @@ function render(state) {
   renderProvenance(scenario);
   const visual = { data, docs, state: { ...state, region: regionParam(location.search) }, indicator, onSelect: selectRegion };
   renderMap(visual);
+  renderSankey(visual);
+  $("replay").onclick = () => animateFromBaseline(visual);
 }
 
 function drawChart(rows, unit) {
