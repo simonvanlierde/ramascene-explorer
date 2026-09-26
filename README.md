@@ -38,7 +38,7 @@ uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS
 ```
 
 `--run` is required because the technical-coefficient scenarios each invert a
-dense 9800 × 9800 matrix: about 3.7 GB peak, one scenario at a time. The script
+dense 9800 × 9800 matrix: about 4.0 GB peak (≈3.6 GB if A is float32), one scenario at a time. The script
 runs the baseline, each intervention, and a 0% control through the modified-A
 path. It writes nothing unless every value is finite, each regional sum matches
 `B_i · L · ΣY` recomputed outside the engine, and the control reproduces the

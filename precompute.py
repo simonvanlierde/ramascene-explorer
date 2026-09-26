@@ -9,7 +9,7 @@ intervention on the 2011 base year through ramascene.modelling.Modelling; the
 engine makes no projection, so nothing here is a forecast.
 
 Memory: each technical-coefficient scenario inverts a dense 9800x9800 matrix and
-peaks near 3.7 GB (five float64 buffers). Scenarios run one at a time and each
+peaks near 4.0 GB (five live 9800×9800 float64 matrices, 768 MB each). Scenarios run one at a time and each
 one's matrices are released before the next starts. --run is required so the
 full-size path is never started by accident.
 
@@ -393,13 +393,13 @@ def indicator_meta(indicators):
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--run", action="store_true", help="really run the full-size engine (~3.7 GB peak)")
+    parser.add_argument("--run", action="store_true", help="really run the full-size engine (~4.0 GB peak)")
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
     parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v3.npy")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     if not args.run:
-        parser.error("refusing to start the full-size engine (~3.7 GB peak per scenario) without --run")
+        parser.error("refusing to start the full-size engine (~4.0 GB peak per scenario) without --run")
 
     with tempfile.TemporaryDirectory() as tmp:
         setup_django(args.engine.resolve(), args.data.resolve(), Path(tmp) / "db.sqlite3")
