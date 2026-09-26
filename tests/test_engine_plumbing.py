@@ -21,7 +21,9 @@ def engine(request, tmp_path_factory):
     path = request.config.getoption("--engine")
     if not path:
         pytest.skip("needs --engine PATH (a RaMa-Scene checkout)")
-    precompute.setup_django(Path(path).resolve(), tmp_path_factory.mktemp("data"), tmp_path_factory.mktemp("db") / "db.sqlite3")
+    precompute.setup_django(
+        Path(path).resolve(), tmp_path_factory.mktemp("data"), tmp_path_factory.mktemp("db") / "db.sqlite3"
+    )
     from ramascene import querymanagement
 
     return querymanagement
@@ -62,12 +64,22 @@ def test_indicator_labels(engine):
     ]
 
 
-def test_by_region_partitions_the_direct_total(engine):
+def test_region_leaves_partition_the_49_countries(engine):
+    leaves = precompute.region_leaves()
+    assert list(leaves) == ["Europe", "Middle-East", "America", "Asia-Pacific", "Africa"]
+    assert sorted(c for countries in leaves.values() for c in countries) == list(range(COUNTRIES))
+
+
+def test_by_region_matches_the_direct_calculation_region_by_region(engine):
     rng = np.random.default_rng(0)
     Y, B = rng.random((N, COUNTRIES)), rng.random((INDICATOR_ROWS, N))
     L = np.identity(N)  # the harness stand-in: result is B applied to final demand
+    leaves = precompute.region_leaves()
     for indicator in precompute.INDICATORS:
         values = precompute.by_region(indicator, Y, B, L)
-        assert list(values) == ["Europe", "Middle-East", "America", "Asia-Pacific", "Africa"]
+        assert list(values) == list(leaves)
         assert np.isfinite(list(values.values())).all()
-        assert precompute.independent_total(indicator, Y, B, L, values)["passed"]
+        assert precompute.independent_by_region(indicator, Y, B, L, values, leaves)["passed"]
+        # values moved between regions, same sum: must fail
+        moved = dict(values, Europe=values["Europe"] + values["Africa"], Africa=0.0)
+        assert not precompute.independent_by_region(indicator, Y, B, L, moved, leaves)["passed"]

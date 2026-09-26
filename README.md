@@ -29,9 +29,18 @@ Russia, Switzerland, Norway and Rest of Europe.
 
 ## Generate the data
 
-Needs a RaMa-Scene checkout and the EXIOBASE matrices from
-[doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196) at
-`$DATASETS_DIR/2011/{A,L,Y,B}_v3.npy`.
+Needs a RaMa-Scene checkout and the matrices of **EXIOBASE v3.3.sm** (Franco
+Donati and Arjan de Koning, Zenodo version V1, 2019-11-08,
+[doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)): the
+monetary product-by-product EXIOBASE v3.3 with materials produced by
+secondary technologies (recycling industries) represented explicitly. The
+engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v3.npy`; `v3` is the file
+suffix, not the dataset version.
+
+The engine commit and branch are recorded in the output. The branch of
+`../ramascene-review` is not published; which engine version to cite (that
+branch or the published RaMa-Scene repository) is the author's decision and
+is not made here.
 
 ```sh
 uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS_DIR" --out data/results.json
@@ -39,11 +48,21 @@ uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS
 
 `--run` is required because the technical-coefficient scenarios each invert a
 dense 9800 × 9800 matrix: about 4.0 GB peak (≈3.6 GB if A is float32), one scenario at a time. The script
-runs the baseline, each intervention, and a 0% control through the modified-A
-path. It writes nothing unless every value is finite, each regional sum matches
-`B_i · L · ΣY` recomputed outside the engine, and the control reproduces the
-baseline. `data_kind` is `exiobase-v3` only if the engine also reproduces the
-four Octave reference files shipped with RaMa-Scene.
+first checks that the engine reproduces the four Octave reference files
+shipped with RaMa-Scene (routes two and four; value added and GHG) and stops,
+before any inversion, if it does not. It then runs the baseline, each
+intervention, and a 0% control through the modified-A path, and writes
+nothing unless:
+
+- every value is finite;
+- each region's value matches `B_i ∘ (L · ΣY)` recomputed outside the engine
+  and summed over that region's countries (relative 1e-9);
+- the control reproduces the baseline (relative 1e-6);
+- every intervention changes the result, and no −20% cut raises an indicator
+  total. The rise check applies only to indicators whose `B` row and `ΣY` have
+  no negative entries; otherwise it is skipped with a warning and recorded.
+
+Output that passes is marked `data_kind: exiobase-v3`.
 
 ## Test
 

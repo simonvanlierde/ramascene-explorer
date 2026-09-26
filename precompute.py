@@ -13,9 +13,10 @@ peaks near 4.0 GB (five live 9800×9800 float64 matrices, 768 MB each). Scenario
 one's matrices are released before the next starts. --run is required so the
 full-size path is never started by accident.
 
-data_kind is derived, never asserted: "exiobase-v3" only when the engine
-reproduces the four Octave reference files shipped with RaMa-Scene on the
-matrices given, "synthetic" otherwise.
+Nothing is written unless the engine first reproduces the four Octave
+reference files shipped with RaMa-Scene on the matrices given (checked before
+any inversion) and every later check passes; only then is data_kind
+"exiobase-v3".
 """
 
 import argparse
@@ -32,15 +33,27 @@ import subprocess
 import sys
 import tempfile
 import types
+import warnings
 from pathlib import Path
 
 import numpy as np
 
 YEAR = 2011
-DATASET_VERSION = "v3"
-DATASET_DOI = "10.5281/zenodo.3533196"
-# ramascene README.md:3 and :18-20
-DATASET_NAME = "EXIOBASE-RaMa-Scene: EXIOBASE v3.3 modified to include secondary materials"
+FILE_SUFFIX = "v3"  # {A,L,Y,B}_v3.npy, the engine's DATASET_VERSION setting
+# As https://zenodo.org/api/records/3533196 returns it (checked 2026-09-26).
+DATASET = {
+    "name": "EXIOBASE v3.3.sm",
+    "version": "V1",
+    "published": "2019-11-08",
+    "creators": ["Franco Donati", "Arjan de Koning"],
+    "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where "
+    "materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
+    "doi": "10.5281/zenodo.3533196",
+    "file_suffix": FILE_SUFFIX,
+}
+# Absolute floor for comparisons, in indicator units (kg, 1000 p, kt): far
+# below any value reported, far above the noise on a value that should be 0.
+ABS_FLOOR = 1e-9
 STATUS = "precomputed — not a live calculation"
 
 # Global ids from the engine's db.sqlite3. Breakdown by the five continental
@@ -106,77 +119,135 @@ SCENARIOS = [
 # --- orchestration (engine injected) -----------------------------------------
 
 
-def independent_total(indicator, Y, B, L, engine_values):
-    """B_i . L . sum(Y) without the engine's index handling; the regions partition it."""
-    direct = float(B[indicator - 1] @ (L @ Y.sum(axis=1)))
-    engine = math.fsum(engine_values.values())
+def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
+    """B_i * (L . sum(Y)) per region, computed without Analyze.
+
+    Rows are country-major (index = country * 200 + product, as
+    productindexmanger builds them), so the vector reshapes to (country,
+    product); each region sums its leaf countries (leaf_children_local).
+    """
+    countries = sum(len(c) for c in region_leaves.values())
+    per_country = (B[indicator - 1] * (L @ Y.sum(axis=1))).reshape(countries, -1).sum(axis=1)
+    regions = {
+        region: {"engine": engine_values.get(region, math.nan), "direct": math.fsum(per_country[leaves])}
+        for region, leaves in region_leaves.items()
+    }
     return {
         "indicator": indicator,
-        "engine": engine,
-        "direct": direct,
-        "passed": math.isclose(engine, direct, rel_tol=1e-9),
+        "regions": regions,
+        "passed": set(engine_values) == set(region_leaves)
+        and all(math.isclose(r["engine"], r["direct"], rel_tol=1e-9, abs_tol=ABS_FLOOR) for r in regions.values()),
     }
 
 
 def relative_difference(value, reference):
-    if reference == 0:
-        return 0.0 if value == 0 else math.inf
-    return abs(value / reference - 1)
+    return abs(value - reference) / max(abs(reference), ABS_FLOOR)
+
+
+def loads_A(scenario):
+    return any(step["consumedBy"] != [FINAL_CONSUMPTION] for step in scenario["model_details"])
+
+
+def modelled(engine, name, model_details, Y):
+    """engine.apply_model, with an engine ValueError naming the scenario."""
+    try:
+        return engine.apply_model(model_details, Y)
+    except ValueError as e:
+        raise ValueError(f"scenario {name}: {e}") from e
+
+
+def scenario_direction(scenarios, results, control, Y, B, indicators):
+    """Every scenario is a -20% cut: it must change the result and, on
+    non-negative B, y, A and L, must not raise any indicator total.
+
+    Final-demand scenarios are compared with the baseline (both use the stored
+    L); technical-coefficient scenarios with the 0% control, which went through
+    the same inversion, so stored-versus-inverted noise cannot pass as a change.
+    A and L are not checked for sign (A is only loaded inside Modelling).
+    """
+    y_ok = bool((Y.sum(axis=1) >= 0).all())
+    skipped = [i for i in indicators if not (y_ok and (B[i - 1] >= 0).all())]
+    if skipped:
+        warnings.warn(f"indicators {skipped}: negative entries in B or final demand, rise check skipped", stacklevel=2)
+    references, unchanged, rises = {}, [], []
+    for s in scenarios:
+        ref_name = "zero_change_control" if loads_A(s) else "baseline"
+        ref, got = (control if loads_A(s) else results["baseline"]), results[s["id"]]
+        references[s["id"]] = ref_name
+        if got == ref:
+            unchanged.append(s["id"])
+        for i in (str(i) for i in indicators if i not in skipped):
+            total, ref_total = math.fsum(got[i].values()), math.fsum(ref[i].values())
+            if total > ref_total and not math.isclose(total, ref_total, rel_tol=1e-9, abs_tol=ABS_FLOOR):
+                rises.append({"scenario": s["id"], "indicator": int(i), "total": total, "reference": ref_total})
+    return {
+        "passed": not unchanged and not rises,
+        "references": references,
+        "unchanged": unchanged,
+        "rises": rises,
+        "rise_check_skipped_indicators": skipped,
+    }
 
 
 def compute(engine, scenarios, indicators):
     """Baseline, each scenario, then a 0% control, one at a time.
 
     engine: load(name) -> array, apply_model(model_details, Y) -> (Y, L),
-    by_region(indicator, Y, B, L) -> {region: value}, reference_validation(Y, B, L).
-    Raises ValueError, before anything is written, on non-finite output or a failed check.
+    by_region(indicator, Y, B, L) -> {region: value}, region_leaves ->
+    {region: [country index]}, reference_validation(Y, B, L).
+    Raises ValueError, before anything is written, on a failed Octave reference
+    check (before any inversion), non-finite output or a failed check.
     """
     Y, B = engine.load("Y"), engine.load("B")
-    totals = []
+    independent = []
 
-    def run(Y_s, L_s):
+    def run(name, Y_s, L_s):
         by_indicator = {}
         for i in indicators:
             values = engine.by_region(i, Y_s, B, L_s)
             if not np.isfinite(list(values.values())).all():
-                raise ValueError(f"non-finite engine output, indicator {i}: {values}")
+                raise ValueError(f"non-finite engine output, {name}, indicator {i}: {values}")
             by_indicator[str(i)] = values
-            totals.append(independent_total(i, Y_s, B, L_s, values))
+            independent.append({"run": name, **independent_by_region(i, Y_s, B, L_s, values, engine.region_leaves)})
         return by_indicator
 
     # Baseline: the stored L, as a query without model_details uses it.
     L = engine.load("L")
     validation = engine.reference_validation(Y, B, L)
-    results = {"baseline": run(Y, L)}
+    if not validation["passed"]:
+        raise ValueError(f"Octave reference check failed, nothing computed or written: {json.dumps(validation)}")
+    results = {"baseline": run("baseline", Y, L)}
     del L
     gc.collect()
 
-    # Passing apply_model's result straight into run() leaves no reference to
+    # Passing modelled()'s result straight into run() leaves no reference to
     # the scenario's (Y, L) once run() returns, so nothing survives into the next.
     for scenario in scenarios:
-        results[scenario["id"]] = run(*engine.apply_model(scenario["model_details"], Y))
+        results[scenario["id"]] = run(scenario["id"], *modelled(engine, scenario["id"], scenario["model_details"], Y))
         gc.collect()
 
     # A 0% change through the modified-A path must reproduce the stored L.
     step = next(st for s in scenarios for st in s["model_details"] if st["consumedBy"] != [FINAL_CONSUMPTION])
     control_details = [dict(step, techChange=[0])]
-    control = run(*engine.apply_model(control_details, Y))
+    control = run("zero_change_control", *modelled(engine, "zero_change_control", control_details, Y))
     gc.collect()
     worst = max(relative_difference(control[i][r], results["baseline"][i][r]) for i in control for r in control[i])
     checks = {
-        "independent_totals": totals,
+        "independent_by_region": independent,
         "zero_change_control": {
             "passed": worst <= 1e-6,
             "max_relative_difference": worst,
             "tolerance": "relative 1e-6",
             "model_details": control_details,
         },
+        "scenario_direction": scenario_direction(scenarios, results, control, Y, B, indicators),
     }
     failed = [
         name
         for name, ok in (
-            ("independent_totals", all(t["passed"] for t in totals)),
+            ("independent_by_region", all(t["passed"] for t in independent)),
             ("zero_change_control", checks["zero_change_control"]["passed"]),
+            ("scenario_direction", checks["scenario_direction"]["passed"]),
         )
         if not ok
     ]
@@ -188,7 +259,7 @@ def compute(engine, scenarios, indicators):
 def assemble(computed, indicators, provenance, peak_rss_bytes):
     results = computed["results"]
     return {
-        "data_kind": "exiobase-v3" if computed["validation"]["passed"] else "synthetic",
+        "data_kind": "exiobase-v3",  # compute() raises unless the Octave reference check passed
         "status": STATUS,
         "base_year": YEAR,
         "breakdown": "Region where the impact occurs (RaMa-Scene route three, Hotspot × Geographic)",
@@ -232,18 +303,30 @@ def collect_provenance(engine_dir, data_dir, argv):
             "dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
         },
         "dataset": {
-            "name": DATASET_NAME,
-            "doi": DATASET_DOI,
-            "version": DATASET_VERSION,
+            **DATASET,
             "year": YEAR,
-            "sha256": {n: sha256(Path(data_dir) / str(YEAR) / f"{n}_{DATASET_VERSION}.npy") for n in "ALYB"},
+            "sha256": {n: sha256(Path(data_dir) / str(YEAR) / f"{n}_{FILE_SUFFIX}.npy") for n in "ALYB"},
         },
-        "command": shlex.join(["uv", "run", "python", "precompute.py", *argv]),
+        "command": public_command(argv),
         "generated_at": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
         "python": platform.python_version(),
         "numpy": np.__version__,
         "django": django.get_version(),
     }
+
+
+def public_command(argv):
+    """The command line, with the dataset directory as "$DATASETS_DIR", not a local path."""
+    words, after_data = [], False
+    for a in argv:
+        if after_data:
+            words.append('"$DATASETS_DIR"')
+        elif a.startswith("--data="):
+            words.append('--data="$DATASETS_DIR"')
+        else:
+            words.append(shlex.quote(a))
+        after_data = a == "--data"
+    return " ".join(["uv run python precompute.py", *words])
 
 
 def peak_rss_bytes():
@@ -283,7 +366,7 @@ def setup_django(engine_dir, data_dir, db_copy):
         INSTALLED_APPS=["django.contrib.contenttypes", "django.contrib.auth", "ramascene"],
         DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": str(db_copy)}},
         DATASET_DIR=str(data_dir),
-        DATASET_VERSION=DATASET_VERSION,
+        DATASET_VERSION=FILE_SUFFIX,
         USE_TZ=True,
     )
     django.setup()
@@ -371,6 +454,15 @@ def reference_validation(Y, B, L):
     return {"passed": all(f["mismatches"] == 0 for f in files.values()), "tolerance": "relative 1e-6", "files": files}
 
 
+def region_leaves():
+    """{region name: 0-based country indices} for REGIONS, from the engine database."""
+    from ramascene import querymanagement as qm
+    from ramascene.models import Country
+
+    rows = {c.global_id: c for c in Country.objects.filter(global_id__in=REGIONS)}
+    return {rows[g].name: qm.clean_local_leafs(rows[g].leaf_children_local) for g in REGIONS}
+
+
 def real_engine():
     from ramascene import querymanagement as qm
 
@@ -378,6 +470,7 @@ def real_engine():
         load=lambda name: qm.get_numpy_objects(YEAR, name),
         apply_model=apply_model,
         by_region=by_region,
+        region_leaves=region_leaves(),
         reference_validation=reference_validation,
     )
 

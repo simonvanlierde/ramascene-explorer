@@ -202,12 +202,19 @@
   }
  },
  "checks": {
-  "independent_totals": [],
+  "independent_by_region": [],
   "zero_change_control": {
    "passed": false,
    "max_relative_difference": null,
    "tolerance": "relative 1e-6",
    "model_details": []
+  },
+  "scenario_direction": {
+   "passed": false,
+   "references": {},
+   "unchanged": [],
+   "rises": [],
+   "rise_check_skipped_indicators": []
   }
  },
  "provenance": {
@@ -218,9 +225,16 @@
    "dirty": false
   },
   "dataset": {
-   "name": "EXIOBASE-RaMa-Scene: EXIOBASE v3.3 modified to include secondary materials",
+   "name": "EXIOBASE v3.3.sm",
+   "version": "V1",
+   "published": "2019-11-08",
+   "creators": [
+    "Franco Donati",
+    "Arjan de Koning"
+   ],
+   "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
    "doi": "10.5281/zenodo.3533196",
-   "version": "v3",
+   "file_suffix": "v3",
    "year": 2011,
    "sha256": {}
   },
