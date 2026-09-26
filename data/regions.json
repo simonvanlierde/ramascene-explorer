@@ -1,0 +1,4400 @@
+{
+ "data_kind": "exiobase-v3",
+ "status": "precomputed — not a live calculation",
+ "base_year": 2011,
+ "breakdown": "Region where the impact occurs (RaMa-Scene route three, Hotspot × Geographic), the 49 EXIOBASE regions",
+ "regions": [
+  "Austria",
+  "Belgium",
+  "Bulgaria",
+  "Cyprus",
+  "Czech Republic",
+  "Germany",
+  "Denmark",
+  "Estonia",
+  "Spain",
+  "Finland",
+  "France",
+  "Greece",
+  "Croatia",
+  "Hungary",
+  "Ireland",
+  "Italy",
+  "Lithuania",
+  "Luxembourg",
+  "Latvia",
+  "Malta",
+  "Netherlands",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "Sweden",
+  "Slovenia",
+  "Slovakia",
+  "United Kingdom",
+  "United States",
+  "Japan",
+  "China",
+  "Canada",
+  "South Korea",
+  "Brazil",
+  "India",
+  "Mexico",
+  "Russia",
+  "Australia",
+  "Switzerland",
+  "Turkey",
+  "Taiwan",
+  "Norway",
+  "Indonesia",
+  "South Africa",
+  "Rest of Asia and Pacific",
+  "Rest of America",
+  "Rest of Europe",
+  "Rest of Africa",
+  "Rest of Middle East"
+ ],
+ "region_codes": {
+  "Austria": "AT",
+  "Belgium": "BE",
+  "Bulgaria": "BG",
+  "Cyprus": "CY",
+  "Czech Republic": "CZ",
+  "Germany": "DE",
+  "Denmark": "DK",
+  "Estonia": "EE",
+  "Spain": "ES",
+  "Finland": "FI",
+  "France": "FR",
+  "Greece": "GR",
+  "Croatia": "HR",
+  "Hungary": "HU",
+  "Ireland": "IE",
+  "Italy": "IT",
+  "Lithuania": "LT",
+  "Luxembourg": "LU",
+  "Latvia": "LV",
+  "Malta": "MT",
+  "Netherlands": "NL",
+  "Poland": "PL",
+  "Portugal": "PT",
+  "Romania": "RO",
+  "Sweden": "SE",
+  "Slovenia": "SI",
+  "Slovakia": "SK",
+  "United Kingdom": "GB",
+  "United States": "US",
+  "Japan": "JP",
+  "China": "CN",
+  "Canada": "CA",
+  "South Korea": "KR",
+  "Brazil": "BR",
+  "India": "IN",
+  "Mexico": "MX",
+  "Russia": "RU",
+  "Australia": "AU",
+  "Switzerland": "CH",
+  "Turkey": "TR",
+  "Taiwan": "TW",
+  "Norway": "NO",
+  "Indonesia": "ID",
+  "South Africa": "ZA",
+  "Rest of Asia and Pacific": "WA",
+  "Rest of America": "WL",
+  "Rest of Europe": "WE",
+  "Rest of Africa": "WF",
+  "Rest of Middle East": "WM"
+ },
+ "aggregates": {
+  "Europe": [
+   "Austria",
+   "Belgium",
+   "Bulgaria",
+   "Cyprus",
+   "Czech Republic",
+   "Germany",
+   "Denmark",
+   "Estonia",
+   "Spain",
+   "Finland",
+   "France",
+   "Greece",
+   "Croatia",
+   "Hungary",
+   "Ireland",
+   "Italy",
+   "Lithuania",
+   "Luxembourg",
+   "Latvia",
+   "Malta",
+   "Netherlands",
+   "Poland",
+   "Portugal",
+   "Romania",
+   "Sweden",
+   "Slovenia",
+   "Slovakia",
+   "United Kingdom",
+   "Russia",
+   "Switzerland",
+   "Norway",
+   "Rest of Europe"
+  ],
+  "America": [
+   "United States",
+   "Canada",
+   "Brazil",
+   "Mexico",
+   "Rest of America"
+  ],
+  "Asia-Pacific": [
+   "Japan",
+   "China",
+   "South Korea",
+   "India",
+   "Australia",
+   "Taiwan",
+   "Indonesia",
+   "Rest of Asia and Pacific"
+  ],
+  "Middle-East": [
+   "Turkey",
+   "Rest of Middle East"
+  ],
+  "Africa": [
+   "South Africa",
+   "Rest of Africa"
+  ]
+ },
+ "indicators": [
+  {
+   "id": 5,
+   "name": "GHG emissions: Total",
+   "unit": "kg CO2 eq"
+  },
+  {
+   "id": 3,
+   "name": "Employment: Total",
+   "unit": "1000 p"
+  },
+  {
+   "id": 7,
+   "name": "Domestic Extraction Used - Metal Ores - Total",
+   "unit": "kt"
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "baseline",
+   "label": "Baseline (2011, no intervention)",
+   "description": "EXIOBASE 2011 as stored, no intervention.",
+   "model_details": null
+  },
+  {
+   "id": "vehicle-demand-europe",
+   "label": "Final demand for European motor vehicles in Europe −20%",
+   "description": "Final demand in European regions for motor vehicles, trailers and semi-trailers produced in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      199
+     ],
+     "originReg": [
+      2
+     ],
+     "consumedBy": [
+      276
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-in-vehicles-europe",
+   "label": "Steel input to European motor-vehicle manufacturing −20%",
+   "description": "Technical coefficient of basic iron and steel (from all regions) into motor-vehicle manufacturing in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      198
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cement-in-construction",
+   "label": "Cement input to construction −20%, all regions",
+   "description": "Technical coefficient of cement, lime and plaster (from all regions) into construction work in all regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      177
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      225
+     ],
+     "consumedReg": [
+      1
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  }
+ ],
+ "results": {
+  "baseline": {
+   "5": {
+    "Austria": 68233210812.873146,
+    "Belgium": 111710107385.87837,
+    "Bulgaria": 54748433974.24481,
+    "Cyprus": 12192163195.607965,
+    "Czech Republic": 121493151034.62474,
+    "Germany": 816947574220.9192,
+    "Denmark": 67185511038.52435,
+    "Estonia": 19764246856.30599,
+    "Spain": 281423967006.46454,
+    "Finland": 63883764764.54272,
+    "France": 365446940876.00073,
+    "Greece": 158259225550.66547,
+    "Croatia": 19792363319.2101,
+    "Hungary": 49053537648.17663,
+    "Ireland": 58806699890.13714,
+    "Italy": 383693433892.4919,
+    "Lithuania": 16797201218.71445,
+    "Luxembourg": 8625912776.428232,
+    "Latvia": 11225706468.225239,
+    "Malta": 2870602890.6533995,
+    "Netherlands": 184262588531.3653,
+    "Poland": 340119624441.8978,
+    "Portugal": 58743002793.94098,
+    "Romania": 95224440025.76587,
+    "Sweden": 50069653799.4458,
+    "Slovenia": 13368770093.723482,
+    "Slovakia": 35350583136.2764,
+    "United Kingdom": 476881438338.664,
+    "United States": 5069841364139.553,
+    "Japan": 1218098283463.5374,
+    "China": 10489563936892.627,
+    "Canada": 603292574820.6836,
+    "South Korea": 614091201410.656,
+    "Brazil": 1060456294343.1604,
+    "India": 2615392197208.3154,
+    "Mexico": 586547936788.8733,
+    "Russia": 2038218695121.4475,
+    "Australia": 583089177420.4879,
+    "Switzerland": 38759506473.91281,
+    "Turkey": 349937976389.4146,
+    "Taiwan": 259974848733.6706,
+    "Norway": 82575464687.65408,
+    "Indonesia": 634904603988.7161,
+    "South Africa": 456683801983.1863,
+    "Rest of Asia and Pacific": 2486568464921.8267,
+    "Rest of America": 1235346713423.5718,
+    "Rest of Europe": 550209902425.6116,
+    "Rest of Africa": 1117383919339.3113,
+    "Rest of Middle East": 2342644939183.195
+   },
+   "3": {
+    "Austria": 4179.560000000001,
+    "Belgium": 4541.700000000027,
+    "Bulgaria": 2958.299999999999,
+    "Cyprus": 404.7000000000001,
+    "Czech Republic": 5043.438000000001,
+    "Germany": 41570.0,
+    "Denmark": 2698.199999999999,
+    "Estonia": 602.6,
+    "Spain": 18417.100000000006,
+    "Finland": 2462.5,
+    "France": 27060.999999999996,
+    "Greece": 4088.7,
+    "Croatia": 1490.8999999999996,
+    "Hungary": 3810.199999999999,
+    "Ireland": 1842.6,
+    "Italy": 22951.399999999998,
+    "Lithuania": 1253.2000000000003,
+    "Luxembourg": 204.4,
+    "Latvia": 861.3000000000002,
+    "Malta": 166.0,
+    "Netherlands": 7469.999999999998,
+    "Poland": 15556.100000000008,
+    "Portugal": 4835.2,
+    "Romania": 9087.2,
+    "Sweden": 4603.700000000001,
+    "Slovenia": 931.5000000000001,
+    "Slovakia": 2313.8,
+    "United Kingdom": 28825.400000000005,
+    "United States": 142171.99999999997,
+    "Japan": 62505.000000000015,
+    "China": 627379.5,
+    "Canada": 17682.524999999998,
+    "South Korea": 24231.600000000002,
+    "Brazil": 93359.19999999998,
+    "India": 377183.1000000001,
+    "Mexico": 46603.799999999996,
+    "Russia": 70854.69999999995,
+    "Australia": 11394.6,
+    "Switzerland": 4171.7,
+    "Turkey": 24094.2,
+    "Taiwan": 10708.400000000001,
+    "Norway": 2532.8,
+    "Indonesia": 108163.9,
+    "South Africa": 13202.399999999998,
+    "Rest of Asia and Pacific": 528534.0,
+    "Rest of America": 125736.99999999997,
+    "Rest of Europe": 163899.99999999994,
+    "Rest of Africa": 359598.0,
+    "Rest of Middle East": 38705.8
+   },
+   "7": {
+    "Austria": 2402.591818181819,
+    "Belgium": 1.230000000000029,
+    "Bulgaria": 23527.033263853893,
+    "Cyprus": 3.6599999999999993,
+    "Czech Republic": 2100.0000000000005,
+    "Germany": 511.4176666666668,
+    "Denmark": 25.77999999999999,
+    "Estonia": 0.0,
+    "Spain": 8240.794064546297,
+    "Finland": 6546.869843107145,
+    "France": 80.80000000000007,
+    "Greece": 3961.4447722000014,
+    "Croatia": 4.800000000000001,
+    "Hungary": 335.7999999999998,
+    "Ireland": 3215.6422159333356,
+    "Italy": 0.005000000000000002,
+    "Lithuania": 0.0,
+    "Luxembourg": 0.0,
+    "Latvia": 0.0,
+    "Malta": 0.0,
+    "Netherlands": 0.575,
+    "Poland": 64899.3709724004,
+    "Portugal": 365.733071624013,
+    "Romania": 2516.44070891429,
+    "Sweden": 58201.5111083966,
+    "Slovenia": 0.0,
+    "Slovakia": 46.930288959767296,
+    "United Kingdom": 76.41033062937062,
+    "United States": 568395.1059489296,
+    "Japan": 887.9173333333337,
+    "China": 1738674.849446042,
+    "Canada": 158714.6598866237,
+    "South Korea": 1386.5602219999994,
+    "Brazil": 554954.2407239324,
+    "India": 206124.16981682624,
+    "Mexico": 219926.23390293843,
+    "Russia": 223016.39988189732,
+    "Australia": 834457.3227756006,
+    "Switzerland": 0.0,
+    "Turkey": 20033.908526242034,
+    "Taiwan": 0.0,
+    "Norway": 3402.747999999998,
+    "Indonesia": 818718.9648875135,
+    "South Africa": 159304.30903899294,
+    "Rest of Asia and Pacific": 412043.66554370057,
+    "Rest of America": 1311679.8573480274,
+    "Rest of Europe": 101776.65798611238,
+    "Rest of Africa": 242596.227661386,
+    "Rest of Middle East": 110990.89159747733
+   }
+  },
+  "vehicle-demand-europe": {
+   "5": {
+    "Austria": 67987288090.59189,
+    "Belgium": 111247876854.88011,
+    "Bulgaria": 54694280223.99402,
+    "Cyprus": 12184958923.51042,
+    "Czech Republic": 120596637982.86615,
+    "Germany": 811277250159.3193,
+    "Denmark": 67087220204.20399,
+    "Estonia": 19727694854.923824,
+    "Spain": 280064657719.46106,
+    "Finland": 63800706569.80719,
+    "France": 363918531493.6107,
+    "Greece": 158107614108.29776,
+    "Croatia": 19764947370.28988,
+    "Hungary": 48760731471.61438,
+    "Ireland": 58756693310.99675,
+    "Italy": 382595112264.9347,
+    "Lithuania": 16783094744.586935,
+    "Luxembourg": 8597335634.12881,
+    "Latvia": 11207625001.533693,
+    "Malta": 2868092412.4512997,
+    "Netherlands": 183880684962.49445,
+    "Poland": 339388749045.37085,
+    "Portugal": 58609714010.45378,
+    "Romania": 94820545974.2385,
+    "Sweden": 49843171376.105286,
+    "Slovenia": 13299776621.52935,
+    "Slovakia": 35084037648.19784,
+    "United Kingdom": 475567331525.0761,
+    "United States": 5068758858397.627,
+    "Japan": 1217748173742.1116,
+    "China": 10485933585922.254,
+    "Canada": 603127323088.2568,
+    "South Korea": 613789809505.1874,
+    "Brazil": 1060338267294.991,
+    "India": 2614621302734.1606,
+    "Mexico": 586472682670.2091,
+    "Russia": 2035847997784.7073,
+    "Australia": 582944236311.442,
+    "Switzerland": 38709466615.19057,
+    "Turkey": 349758939546.65094,
+    "Taiwan": 259748171181.4946,
+    "Norway": 82363211576.97131,
+    "Indonesia": 634763101756.8696,
+    "South Africa": 456375738279.52295,
+    "Rest of Asia and Pacific": 2485337449210.697,
+    "Rest of America": 1235127719967.1045,
+    "Rest of Europe": 546997450126.86896,
+    "Rest of Africa": 1116807863622.4272,
+    "Rest of Middle East": 2341000209487.366
+   },
+   "3": {
+    "Austria": 4165.30447114643,
+    "Belgium": 4527.88300377153,
+    "Bulgaria": 2954.171892760078,
+    "Cyprus": 404.4933861299398,
+    "Czech Republic": 4991.684309514009,
+    "Germany": 41295.919259754904,
+    "Denmark": 2694.8749369005077,
+    "Estonia": 601.1229828077466,
+    "Spain": 18352.226770590412,
+    "Finland": 2459.720710292551,
+    "France": 26959.81139532192,
+    "Greece": 4086.587798325577,
+    "Croatia": 1489.127651331387,
+    "Hungary": 3787.157819733357,
+    "Ireland": 1840.6430179665726,
+    "Italy": 22878.56530492934,
+    "Lithuania": 1252.0233830998222,
+    "Luxembourg": 204.1204640849113,
+    "Latvia": 860.4181992581168,
+    "Malta": 165.85108167806797,
+    "Netherlands": 7453.723346262509,
+    "Poland": 15485.56705050677,
+    "Portugal": 4822.251175318694,
+    "Romania": 9059.464806624625,
+    "Sweden": 4582.717844333547,
+    "Slovenia": 925.9113393345461,
+    "Slovakia": 2292.5228864176715,
+    "United Kingdom": 28747.990028315107,
+    "United States": 142142.00559458206,
+    "Japan": 62494.41126843871,
+    "China": 627256.4821290812,
+    "Canada": 17679.41620761036,
+    "South Korea": 24222.9534475397,
+    "Brazil": 93352.31004293918,
+    "India": 377117.15100854926,
+    "Mexico": 46597.1983516828,
+    "Russia": 70757.5837568299,
+    "Australia": 11392.190195527519,
+    "Switzerland": 4166.57324906824,
+    "Turkey": 24083.163511466315,
+    "Taiwan": 10701.883017628847,
+    "Norway": 2530.855032805628,
+    "Indonesia": 108146.01126365815,
+    "South Africa": 13196.533449406073,
+    "Rest of Asia and Pacific": 528264.3689705753,
+    "Rest of America": 125712.85298010347,
+    "Rest of Europe": 162735.95933211822,
+    "Rest of Africa": 359447.7460334905,
+    "Rest of Middle East": 38689.60992861944
+   },
+   "7": {
+    "Austria": 2389.571741385249,
+    "Belgium": 1.2155506799595301,
+    "Bulgaria": 23421.71014370876,
+    "Cyprus": 3.658325219744258,
+    "Czech Republic": 2089.5056889560396,
+    "Germany": 507.28914475803003,
+    "Denmark": 25.389555325207837,
+    "Estonia": 0.0,
+    "Spain": 8205.464092294853,
+    "Finland": 6500.599923330028,
+    "France": 79.57073358596288,
+    "Greece": 3948.79288435349,
+    "Croatia": 4.786457959498651,
+    "Hungary": 333.1242690515046,
+    "Ireland": 3209.1305849042355,
+    "Italy": 0.004960677734685549,
+    "Lithuania": 0.0,
+    "Luxembourg": 0.0,
+    "Latvia": 0.0,
+    "Malta": 0.0,
+    "Netherlands": 0.5727543382014806,
+    "Poland": 63878.938706385044,
+    "Portugal": 364.0043697517481,
+    "Romania": 2509.223844396561,
+    "Sweden": 57823.39940252942,
+    "Slovenia": 0.0,
+    "Slovakia": 46.37506853904087,
+    "United Kingdom": 76.3081044189045,
+    "United States": 567867.4799172209,
+    "Japan": 887.0129919531661,
+    "China": 1737546.988946189,
+    "Canada": 158586.08221695764,
+    "South Korea": 1385.0746579480465,
+    "Brazil": 554014.5025917644,
+    "India": 205925.66279416226,
+    "Mexico": 219853.98121435917,
+    "Russia": 222534.99249547295,
+    "Australia": 833520.1635049582,
+    "Switzerland": 0.0,
+    "Turkey": 20000.036036309568,
+    "Taiwan": 0.0,
+    "Norway": 3390.739337677997,
+    "Indonesia": 818511.3885142228,
+    "South Africa": 159015.6949463615,
+    "Rest of Asia and Pacific": 411622.10784778744,
+    "Rest of America": 1310759.862108504,
+    "Rest of Europe": 101450.32499893851,
+    "Rest of Africa": 242282.86874605363,
+    "Rest of Middle East": 110877.67113871673
+   }
+  },
+  "steel-in-vehicles-europe": {
+   "5": {
+    "Austria": 68190865803.27238,
+    "Belgium": 111637861693.06992,
+    "Bulgaria": 54746646110.676926,
+    "Cyprus": 12191662374.871937,
+    "Czech Republic": 121357757256.0833,
+    "Germany": 816174405936.6213,
+    "Denmark": 67181093861.381195,
+    "Estonia": 19762282848.286213,
+    "Spain": 281340275839.1171,
+    "Finland": 63855764381.61696,
+    "France": 365140388307.6985,
+    "Greece": 158250717883.05655,
+    "Croatia": 19790244019.698124,
+    "Hungary": 49024785934.212746,
+    "Ireland": 58804885331.12658,
+    "Italy": 383554860454.9874,
+    "Lithuania": 16796525357.371607,
+    "Luxembourg": 8622348388.036652,
+    "Latvia": 11223236970.485882,
+    "Malta": 2870511960.948007,
+    "Netherlands": 184252213051.86188,
+    "Poland": 340008305859.2453,
+    "Portugal": 58735379822.1977,
+    "Romania": 95143133232.4289,
+    "Sweden": 50008891861.44469,
+    "Slovenia": 13364450042.350977,
+    "Slovakia": 35280105265.295006,
+    "United Kingdom": 476785130494.7617,
+    "United States": 5069748914534.936,
+    "Japan": 1218057280676.359,
+    "China": 10489179167650.723,
+    "Canada": 603278656221.9723,
+    "South Korea": 614047345069.4833,
+    "Brazil": 1060428885927.116,
+    "India": 2615177389514.3047,
+    "Mexico": 586543163338.6257,
+    "Russia": 2037775550118.358,
+    "Australia": 583063742683.5186,
+    "Switzerland": 38757812888.34012,
+    "Turkey": 349918847823.7406,
+    "Taiwan": 259953625715.85217,
+    "Norway": 82544795968.74484,
+    "Indonesia": 634896659770.6184,
+    "South Africa": 456652082245.88416,
+    "Rest of Asia and Pacific": 2486488382667.375,
+    "Rest of America": 1235326974525.0078,
+    "Rest of Europe": 549754649815.56604,
+    "Rest of Africa": 1117354083479.2764,
+    "Rest of Middle East": 2342563490894.1714
+   },
+   "3": {
+    "Austria": 4179.091688636713,
+    "Belgium": 4541.109575864126,
+    "Bulgaria": 2958.2154629609013,
+    "Cyprus": 404.69065978328354,
+    "Czech Republic": 5042.289639296166,
+    "Germany": 41560.30689627056,
+    "Denmark": 2698.0911210008335,
+    "Estonia": 602.5453118908679,
+    "Spain": 18415.398937747694,
+    "Finland": 2462.1858384381,
+    "France": 27056.825350030733,
+    "Greece": 4088.5839808861856,
+    "Croatia": 1490.7717082469285,
+    "Hungary": 3809.4489883576034,
+    "Ireland": 1842.525205957578,
+    "Italy": 22948.507505712627,
+    "Lithuania": 1253.1633920272293,
+    "Luxembourg": 204.37205557871866,
+    "Latvia": 861.1423595856058,
+    "Malta": 165.9942511360434,
+    "Netherlands": 7469.831035179574,
+    "Poland": 15551.8460929185,
+    "Portugal": 4834.81370202027,
+    "Romania": 9085.788732875251,
+    "Sweden": 4602.99671938227,
+    "Slovenia": 931.283726963982,
+    "Slovakia": 2313.554998349907,
+    "United Kingdom": 28824.109985895404,
+    "United States": 142170.89851129203,
+    "Japan": 62504.62174838636,
+    "China": 627373.0794253435,
+    "Canada": 17682.375344236796,
+    "South Korea": 24231.153440842496,
+    "Brazil": 93358.48252138976,
+    "India": 377175.3485783624,
+    "Mexico": 46603.6213802048,
+    "Russia": 70850.59503374119,
+    "Australia": 11394.424051694574,
+    "Switzerland": 4171.609812228395,
+    "Turkey": 24093.68513790905,
+    "Taiwan": 10708.095282850401,
+    "Norway": 2532.661617662609,
+    "Indonesia": 108163.1010956703,
+    "South Africa": 13202.165968720683,
+    "Rest of Asia and Pacific": 528517.3570320354,
+    "Rest of America": 125735.21166196241,
+    "Rest of Europe": 163871.01407068412,
+    "Rest of Africa": 359588.91027002933,
+    "Rest of Middle East": 38704.38232861493
+   },
+   "7": {
+    "Austria": 2395.443638928179,
+    "Belgium": 1.2263680186961414,
+    "Bulgaria": 23522.630012366797,
+    "Cyprus": 3.659837366596667,
+    "Czech Republic": 2099.384116140522,
+    "Germany": 509.63190099562394,
+    "Denmark": 25.7787640964332,
+    "Estonia": 0.0,
+    "Spain": 8239.372618347174,
+    "Finland": 6511.14786190259,
+    "France": 80.77864964422814,
+    "Greece": 3959.8718066018973,
+    "Croatia": 4.799358810894076,
+    "Hungary": 335.6110795925904,
+    "Ireland": 3215.4575053173007,
+    "Italy": 0.004992601883977828,
+    "Lithuania": 0.0,
+    "Luxembourg": 0.0,
+    "Latvia": 0.0,
+    "Malta": 0.0,
+    "Netherlands": 0.5749690829266021,
+    "Poland": 64255.03784699437,
+    "Portugal": 365.598361810042,
+    "Romania": 2516.0695709178635,
+    "Sweden": 57962.840213644835,
+    "Slovenia": 0.0,
+    "Slovakia": 46.91337658165507,
+    "United Kingdom": 76.40778197933477,
+    "United States": 568367.7657951495,
+    "Japan": 887.8703952180954,
+    "China": 1738412.6335911194,
+    "Canada": 158666.59500499832,
+    "South Korea": 1386.1273500012733,
+    "Brazil": 554273.8574293952,
+    "India": 206016.29688264366,
+    "Mexico": 219919.61359172,
+    "Russia": 222843.01309137887,
+    "Australia": 834186.6284239078,
+    "Switzerland": 0.0,
+    "Turkey": 20022.2264248943,
+    "Taiwan": 0.0,
+    "Norway": 3397.7759699148987,
+    "Indonesia": 818700.89062641,
+    "South Africa": 159261.83884325234,
+    "Rest of Asia and Pacific": 411942.6819526577,
+    "Rest of America": 1311531.0829890228,
+    "Rest of Europe": 101652.82604724052,
+    "Rest of Africa": 242549.8073460554,
+    "Rest of Middle East": 110960.13556241081
+   }
+  },
+  "cement-in-construction": {
+   "5": {
+    "Austria": 67683072223.26071,
+    "Belgium": 110670453274.26105,
+    "Bulgaria": 54355739085.72307,
+    "Cyprus": 11967408938.904213,
+    "Czech Republic": 121083654794.79224,
+    "Germany": 811772579048.792,
+    "Denmark": 67007978565.08799,
+    "Estonia": 19654686993.383858,
+    "Spain": 279102289954.45386,
+    "Finland": 63636014025.180786,
+    "France": 362141242646.56616,
+    "Greece": 157239628440.9269,
+    "Croatia": 19625559090.98313,
+    "Hungary": 48752148523.81984,
+    "Ireland": 58389084202.825645,
+    "Italy": 380308153092.3854,
+    "Lithuania": 16704596037.966581,
+    "Luxembourg": 8584010808.041121,
+    "Latvia": 11089346799.069681,
+    "Malta": 2869693023.266282,
+    "Netherlands": 183283752751.131,
+    "Poland": 337854243413.84375,
+    "Portugal": 57394964394.489586,
+    "Romania": 94254390720.89456,
+    "Sweden": 49769114598.325645,
+    "Slovenia": 13286863594.69379,
+    "Slovakia": 34916592015.57317,
+    "United Kingdom": 475270317428.46326,
+    "United States": 5048194966916.135,
+    "Japan": 1215990582000.5469,
+    "China": 10251871320913.309,
+    "Canada": 602462028748.7722,
+    "South Korea": 606532871230.5148,
+    "Brazil": 1038449665709.894,
+    "India": 2587369281330.3237,
+    "Mexico": 574209673271.1165,
+    "Russia": 2029096731056.107,
+    "Australia": 580871908831.9202,
+    "Switzerland": 38213836679.12274,
+    "Turkey": 345003328170.75977,
+    "Taiwan": 258581147896.54456,
+    "Norway": 82352401681.78882,
+    "Indonesia": 628327476587.6191,
+    "South Africa": 455472548070.4607,
+    "Rest of Asia and Pacific": 2470985120645.6377,
+    "Rest of America": 1217788305980.187,
+    "Rest of Europe": 545337980034.56836,
+    "Rest of Africa": 1110858859580.4446,
+    "Rest of Middle East": 2328921632880.9653
+   },
+   "3": {
+    "Austria": 4173.868909529085,
+    "Belgium": 4536.70063120719,
+    "Bulgaria": 2954.1144707677454,
+    "Cyprus": 403.4622931894037,
+    "Czech Republic": 5039.841653349108,
+    "Germany": 41530.46460837522,
+    "Denmark": 2696.859208296075,
+    "Estonia": 601.6710564083384,
+    "Spain": 18396.732306607548,
+    "Finland": 2459.8142734740923,
+    "France": 27034.767043899537,
+    "Greece": 4085.2254059885054,
+    "Croatia": 1488.6221180504594,
+    "Hungary": 3806.491143916156,
+    "Ireland": 1839.8142873734528,
+    "Italy": 22924.792630096304,
+    "Lithuania": 1252.1431783954577,
+    "Luxembourg": 204.3146930382189,
+    "Latvia": 859.298057806056,
+    "Malta": 165.94626766129244,
+    "Netherlands": 7463.650206333633,
+    "Poland": 15531.436707060822,
+    "Portugal": 4827.730835703321,
+    "Romania": 9067.076027303094,
+    "Sweden": 4600.571538217386,
+    "Slovenia": 930.2645515412992,
+    "Slovakia": 2309.212404203244,
+    "United Kingdom": 28809.43148808051,
+    "United States": 142089.0724973687,
+    "Japan": 62499.691667923136,
+    "China": 626828.7041392464,
+    "Canada": 17679.860336758193,
+    "South Korea": 24205.400396922276,
+    "Brazil": 93323.03604611178,
+    "India": 376763.59042470274,
+    "Mexico": 46567.38102585534,
+    "Russia": 70734.41293039816,
+    "Australia": 11384.921591759135,
+    "Switzerland": 4168.848289763942,
+    "Turkey": 24082.511784990922,
+    "Taiwan": 10705.51141728851,
+    "Norway": 2531.9087968978642,
+    "Indonesia": 108049.71955667967,
+    "South Africa": 13199.711027271547,
+    "Rest of Asia and Pacific": 527768.3403098524,
+    "Rest of America": 125601.47850672362,
+    "Rest of Europe": 163684.16718957198,
+    "Rest of Africa": 359267.16059034306,
+    "Rest of Middle East": 38646.98842085636
+   },
+   "7": {
+    "Austria": 2398.7194458520353,
+    "Belgium": 1.2283467912199693,
+    "Bulgaria": 23477.093067443246,
+    "Cyprus": 3.57267635946513,
+    "Czech Republic": 2098.415949284873,
+    "Germany": 509.3326429554575,
+    "Denmark": 25.755820840851726,
+    "Estonia": 0.0,
+    "Spain": 8216.453916618273,
+    "Finland": 6522.244177805987,
+    "France": 80.45002265908863,
+    "Greece": 3944.5572877601976,
+    "Croatia": 4.7876036161094975,
+    "Hungary": 335.3839767473062,
+    "Ireland": 3207.5944985407195,
+    "Italy": 0.004996730971483265,
+    "Lithuania": 0.0,
+    "Luxembourg": 0.0,
+    "Latvia": 0.0,
+    "Malta": 0.0,
+    "Netherlands": 0.568031745565823,
+    "Poland": 64539.33111521874,
+    "Portugal": 364.6485939919316,
+    "Romania": 2513.2258670316955,
+    "Sweden": 57460.83406405372,
+    "Slovenia": 0.0,
+    "Slovakia": 46.76590397629222,
+    "United Kingdom": 76.32425294118835,
+    "United States": 568147.2570884612,
+    "Japan": 887.63871595955,
+    "China": 1735977.3211053368,
+    "Canada": 158651.59776035682,
+    "South Korea": 1385.2315039458717,
+    "Brazil": 554286.6659359214,
+    "India": 205820.02159410733,
+    "Mexico": 219722.91373795402,
+    "Russia": 222295.24603423823,
+    "Australia": 833549.4881013613,
+    "Switzerland": 0.0,
+    "Turkey": 20004.254744370453,
+    "Taiwan": 0.0,
+    "Norway": 3397.589684914357,
+    "Indonesia": 818399.3341886147,
+    "South Africa": 159209.55088761708,
+    "Rest of Asia and Pacific": 410835.34435459727,
+    "Rest of America": 1308656.368456161,
+    "Rest of Europe": 101581.48707988924,
+    "Rest of Africa": 241849.022155457,
+    "Rest of Middle East": 110668.34379623775
+   }
+  }
+ },
+ "checks": {
+  "independent_by_country": [
+   {
+    "run": "baseline",
+    "indicator": 5,
+    "regions": {
+     "Austria": {
+      "engine": 68233210812.873146,
+      "direct": 68233210812.87315
+     },
+     "Belgium": {
+      "engine": 111710107385.87837,
+      "direct": 111710107385.87837
+     },
+     "Bulgaria": {
+      "engine": 54748433974.24481,
+      "direct": 54748433974.24481
+     },
+     "Cyprus": {
+      "engine": 12192163195.607965,
+      "direct": 12192163195.60797
+     },
+     "Czech Republic": {
+      "engine": 121493151034.62474,
+      "direct": 121493151034.62474
+     },
+     "Germany": {
+      "engine": 816947574220.9192,
+      "direct": 816947574220.9192
+     },
+     "Denmark": {
+      "engine": 67185511038.52435,
+      "direct": 67185511038.52435
+     },
+     "Estonia": {
+      "engine": 19764246856.30599,
+      "direct": 19764246856.30599
+     },
+     "Spain": {
+      "engine": 281423967006.46454,
+      "direct": 281423967006.46454
+     },
+     "Finland": {
+      "engine": 63883764764.54272,
+      "direct": 63883764764.54272
+     },
+     "France": {
+      "engine": 365446940876.00073,
+      "direct": 365446940876.0007
+     },
+     "Greece": {
+      "engine": 158259225550.66547,
+      "direct": 158259225550.66544
+     },
+     "Croatia": {
+      "engine": 19792363319.2101,
+      "direct": 19792363319.2101
+     },
+     "Hungary": {
+      "engine": 49053537648.17663,
+      "direct": 49053537648.17663
+     },
+     "Ireland": {
+      "engine": 58806699890.13714,
+      "direct": 58806699890.13714
+     },
+     "Italy": {
+      "engine": 383693433892.4919,
+      "direct": 383693433892.4919
+     },
+     "Lithuania": {
+      "engine": 16797201218.71445,
+      "direct": 16797201218.714449
+     },
+     "Luxembourg": {
+      "engine": 8625912776.428232,
+      "direct": 8625912776.428232
+     },
+     "Latvia": {
+      "engine": 11225706468.225239,
+      "direct": 11225706468.225239
+     },
+     "Malta": {
+      "engine": 2870602890.6533995,
+      "direct": 2870602890.6534
+     },
+     "Netherlands": {
+      "engine": 184262588531.3653,
+      "direct": 184262588531.3653
+     },
+     "Poland": {
+      "engine": 340119624441.8978,
+      "direct": 340119624441.8978
+     },
+     "Portugal": {
+      "engine": 58743002793.94098,
+      "direct": 58743002793.94097
+     },
+     "Romania": {
+      "engine": 95224440025.76587,
+      "direct": 95224440025.76587
+     },
+     "Sweden": {
+      "engine": 50069653799.4458,
+      "direct": 50069653799.4458
+     },
+     "Slovenia": {
+      "engine": 13368770093.723482,
+      "direct": 13368770093.723482
+     },
+     "Slovakia": {
+      "engine": 35350583136.2764,
+      "direct": 35350583136.2764
+     },
+     "United Kingdom": {
+      "engine": 476881438338.664,
+      "direct": 476881438338.664
+     },
+     "United States": {
+      "engine": 5069841364139.553,
+      "direct": 5069841364139.553
+     },
+     "Japan": {
+      "engine": 1218098283463.5374,
+      "direct": 1218098283463.5374
+     },
+     "China": {
+      "engine": 10489563936892.627,
+      "direct": 10489563936892.625
+     },
+     "Canada": {
+      "engine": 603292574820.6836,
+      "direct": 603292574820.6836
+     },
+     "South Korea": {
+      "engine": 614091201410.656,
+      "direct": 614091201410.656
+     },
+     "Brazil": {
+      "engine": 1060456294343.1604,
+      "direct": 1060456294343.1605
+     },
+     "India": {
+      "engine": 2615392197208.3154,
+      "direct": 2615392197208.3154
+     },
+     "Mexico": {
+      "engine": 586547936788.8733,
+      "direct": 586547936788.8733
+     },
+     "Russia": {
+      "engine": 2038218695121.4475,
+      "direct": 2038218695121.4475
+     },
+     "Australia": {
+      "engine": 583089177420.4879,
+      "direct": 583089177420.4879
+     },
+     "Switzerland": {
+      "engine": 38759506473.91281,
+      "direct": 38759506473.91281
+     },
+     "Turkey": {
+      "engine": 349937976389.4146,
+      "direct": 349937976389.4146
+     },
+     "Taiwan": {
+      "engine": 259974848733.6706,
+      "direct": 259974848733.6706
+     },
+     "Norway": {
+      "engine": 82575464687.65408,
+      "direct": 82575464687.65408
+     },
+     "Indonesia": {
+      "engine": 634904603988.7161,
+      "direct": 634904603988.7161
+     },
+     "South Africa": {
+      "engine": 456683801983.1863,
+      "direct": 456683801983.18616
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 2486568464921.8267,
+      "direct": 2486568464921.8267
+     },
+     "Rest of America": {
+      "engine": 1235346713423.5718,
+      "direct": 1235346713423.5718
+     },
+     "Rest of Europe": {
+      "engine": 550209902425.6116,
+      "direct": 550209902425.6116
+     },
+     "Rest of Africa": {
+      "engine": 1117383919339.3113,
+      "direct": 1117383919339.3113
+     },
+     "Rest of Middle East": {
+      "engine": 2342644939183.195,
+      "direct": 2342644939183.195
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 3,
+    "regions": {
+     "Austria": {
+      "engine": 4179.560000000001,
+      "direct": 4179.560000000001
+     },
+     "Belgium": {
+      "engine": 4541.700000000027,
+      "direct": 4541.700000000027
+     },
+     "Bulgaria": {
+      "engine": 2958.299999999999,
+      "direct": 2958.2999999999993
+     },
+     "Cyprus": {
+      "engine": 404.7000000000001,
+      "direct": 404.7000000000001
+     },
+     "Czech Republic": {
+      "engine": 5043.438000000001,
+      "direct": 5043.438000000001
+     },
+     "Germany": {
+      "engine": 41570.0,
+      "direct": 41570.0
+     },
+     "Denmark": {
+      "engine": 2698.199999999999,
+      "direct": 2698.2
+     },
+     "Estonia": {
+      "engine": 602.6,
+      "direct": 602.6
+     },
+     "Spain": {
+      "engine": 18417.100000000006,
+      "direct": 18417.100000000006
+     },
+     "Finland": {
+      "engine": 2462.5,
+      "direct": 2462.4999999999995
+     },
+     "France": {
+      "engine": 27060.999999999996,
+      "direct": 27060.999999999996
+     },
+     "Greece": {
+      "engine": 4088.7,
+      "direct": 4088.7
+     },
+     "Croatia": {
+      "engine": 1490.8999999999996,
+      "direct": 1490.8999999999996
+     },
+     "Hungary": {
+      "engine": 3810.199999999999,
+      "direct": 3810.1999999999994
+     },
+     "Ireland": {
+      "engine": 1842.6,
+      "direct": 1842.6
+     },
+     "Italy": {
+      "engine": 22951.399999999998,
+      "direct": 22951.399999999998
+     },
+     "Lithuania": {
+      "engine": 1253.2000000000003,
+      "direct": 1253.2000000000003
+     },
+     "Luxembourg": {
+      "engine": 204.4,
+      "direct": 204.39999999999998
+     },
+     "Latvia": {
+      "engine": 861.3000000000002,
+      "direct": 861.3000000000002
+     },
+     "Malta": {
+      "engine": 166.0,
+      "direct": 166.0
+     },
+     "Netherlands": {
+      "engine": 7469.999999999998,
+      "direct": 7469.999999999997
+     },
+     "Poland": {
+      "engine": 15556.100000000008,
+      "direct": 15556.100000000006
+     },
+     "Portugal": {
+      "engine": 4835.2,
+      "direct": 4835.2
+     },
+     "Romania": {
+      "engine": 9087.2,
+      "direct": 9087.2
+     },
+     "Sweden": {
+      "engine": 4603.700000000001,
+      "direct": 4603.700000000002
+     },
+     "Slovenia": {
+      "engine": 931.5000000000001,
+      "direct": 931.4999999999999
+     },
+     "Slovakia": {
+      "engine": 2313.8,
+      "direct": 2313.8
+     },
+     "United Kingdom": {
+      "engine": 28825.400000000005,
+      "direct": 28825.4
+     },
+     "United States": {
+      "engine": 142171.99999999997,
+      "direct": 142171.99999999997
+     },
+     "Japan": {
+      "engine": 62505.000000000015,
+      "direct": 62505.000000000015
+     },
+     "China": {
+      "engine": 627379.5,
+      "direct": 627379.5
+     },
+     "Canada": {
+      "engine": 17682.524999999998,
+      "direct": 17682.525
+     },
+     "South Korea": {
+      "engine": 24231.600000000002,
+      "direct": 24231.600000000002
+     },
+     "Brazil": {
+      "engine": 93359.19999999998,
+      "direct": 93359.19999999998
+     },
+     "India": {
+      "engine": 377183.1000000001,
+      "direct": 377183.1000000001
+     },
+     "Mexico": {
+      "engine": 46603.799999999996,
+      "direct": 46603.79999999999
+     },
+     "Russia": {
+      "engine": 70854.69999999995,
+      "direct": 70854.69999999995
+     },
+     "Australia": {
+      "engine": 11394.6,
+      "direct": 11394.6
+     },
+     "Switzerland": {
+      "engine": 4171.7,
+      "direct": 4171.700000000001
+     },
+     "Turkey": {
+      "engine": 24094.2,
+      "direct": 24094.199999999997
+     },
+     "Taiwan": {
+      "engine": 10708.400000000001,
+      "direct": 10708.400000000001
+     },
+     "Norway": {
+      "engine": 2532.8,
+      "direct": 2532.7999999999997
+     },
+     "Indonesia": {
+      "engine": 108163.9,
+      "direct": 108163.9
+     },
+     "South Africa": {
+      "engine": 13202.399999999998,
+      "direct": 13202.399999999998
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 528534.0,
+      "direct": 528534.0
+     },
+     "Rest of America": {
+      "engine": 125736.99999999997,
+      "direct": 125736.99999999997
+     },
+     "Rest of Europe": {
+      "engine": 163899.99999999994,
+      "direct": 163899.99999999997
+     },
+     "Rest of Africa": {
+      "engine": 359598.0,
+      "direct": 359598.0
+     },
+     "Rest of Middle East": {
+      "engine": 38705.8,
+      "direct": 38705.8
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 7,
+    "regions": {
+     "Austria": {
+      "engine": 2402.591818181819,
+      "direct": 2402.5918181818192
+     },
+     "Belgium": {
+      "engine": 1.230000000000029,
+      "direct": 1.230000000000029
+     },
+     "Bulgaria": {
+      "engine": 23527.033263853893,
+      "direct": 23527.03326385389
+     },
+     "Cyprus": {
+      "engine": 3.6599999999999993,
+      "direct": 3.66
+     },
+     "Czech Republic": {
+      "engine": 2100.0000000000005,
+      "direct": 2100.0
+     },
+     "Germany": {
+      "engine": 511.4176666666668,
+      "direct": 511.4176666666668
+     },
+     "Denmark": {
+      "engine": 25.77999999999999,
+      "direct": 25.77999999999999
+     },
+     "Estonia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Spain": {
+      "engine": 8240.794064546297,
+      "direct": 8240.794064546297
+     },
+     "Finland": {
+      "engine": 6546.869843107145,
+      "direct": 6546.869843107145
+     },
+     "France": {
+      "engine": 80.80000000000007,
+      "direct": 80.80000000000007
+     },
+     "Greece": {
+      "engine": 3961.4447722000014,
+      "direct": 3961.444772200001
+     },
+     "Croatia": {
+      "engine": 4.800000000000001,
+      "direct": 4.800000000000001
+     },
+     "Hungary": {
+      "engine": 335.7999999999998,
+      "direct": 335.7999999999998
+     },
+     "Ireland": {
+      "engine": 3215.6422159333356,
+      "direct": 3215.6422159333356
+     },
+     "Italy": {
+      "engine": 0.005000000000000002,
+      "direct": 0.005000000000000001
+     },
+     "Lithuania": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Luxembourg": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Latvia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Malta": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Netherlands": {
+      "engine": 0.575,
+      "direct": 0.575
+     },
+     "Poland": {
+      "engine": 64899.3709724004,
+      "direct": 64899.370972400386
+     },
+     "Portugal": {
+      "engine": 365.733071624013,
+      "direct": 365.733071624013
+     },
+     "Romania": {
+      "engine": 2516.44070891429,
+      "direct": 2516.44070891429
+     },
+     "Sweden": {
+      "engine": 58201.5111083966,
+      "direct": 58201.5111083966
+     },
+     "Slovenia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Slovakia": {
+      "engine": 46.930288959767296,
+      "direct": 46.930288959767296
+     },
+     "United Kingdom": {
+      "engine": 76.41033062937062,
+      "direct": 76.4103306293706
+     },
+     "United States": {
+      "engine": 568395.1059489296,
+      "direct": 568395.1059489296
+     },
+     "Japan": {
+      "engine": 887.9173333333337,
+      "direct": 887.9173333333337
+     },
+     "China": {
+      "engine": 1738674.849446042,
+      "direct": 1738674.8494460415
+     },
+     "Canada": {
+      "engine": 158714.6598866237,
+      "direct": 158714.6598866237
+     },
+     "South Korea": {
+      "engine": 1386.5602219999994,
+      "direct": 1386.560221999999
+     },
+     "Brazil": {
+      "engine": 554954.2407239324,
+      "direct": 554954.2407239324
+     },
+     "India": {
+      "engine": 206124.16981682624,
+      "direct": 206124.16981682624
+     },
+     "Mexico": {
+      "engine": 219926.23390293843,
+      "direct": 219926.23390293843
+     },
+     "Russia": {
+      "engine": 223016.39988189732,
+      "direct": 223016.39988189732
+     },
+     "Australia": {
+      "engine": 834457.3227756006,
+      "direct": 834457.3227756006
+     },
+     "Switzerland": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Turkey": {
+      "engine": 20033.908526242034,
+      "direct": 20033.908526242034
+     },
+     "Taiwan": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Norway": {
+      "engine": 3402.747999999998,
+      "direct": 3402.747999999998
+     },
+     "Indonesia": {
+      "engine": 818718.9648875135,
+      "direct": 818718.9648875135
+     },
+     "South Africa": {
+      "engine": 159304.30903899294,
+      "direct": 159304.30903899294
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 412043.66554370057,
+      "direct": 412043.6655437005
+     },
+     "Rest of America": {
+      "engine": 1311679.8573480274,
+      "direct": 1311679.8573480274
+     },
+     "Rest of Europe": {
+      "engine": 101776.65798611238,
+      "direct": 101776.65798611239
+     },
+     "Rest of Africa": {
+      "engine": 242596.227661386,
+      "direct": 242596.227661386
+     },
+     "Rest of Middle East": {
+      "engine": 110990.89159747733,
+      "direct": 110990.89159747733
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 5,
+    "regions": {
+     "Austria": {
+      "engine": 67987288090.59189,
+      "direct": 67987288090.5919
+     },
+     "Belgium": {
+      "engine": 111247876854.88011,
+      "direct": 111247876854.8801
+     },
+     "Bulgaria": {
+      "engine": 54694280223.99402,
+      "direct": 54694280223.99402
+     },
+     "Cyprus": {
+      "engine": 12184958923.51042,
+      "direct": 12184958923.510422
+     },
+     "Czech Republic": {
+      "engine": 120596637982.86615,
+      "direct": 120596637982.86612
+     },
+     "Germany": {
+      "engine": 811277250159.3193,
+      "direct": 811277250159.3193
+     },
+     "Denmark": {
+      "engine": 67087220204.20399,
+      "direct": 67087220204.20399
+     },
+     "Estonia": {
+      "engine": 19727694854.923824,
+      "direct": 19727694854.92382
+     },
+     "Spain": {
+      "engine": 280064657719.46106,
+      "direct": 280064657719.46106
+     },
+     "Finland": {
+      "engine": 63800706569.80719,
+      "direct": 63800706569.80718
+     },
+     "France": {
+      "engine": 363918531493.6107,
+      "direct": 363918531493.6107
+     },
+     "Greece": {
+      "engine": 158107614108.29776,
+      "direct": 158107614108.29776
+     },
+     "Croatia": {
+      "engine": 19764947370.28988,
+      "direct": 19764947370.28988
+     },
+     "Hungary": {
+      "engine": 48760731471.61438,
+      "direct": 48760731471.61438
+     },
+     "Ireland": {
+      "engine": 58756693310.99675,
+      "direct": 58756693310.99675
+     },
+     "Italy": {
+      "engine": 382595112264.9347,
+      "direct": 382595112264.93463
+     },
+     "Lithuania": {
+      "engine": 16783094744.586935,
+      "direct": 16783094744.586933
+     },
+     "Luxembourg": {
+      "engine": 8597335634.12881,
+      "direct": 8597335634.12881
+     },
+     "Latvia": {
+      "engine": 11207625001.533693,
+      "direct": 11207625001.533691
+     },
+     "Malta": {
+      "engine": 2868092412.4512997,
+      "direct": 2868092412.4512997
+     },
+     "Netherlands": {
+      "engine": 183880684962.49445,
+      "direct": 183880684962.49445
+     },
+     "Poland": {
+      "engine": 339388749045.37085,
+      "direct": 339388749045.37085
+     },
+     "Portugal": {
+      "engine": 58609714010.45378,
+      "direct": 58609714010.45378
+     },
+     "Romania": {
+      "engine": 94820545974.2385,
+      "direct": 94820545974.2385
+     },
+     "Sweden": {
+      "engine": 49843171376.105286,
+      "direct": 49843171376.105286
+     },
+     "Slovenia": {
+      "engine": 13299776621.52935,
+      "direct": 13299776621.52935
+     },
+     "Slovakia": {
+      "engine": 35084037648.19784,
+      "direct": 35084037648.19784
+     },
+     "United Kingdom": {
+      "engine": 475567331525.0761,
+      "direct": 475567331525.0762
+     },
+     "United States": {
+      "engine": 5068758858397.627,
+      "direct": 5068758858397.627
+     },
+     "Japan": {
+      "engine": 1217748173742.1116,
+      "direct": 1217748173742.1116
+     },
+     "China": {
+      "engine": 10485933585922.254,
+      "direct": 10485933585922.254
+     },
+     "Canada": {
+      "engine": 603127323088.2568,
+      "direct": 603127323088.2568
+     },
+     "South Korea": {
+      "engine": 613789809505.1874,
+      "direct": 613789809505.1874
+     },
+     "Brazil": {
+      "engine": 1060338267294.991,
+      "direct": 1060338267294.9912
+     },
+     "India": {
+      "engine": 2614621302734.1606,
+      "direct": 2614621302734.16
+     },
+     "Mexico": {
+      "engine": 586472682670.2091,
+      "direct": 586472682670.2091
+     },
+     "Russia": {
+      "engine": 2035847997784.7073,
+      "direct": 2035847997784.7073
+     },
+     "Australia": {
+      "engine": 582944236311.442,
+      "direct": 582944236311.4419
+     },
+     "Switzerland": {
+      "engine": 38709466615.19057,
+      "direct": 38709466615.19057
+     },
+     "Turkey": {
+      "engine": 349758939546.65094,
+      "direct": 349758939546.65094
+     },
+     "Taiwan": {
+      "engine": 259748171181.4946,
+      "direct": 259748171181.49463
+     },
+     "Norway": {
+      "engine": 82363211576.97131,
+      "direct": 82363211576.97131
+     },
+     "Indonesia": {
+      "engine": 634763101756.8696,
+      "direct": 634763101756.8696
+     },
+     "South Africa": {
+      "engine": 456375738279.52295,
+      "direct": 456375738279.5228
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 2485337449210.697,
+      "direct": 2485337449210.697
+     },
+     "Rest of America": {
+      "engine": 1235127719967.1045,
+      "direct": 1235127719967.1045
+     },
+     "Rest of Europe": {
+      "engine": 546997450126.86896,
+      "direct": 546997450126.86896
+     },
+     "Rest of Africa": {
+      "engine": 1116807863622.4272,
+      "direct": 1116807863622.4272
+     },
+     "Rest of Middle East": {
+      "engine": 2341000209487.366,
+      "direct": 2341000209487.366
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 3,
+    "regions": {
+     "Austria": {
+      "engine": 4165.30447114643,
+      "direct": 4165.30447114643
+     },
+     "Belgium": {
+      "engine": 4527.88300377153,
+      "direct": 4527.88300377153
+     },
+     "Bulgaria": {
+      "engine": 2954.171892760078,
+      "direct": 2954.1718927600787
+     },
+     "Cyprus": {
+      "engine": 404.4933861299398,
+      "direct": 404.49338612993984
+     },
+     "Czech Republic": {
+      "engine": 4991.684309514009,
+      "direct": 4991.684309514008
+     },
+     "Germany": {
+      "engine": 41295.919259754904,
+      "direct": 41295.91925975491
+     },
+     "Denmark": {
+      "engine": 2694.8749369005077,
+      "direct": 2694.874936900508
+     },
+     "Estonia": {
+      "engine": 601.1229828077466,
+      "direct": 601.1229828077466
+     },
+     "Spain": {
+      "engine": 18352.226770590412,
+      "direct": 18352.226770590412
+     },
+     "Finland": {
+      "engine": 2459.720710292551,
+      "direct": 2459.720710292551
+     },
+     "France": {
+      "engine": 26959.81139532192,
+      "direct": 26959.811395321918
+     },
+     "Greece": {
+      "engine": 4086.587798325577,
+      "direct": 4086.5877983255773
+     },
+     "Croatia": {
+      "engine": 1489.127651331387,
+      "direct": 1489.127651331387
+     },
+     "Hungary": {
+      "engine": 3787.157819733357,
+      "direct": 3787.1578197333565
+     },
+     "Ireland": {
+      "engine": 1840.6430179665726,
+      "direct": 1840.6430179665724
+     },
+     "Italy": {
+      "engine": 22878.56530492934,
+      "direct": 22878.565304929336
+     },
+     "Lithuania": {
+      "engine": 1252.0233830998222,
+      "direct": 1252.023383099822
+     },
+     "Luxembourg": {
+      "engine": 204.1204640849113,
+      "direct": 204.1204640849113
+     },
+     "Latvia": {
+      "engine": 860.4181992581168,
+      "direct": 860.4181992581169
+     },
+     "Malta": {
+      "engine": 165.85108167806797,
+      "direct": 165.85108167806797
+     },
+     "Netherlands": {
+      "engine": 7453.723346262509,
+      "direct": 7453.723346262508
+     },
+     "Poland": {
+      "engine": 15485.56705050677,
+      "direct": 15485.56705050677
+     },
+     "Portugal": {
+      "engine": 4822.251175318694,
+      "direct": 4822.251175318694
+     },
+     "Romania": {
+      "engine": 9059.464806624625,
+      "direct": 9059.464806624625
+     },
+     "Sweden": {
+      "engine": 4582.717844333547,
+      "direct": 4582.717844333547
+     },
+     "Slovenia": {
+      "engine": 925.9113393345461,
+      "direct": 925.911339334546
+     },
+     "Slovakia": {
+      "engine": 2292.5228864176715,
+      "direct": 2292.5228864176715
+     },
+     "United Kingdom": {
+      "engine": 28747.990028315107,
+      "direct": 28747.990028315104
+     },
+     "United States": {
+      "engine": 142142.00559458206,
+      "direct": 142142.00559458206
+     },
+     "Japan": {
+      "engine": 62494.41126843871,
+      "direct": 62494.411268438715
+     },
+     "China": {
+      "engine": 627256.4821290812,
+      "direct": 627256.4821290812
+     },
+     "Canada": {
+      "engine": 17679.41620761036,
+      "direct": 17679.416207610364
+     },
+     "South Korea": {
+      "engine": 24222.9534475397,
+      "direct": 24222.9534475397
+     },
+     "Brazil": {
+      "engine": 93352.31004293918,
+      "direct": 93352.31004293915
+     },
+     "India": {
+      "engine": 377117.15100854926,
+      "direct": 377117.1510085492
+     },
+     "Mexico": {
+      "engine": 46597.1983516828,
+      "direct": 46597.19835168279
+     },
+     "Russia": {
+      "engine": 70757.5837568299,
+      "direct": 70757.5837568299
+     },
+     "Australia": {
+      "engine": 11392.190195527519,
+      "direct": 11392.190195527519
+     },
+     "Switzerland": {
+      "engine": 4166.57324906824,
+      "direct": 4166.57324906824
+     },
+     "Turkey": {
+      "engine": 24083.163511466315,
+      "direct": 24083.163511466315
+     },
+     "Taiwan": {
+      "engine": 10701.883017628847,
+      "direct": 10701.883017628847
+     },
+     "Norway": {
+      "engine": 2530.855032805628,
+      "direct": 2530.855032805627
+     },
+     "Indonesia": {
+      "engine": 108146.01126365815,
+      "direct": 108146.01126365815
+     },
+     "South Africa": {
+      "engine": 13196.533449406073,
+      "direct": 13196.533449406072
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 528264.3689705753,
+      "direct": 528264.3689705753
+     },
+     "Rest of America": {
+      "engine": 125712.85298010347,
+      "direct": 125712.85298010347
+     },
+     "Rest of Europe": {
+      "engine": 162735.95933211822,
+      "direct": 162735.95933211822
+     },
+     "Rest of Africa": {
+      "engine": 359447.7460334905,
+      "direct": 359447.7460334905
+     },
+     "Rest of Middle East": {
+      "engine": 38689.60992861944,
+      "direct": 38689.60992861944
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 7,
+    "regions": {
+     "Austria": {
+      "engine": 2389.571741385249,
+      "direct": 2389.571741385249
+     },
+     "Belgium": {
+      "engine": 1.2155506799595301,
+      "direct": 1.2155506799595301
+     },
+     "Bulgaria": {
+      "engine": 23421.71014370876,
+      "direct": 23421.710143708755
+     },
+     "Cyprus": {
+      "engine": 3.658325219744258,
+      "direct": 3.658325219744258
+     },
+     "Czech Republic": {
+      "engine": 2089.5056889560396,
+      "direct": 2089.5056889560396
+     },
+     "Germany": {
+      "engine": 507.28914475803003,
+      "direct": 507.2891447580301
+     },
+     "Denmark": {
+      "engine": 25.389555325207837,
+      "direct": 25.389555325207844
+     },
+     "Estonia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Spain": {
+      "engine": 8205.464092294853,
+      "direct": 8205.464092294853
+     },
+     "Finland": {
+      "engine": 6500.599923330028,
+      "direct": 6500.599923330028
+     },
+     "France": {
+      "engine": 79.57073358596288,
+      "direct": 79.57073358596288
+     },
+     "Greece": {
+      "engine": 3948.79288435349,
+      "direct": 3948.7928843534896
+     },
+     "Croatia": {
+      "engine": 4.786457959498651,
+      "direct": 4.786457959498651
+     },
+     "Hungary": {
+      "engine": 333.1242690515046,
+      "direct": 333.1242690515046
+     },
+     "Ireland": {
+      "engine": 3209.1305849042355,
+      "direct": 3209.1305849042355
+     },
+     "Italy": {
+      "engine": 0.004960677734685549,
+      "direct": 0.004960677734685549
+     },
+     "Lithuania": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Luxembourg": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Latvia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Malta": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Netherlands": {
+      "engine": 0.5727543382014806,
+      "direct": 0.5727543382014805
+     },
+     "Poland": {
+      "engine": 63878.938706385044,
+      "direct": 63878.938706385044
+     },
+     "Portugal": {
+      "engine": 364.0043697517481,
+      "direct": 364.0043697517481
+     },
+     "Romania": {
+      "engine": 2509.223844396561,
+      "direct": 2509.223844396561
+     },
+     "Sweden": {
+      "engine": 57823.39940252942,
+      "direct": 57823.399402529416
+     },
+     "Slovenia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Slovakia": {
+      "engine": 46.37506853904087,
+      "direct": 46.37506853904086
+     },
+     "United Kingdom": {
+      "engine": 76.3081044189045,
+      "direct": 76.30810441890449
+     },
+     "United States": {
+      "engine": 567867.4799172209,
+      "direct": 567867.4799172209
+     },
+     "Japan": {
+      "engine": 887.0129919531661,
+      "direct": 887.0129919531659
+     },
+     "China": {
+      "engine": 1737546.988946189,
+      "direct": 1737546.9889461885
+     },
+     "Canada": {
+      "engine": 158586.08221695764,
+      "direct": 158586.08221695764
+     },
+     "South Korea": {
+      "engine": 1385.0746579480465,
+      "direct": 1385.0746579480463
+     },
+     "Brazil": {
+      "engine": 554014.5025917644,
+      "direct": 554014.5025917644
+     },
+     "India": {
+      "engine": 205925.66279416226,
+      "direct": 205925.66279416226
+     },
+     "Mexico": {
+      "engine": 219853.98121435917,
+      "direct": 219853.98121435917
+     },
+     "Russia": {
+      "engine": 222534.99249547295,
+      "direct": 222534.99249547295
+     },
+     "Australia": {
+      "engine": 833520.1635049582,
+      "direct": 833520.1635049582
+     },
+     "Switzerland": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Turkey": {
+      "engine": 20000.036036309568,
+      "direct": 20000.036036309568
+     },
+     "Taiwan": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Norway": {
+      "engine": 3390.739337677997,
+      "direct": 3390.739337677997
+     },
+     "Indonesia": {
+      "engine": 818511.3885142228,
+      "direct": 818511.3885142228
+     },
+     "South Africa": {
+      "engine": 159015.6949463615,
+      "direct": 159015.6949463615
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 411622.10784778744,
+      "direct": 411622.10784778744
+     },
+     "Rest of America": {
+      "engine": 1310759.862108504,
+      "direct": 1310759.862108504
+     },
+     "Rest of Europe": {
+      "engine": 101450.32499893851,
+      "direct": 101450.32499893851
+     },
+     "Rest of Africa": {
+      "engine": 242282.86874605363,
+      "direct": 242282.86874605363
+     },
+     "Rest of Middle East": {
+      "engine": 110877.67113871673,
+      "direct": 110877.67113871673
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 5,
+    "regions": {
+     "Austria": {
+      "engine": 68190865803.27238,
+      "direct": 68190865803.27238
+     },
+     "Belgium": {
+      "engine": 111637861693.06992,
+      "direct": 111637861693.06053
+     },
+     "Bulgaria": {
+      "engine": 54746646110.676926,
+      "direct": 54746646110.67691
+     },
+     "Cyprus": {
+      "engine": 12191662374.871937,
+      "direct": 12191662374.871935
+     },
+     "Czech Republic": {
+      "engine": 121357757256.0833,
+      "direct": 121357757256.08328
+     },
+     "Germany": {
+      "engine": 816174405936.6213,
+      "direct": 816174405936.6213
+     },
+     "Denmark": {
+      "engine": 67181093861.381195,
+      "direct": 67181093861.381195
+     },
+     "Estonia": {
+      "engine": 19762282848.286213,
+      "direct": 19762282848.286213
+     },
+     "Spain": {
+      "engine": 281340275839.1171,
+      "direct": 281340275839.1171
+     },
+     "Finland": {
+      "engine": 63855764381.61696,
+      "direct": 63855764381.61695
+     },
+     "France": {
+      "engine": 365140388307.6985,
+      "direct": 365140388307.6984
+     },
+     "Greece": {
+      "engine": 158250717883.05655,
+      "direct": 158250717883.05655
+     },
+     "Croatia": {
+      "engine": 19790244019.698124,
+      "direct": 19790244019.698128
+     },
+     "Hungary": {
+      "engine": 49024785934.212746,
+      "direct": 49024785934.21274
+     },
+     "Ireland": {
+      "engine": 58804885331.12658,
+      "direct": 58804885331.12658
+     },
+     "Italy": {
+      "engine": 383554860454.9874,
+      "direct": 383554860454.98737
+     },
+     "Lithuania": {
+      "engine": 16796525357.371607,
+      "direct": 16796525357.371605
+     },
+     "Luxembourg": {
+      "engine": 8622348388.036652,
+      "direct": 8622348388.036652
+     },
+     "Latvia": {
+      "engine": 11223236970.485882,
+      "direct": 11223236970.485882
+     },
+     "Malta": {
+      "engine": 2870511960.948007,
+      "direct": 2870511960.948007
+     },
+     "Netherlands": {
+      "engine": 184252213051.86188,
+      "direct": 184252213051.86172
+     },
+     "Poland": {
+      "engine": 340008305859.2453,
+      "direct": 340008305859.2453
+     },
+     "Portugal": {
+      "engine": 58735379822.1977,
+      "direct": 58735379822.19769
+     },
+     "Romania": {
+      "engine": 95143133232.4289,
+      "direct": 95143133232.4289
+     },
+     "Sweden": {
+      "engine": 50008891861.44469,
+      "direct": 50008891861.44469
+     },
+     "Slovenia": {
+      "engine": 13364450042.350977,
+      "direct": 13364450042.350975
+     },
+     "Slovakia": {
+      "engine": 35280105265.295006,
+      "direct": 35280105265.295006
+     },
+     "United Kingdom": {
+      "engine": 476785130494.7617,
+      "direct": 476785130494.7616
+     },
+     "United States": {
+      "engine": 5069748914534.936,
+      "direct": 5069748914534.936
+     },
+     "Japan": {
+      "engine": 1218057280676.359,
+      "direct": 1218057280676.359
+     },
+     "China": {
+      "engine": 10489179167650.723,
+      "direct": 10489179167650.723
+     },
+     "Canada": {
+      "engine": 603278656221.9723,
+      "direct": 603278656221.9722
+     },
+     "South Korea": {
+      "engine": 614047345069.4833,
+      "direct": 614047345069.4833
+     },
+     "Brazil": {
+      "engine": 1060428885927.116,
+      "direct": 1060428885927.1158
+     },
+     "India": {
+      "engine": 2615177389514.3047,
+      "direct": 2615177389514.3047
+     },
+     "Mexico": {
+      "engine": 586543163338.6257,
+      "direct": 586543163338.6257
+     },
+     "Russia": {
+      "engine": 2037775550118.358,
+      "direct": 2037775550118.3577
+     },
+     "Australia": {
+      "engine": 583063742683.5186,
+      "direct": 583063742683.5186
+     },
+     "Switzerland": {
+      "engine": 38757812888.34012,
+      "direct": 38757812888.34011
+     },
+     "Turkey": {
+      "engine": 349918847823.7406,
+      "direct": 349918847823.7405
+     },
+     "Taiwan": {
+      "engine": 259953625715.85217,
+      "direct": 259953625715.85217
+     },
+     "Norway": {
+      "engine": 82544795968.74484,
+      "direct": 82544795968.74483
+     },
+     "Indonesia": {
+      "engine": 634896659770.6184,
+      "direct": 634896659770.6184
+     },
+     "South Africa": {
+      "engine": 456652082245.88416,
+      "direct": 456652082245.88416
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 2486488382667.375,
+      "direct": 2486488382667.375
+     },
+     "Rest of America": {
+      "engine": 1235326974525.0078,
+      "direct": 1235326974525.0078
+     },
+     "Rest of Europe": {
+      "engine": 549754649815.56604,
+      "direct": 549754649815.566
+     },
+     "Rest of Africa": {
+      "engine": 1117354083479.2764,
+      "direct": 1117354083479.2766
+     },
+     "Rest of Middle East": {
+      "engine": 2342563490894.1714,
+      "direct": 2342563490894.171
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 3,
+    "regions": {
+     "Austria": {
+      "engine": 4179.091688636713,
+      "direct": 4179.091688636712
+     },
+     "Belgium": {
+      "engine": 4541.109575864126,
+      "direct": 4541.10957586408
+     },
+     "Bulgaria": {
+      "engine": 2958.2154629609013,
+      "direct": 2958.215462960901
+     },
+     "Cyprus": {
+      "engine": 404.69065978328354,
+      "direct": 404.6906597832835
+     },
+     "Czech Republic": {
+      "engine": 5042.289639296166,
+      "direct": 5042.289639296165
+     },
+     "Germany": {
+      "engine": 41560.30689627056,
+      "direct": 41560.30689627056
+     },
+     "Denmark": {
+      "engine": 2698.0911210008335,
+      "direct": 2698.091121000834
+     },
+     "Estonia": {
+      "engine": 602.5453118908679,
+      "direct": 602.5453118908678
+     },
+     "Spain": {
+      "engine": 18415.398937747694,
+      "direct": 18415.39893774769
+     },
+     "Finland": {
+      "engine": 2462.1858384381,
+      "direct": 2462.1858384381
+     },
+     "France": {
+      "engine": 27056.825350030733,
+      "direct": 27056.825350030726
+     },
+     "Greece": {
+      "engine": 4088.5839808861856,
+      "direct": 4088.583980886186
+     },
+     "Croatia": {
+      "engine": 1490.7717082469285,
+      "direct": 1490.7717082469287
+     },
+     "Hungary": {
+      "engine": 3809.4489883576034,
+      "direct": 3809.4489883576034
+     },
+     "Ireland": {
+      "engine": 1842.525205957578,
+      "direct": 1842.525205957578
+     },
+     "Italy": {
+      "engine": 22948.507505712627,
+      "direct": 22948.50750571263
+     },
+     "Lithuania": {
+      "engine": 1253.1633920272293,
+      "direct": 1253.1633920272293
+     },
+     "Luxembourg": {
+      "engine": 204.37205557871866,
+      "direct": 204.37205557871866
+     },
+     "Latvia": {
+      "engine": 861.1423595856058,
+      "direct": 861.1423595856058
+     },
+     "Malta": {
+      "engine": 165.9942511360434,
+      "direct": 165.9942511360434
+     },
+     "Netherlands": {
+      "engine": 7469.831035179574,
+      "direct": 7469.831035179572
+     },
+     "Poland": {
+      "engine": 15551.8460929185,
+      "direct": 15551.846092918498
+     },
+     "Portugal": {
+      "engine": 4834.81370202027,
+      "direct": 4834.81370202027
+     },
+     "Romania": {
+      "engine": 9085.788732875251,
+      "direct": 9085.788732875251
+     },
+     "Sweden": {
+      "engine": 4602.99671938227,
+      "direct": 4602.996719382269
+     },
+     "Slovenia": {
+      "engine": 931.283726963982,
+      "direct": 931.2837269639817
+     },
+     "Slovakia": {
+      "engine": 2313.554998349907,
+      "direct": 2313.554998349907
+     },
+     "United Kingdom": {
+      "engine": 28824.109985895404,
+      "direct": 28824.109985895397
+     },
+     "United States": {
+      "engine": 142170.89851129203,
+      "direct": 142170.89851129203
+     },
+     "Japan": {
+      "engine": 62504.62174838636,
+      "direct": 62504.62174838636
+     },
+     "China": {
+      "engine": 627373.0794253435,
+      "direct": 627373.0794253435
+     },
+     "Canada": {
+      "engine": 17682.375344236796,
+      "direct": 17682.375344236796
+     },
+     "South Korea": {
+      "engine": 24231.153440842496,
+      "direct": 24231.153440842492
+     },
+     "Brazil": {
+      "engine": 93358.48252138976,
+      "direct": 93358.48252138976
+     },
+     "India": {
+      "engine": 377175.3485783624,
+      "direct": 377175.3485783624
+     },
+     "Mexico": {
+      "engine": 46603.6213802048,
+      "direct": 46603.6213802048
+     },
+     "Russia": {
+      "engine": 70850.59503374119,
+      "direct": 70850.59503374119
+     },
+     "Australia": {
+      "engine": 11394.424051694574,
+      "direct": 11394.424051694572
+     },
+     "Switzerland": {
+      "engine": 4171.609812228395,
+      "direct": 4171.609812228395
+     },
+     "Turkey": {
+      "engine": 24093.68513790905,
+      "direct": 24093.685137909048
+     },
+     "Taiwan": {
+      "engine": 10708.095282850401,
+      "direct": 10708.095282850401
+     },
+     "Norway": {
+      "engine": 2532.661617662609,
+      "direct": 2532.6616176626085
+     },
+     "Indonesia": {
+      "engine": 108163.1010956703,
+      "direct": 108163.10109567031
+     },
+     "South Africa": {
+      "engine": 13202.165968720683,
+      "direct": 13202.165968720681
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 528517.3570320354,
+      "direct": 528517.3570320354
+     },
+     "Rest of America": {
+      "engine": 125735.21166196241,
+      "direct": 125735.21166196241
+     },
+     "Rest of Europe": {
+      "engine": 163871.01407068412,
+      "direct": 163871.01407068412
+     },
+     "Rest of Africa": {
+      "engine": 359588.91027002933,
+      "direct": 359588.91027002933
+     },
+     "Rest of Middle East": {
+      "engine": 38704.38232861493,
+      "direct": 38704.38232861493
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 7,
+    "regions": {
+     "Austria": {
+      "engine": 2395.443638928179,
+      "direct": 2395.443638928179
+     },
+     "Belgium": {
+      "engine": 1.2263680186961414,
+      "direct": 1.2263680186960935
+     },
+     "Bulgaria": {
+      "engine": 23522.630012366797,
+      "direct": 23522.63001236673
+     },
+     "Cyprus": {
+      "engine": 3.659837366596667,
+      "direct": 3.659837366596667
+     },
+     "Czech Republic": {
+      "engine": 2099.384116140522,
+      "direct": 2099.384116140522
+     },
+     "Germany": {
+      "engine": 509.63190099562394,
+      "direct": 509.6319009956237
+     },
+     "Denmark": {
+      "engine": 25.7787640964332,
+      "direct": 25.778764096433203
+     },
+     "Estonia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Spain": {
+      "engine": 8239.372618347174,
+      "direct": 8239.372618347163
+     },
+     "Finland": {
+      "engine": 6511.14786190259,
+      "direct": 6511.147861902584
+     },
+     "France": {
+      "engine": 80.77864964422814,
+      "direct": 80.77864964422812
+     },
+     "Greece": {
+      "engine": 3959.8718066018973,
+      "direct": 3959.8718066018973
+     },
+     "Croatia": {
+      "engine": 4.799358810894076,
+      "direct": 4.799358810894076
+     },
+     "Hungary": {
+      "engine": 335.6110795925904,
+      "direct": 335.6110795925904
+     },
+     "Ireland": {
+      "engine": 3215.4575053173007,
+      "direct": 3215.4575053172985
+     },
+     "Italy": {
+      "engine": 0.004992601883977828,
+      "direct": 0.004992601883977826
+     },
+     "Lithuania": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Luxembourg": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Latvia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Malta": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Netherlands": {
+      "engine": 0.5749690829266021,
+      "direct": 0.5749690829266019
+     },
+     "Poland": {
+      "engine": 64255.03784699437,
+      "direct": 64255.03784699436
+     },
+     "Portugal": {
+      "engine": 365.598361810042,
+      "direct": 365.598361810042
+     },
+     "Romania": {
+      "engine": 2516.0695709178635,
+      "direct": 2516.069570917863
+     },
+     "Sweden": {
+      "engine": 57962.840213644835,
+      "direct": 57962.84021364481
+     },
+     "Slovenia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Slovakia": {
+      "engine": 46.91337658165507,
+      "direct": 46.913376581654965
+     },
+     "United Kingdom": {
+      "engine": 76.40778197933477,
+      "direct": 76.40778197933474
+     },
+     "United States": {
+      "engine": 568367.7657951495,
+      "direct": 568367.7657951495
+     },
+     "Japan": {
+      "engine": 887.8703952180954,
+      "direct": 887.8703952180953
+     },
+     "China": {
+      "engine": 1738412.6335911194,
+      "direct": 1738412.6335911192
+     },
+     "Canada": {
+      "engine": 158666.59500499832,
+      "direct": 158666.59500499832
+     },
+     "South Korea": {
+      "engine": 1386.1273500012733,
+      "direct": 1386.127350001273
+     },
+     "Brazil": {
+      "engine": 554273.8574293952,
+      "direct": 554273.8574293952
+     },
+     "India": {
+      "engine": 206016.29688264366,
+      "direct": 206016.29688264363
+     },
+     "Mexico": {
+      "engine": 219919.61359172,
+      "direct": 219919.61359171997
+     },
+     "Russia": {
+      "engine": 222843.01309137887,
+      "direct": 222843.01309137885
+     },
+     "Australia": {
+      "engine": 834186.6284239078,
+      "direct": 834186.6284239076
+     },
+     "Switzerland": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Turkey": {
+      "engine": 20022.2264248943,
+      "direct": 20022.226424894296
+     },
+     "Taiwan": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Norway": {
+      "engine": 3397.7759699148987,
+      "direct": 3397.775969914898
+     },
+     "Indonesia": {
+      "engine": 818700.89062641,
+      "direct": 818700.89062641
+     },
+     "South Africa": {
+      "engine": 159261.83884325234,
+      "direct": 159261.83884325228
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 411942.6819526577,
+      "direct": 411942.6819526577
+     },
+     "Rest of America": {
+      "engine": 1311531.0829890228,
+      "direct": 1311531.0829890226
+     },
+     "Rest of Europe": {
+      "engine": 101652.82604724052,
+      "direct": 101652.82604724052
+     },
+     "Rest of Africa": {
+      "engine": 242549.8073460554,
+      "direct": 242549.8073460554
+     },
+     "Rest of Middle East": {
+      "engine": 110960.13556241081,
+      "direct": 110960.13556241077
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 5,
+    "regions": {
+     "Austria": {
+      "engine": 67683072223.26071,
+      "direct": 67683072223.26071
+     },
+     "Belgium": {
+      "engine": 110670453274.26105,
+      "direct": 110670453274.25156
+     },
+     "Bulgaria": {
+      "engine": 54355739085.72307,
+      "direct": 54355739085.72307
+     },
+     "Cyprus": {
+      "engine": 11967408938.904213,
+      "direct": 11967408938.904213
+     },
+     "Czech Republic": {
+      "engine": 121083654794.79224,
+      "direct": 121083654794.7922
+     },
+     "Germany": {
+      "engine": 811772579048.792,
+      "direct": 811772579048.7917
+     },
+     "Denmark": {
+      "engine": 67007978565.08799,
+      "direct": 67007978565.088
+     },
+     "Estonia": {
+      "engine": 19654686993.383858,
+      "direct": 19654686993.383858
+     },
+     "Spain": {
+      "engine": 279102289954.45386,
+      "direct": 279102289954.4538
+     },
+     "Finland": {
+      "engine": 63636014025.180786,
+      "direct": 63636014025.18078
+     },
+     "France": {
+      "engine": 362141242646.56616,
+      "direct": 362141242646.5661
+     },
+     "Greece": {
+      "engine": 157239628440.9269,
+      "direct": 157239628440.92694
+     },
+     "Croatia": {
+      "engine": 19625559090.98313,
+      "direct": 19625559090.98313
+     },
+     "Hungary": {
+      "engine": 48752148523.81984,
+      "direct": 48752148523.81983
+     },
+     "Ireland": {
+      "engine": 58389084202.825645,
+      "direct": 58389084202.82564
+     },
+     "Italy": {
+      "engine": 380308153092.3854,
+      "direct": 380308153092.3853
+     },
+     "Lithuania": {
+      "engine": 16704596037.966581,
+      "direct": 16704596037.966581
+     },
+     "Luxembourg": {
+      "engine": 8584010808.041121,
+      "direct": 8584010808.041121
+     },
+     "Latvia": {
+      "engine": 11089346799.069681,
+      "direct": 11089346799.06968
+     },
+     "Malta": {
+      "engine": 2869693023.266282,
+      "direct": 2869693023.266282
+     },
+     "Netherlands": {
+      "engine": 183283752751.131,
+      "direct": 183283752751.1309
+     },
+     "Poland": {
+      "engine": 337854243413.84375,
+      "direct": 337854243413.84375
+     },
+     "Portugal": {
+      "engine": 57394964394.489586,
+      "direct": 57394964394.48958
+     },
+     "Romania": {
+      "engine": 94254390720.89456,
+      "direct": 94254390720.89455
+     },
+     "Sweden": {
+      "engine": 49769114598.325645,
+      "direct": 49769114598.325645
+     },
+     "Slovenia": {
+      "engine": 13286863594.69379,
+      "direct": 13286863594.693787
+     },
+     "Slovakia": {
+      "engine": 34916592015.57317,
+      "direct": 34916592015.573166
+     },
+     "United Kingdom": {
+      "engine": 475270317428.46326,
+      "direct": 475270317428.4632
+     },
+     "United States": {
+      "engine": 5048194966916.135,
+      "direct": 5048194966916.134
+     },
+     "Japan": {
+      "engine": 1215990582000.5469,
+      "direct": 1215990582000.5466
+     },
+     "China": {
+      "engine": 10251871320913.309,
+      "direct": 10251871320913.305
+     },
+     "Canada": {
+      "engine": 602462028748.7722,
+      "direct": 602462028748.7722
+     },
+     "South Korea": {
+      "engine": 606532871230.5148,
+      "direct": 606532871230.5146
+     },
+     "Brazil": {
+      "engine": 1038449665709.894,
+      "direct": 1038449665709.894
+     },
+     "India": {
+      "engine": 2587369281330.3237,
+      "direct": 2587369281330.3237
+     },
+     "Mexico": {
+      "engine": 574209673271.1165,
+      "direct": 574209673271.1165
+     },
+     "Russia": {
+      "engine": 2029096731056.107,
+      "direct": 2029096731056.1067
+     },
+     "Australia": {
+      "engine": 580871908831.9202,
+      "direct": 580871908831.9202
+     },
+     "Switzerland": {
+      "engine": 38213836679.12274,
+      "direct": 38213836679.122734
+     },
+     "Turkey": {
+      "engine": 345003328170.75977,
+      "direct": 345003328170.75977
+     },
+     "Taiwan": {
+      "engine": 258581147896.54456,
+      "direct": 258581147896.54456
+     },
+     "Norway": {
+      "engine": 82352401681.78882,
+      "direct": 82352401681.78877
+     },
+     "Indonesia": {
+      "engine": 628327476587.6191,
+      "direct": 628327476587.6191
+     },
+     "South Africa": {
+      "engine": 455472548070.4607,
+      "direct": 455472548070.46063
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 2470985120645.6377,
+      "direct": 2470985120645.6377
+     },
+     "Rest of America": {
+      "engine": 1217788305980.187,
+      "direct": 1217788305980.187
+     },
+     "Rest of Europe": {
+      "engine": 545337980034.56836,
+      "direct": 545337980034.5685
+     },
+     "Rest of Africa": {
+      "engine": 1110858859580.4446,
+      "direct": 1110858859580.4446
+     },
+     "Rest of Middle East": {
+      "engine": 2328921632880.9653,
+      "direct": 2328921632880.9653
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 3,
+    "regions": {
+     "Austria": {
+      "engine": 4173.868909529085,
+      "direct": 4173.868909529085
+     },
+     "Belgium": {
+      "engine": 4536.70063120719,
+      "direct": 4536.700631207145
+     },
+     "Bulgaria": {
+      "engine": 2954.1144707677454,
+      "direct": 2954.1144707677454
+     },
+     "Cyprus": {
+      "engine": 403.4622931894037,
+      "direct": 403.4622931894037
+     },
+     "Czech Republic": {
+      "engine": 5039.841653349108,
+      "direct": 5039.841653349108
+     },
+     "Germany": {
+      "engine": 41530.46460837522,
+      "direct": 41530.464608375216
+     },
+     "Denmark": {
+      "engine": 2696.859208296075,
+      "direct": 2696.8592082960754
+     },
+     "Estonia": {
+      "engine": 601.6710564083384,
+      "direct": 601.6710564083382
+     },
+     "Spain": {
+      "engine": 18396.732306607548,
+      "direct": 18396.732306607544
+     },
+     "Finland": {
+      "engine": 2459.8142734740923,
+      "direct": 2459.814273474092
+     },
+     "France": {
+      "engine": 27034.767043899537,
+      "direct": 27034.76704389953
+     },
+     "Greece": {
+      "engine": 4085.2254059885054,
+      "direct": 4085.2254059885063
+     },
+     "Croatia": {
+      "engine": 1488.6221180504594,
+      "direct": 1488.6221180504594
+     },
+     "Hungary": {
+      "engine": 3806.491143916156,
+      "direct": 3806.491143916155
+     },
+     "Ireland": {
+      "engine": 1839.8142873734528,
+      "direct": 1839.8142873734528
+     },
+     "Italy": {
+      "engine": 22924.792630096304,
+      "direct": 22924.7926300963
+     },
+     "Lithuania": {
+      "engine": 1252.1431783954577,
+      "direct": 1252.1431783954577
+     },
+     "Luxembourg": {
+      "engine": 204.3146930382189,
+      "direct": 204.3146930382189
+     },
+     "Latvia": {
+      "engine": 859.298057806056,
+      "direct": 859.2980578060562
+     },
+     "Malta": {
+      "engine": 165.94626766129244,
+      "direct": 165.94626766129238
+     },
+     "Netherlands": {
+      "engine": 7463.650206333633,
+      "direct": 7463.65020633363
+     },
+     "Poland": {
+      "engine": 15531.436707060822,
+      "direct": 15531.436707060822
+     },
+     "Portugal": {
+      "engine": 4827.730835703321,
+      "direct": 4827.73083570332
+     },
+     "Romania": {
+      "engine": 9067.076027303094,
+      "direct": 9067.076027303094
+     },
+     "Sweden": {
+      "engine": 4600.571538217386,
+      "direct": 4600.571538217386
+     },
+     "Slovenia": {
+      "engine": 930.2645515412992,
+      "direct": 930.2645515412989
+     },
+     "Slovakia": {
+      "engine": 2309.212404203244,
+      "direct": 2309.2124042032438
+     },
+     "United Kingdom": {
+      "engine": 28809.43148808051,
+      "direct": 28809.431488080503
+     },
+     "United States": {
+      "engine": 142089.0724973687,
+      "direct": 142089.07249736867
+     },
+     "Japan": {
+      "engine": 62499.691667923136,
+      "direct": 62499.691667923136
+     },
+     "China": {
+      "engine": 626828.7041392464,
+      "direct": 626828.7041392464
+     },
+     "Canada": {
+      "engine": 17679.860336758193,
+      "direct": 17679.860336758196
+     },
+     "South Korea": {
+      "engine": 24205.400396922276,
+      "direct": 24205.400396922272
+     },
+     "Brazil": {
+      "engine": 93323.03604611178,
+      "direct": 93323.03604611178
+     },
+     "India": {
+      "engine": 376763.59042470274,
+      "direct": 376763.59042470274
+     },
+     "Mexico": {
+      "engine": 46567.38102585534,
+      "direct": 46567.38102585534
+     },
+     "Russia": {
+      "engine": 70734.41293039816,
+      "direct": 70734.41293039818
+     },
+     "Australia": {
+      "engine": 11384.921591759135,
+      "direct": 11384.921591759135
+     },
+     "Switzerland": {
+      "engine": 4168.848289763942,
+      "direct": 4168.8482897639415
+     },
+     "Turkey": {
+      "engine": 24082.511784990922,
+      "direct": 24082.51178499092
+     },
+     "Taiwan": {
+      "engine": 10705.51141728851,
+      "direct": 10705.51141728851
+     },
+     "Norway": {
+      "engine": 2531.9087968978642,
+      "direct": 2531.9087968978642
+     },
+     "Indonesia": {
+      "engine": 108049.71955667967,
+      "direct": 108049.71955667966
+     },
+     "South Africa": {
+      "engine": 13199.711027271547,
+      "direct": 13199.711027271547
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 527768.3403098524,
+      "direct": 527768.3403098524
+     },
+     "Rest of America": {
+      "engine": 125601.47850672362,
+      "direct": 125601.47850672362
+     },
+     "Rest of Europe": {
+      "engine": 163684.16718957198,
+      "direct": 163684.16718957198
+     },
+     "Rest of Africa": {
+      "engine": 359267.16059034306,
+      "direct": 359267.16059034306
+     },
+     "Rest of Middle East": {
+      "engine": 38646.98842085636,
+      "direct": 38646.98842085635
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 7,
+    "regions": {
+     "Austria": {
+      "engine": 2398.7194458520353,
+      "direct": 2398.719445852035
+     },
+     "Belgium": {
+      "engine": 1.2283467912199693,
+      "direct": 1.2283467912199209
+     },
+     "Bulgaria": {
+      "engine": 23477.093067443246,
+      "direct": 23477.09306744318
+     },
+     "Cyprus": {
+      "engine": 3.57267635946513,
+      "direct": 3.572676359465129
+     },
+     "Czech Republic": {
+      "engine": 2098.415949284873,
+      "direct": 2098.415949284872
+     },
+     "Germany": {
+      "engine": 509.3326429554575,
+      "direct": 509.33264295545735
+     },
+     "Denmark": {
+      "engine": 25.755820840851726,
+      "direct": 25.755820840851726
+     },
+     "Estonia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Spain": {
+      "engine": 8216.453916618273,
+      "direct": 8216.453916618262
+     },
+     "Finland": {
+      "engine": 6522.244177805987,
+      "direct": 6522.244177805979
+     },
+     "France": {
+      "engine": 80.45002265908863,
+      "direct": 80.4500226590886
+     },
+     "Greece": {
+      "engine": 3944.5572877601976,
+      "direct": 3944.5572877601976
+     },
+     "Croatia": {
+      "engine": 4.7876036161094975,
+      "direct": 4.787603616109497
+     },
+     "Hungary": {
+      "engine": 335.3839767473062,
+      "direct": 335.3839767473062
+     },
+     "Ireland": {
+      "engine": 3207.5944985407195,
+      "direct": 3207.5944985407177
+     },
+     "Italy": {
+      "engine": 0.004996730971483265,
+      "direct": 0.004996730971483262
+     },
+     "Lithuania": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Luxembourg": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Latvia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Malta": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Netherlands": {
+      "engine": 0.568031745565823,
+      "direct": 0.5680317455658226
+     },
+     "Poland": {
+      "engine": 64539.33111521874,
+      "direct": 64539.33111521873
+     },
+     "Portugal": {
+      "engine": 364.6485939919316,
+      "direct": 364.64859399193153
+     },
+     "Romania": {
+      "engine": 2513.2258670316955,
+      "direct": 2513.225867031695
+     },
+     "Sweden": {
+      "engine": 57460.83406405372,
+      "direct": 57460.834064053684
+     },
+     "Slovenia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Slovakia": {
+      "engine": 46.76590397629222,
+      "direct": 46.765903976292115
+     },
+     "United Kingdom": {
+      "engine": 76.32425294118835,
+      "direct": 76.32425294118832
+     },
+     "United States": {
+      "engine": 568147.2570884612,
+      "direct": 568147.2570884611
+     },
+     "Japan": {
+      "engine": 887.63871595955,
+      "direct": 887.63871595955
+     },
+     "China": {
+      "engine": 1735977.3211053368,
+      "direct": 1735977.321105336
+     },
+     "Canada": {
+      "engine": 158651.59776035682,
+      "direct": 158651.59776035682
+     },
+     "South Korea": {
+      "engine": 1385.2315039458717,
+      "direct": 1385.2315039458717
+     },
+     "Brazil": {
+      "engine": 554286.6659359214,
+      "direct": 554286.6659359214
+     },
+     "India": {
+      "engine": 205820.02159410733,
+      "direct": 205820.0215941073
+     },
+     "Mexico": {
+      "engine": 219722.91373795402,
+      "direct": 219722.91373795396
+     },
+     "Russia": {
+      "engine": 222295.24603423823,
+      "direct": 222295.24603423817
+     },
+     "Australia": {
+      "engine": 833549.4881013613,
+      "direct": 833549.4881013613
+     },
+     "Switzerland": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Turkey": {
+      "engine": 20004.254744370453,
+      "direct": 20004.254744370446
+     },
+     "Taiwan": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Norway": {
+      "engine": 3397.589684914357,
+      "direct": 3397.5896849143555
+     },
+     "Indonesia": {
+      "engine": 818399.3341886147,
+      "direct": 818399.3341886147
+     },
+     "South Africa": {
+      "engine": 159209.55088761708,
+      "direct": 159209.55088761705
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 410835.34435459727,
+      "direct": 410835.34435459727
+     },
+     "Rest of America": {
+      "engine": 1308656.368456161,
+      "direct": 1308656.368456161
+     },
+     "Rest of Europe": {
+      "engine": 101581.48707988924,
+      "direct": 101581.48707988922
+     },
+     "Rest of Africa": {
+      "engine": 241849.022155457,
+      "direct": 241849.0221554569
+     },
+     "Rest of Middle East": {
+      "engine": 110668.34379623775,
+      "direct": 110668.34379623775
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 5,
+    "regions": {
+     "Austria": {
+      "engine": 68233210812.87318,
+      "direct": 68233210812.87318
+     },
+     "Belgium": {
+      "engine": 111710107385.99295,
+      "direct": 111710107385.99326
+     },
+     "Bulgaria": {
+      "engine": 54748433974.24487,
+      "direct": 54748433974.24487
+     },
+     "Cyprus": {
+      "engine": 12192163195.60799,
+      "direct": 12192163195.607992
+     },
+     "Czech Republic": {
+      "engine": 121493151034.62476,
+      "direct": 121493151034.62473
+     },
+     "Germany": {
+      "engine": 816947574220.9199,
+      "direct": 816947574220.9199
+     },
+     "Denmark": {
+      "engine": 67185511038.52445,
+      "direct": 67185511038.52446
+     },
+     "Estonia": {
+      "engine": 19764246856.30599,
+      "direct": 19764246856.30599
+     },
+     "Spain": {
+      "engine": 281423967006.46497,
+      "direct": 281423967006.46497
+     },
+     "Finland": {
+      "engine": 63883764764.54282,
+      "direct": 63883764764.54282
+     },
+     "France": {
+      "engine": 365446940876.00134,
+      "direct": 365446940876.00134
+     },
+     "Greece": {
+      "engine": 158259225550.66553,
+      "direct": 158259225550.66553
+     },
+     "Croatia": {
+      "engine": 19792363319.210114,
+      "direct": 19792363319.210114
+     },
+     "Hungary": {
+      "engine": 49053537648.17667,
+      "direct": 49053537648.17667
+     },
+     "Ireland": {
+      "engine": 58806699890.13715,
+      "direct": 58806699890.137146
+     },
+     "Italy": {
+      "engine": 383693433892.492,
+      "direct": 383693433892.492
+     },
+     "Lithuania": {
+      "engine": 16797201218.714472,
+      "direct": 16797201218.714474
+     },
+     "Luxembourg": {
+      "engine": 8625912776.428242,
+      "direct": 8625912776.428242
+     },
+     "Latvia": {
+      "engine": 11225706468.225248,
+      "direct": 11225706468.225246
+     },
+     "Malta": {
+      "engine": 2870602890.6534038,
+      "direct": 2870602890.6534038
+     },
+     "Netherlands": {
+      "engine": 184262588531.3669,
+      "direct": 184262588531.3669
+     },
+     "Poland": {
+      "engine": 340119624441.89844,
+      "direct": 340119624441.89844
+     },
+     "Portugal": {
+      "engine": 58743002793.94105,
+      "direct": 58743002793.94105
+     },
+     "Romania": {
+      "engine": 95224440025.76581,
+      "direct": 95224440025.76581
+     },
+     "Sweden": {
+      "engine": 50069653799.44586,
+      "direct": 50069653799.44586
+     },
+     "Slovenia": {
+      "engine": 13368770093.723492,
+      "direct": 13368770093.723492
+     },
+     "Slovakia": {
+      "engine": 35350583136.27641,
+      "direct": 35350583136.27642
+     },
+     "United Kingdom": {
+      "engine": 476881438338.66504,
+      "direct": 476881438338.6651
+     },
+     "United States": {
+      "engine": 5069841364139.56,
+      "direct": 5069841364139.559
+     },
+     "Japan": {
+      "engine": 1218098283463.5366,
+      "direct": 1218098283463.5366
+     },
+     "China": {
+      "engine": 10489563936892.629,
+      "direct": 10489563936892.629
+     },
+     "Canada": {
+      "engine": 603292574820.6846,
+      "direct": 603292574820.6847
+     },
+     "South Korea": {
+      "engine": 614091201410.6565,
+      "direct": 614091201410.6565
+     },
+     "Brazil": {
+      "engine": 1060456294343.1606,
+      "direct": 1060456294343.1608
+     },
+     "India": {
+      "engine": 2615392197208.3135,
+      "direct": 2615392197208.3135
+     },
+     "Mexico": {
+      "engine": 586547936788.8738,
+      "direct": 586547936788.8737
+     },
+     "Russia": {
+      "engine": 2038218695121.4517,
+      "direct": 2038218695121.4517
+     },
+     "Australia": {
+      "engine": 583089177420.488,
+      "direct": 583089177420.4882
+     },
+     "Switzerland": {
+      "engine": 38759506473.91283,
+      "direct": 38759506473.912834
+     },
+     "Turkey": {
+      "engine": 349937976389.4146,
+      "direct": 349937976389.4146
+     },
+     "Taiwan": {
+      "engine": 259974848733.67072,
+      "direct": 259974848733.67072
+     },
+     "Norway": {
+      "engine": 82575464687.65459,
+      "direct": 82575464687.6546
+     },
+     "Indonesia": {
+      "engine": 634904603988.7166,
+      "direct": 634904603988.7166
+     },
+     "South Africa": {
+      "engine": 456683801983.1866,
+      "direct": 456683801983.1866
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 2486568464921.8286,
+      "direct": 2486568464921.8286
+     },
+     "Rest of America": {
+      "engine": 1235346713423.5732,
+      "direct": 1235346713423.5732
+     },
+     "Rest of Europe": {
+      "engine": 550209902425.6118,
+      "direct": 550209902425.6118
+     },
+     "Rest of Africa": {
+      "engine": 1117383919339.3125,
+      "direct": 1117383919339.3125
+     },
+     "Rest of Middle East": {
+      "engine": 2342644939183.1978,
+      "direct": 2342644939183.1973
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 3,
+    "regions": {
+     "Austria": {
+      "engine": 4179.560000000003,
+      "direct": 4179.560000000003
+     },
+     "Belgium": {
+      "engine": 4541.700000000585,
+      "direct": 4541.700000000586
+     },
+     "Bulgaria": {
+      "engine": 2958.300000000002,
+      "direct": 2958.300000000003
+     },
+     "Cyprus": {
+      "engine": 404.7000000000001,
+      "direct": 404.7000000000001
+     },
+     "Czech Republic": {
+      "engine": 5043.438000000002,
+      "direct": 5043.438
+     },
+     "Germany": {
+      "engine": 41569.99999999995,
+      "direct": 41569.99999999994
+     },
+     "Denmark": {
+      "engine": 2698.200000000001,
+      "direct": 2698.200000000002
+     },
+     "Estonia": {
+      "engine": 602.6000000000004,
+      "direct": 602.6000000000003
+     },
+     "Spain": {
+      "engine": 18417.100000000017,
+      "direct": 18417.100000000013
+     },
+     "Finland": {
+      "engine": 2462.500000000004,
+      "direct": 2462.500000000004
+     },
+     "France": {
+      "engine": 27061.000000000015,
+      "direct": 27061.000000000015
+     },
+     "Greece": {
+      "engine": 4088.7000000000016,
+      "direct": 4088.7000000000016
+     },
+     "Croatia": {
+      "engine": 1490.9,
+      "direct": 1490.9
+     },
+     "Hungary": {
+      "engine": 3810.2000000000025,
+      "direct": 3810.2000000000025
+     },
+     "Ireland": {
+      "engine": 1842.6000000000017,
+      "direct": 1842.600000000002
+     },
+     "Italy": {
+      "engine": 22951.399999999998,
+      "direct": 22951.399999999998
+     },
+     "Lithuania": {
+      "engine": 1253.2000000000012,
+      "direct": 1253.2000000000012
+     },
+     "Luxembourg": {
+      "engine": 204.4000000000001,
+      "direct": 204.4000000000001
+     },
+     "Latvia": {
+      "engine": 861.3000000000008,
+      "direct": 861.3000000000009
+     },
+     "Malta": {
+      "engine": 166.00000000000023,
+      "direct": 166.00000000000026
+     },
+     "Netherlands": {
+      "engine": 7470.000000000011,
+      "direct": 7470.000000000009
+     },
+     "Poland": {
+      "engine": 15556.10000000001,
+      "direct": 15556.100000000008
+     },
+     "Portugal": {
+      "engine": 4835.200000000001,
+      "direct": 4835.200000000001
+     },
+     "Romania": {
+      "engine": 9087.2,
+      "direct": 9087.2
+     },
+     "Sweden": {
+      "engine": 4603.700000000003,
+      "direct": 4603.700000000003
+     },
+     "Slovenia": {
+      "engine": 931.5000000000005,
+      "direct": 931.5000000000006
+     },
+     "Slovakia": {
+      "engine": 2313.7999999999993,
+      "direct": 2313.7999999999997
+     },
+     "United Kingdom": {
+      "engine": 28825.39999999999,
+      "direct": 28825.399999999987
+     },
+     "United States": {
+      "engine": 142172.00000000012,
+      "direct": 142172.00000000012
+     },
+     "Japan": {
+      "engine": 62504.99999999996,
+      "direct": 62504.99999999996
+     },
+     "China": {
+      "engine": 627379.4999999999,
+      "direct": 627379.4999999999
+     },
+     "Canada": {
+      "engine": 17682.525000000005,
+      "direct": 17682.52500000001
+     },
+     "South Korea": {
+      "engine": 24231.60000000002,
+      "direct": 24231.600000000017
+     },
+     "Brazil": {
+      "engine": 93359.19999999995,
+      "direct": 93359.19999999995
+     },
+     "India": {
+      "engine": 377183.09999999974,
+      "direct": 377183.0999999997
+     },
+     "Mexico": {
+      "engine": 46603.800000000054,
+      "direct": 46603.800000000054
+     },
+     "Russia": {
+      "engine": 70854.69999999998,
+      "direct": 70854.69999999998
+     },
+     "Australia": {
+      "engine": 11394.600000000013,
+      "direct": 11394.600000000013
+     },
+     "Switzerland": {
+      "engine": 4171.700000000001,
+      "direct": 4171.700000000001
+     },
+     "Turkey": {
+      "engine": 24094.199999999986,
+      "direct": 24094.19999999999
+     },
+     "Taiwan": {
+      "engine": 10708.400000000001,
+      "direct": 10708.400000000001
+     },
+     "Norway": {
+      "engine": 2532.8000000000006,
+      "direct": 2532.8000000000006
+     },
+     "Indonesia": {
+      "engine": 108163.90000000002,
+      "direct": 108163.90000000002
+     },
+     "South Africa": {
+      "engine": 13202.400000000009,
+      "direct": 13202.400000000007
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 528534.0000000002,
+      "direct": 528534.0000000002
+     },
+     "Rest of America": {
+      "engine": 125737.00000000006,
+      "direct": 125737.00000000003
+     },
+     "Rest of Europe": {
+      "engine": 163900.00000000003,
+      "direct": 163900.00000000003
+     },
+     "Rest of Africa": {
+      "engine": 359598.0000000001,
+      "direct": 359598.0000000001
+     },
+     "Rest of Middle East": {
+      "engine": 38705.80000000003,
+      "direct": 38705.80000000003
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 7,
+    "regions": {
+     "Austria": {
+      "engine": 2402.5918181818215,
+      "direct": 2402.5918181818215
+     },
+     "Belgium": {
+      "engine": 1.230000000000615,
+      "direct": 1.2300000000006166
+     },
+     "Bulgaria": {
+      "engine": 23527.03326385464,
+      "direct": 23527.03326385464
+     },
+     "Cyprus": {
+      "engine": 3.6599999999999993,
+      "direct": 3.659999999999999
+     },
+     "Czech Republic": {
+      "engine": 2100.0,
+      "direct": 2100.0
+     },
+     "Germany": {
+      "engine": 511.41766666666894,
+      "direct": 511.417666666669
+     },
+     "Denmark": {
+      "engine": 25.780000000000012,
+      "direct": 25.780000000000012
+     },
+     "Estonia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Spain": {
+      "engine": 8240.79406454642,
+      "direct": 8240.794064546422
+     },
+     "Finland": {
+      "engine": 6546.8698431072135,
+      "direct": 6546.8698431072135
+     },
+     "France": {
+      "engine": 80.8000000000003,
+      "direct": 80.8000000000003
+     },
+     "Greece": {
+      "engine": 3961.444772200006,
+      "direct": 3961.444772200006
+     },
+     "Croatia": {
+      "engine": 4.800000000000005,
+      "direct": 4.800000000000007
+     },
+     "Hungary": {
+      "engine": 335.7999999999999,
+      "direct": 335.7999999999999
+     },
+     "Ireland": {
+      "engine": 3215.642215933359,
+      "direct": 3215.642215933359
+     },
+     "Italy": {
+      "engine": 0.005000000000000015,
+      "direct": 0.005000000000000015
+     },
+     "Lithuania": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Luxembourg": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Latvia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Malta": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Netherlands": {
+      "engine": 0.5750000000000044,
+      "direct": 0.5750000000000044
+     },
+     "Poland": {
+      "engine": 64899.37097240051,
+      "direct": 64899.3709724005
+     },
+     "Portugal": {
+      "engine": 365.7330716240134,
+      "direct": 365.7330716240134
+     },
+     "Romania": {
+      "engine": 2516.4407089142887,
+      "direct": 2516.4407089142887
+     },
+     "Sweden": {
+      "engine": 58201.51110839694,
+      "direct": 58201.51110839694
+     },
+     "Slovenia": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Slovakia": {
+      "engine": 46.93028895976852,
+      "direct": 46.930288959768525
+     },
+     "United Kingdom": {
+      "engine": 76.41033062937072,
+      "direct": 76.4103306293707
+     },
+     "United States": {
+      "engine": 568395.1059489307,
+      "direct": 568395.1059489307
+     },
+     "Japan": {
+      "engine": 887.9173333333333,
+      "direct": 887.9173333333333
+     },
+     "China": {
+      "engine": 1738674.8494460431,
+      "direct": 1738674.8494460427
+     },
+     "Canada": {
+      "engine": 158714.65988662382,
+      "direct": 158714.6598866238
+     },
+     "South Korea": {
+      "engine": 1386.5602220000017,
+      "direct": 1386.5602220000017
+     },
+     "Brazil": {
+      "engine": 554954.2407239331,
+      "direct": 554954.2407239331
+     },
+     "India": {
+      "engine": 206124.1698168264,
+      "direct": 206124.16981682635
+     },
+     "Mexico": {
+      "engine": 219926.23390293916,
+      "direct": 219926.23390293916
+     },
+     "Russia": {
+      "engine": 223016.39988189816,
+      "direct": 223016.39988189816
+     },
+     "Australia": {
+      "engine": 834457.3227756023,
+      "direct": 834457.3227756023
+     },
+     "Switzerland": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Turkey": {
+      "engine": 20033.908526242085,
+      "direct": 20033.908526242085
+     },
+     "Taiwan": {
+      "engine": 0.0,
+      "direct": 0.0
+     },
+     "Norway": {
+      "engine": 3402.7479999999987,
+      "direct": 3402.7479999999987
+     },
+     "Indonesia": {
+      "engine": 818718.9648875135,
+      "direct": 818718.9648875135
+     },
+     "South Africa": {
+      "engine": 159304.30903899347,
+      "direct": 159304.3090389935
+     },
+     "Rest of Asia and Pacific": {
+      "engine": 412043.66554370127,
+      "direct": 412043.6655437012
+     },
+     "Rest of America": {
+      "engine": 1311679.8573480311,
+      "direct": 1311679.8573480311
+     },
+     "Rest of Europe": {
+      "engine": 101776.65798611239,
+      "direct": 101776.65798611239
+     },
+     "Rest of Africa": {
+      "engine": 242596.2276613863,
+      "direct": 242596.2276613863
+     },
+     "Rest of Middle East": {
+      "engine": 110990.89159747731,
+      "direct": 110990.89159747731
+     }
+    },
+    "passed": true
+   }
+  ],
+  "aggregates": [
+   {
+    "run": "baseline",
+    "indicator": 5,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 6655937424690.395,
+      "members": 6655937424690.395
+     },
+     "America": {
+      "aggregate": 8555484883515.842,
+      "members": 8555484883515.842
+     },
+     "Asia-Pacific": {
+      "aggregate": 18901682714039.836,
+      "members": 18901682714039.836
+     },
+     "Middle-East": {
+      "aggregate": 2692582915572.6094,
+      "members": 2692582915572.6094
+     },
+     "Africa": {
+      "aggregate": 1574067721322.4976,
+      "members": 1574067721322.4976
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 3,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 461689.8979999999,
+      "members": 461689.8979999999
+     },
+     "America": {
+      "aggregate": 425554.5249999999,
+      "members": 425554.5249999999
+     },
+     "Asia-Pacific": {
+      "aggregate": 1750100.1,
+      "members": 1750100.1
+     },
+     "Middle-East": {
+      "aggregate": 62800.0,
+      "members": 62800.0
+     },
+     "Africa": {
+      "aggregate": 372800.4,
+      "members": 372800.4
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 7,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 505260.6459934233,
+      "members": 505260.6459934233
+     },
+     "America": {
+      "aggregate": 2813670.0978104514,
+      "members": 2813670.0978104514
+     },
+     "Asia-Pacific": {
+      "aggregate": 4012293.4500250164,
+      "members": 4012293.4500250164
+     },
+     "Middle-East": {
+      "aggregate": 131024.80012371935,
+      "members": 131024.80012371935
+     },
+     "Africa": {
+      "aggregate": 401900.5367003789,
+      "members": 401900.5367003789
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 5,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 6634440486663.207,
+      "members": 6634440486663.207
+     },
+     "America": {
+      "aggregate": 8553824851418.188,
+      "members": 8553824851418.188
+     },
+     "Asia-Pacific": {
+      "aggregate": 18894885830364.215,
+      "members": 18894885830364.215
+     },
+     "Middle-East": {
+      "aggregate": 2690759149034.017,
+      "members": 2690759149034.017
+     },
+     "Africa": {
+      "aggregate": 1573183601901.9502,
+      "members": 1573183601901.9502
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 3,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 459532.82768733264,
+      "members": 459532.82768733264
+     },
+     "America": {
+      "aggregate": 425483.7831769179,
+      "members": 425483.7831769179
+     },
+     "Asia-Pacific": {
+      "aggregate": 1749595.4513009987,
+      "members": 1749595.4513009987
+     },
+     "Middle-East": {
+      "aggregate": 62772.77344008575,
+      "members": 62772.77344008575
+     },
+     "Africa": {
+      "aggregate": 372644.2794828966,
+      "members": 372644.2794828966
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 7,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 502794.6931386387,
+      "members": 502794.6931386387
+     },
+     "America": {
+      "aggregate": 2811081.9080488062,
+      "members": 2811081.9080488062
+     },
+     "Asia-Pacific": {
+      "aggregate": 4009398.399257221,
+      "members": 4009398.399257221
+     },
+     "Middle-East": {
+      "aggregate": 130877.7071750263,
+      "members": 130877.7071750263
+     },
+     "Africa": {
+      "aggregate": 401298.56369241513,
+      "members": 401298.56369241513
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 5,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 6652927539133.215,
+      "members": 6652927539133.215
+     },
+     "America": {
+      "aggregate": 8555326594547.657,
+      "members": 8555326594547.657
+     },
+     "Asia-Pacific": {
+      "aggregate": 18900863593748.234,
+      "members": 18900863593748.234
+     },
+     "Middle-East": {
+      "aggregate": 2692482338717.912,
+      "members": 2692482338717.912
+     },
+     "Africa": {
+      "aggregate": 1574006165725.1606,
+      "members": 1574006165725.1606
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 3,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 461625.36545731,
+      "members": 461625.36545731
+     },
+     "America": {
+      "aggregate": 425550.5894190858,
+      "members": 425550.5894190858
+     },
+     "Asia-Pacific": {
+      "aggregate": 1750067.1806551854,
+      "members": 1750067.1806551854
+     },
+     "Middle-East": {
+      "aggregate": 62798.06746652398,
+      "members": 62798.06746652398
+     },
+     "Africa": {
+      "aggregate": 372791.07623875,
+      "members": 372791.07623875
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 7,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 504021.85574027675,
+      "members": 504021.85574027675
+     },
+     "America": {
+      "aggregate": 2812758.914810286,
+      "members": 2812758.914810286
+     },
+     "Asia-Pacific": {
+      "aggregate": 4011533.129221958,
+      "members": 4011533.129221958
+     },
+     "Middle-East": {
+      "aggregate": 130982.3619873051,
+      "members": 130982.3619873051
+     },
+     "Africa": {
+      "aggregate": 401811.64618930774,
+      "members": 401811.64618930774
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 5,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 6613668527938.692,
+      "members": 6613668527938.692
+     },
+     "America": {
+      "aggregate": 8481104640626.1045,
+      "members": 8481104640626.1045
+     },
+     "Asia-Pacific": {
+      "aggregate": 18600529709436.414,
+      "members": 18600529709436.414
+     },
+     "Middle-East": {
+      "aggregate": 2673924961051.725,
+      "members": 2673924961051.725
+     },
+     "Africa": {
+      "aggregate": 1566331407650.9053,
+      "members": 1566331407650.9053
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 3,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 461113.6552025045,
+      "members": 461113.6552025045
+     },
+     "America": {
+      "aggregate": 425260.8284128176,
+      "members": 425260.8284128176
+     },
+     "Asia-Pacific": {
+      "aggregate": 1748205.8795043742,
+      "members": 1748205.8795043742
+     },
+     "Middle-East": {
+      "aggregate": 62729.50020584728,
+      "members": 62729.50020584728
+     },
+     "Africa": {
+      "aggregate": 372466.8716176146,
+      "members": 372466.8716176146
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 7,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 503101.6150580068,
+      "members": 503101.6150580068
+     },
+     "America": {
+      "aggregate": 2809464.8029788546,
+      "members": 2809464.8029788546
+     },
+     "Asia-Pacific": {
+      "aggregate": 4006854.379563923,
+      "members": 4006854.379563923
+     },
+     "Middle-East": {
+      "aggregate": 130672.5985406082,
+      "members": 130672.5985406082
+     },
+     "Africa": {
+      "aggregate": 401058.5730430741,
+      "members": 401058.5730430741
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 5,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 6655937424690.52,
+      "members": 6655937424690.52
+     },
+     "America": {
+      "aggregate": 8555484883515.852,
+      "members": 8555484883515.852
+     },
+     "Asia-Pacific": {
+      "aggregate": 18901682714039.84,
+      "members": 18901682714039.84
+     },
+     "Middle-East": {
+      "aggregate": 2692582915572.6123,
+      "members": 2692582915572.6123
+     },
+     "Africa": {
+      "aggregate": 1574067721322.499,
+      "members": 1574067721322.499
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 3,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 461689.8980000006,
+      "members": 461689.8980000006
+     },
+     "America": {
+      "aggregate": 425554.5250000002,
+      "members": 425554.5250000002
+     },
+     "Asia-Pacific": {
+      "aggregate": 1750100.0999999999,
+      "members": 1750100.0999999999
+     },
+     "Middle-East": {
+      "aggregate": 62800.000000000015,
+      "members": 62800.000000000015
+     },
+     "Africa": {
+      "aggregate": 372800.40000000014,
+      "members": 372800.40000000014
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 7,
+    "aggregates": {
+     "Europe": {
+      "aggregate": 505260.64599342557,
+      "members": 505260.64599342557
+     },
+     "America": {
+      "aggregate": 2813670.097810458,
+      "members": 2813670.097810458
+     },
+     "Asia-Pacific": {
+      "aggregate": 4012293.45002502,
+      "members": 4012293.45002502
+     },
+     "Middle-East": {
+      "aggregate": 131024.8001237194,
+      "members": 131024.8001237194
+     },
+     "Africa": {
+      "aggregate": 401900.5367003798,
+      "members": 401900.5367003798
+     }
+    },
+    "passed": true
+   }
+  ]
+ },
+ "provenance": {
+  "engine": {
+   "repository": null,
+   "branch": "perf/solve-not-invert",
+   "commit": "a258e63f38d326a8dbcad9527d4cbb7b0f4af583",
+   "dirty": false
+  },
+  "dataset": {
+   "name": "EXIOBASE v3.3.sm",
+   "version": "V1",
+   "published": "2019-11-08",
+   "creators": [
+    "Franco Donati",
+    "Arjan de Koning"
+   ],
+   "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
+   "doi": "10.5281/zenodo.3533196",
+   "file_suffix": "v4",
+   "year": 2011,
+   "sha256": {
+    "A": "747330308d1c21f025b172002757b3138a336ae5a6f4eae8bb61a7bb9e59a17d",
+    "L": "67bc147df931205ff3cdebbc978d69e530224a6cf0dafcf9e68486afcc831945",
+    "Y": "5f6e9fe2e136533f6e9a43ebf15e5efbbc20b15eaeb309f9de9fcf108603bc45",
+    "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
+   }
+  },
+  "command": "uv run python precompute.py --run --engine ../ramascene-pr2 --data \"$DATASETS_DIR\" --out /tmp/nightc-c2-results-rerun.json --out-regions data/regions.json --out-flows data/flows.json",
+  "generated_at": "2026-09-26T23:48:31+00:00",
+  "python": "3.14.7",
+  "numpy": "2.5.3",
+  "django": "5.2.17",
+  "wall_seconds": 55.8,
+  "reference_validation": {
+   "passed": true,
+   "tolerance": "relative 1e-6",
+   "files": {
+    "validation_analytical_1_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_2_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_3_v3.csv": {
+     "values": 3,
+     "mismatches": 0
+    },
+    "validation_analytical_4_v3.csv": {
+     "values": 19,
+     "mismatches": 0
+    }
+   }
+  },
+  "peak_rss_bytes": 1650573312
+ }
+}

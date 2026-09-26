@@ -115,7 +115,9 @@ export function renderMap(ctx) {
 	}
 	for (const path of svg.querySelectorAll("path.hatch")) {
 		// every country shares a value with others: all of them at aggregate level
-		path.hidden = !(view.level === "aggregate" || isRestOf(path.dataset.code));
+		// SVG elements have no hidden property: display does it
+		path.style.display =
+			view.level === "aggregate" || isRestOf(path.dataset.code) ? "" : "none";
 		path.classList.toggle("selected", path.dataset.code === state.region);
 	}
 	svg._values = values;
@@ -344,6 +346,15 @@ function drawMapTable(view, unit, selected) {
 // --- Sankey -----------------------------------------------------------------------
 
 const short = (id) => SECTOR_SHORT[id] ?? id;
+// At phone width the label column is ~118 px: shorter still (full names in the table).
+const NARROW = {
+	"Electricity, gas, water": "Electricity",
+	"Real estate, business": "Real estate",
+	"Public administration": "Public admin.",
+	"Hotels, restaurants": "Hotels",
+	"Rest of Asia and Pacific": "Rest of Asia-Pac.",
+	"Rest of Middle East": "Rest of Mid. East",
+};
 
 export function renderSankey(ctx, t = 1) {
 	const { docs, state, indicator } = ctx;
@@ -368,7 +379,7 @@ export function renderSankey(ctx, t = 1) {
 		new Set(flows.map((x) => x.sector)).size,
 		new Set(flows.map((x) => x.region)).size,
 	);
-	const height = Math.max(narrow ? 420 : 380, rows * (narrow ? 38 : 34));
+	const height = Math.max(narrow ? 420 : 380, rows * (narrow ? 34 : 38) + 40);
 	const scaleAbs = flows.reduce((s, x) => s + Math.abs(x.delta), 0);
 	const layout = sankeyLayout(t === 1 ? flows : tween(flows, t), {
 		width,
@@ -400,8 +411,16 @@ export function renderSankey(ctx, t = 1) {
 	}
 	const nodes = add(svg, "g", {});
 	const labels = (list, anchorLeft) => {
-		let floor = -Infinity;
-		for (const n of list) {
+		const step = narrow ? 34 : 38; // two lines: name, then value
+		const ys = [];
+		for (const n of list)
+			ys.push(Math.max((n.y0 + n.y1) / 2, (ys.at(-1) ?? -Infinity) + step));
+		for (let i = ys.length - 1; i >= 0; i--)
+			ys[i] = Math.min(
+				ys[i],
+				i === ys.length - 1 ? height - 20 : ys[i + 1] - step,
+			);
+		for (const [i, n] of list.entries()) {
 			add(nodes, "rect", {
 				x: n.x0,
 				y: n.y0,
@@ -410,11 +429,11 @@ export function renderSankey(ctx, t = 1) {
 				class: "node",
 			});
 			// labels keep a minimum spacing; a label then sits a little off its node
-			const y = Math.max((n.y0 + n.y1) / 2, floor);
-			floor = y + (narrow ? 34 : 30);
+			const y = ys[i];
 			const x = anchorLeft ? n.x0 - 8 : n.x1 + 8;
 			const anchor = anchorLeft ? "end" : "start";
-			const name = anchorLeft ? short(n.id) : n.id;
+			const long = anchorLeft ? short(n.id) : n.id;
+			const name = narrow ? (NARROW[long] ?? long) : long;
 			add(
 				nodes,
 				"text",
@@ -433,11 +452,13 @@ export function renderSankey(ctx, t = 1) {
 	labels(layout.targets, false);
 
 	if (t !== 1) return;
+	$("sankey-decrease").hidden = !flows.some((x) => x.delta < 0);
+	$("sankey-increase").hidden = !flows.some((x) => x.delta > 0);
 	const scenario = ctx.data.scenarios.find((s) => s.id === state.scenario);
 	const named = result.flows.filter((x) => x.named).length;
 	$("sankey-caption").textContent =
 		`Change in ${indicator.name} (${unit}), ${scenario.label}: from the sector whose production emits or employs (left) to the region where that happens (right). ` +
-		`Band width is the size of the change; blue bands are decreases, red increases. ` +
+		`Band width is the size of the change; ${flows.some((x) => x.delta > 0) ? "blue bands are decreases, red increases" : "every band is a decrease"}. ` +
 		`The ${named} largest sector × region cells of ${result.cells} are drawn by name; every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
 		`so the bands sum to the total change, ${signed(result.total_delta * f, unit)} ${unit}.`;
 	$("sankey-source").textContent =
@@ -496,9 +517,13 @@ export function animateFromBaseline(ctx, ms = 1400) {
 		return;
 	}
 	const svg = $("map");
-	svg.classList.add("slow");
+	// jump to the baseline without a transition (a reversed one would be cut
+	// short to ~0 s), then let the fills transition to the intervention
+	svg.classList.add("instant");
 	renderMap({ ...ctx, baselineView: true });
-	svg.getBoundingClientRect(); // commit the baseline fills before the transition
+	svg.getBoundingClientRect(); // commit the baseline fills
+	svg.classList.replace("instant", "slow");
+	svg.getBoundingClientRect();
 	requestAnimationFrame(() => renderMap(ctx));
 	setTimeout(() => svg.classList.remove("slow"), ms + 100);
 	const start = performance.now();

@@ -83,7 +83,7 @@
   #map path.country:hover { stroke: var(--text-2); stroke-width: 1.2; }
   .tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--text); border: 1px solid var(--border);
          border-radius: 8px; padding: 8px 10px; font-size: .875rem; line-height: 1.35; display: grid; max-width: 18rem; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-  .tip[hidden] { display: none; }
+  .tip[hidden], .legend-item[hidden] { display: none; }
   .tip strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
   .tip span { color: var(--text-2); }
   .legend { display: grid; gap: 8px; margin: 12px 0 0; font-size: .875rem; color: var(--text-2); }
@@ -98,6 +98,7 @@
   details.table-fallback { margin-top: 16px; }
   details.table-fallback summary { font-size: 1rem; }
   #map.slow path.country { transition-duration: 1.4s; }
+  #map.instant path.country { transition: none; }
   #sankey { overflow: visible; }
   #sankey .band { opacity: .5; }
   #sankey .band.decrease { fill: var(--decrease); }
@@ -160,8 +161,8 @@
       <figure class="visual">
         <svg id="sankey" role="img" aria-labelledby="sankey-heading" aria-describedby="sankey-caption"></svg>
         <div class="legend" aria-label="Sankey legend"><div class="legend-extra">
-          <span class="legend-item"><span class="swatch decrease"></span><span>decrease</span></span>
-          <span class="legend-item"><span class="swatch increase"></span><span>increase</span></span>
+          <span class="legend-item" id="sankey-decrease"><span class="swatch decrease"></span><span>decrease</span></span>
+          <span class="legend-item" id="sankey-increase"><span class="swatch increase"></span><span>increase</span></span>
         </div></div>
         <figcaption id="sankey-caption"></figcaption>
         <p class="source" id="sankey-source"></p>
