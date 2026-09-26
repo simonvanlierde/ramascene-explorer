@@ -312,3 +312,11 @@ def test_page_fixture_is_synthetic_and_shaped_like_real_output():
     assert set(fixture["checks"]) == set(doc["checks"])
     assert [s["id"] for s in fixture["scenarios"]] == ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
     assert set(fixture["results"]) == {s["id"] for s in fixture["scenarios"]}
+
+
+def test_engine_remote_is_recorded_only_when_it_is_not_a_local_path():
+    for local in ("/home/someone/bundles/ramascene.bundle", "file:///home/someone/r.git", "../ramascene", "~/r"):
+        assert precompute.public_remote(local) is None
+    for public in ("https://github.com/UM-Sustainability/ramascene.git", "git@github.com:x/ramascene.git"):
+        assert precompute.public_remote(public) == public
+    assert precompute.public_remote(None) is None

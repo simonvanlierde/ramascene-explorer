@@ -298,7 +298,7 @@ def collect_provenance(engine_dir, data_dir, argv):
 
     return {
         "engine": {
-            "repository": git("remote", "get-url", "origin"),
+            "repository": public_remote(git("remote", "get-url", "origin")),
             "branch": git("branch", "--show-current"),
             "commit": git("rev-parse", "HEAD"),
             "dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
@@ -314,6 +314,11 @@ def collect_provenance(engine_dir, data_dir, argv):
         "numpy": np.__version__,
         "django": django.get_version(),
     }
+
+
+def public_remote(url):
+    """The engine's origin URL, or None for a local path, which must not reach the page."""
+    return None if url is None or url.startswith(("/", ".", "~", "file:")) else url
 
 
 def public_command(argv):
