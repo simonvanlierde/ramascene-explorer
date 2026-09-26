@@ -43,6 +43,10 @@
   .status strong { color: var(--text); }
   .controls { display: grid; gap: 16px; max-width: 44rem; margin-bottom: 24px; }
   .controls label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; }
+  .grid-controls { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+  .grid-controls label:has(select:disabled) { color: var(--muted); }
+  .notice { border-left: 4px solid var(--increase); padding: 8px 12px; background: var(--surface-2); margin: 0 0 24px; max-width: 70ch; }
+  @media (max-width: 560px) { .grid-controls { grid-template-columns: 1fr; } }
   select { font: inherit; font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
            border-radius: 8px; padding: 8px 10px; width: 100%; }
   select:hover { border-color: var(--axis); }
@@ -76,22 +80,29 @@
 <main>
   <div id="banner" class="banner" role="alert" hidden></div>
   <h1>RaMa-Scene scenario explorer</h1>
-  <p class="scope">Interventions on the EXIOBASE 2011 base year, computed by the RaMa-Scene engine. Not a forecast: the engine changes final demand or technical coefficients in the 2011 economy and has no projection step.</p>
+  <p class="scope">Interventions on the EXIOBASE 2011 base year, computed by the RaMa-Scene engine. Not a forecast: the engine changes final demand or technical coefficients in the 2011 economy and has no projection step. Three original interventions, plus a material-efficiency grid: five products × five continental regions × three cut sizes, each cell "every industry in the region uses that much less of the product per unit of output".</p>
   <p class="status" id="status"></p>
 
   <div id="app" hidden>
     <div class="controls">
       <label for="scenario">Intervention (compared with the 2011 baseline) <select id="scenario"></select></label>
+      <div class="grid-controls">
+        <label for="region">Region whose industries use less of it <select id="region"></select></label>
+        <label for="cut">Cut <select id="cut"></select></label>
+      </div>
       <label for="indicator">Indicator <select id="indicator"></select></label>
     </div>
     <p class="headline" id="headline"></p>
     <p class="scenario-text" id="scenario-text"></p>
+    <p class="notice" id="notice" role="status" hidden></p>
+    <div id="result">
     <figure>
       <svg id="chart" role="img" aria-labelledby="headline" aria-describedby="caption"></svg>
       <figcaption id="caption"></figcaption>
     </figure>
     <h2>Values</h2>
     <div class="table-wrap"><table id="table"></table></div>
+    </div>
     <details id="provenance-panel" open>
       <summary>Provenance</summary>
       <dl id="provenance"></dl>
@@ -101,12 +112,12 @@
 
   <div id="empty" hidden>
     <p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
-    <pre>uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS_DIR" --out data/results.json</pre>
+    <pre>uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" --out data/results.json</pre>
     <p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
   </div>
 </main>
 <script type="module">
-import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, niceTicks, parseState, signed, stateToSearch } from "./explorer.js";
+import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, lookupGrid, niceTicks, parseState, pickerState, runSummary, scenarioMenu, signed, stateToSearch } from "./explorer.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
@@ -120,6 +131,7 @@ const ignored = ignoredData(location.search);
 if (ignored !== null) $("status").append(el("span", { class: "fail" }, `ignored data=${ignored}`));
 
 let data;
+let picker;
 try {
   const response = await fetch(dataUrl(location.search), { cache: "no-cache" });
   if (!response.ok) throw new Error(response.status);
@@ -140,18 +152,30 @@ if (data) {
     el("span", {}, `Base year ${data.base_year}`),
     el("span", {}, `data_kind: ${data.data_kind}`),
   );
-  for (const s of data.scenarios.filter((s) => s.id !== "baseline")) $("scenario").append(el("option", { value: s.id }, s.label));
+  const menu = scenarioMenu(data);
+  const group = (label, options) => {
+    const g = el("optgroup", { label });
+    for (const o of options) g.append(el("option", { value: o.value }, o.label));
+    return g;
+  };
+  $("scenario").append(group("Interventions", menu.interventions));
+  if (menu.grid.length) $("scenario").append(group("Material-efficiency grid: less of this product in every industry of a region", menu.grid));
+  for (const r of data.grid?.regions ?? []) $("region").append(el("option", { value: r.slug }, r.name));
+  for (const c of data.grid?.cuts ?? []) $("cut").append(el("option", { value: String(c) }, `${c}%`.replace("-", "\u2212")));
   for (const i of data.indicators.map(displayIndicator)) $("indicator").append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
   $("app").hidden = false;
 
   let state = parseState(location.search, data);
+  picker = pickerState(data, state.scenario);
   const update = () => {
-    state = { scenario: $("scenario").value, indicator: $("indicator").value };
+    picker = { scenario: $("scenario").value, region: $("region").value, cut: $("cut").value };
+    const target = lookupGrid(data, picker);
+    // an excluded or never-run cell is shown as such and does not enter the URL
+    state = { scenario: target.id in data.results ? target.id : state.scenario, indicator: $("indicator").value };
     history.replaceState(null, "", stateToSearch(state, location.search) + location.hash);
     render(state);
   };
-  $("scenario").addEventListener("change", update);
-  $("indicator").addEventListener("change", update);
+  for (const id of ["scenario", "region", "cut", "indicator"]) $(id).addEventListener("change", update);
   let width = 0;
   new ResizeObserver(() => {
     if ($("chart").clientWidth === width) return;
@@ -162,8 +186,28 @@ if (data) {
 }
 
 function render(state) {
-  $("scenario").value = state.scenario;
+  // the pickers may point at an excluded or never-run cell; state holds the last published one
+  const target = lookupGrid(data, picker);
+  $("scenario").value = picker.scenario;
+  $("region").value = picker.region;
+  $("cut").value = picker.cut;
   $("indicator").value = state.indicator;
+  const onGrid = picker.scenario.startsWith("grid:");
+  $("region").disabled = $("cut").disabled = !onGrid;
+  if (target.id !== state.scenario) {
+    const failed = (data.failed ?? []).find((f) => f.id === target.id);
+    $("notice").textContent = target.failed
+      ? `${failed?.label ?? target.id} was run but failed a check and is not published: ${target.failed}`
+      : `${target.id} was not part of this run.`;
+    $("notice").hidden = false;
+    $("result").hidden = true;
+    $("headline").textContent = "";
+    $("scenario-text").textContent = "";
+    renderProvenance(failed ?? { model_details: [] });
+    return;
+  }
+  $("notice").hidden = true;
+  $("result").hidden = false;
   const scenario = data.scenarios.find((s) => s.id === state.scenario);
   const indicator = displayIndicator(data.indicators.find((i) => String(i.id) === state.indicator));
   const rows = compare(data, state, indicator.factor);
@@ -241,7 +285,9 @@ function renderProvenance(scenario) {
   const e = p.engine;
   const v = p.reference_validation;
   const control = data.checks.zero_change_control;
-  const independent = data.checks.independent_by_region;
+  // the checks of the published runs (and the control); excluded scenarios are listed separately
+  const shown = new Set([...data.scenarios.map((s) => s.id), "zero_change_control"]);
+  const independent = data.checks.independent_by_region.filter((c) => shown.has(c.run));
   const direction = data.checks.scenario_direction;
   const regionValues = independent.reduce((n, c) => n + Object.keys(c.regions).length, 0);
   const runs = new Set(independent.map((c) => c.run)).size;
@@ -250,7 +296,15 @@ function renderProvenance(scenario) {
   const item = (k, value, cls) => dl.append(el("dt", {}, k), el("dd", cls ? { class: cls } : {}, value));
   item("data_kind", data.data_kind, data.data_kind === "exiobase-v3" ? undefined : "fail");
   item("Status", data.status);
-  item("Engine", `${e.repository ?? "(no remote)"} · ${e.branch ?? "(detached)"} · ${e.commit}${e.dirty ? " · uncommitted changes" : ""}`);
+  item("Engine", `${e.label ? `${e.label} · ` : ""}${e.repository ?? "(no remote)"} · ${e.branch ?? "(detached)"} · ${e.commit}${e.dirty ? " · uncommitted changes" : ""}`);
+  const run = p.run;
+  if (run) item("Run", `${runSummary(run)} · generated ${p.generated_at}`, run.failed ? "fail" : undefined);
+  if (data.failed?.length) {
+    const dd = el("dd");
+    dd.append(el("span", {}, "Excluded from this page, with the recorded reason:"),
+      el("pre", {}, data.failed.map((f) => `${f.id}: ${f.reason}`).join("\n")));
+    dl.append(el("dt", {}, "Failed scenarios"), dd);
+  }
   const d = p.dataset;
   item("Dataset", `${d.name} (${(d.creators ?? []).join(", ")}; Zenodo ${d.version}, ${d.published}) · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`);
   item("Reference check", `Octave reference (routes two and four; value added and GHG): ${v.passed ? "passed" : "not passed"}, ${v.tolerance}. Route three, shown here, is checked against B·L·ΣY per region (next line).`, v.passed ? undefined : "fail");
@@ -258,13 +312,13 @@ function renderProvenance(scenario) {
   item("Verification",
     `${regionValues} regional values (${runs} runs × ${data.indicators.length} indicators × ${data.regions.length} regions) match B·L·ΣY within relative 1e-9: ${verified ? "yes" : "no"}` +
     ` · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}` +
-    ` · every cut changes the result and raises no indicator total: ${direction.passed ? "yes" : "no"}` +
+    ` · every published cut changes the result and raises no indicator total: ${data.checks.published_passed_every_check ? "yes" : direction.passed ? "yes" : "no"}` +
     (direction.rise_check_skipped_indicators.length ? ` (rise check skipped for indicators ${direction.rise_check_skipped_indicators.join(", ")})` : ""),
-    verified && control.passed && direction.passed ? undefined : "fail");
+    verified && control.passed && (direction.passed || data.checks.published_passed_every_check) ? undefined : "fail");
   item("Breakdown", data.breakdown);
   const dd = el("dd");
   dd.append(el("span", {}, "RaMa-Scene model_details, verbatim (global ids from the engine database; techChange in %):"),
-    el("pre", {}, scenario.model_details.map((step) => JSON.stringify(step)).join("\n")));
+    el("pre", {}, (scenario.model_details ?? []).map((step) => JSON.stringify(step)).join("\n")));
   dl.append(el("dt", {}, "Scenario parameters"), dd);
   const cmd = el("dd");
   cmd.append(el("code", {}, p.command));

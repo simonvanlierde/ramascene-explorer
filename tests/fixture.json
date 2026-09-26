@@ -105,6 +105,178 @@
      ]
     }
    ]
+  },
+  {
+   "id": "steel-europe-10",
+   "label": "Basic iron and steel input to all industries in Europe −10%",
+   "description": "Technical coefficient of basic iron and steel and of ferro-alloys and first products thereof (from all regions) into every industry in Europe (the 15 industry sections of the engine database), scaled by −10%.",
+   "grid": {
+    "product": "steel",
+    "region": "europe",
+    "cut": -10
+   },
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -10
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-europe-50",
+   "label": "Basic iron and steel input to all industries in Europe −50%",
+   "description": "Technical coefficient of basic iron and steel and of ferro-alloys and first products thereof (from all regions) into every industry in Europe (the 15 industry sections of the engine database), scaled by −50%.",
+   "grid": {
+    "product": "steel",
+    "region": "europe",
+    "cut": -50
+   },
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -50
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-africa-20",
+   "label": "Basic iron and steel input to all industries in Africa −20%",
+   "description": "Technical coefficient of basic iron and steel and of ferro-alloys and first products thereof (from all regions) into every industry in Africa (the 15 industry sections of the engine database), scaled by −20%.",
+   "grid": {
+    "product": "steel",
+    "region": "africa",
+    "cut": -20
+   },
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      6
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cement-asia-pacific-20",
+   "label": "Cement, lime and plaster input to all industries in Asia-Pacific −20%",
+   "description": "Technical coefficient of cement, lime and plaster (from all regions) into every industry in Asia-Pacific (the 15 industry sections of the engine database), scaled by −20%.",
+   "grid": {
+    "product": "cement",
+    "region": "asia-pacific",
+    "cut": -20
+   },
+   "model_details": [
+    {
+     "product": [
+      177
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      5
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
   }
  ],
  "results": {
@@ -199,6 +371,98 @@
     "Asia-Pacific": 1886700.0,
     "Africa": 398000.0
    }
+  },
+  "steel-europe-10": {
+   "5": {
+    "Europe": 3936000000000.0,
+    "Middle-East": 1890500000000.0,
+    "America": 8159000000000.0,
+    "Asia-Pacific": 16119000000000.0,
+    "Africa": 1293500000000.0
+   },
+   "3": {
+    "Europe": 249600.0,
+    "Middle-East": 59700.0,
+    "America": 288600.0,
+    "Asia-Pacific": 2089500.0,
+    "Africa": 417900.0
+   },
+   "7": {
+    "Europe": 297600.0,
+    "Middle-East": 19900.0,
+    "America": 1094500.0,
+    "Asia-Pacific": 1890500.0,
+    "Africa": 398000.0
+   }
+  },
+  "steel-europe-50": {
+   "5": {
+    "Europe": 3280000000000.0,
+    "Middle-East": 1852500000000.0,
+    "America": 7995000000000.0,
+    "Asia-Pacific": 15795000000000.0,
+    "Africa": 1267500000000.0
+   },
+   "3": {
+    "Europe": 208000.0,
+    "Middle-East": 58500.0,
+    "America": 282800.0,
+    "Asia-Pacific": 2047500.0,
+    "Africa": 409500.0
+   },
+   "7": {
+    "Europe": 248000.0,
+    "Middle-East": 19500.0,
+    "America": 1072500.0,
+    "Asia-Pacific": 1852500.0,
+    "Africa": 390000.0
+   }
+  },
+  "steel-africa-20": {
+   "5": {
+    "Europe": 4059000000000.0,
+    "Middle-East": 1881000000000.0,
+    "America": 8118000000000.0,
+    "Asia-Pacific": 16038000000000.0,
+    "Africa": 1196000000000.0
+   },
+   "3": {
+    "Europe": 257400.0,
+    "Middle-East": 59400.0,
+    "America": 287100.0,
+    "Asia-Pacific": 2079000.0,
+    "Africa": 386400.0
+   },
+   "7": {
+    "Europe": 306900.0,
+    "Middle-East": 19800.0,
+    "America": 1089000.0,
+    "Asia-Pacific": 1881000.0,
+    "Africa": 368000.0
+   }
+  },
+  "cement-asia-pacific-20": {
+   "5": {
+    "Europe": 4059000000000.0,
+    "Middle-East": 1881000000000.0,
+    "America": 8118000000000.0,
+    "Asia-Pacific": 14904000000000.0,
+    "Africa": 1287000000000.0
+   },
+   "3": {
+    "Europe": 257400.0,
+    "Middle-East": 59400.0,
+    "America": 287100.0,
+    "Asia-Pacific": 1932000.0,
+    "Africa": 415800.0
+   },
+   "7": {
+    "Europe": 306900.0,
+    "Middle-East": 19800.0,
+    "America": 1089000.0,
+    "Asia-Pacific": 1748000.0,
+    "Africa": 396000.0
+   }
   }
  },
  "checks": {
@@ -215,14 +479,16 @@
    "unchanged": [],
    "rises": [],
    "rise_check_skipped_indicators": []
-  }
+  },
+  "published_passed_every_check": true
  },
  "provenance": {
   "engine": {
    "repository": null,
    "branch": null,
    "commit": "synthetic-fixture-no-engine-run",
-   "dirty": false
+   "dirty": false,
+   "label": null
   },
   "dataset": {
    "name": "EXIOBASE v3.3.sm",
@@ -248,6 +514,214 @@
    "tolerance": "relative 1e-6",
    "files": {}
   },
-  "peak_rss_bytes": null
+  "peak_rss_bytes": null,
+  "parent_peak_rss_bytes": null,
+  "run": {
+   "scenarios_run": 8,
+   "passed": 7,
+   "failed": 1,
+   "wall_s": {
+    "median": 9.0,
+    "max": 9.0,
+    "n": 8,
+    "total": 72.0
+   },
+   "engine_s": {
+    "median": 8.5,
+    "max": 8.5,
+    "n": 7
+   },
+   "peak_rss_bytes": {
+    "median": 1650000000,
+    "max": 1650000000,
+    "n": 7
+   },
+   "octave_reference_files": 0,
+   "octave_reference_values": 0
+  }
+ },
+ "failed": [
+  {
+   "id": "steel-america-50",
+   "label": "Basic iron and steel input to all industries in America −50%",
+   "description": "Technical coefficient of basic iron and steel and of ferro-alloys and first products thereof (from all regions) into every industry in America (the 15 industry sections of the engine database), scaled by −50%.",
+   "grid": {
+    "product": "steel",
+    "region": "america",
+    "cut": -50
+   },
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      4
+     ],
+     "techChange": [
+      -50
+     ]
+    }
+   ],
+   "reason": "SYNTHETIC FIXTURE: example of a scenario excluded after a failed check"
+  }
+ ],
+ "grid": {
+  "shape": "Technical coefficient of the product (from all regions) into every industry of the region, scaled by the cut; consumedBy lists the engine database's 15 industry sections.",
+  "products": [
+   {
+    "slug": "steel",
+    "id": 180,
+    "name": "Basic iron and steel and of ferro-alloys and first products thereof",
+    "short": "Basic iron and steel"
+   },
+   {
+    "slug": "aluminium",
+    "id": 184,
+    "name": "Aluminium and aluminium products",
+    "short": "Aluminium"
+   },
+   {
+    "slug": "cement",
+    "id": 177,
+    "name": "Cement, lime and plaster",
+    "short": "Cement, lime and plaster"
+   },
+   {
+    "slug": "plastics",
+    "id": 162,
+    "name": "Plastics, basic",
+    "short": "Basic plastics"
+   },
+   {
+    "slug": "electrical",
+    "id": 196,
+    "name": "Electrical machinery and apparatus n.e.c.",
+    "short": "Electrical machinery"
+   }
+  ],
+  "regions": [
+   {
+    "slug": "europe",
+    "id": 2,
+    "name": "Europe"
+   },
+   {
+    "slug": "middle-east",
+    "id": 3,
+    "name": "Middle-East"
+   },
+   {
+    "slug": "america",
+    "id": 4,
+    "name": "America"
+   },
+   {
+    "slug": "asia-pacific",
+    "id": 5,
+    "name": "Asia-Pacific"
+   },
+   {
+    "slug": "africa",
+    "id": 6,
+    "name": "Africa"
+   }
+  ],
+  "cuts": [
+   -10,
+   -20,
+   -50
+  ],
+  "consumed_by": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15
+  ]
+ },
+ "runs": {
+  "vehicle-demand-europe": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-in-vehicles-europe": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "cement-in-construction": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-europe-10": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-europe-50": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-africa-20": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "cement-asia-pacific-20": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "zero_change_control": {
+   "status": null,
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-america-50": {
+   "status": "failed",
+   "wall_s": 9.0
+  }
  }
 }
