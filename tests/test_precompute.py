@@ -4,7 +4,7 @@ No RaMa-Scene checkout and no full-size matrix is needed. The fake engine is
 a four-sector input-output model with the call shapes of the real adapter in
 precompute.py (load / apply_model / by_region / reference_validation). The
 real engine is exercised only by tests/test_engine_plumbing.py, behind
-`pytest --engine PATH`.
+`pytest --engine=PATH`.
 """
 
 import json
@@ -34,6 +34,7 @@ def fake_engine(
     raise_instead_of_cut=False,
     negative_B=False,
     engine_error=False,
+    fail_scenario=None,
 ):
     rng = np.random.default_rng(0)
     A = rng.random((4, 4)) * 0.2
@@ -42,7 +43,7 @@ def fake_engine(
     if negative_B:
         B[:, 0] *= -1
     L = np.linalg.inv(np.identity(4) - A)
-    live = {"previous": None, "violations": 0, "apply_calls": 0}
+    live = {"previous": None, "violations": 0, "apply_calls": 0, "current": None}
 
     def load(name):
         return {"A": A, "Y": Y, "B": B, "L": L}[name].copy()
@@ -52,7 +53,7 @@ def fake_engine(
         if live["previous"] is not None and live["previous"]() is not None:
             live["violations"] += 1
         live["apply_calls"] += 1
-        if engine_error:
+        if engine_error is True or engine_error == live["current"]:
             raise ValueError("no leaves for the selection")
         Y_s, A_s = Y_in.copy(), A.copy()
         for step in model_details:
@@ -80,6 +81,8 @@ def fake_engine(
             values["R2"] *= 0.9
         if nan_on_demand_change and not np.array_equal(Y_in, Y):
             values["R2"] = math.nan
+        if fail_scenario is not None and fail_scenario == live["current"]:
+            values["R1"] = math.inf
         if lose_a_region:
             values["R2"] = 0.0
         return values
@@ -87,7 +90,7 @@ def fake_engine(
     def reference_validation(Y_in, B_in, L_in):
         return {"passed": not reference_fails, "tolerance": "relative 1e-6", "files": {}}
 
-    return types.SimpleNamespace(
+    engine = types.SimpleNamespace(
         load=load,
         apply_model=apply_model,
         by_region=by_region,
@@ -95,6 +98,13 @@ def fake_engine(
         reference_validation=reference_validation,
         live=live,
     )
+
+    def scenario(name, model_details, indicators):
+        live["current"] = name
+        return precompute.scenario_in_process(engine, name, model_details, indicators, load("Y"), load("B"))
+
+    engine.scenario = scenario
+    return engine
 
 
 def run(engine):
@@ -114,11 +124,51 @@ def test_scenarios_run_one_at_a_time_and_release_the_previous_matrices():
     engine = fake_engine()
     run(engine)
     assert engine.live["violations"] == 0
+    del engine.scenario  # the in-process fallback of compute() must release them too
+    run(engine)
+    assert engine.live["violations"] == 0
 
 
-def test_non_finite_output_refuses_to_produce_a_result():
-    with pytest.raises(ValueError, match="non-finite"):
-        run(fake_engine(nan_on_demand_change=True))
+def test_run_records_carry_status_and_timing():
+    computed = run(fake_engine())
+    assert set(computed["runs"]) == {*(s["id"] for s in precompute.SCENARIOS), "zero_change_control"}
+    for name, r in computed["runs"].items():
+        assert r["engine_s"] >= 0 and r["wall_s"] >= 0, name
+        assert r.get("status") == ("passed" if name != "zero_change_control" else None)
+    summary = precompute.run_summary(computed["runs"], {"files": {"a": {"values": 2}, "b": {"values": 3}}})
+    assert (summary["scenarios_run"], summary["passed"], summary["failed"]) == (3, 3, 0)
+    assert summary["wall_s"]["n"] == 3 and summary["wall_s"]["max"] >= summary["wall_s"]["median"]
+    assert summary["peak_rss_bytes"] is None  # no worker process in the fake engine
+    assert (summary["octave_reference_files"], summary["octave_reference_values"]) == (2, 5)
+
+
+def test_non_finite_output_marks_the_scenario_failed_and_publishes_the_rest():
+    computed = run(fake_engine(nan_on_demand_change=True))
+    assert list(computed["failed"]) == ["vehicle-demand-europe"]  # the only final-demand scenario
+    assert "non-finite" in computed["failed"]["vehicle-demand-europe"]
+    assert "vehicle-demand-europe" not in computed["results"]
+    assert computed["runs"]["vehicle-demand-europe"]["status"] == "failed"
+    assert set(computed["results"]) == {"baseline", "steel-in-vehicles-europe", "cement-in-construction"}
+
+
+def test_a_failed_scenario_is_listed_with_its_reason_and_left_out_of_the_page_data():
+    doc = precompute.assemble(
+        run(fake_engine(fail_scenario="cement-in-construction")), INDICATOR_META, dict(PROVENANCE), peak_rss_bytes=1
+    )
+    assert [s["id"] for s in doc["scenarios"]] == ["baseline", "vehicle-demand-europe", "steel-in-vehicles-europe"]
+    (failed,) = doc["failed"]
+    assert failed["id"] == "cement-in-construction" and "non-finite" in failed["reason"]
+    assert failed["model_details"] and failed["label"]
+    assert "cement-in-construction" not in doc["results"]
+    assert doc["runs"]["cement-in-construction"]["status"] == "failed"
+    assert doc["provenance"]["run"] == {**doc["provenance"]["run"], "scenarios_run": 3, "passed": 2, "failed": 1}
+    assert doc["checks"]["published_passed_every_check"] is True
+    assert "cement-in-construction" in precompute.run_log(doc)
+
+
+def test_every_scenario_failing_leaves_nothing_to_write():
+    with pytest.raises(ValueError, match="every scenario failed"):
+        run(fake_engine(fail_scenario="vehicle-demand-europe", nan_on_demand_change=True, ignore_selection=True))
 
 
 def test_regional_values_must_match_the_direct_calculation():
@@ -152,13 +202,14 @@ def test_a_failed_octave_reference_check_aborts_before_any_inversion():
     assert engine.live["apply_calls"] == 0
 
 
-def test_a_scenario_identical_to_its_reference_fails():
-    with pytest.raises(ValueError, match="scenario_direction"):
+def test_scenarios_identical_to_their_reference_fail():
+    with pytest.raises(ValueError, match="(?s)every scenario failed.*identical to its reference") as info:
         run(fake_engine(ignore_selection=True))
+    assert "zero_change_control" in str(info.value) and "baseline" in str(info.value)  # the reference each was held to
 
 
-def test_a_cut_that_raises_an_indicator_total_fails():
-    with pytest.raises(ValueError, match="scenario_direction"):
+def test_cuts_that_raise_an_indicator_total_fail():
+    with pytest.raises(ValueError, match="(?s)every scenario failed.*total rises"):
         run(fake_engine(raise_instead_of_cut=True))
 
 
@@ -175,9 +226,17 @@ def test_cuts_lower_every_indicator_total():
     assert direction["references"]["steel-in-vehicles-europe"] == "zero_change_control"
 
 
-def test_an_engine_error_names_the_scenario():
-    with pytest.raises(ValueError, match="vehicle-demand-europe.*no leaves"):
-        run(fake_engine(engine_error=True))
+def test_an_engine_error_names_the_scenario_and_fails_only_that_one():
+    computed = run(fake_engine(engine_error="vehicle-demand-europe"))
+    assert computed["failed"] == {
+        "vehicle-demand-europe": "scenario vehicle-demand-europe: no leaves for the selection"
+    }
+    assert len(computed["results"]) == 3  # baseline and the other two
+
+
+def test_an_engine_error_on_the_control_aborts_the_run():
+    with pytest.raises(ValueError, match="zero_change_control.*no leaves"):
+        run(fake_engine(engine_error="zero_change_control"))
 
 
 def test_zero_change_through_the_modelling_path_must_reproduce_the_baseline():
@@ -222,7 +281,7 @@ def test_both_engine_intervention_kinds_are_covered():
 # --- output document --------------------------------------------------------
 
 PROVENANCE = {
-    "engine": {"repository": "r", "branch": "b", "commit": "c" * 40, "dirty": False},
+    "engine": {"repository": "r", "branch": "b", "commit": "c" * 40, "label": "b @ ccccccc", "dirty": False},
     "dataset": {**precompute.DATASET, "year": 2011, "sha256": {}},
     "command": "uv run python precompute.py --run",
     "generated_at": "2026-09-26T00:00:00+00:00",
@@ -249,8 +308,11 @@ def test_document_carries_status_scenarios_verbatim_and_provenance():
     assert doc["indicators"] == INDICATOR_META
     assert doc["scenarios"][0]["id"] == "baseline"
     assert doc["scenarios"][1:] == precompute.SCENARIOS
+    assert doc["grid"] == precompute.GRID
+    assert doc["failed"] == []
     p = doc["provenance"]
-    assert p["peak_rss_bytes"] == 123
+    assert p["peak_rss_bytes"] == 123 and p["parent_peak_rss_bytes"] == 123
+    assert p["run"]["passed"] == 3
     assert p["reference_validation"]["passed"] is True
     assert p["engine"]["commit"] == "c" * 40
     assert doc["checks"]["zero_change_control"]["passed"]
@@ -271,6 +333,7 @@ def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     p = precompute.collect_provenance(engine, tmp_path / "data", ["--run", "--engine", "e"])
 
     assert len(p["engine"]["commit"]) == 40 and p["engine"]["branch"] == "main"
+    assert p["engine"]["label"] == f"main @ {p['engine']['commit'][:7]}"
     assert p["engine"]["repository"] is None  # no remote: recorded as absent, not a crash
     # Zenodo record 3533196, as its API returns it
     d = p["dataset"]
@@ -310,8 +373,13 @@ def test_page_fixture_is_synthetic_and_shaped_like_real_output():
     assert set(fixture["provenance"]) == set(doc["provenance"])
     assert set(fixture["provenance"]["dataset"]) == set(PROVENANCE["dataset"])
     assert set(fixture["checks"]) == set(doc["checks"])
-    assert [s["id"] for s in fixture["scenarios"]] == ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
-    assert set(fixture["results"]) == {s["id"] for s in fixture["scenarios"]}
+    ids = [s["id"] for s in fixture["scenarios"]]
+    assert ids[:4] == ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
+    grid_ids = {s["id"] for s in precompute.grid_scenarios()}
+    assert ids[4:] and set(ids[4:]) <= grid_ids  # a few grid cells, so the page pickers are exercised
+    assert set(fixture["results"]) == set(ids)
+    assert fixture["failed"] and {f["id"] for f in fixture["failed"]} <= grid_ids - set(ids)
+    assert fixture["grid"] == precompute.GRID
 
 
 def test_engine_remote_is_recorded_only_when_it_is_not_a_local_path():
