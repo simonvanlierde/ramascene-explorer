@@ -65,6 +65,27 @@ nothing unless:
 
 Output that passes is marked `data_kind: exiobase-v3`.
 
+## World map
+
+Below the bar chart, a choropleth colours each country by the change in its
+EXIOBASE region, as a percentage of that region's own baseline (diverging
+blue/red around a grey "within ±E/20" class, E a round number at or above the
+largest change). `data/regions.json` carries the 49-region breakdown
+(`--out-regions`); a scenario without one (for example a grid cell) falls back
+to the five continental aggregates of `results.json`, and the page says so.
+The five "Rest of …" regions are hatched: every country in one shares its
+value. Which countries each covers follows Natural Earth continents (see
+`REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
+`?region=<code>` highlights a region (click the map or use the picker).
+
+`geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
+**v5.1.2** (public domain), from
+`nvkelso/natural-earth-vector` tag `v5.1.2`, `geojson/ne_110m_admin_0_countries.geojson`
+(sha256 `6866c877…c977f`). Properties reduced to `iso` (`ISO_A2_EH`; Somaliland
+as `SO`, N. Cyprus `null`) and `name`; Antarctica and the French Southern
+Lands dropped; converted with `geo2topo -q 1e4` (topojson-server 3.0.1).
+Malta is below the 1:110m threshold and appears only in the table.
+
 ## Test
 
 ```sh

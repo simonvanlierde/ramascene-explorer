@@ -70,6 +70,34 @@
   .fail { color: var(--increase); font-weight: 700; }
   footer { color: var(--muted); font-size: 1rem; margin-top: 24px; }
   @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dt { margin-top: 10px; } }
+  /* map and Sankey (visuals.js) */
+  :root { --map-neutral: #e4e3de; --map-nodata: #fcfcfb; --map-edge: #fcfcfb; --hatch: rgba(11,11,11,.55); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --map-neutral: #3a3a37; --map-nodata: #1a1a19; --map-edge: #1a1a19; --hatch: rgba(255,255,255,.6); } }
+  :root[data-theme="dark"] { --map-neutral: #3a3a37; --map-nodata: #1a1a19; --map-edge: #1a1a19; --hatch: rgba(255,255,255,.6); }
+  .visual { position: relative; }
+  .visual svg { width: 100%; display: block; }
+  #map path.country { stroke: var(--map-edge); stroke-width: .6; transition: fill .6s ease; cursor: pointer; }
+  #map path.hatch { pointer-events: none; }
+  #map .hatch-line { stroke: var(--hatch); stroke-width: 1.2; }
+  #map path.country.selected, #map path.hatch.selected { stroke: var(--text); stroke-width: 2; }
+  #map path.country:hover { stroke: var(--text-2); stroke-width: 1.2; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); color: var(--text); border: 1px solid var(--border);
+         border-radius: 8px; padding: 8px 10px; font-size: .875rem; line-height: 1.35; display: grid; max-width: 18rem; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .tip[hidden] { display: none; }
+  .tip strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+  .tip span { color: var(--text-2); }
+  .legend { display: grid; gap: 8px; margin: 12px 0 0; font-size: .875rem; color: var(--text-2); }
+  .legend-scale, .legend-extra { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .swatch { width: 16px; height: 12px; border-radius: 2px; border: 1px solid var(--border); display: inline-block; }
+  .swatch.hatched { background: repeating-linear-gradient(45deg, var(--hatch) 0 1.2px, transparent 1.2px 4.2px), var(--map-neutral); }
+  .map-controls { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; margin: 0 0 12px; }
+  .map-controls label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; min-width: 16rem; }
+  .source { color: var(--muted); font-size: .875rem; margin: 4px 0 0; max-width: 70ch; }
+  tr.selected th, tr.selected td { background: var(--surface-2); font-weight: 700; }
+  details.table-fallback { margin-top: 16px; }
+  details.table-fallback summary { font-size: 1rem; }
+  @media (prefers-reduced-motion: reduce) { #map path.country { transition: none; } }
 </style>
 </head>
 <body>
@@ -92,6 +120,23 @@
     </figure>
     <h2>Values</h2>
     <div class="table-wrap"><table id="table"></table></div>
+    <section id="map-section" aria-labelledby="map-heading" hidden>
+      <h2 id="map-heading">Where the change occurs, by EXIOBASE region</h2>
+      <div class="map-controls">
+        <label for="map-region">Highlight a region <select id="map-region"></select></label>
+      </div>
+      <figure class="visual">
+        <svg id="map" role="img" aria-labelledby="map-heading" aria-describedby="map-caption"></svg>
+        <div id="map-tip" class="tip" hidden></div>
+        <div id="map-legend" class="legend" aria-label="Map legend"></div>
+        <figcaption id="map-caption"></figcaption>
+        <p class="source" id="map-source"></p>
+      </figure>
+      <details class="table-fallback">
+        <summary>Map values as a table</summary>
+        <div class="table-wrap"><table id="map-table"></table></div>
+      </details>
+    </section>
     <details id="provenance-panel" open>
       <summary>Provenance</summary>
       <dl id="provenance"></dl>
@@ -107,6 +152,8 @@
 </main>
 <script type="module">
 import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, niceTicks, parseState, signed, stateToSearch } from "./explorer.js";
+import { regionParam, withRegion } from "./map.js";
+import { loadVisuals, renderMap } from "./visuals.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
@@ -120,6 +167,8 @@ const ignored = ignoredData(location.search);
 if (ignored !== null) $("status").append(el("span", { class: "fail" }, `ignored data=${ignored}`));
 
 let data;
+let docs = {};
+let selectRegion = () => {};
 try {
   const response = await fetch(dataUrl(location.search), { cache: "no-cache" });
   if (!response.ok) throw new Error(response.status);
@@ -143,11 +192,17 @@ if (data) {
   for (const s of data.scenarios.filter((s) => s.id !== "baseline")) $("scenario").append(el("option", { value: s.id }, s.label));
   for (const i of data.indicators.map(displayIndicator)) $("indicator").append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
   $("app").hidden = false;
+  docs = await loadVisuals(dataUrl(location.search), data);
 
   let state = parseState(location.search, data);
   const update = () => {
     state = { scenario: $("scenario").value, indicator: $("indicator").value };
     history.replaceState(null, "", stateToSearch(state, location.search) + location.hash);
+    render(state);
+  };
+  // the map's region highlight: its own ?region= parameter, next to the selection
+  selectRegion = (code) => {
+    history.replaceState(null, "", withRegion(location.search, code) + location.hash);
     render(state);
   };
   $("scenario").addEventListener("change", update);
@@ -180,6 +235,8 @@ function render(state) {
   drawChart(rows, indicator.unit);
   drawTable(rows, indicator.unit);
   renderProvenance(scenario);
+  const visual = { data, docs, state: { ...state, region: regionParam(location.search) }, indicator, onSelect: selectRegion };
+  renderMap(visual);
 }
 
 function drawChart(rows, unit) {
