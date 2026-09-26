@@ -78,6 +78,24 @@ value. Which countries each covers follows Natural Earth continents (see
 `REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
 `?region=<code>` highlights a region (click the map or use the picker).
 
+## Supply-chain Sankey
+
+`data/flows.json` (`--out-flows`) decomposes each scenario's change by the
+sector whose production carries the impact and the region where it occurs:
+route three (Hotspot × Geographic, the same route as the map) run once per
+level-2 product aggregate (15 sectors, which partition the 200 products) over
+the 49 regions, intervention minus baseline. That gives 15 × 49 = 735 cells.
+The 12 cells with the largest |change| are named; every other cell is added
+to the flow between its sector (if named) or "Other sectors" and its region
+(if named) or "Other regions". Nothing is dropped, so the flows sum to the
+total change. precompute.py writes nothing unless the flows sum to the
+total (relative 1e-12), the sectors sum to each region's value, and each
+region matches B·L·ΣY (relative 1e-9). It is a production-side decomposition
+of where the change lands, not a structural path analysis through the tiers
+of the supply chain. "Replay from the baseline" animates the map and the
+bands from no change to the intervention (instant under
+`prefers-reduced-motion`).
+
 `geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
 **v5.1.2** (public domain), from
 `nvkelso/natural-earth-vector` tag `v5.1.2`, `geojson/ne_110m_admin_0_countries.geojson`
