@@ -34,8 +34,9 @@ Donati and Arjan de Koning, Zenodo version V1, 2019-11-08,
 [doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)): the
 monetary product-by-product EXIOBASE v3.3 with materials produced by
 secondary technologies (recycling industries) represented explicitly. The
-engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v3.npy`; `v3` is the file
-suffix, not the dataset version.
+engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`; the Zenodo record ships only `_v4`
+files, and `v4` is the file suffix, not the dataset version. The matrices are
+float64.
 
 The engine commit and branch are recorded in the output. The branch of
 `../ramascene-review` is not published; which engine version to cite (that
@@ -47,7 +48,7 @@ uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS
 ```
 
 `--run` is required because the technical-coefficient scenarios each invert a
-dense 9800 × 9800 matrix: about 4.0 GB peak (≈3.6 GB if A is float32), one scenario at a time. The script
+dense 9800 × 9800 matrix: about 4.0 GB peak, one scenario at a time. The script
 first checks that the engine reproduces the four Octave reference files
 shipped with RaMa-Scene (routes two and four; value added and GHG) and stops,
 before any inversion, if it does not. It then runs the baseline, each

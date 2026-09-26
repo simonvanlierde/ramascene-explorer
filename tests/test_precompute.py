@@ -266,7 +266,7 @@ def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     year = tmp_path / "data" / "2011"
     year.mkdir(parents=True)
     for name in "ALYB":
-        (year / f"{name}_v3.npy").write_bytes(name.encode())
+        (year / f"{name}_v4.npy").write_bytes(name.encode())
 
     p = precompute.collect_provenance(engine, tmp_path / "data", ["--run", "--engine", "e"])
 
@@ -278,7 +278,7 @@ def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     assert (d["name"], d["version"], d["published"]) == ("EXIOBASE v3.3.sm", "V1", "2019-11-08")
     assert d["creators"] == ["Franco Donati", "Arjan de Koning"]
     assert "secondary technologies" in d["description"]
-    assert (d["file_suffix"], d["year"]) == ("v3", 2011)
+    assert (d["file_suffix"], d["year"]) == ("v4", 2011)
     assert set(p["dataset"]["sha256"]) == {"A", "L", "Y", "B"}
     assert p["python"] == ".".join(map(str, sys.version_info[:3]))
     assert p["numpy"] == np.__version__ and p["django"]

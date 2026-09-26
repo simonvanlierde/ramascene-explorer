@@ -234,7 +234,7 @@
    ],
    "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
    "doi": "10.5281/zenodo.3533196",
-   "file_suffix": "v3",
+   "file_suffix": "v4",
    "year": 2011,
    "sha256": {}
   },

@@ -39,7 +39,8 @@ from pathlib import Path
 import numpy as np
 
 YEAR = 2011
-FILE_SUFFIX = "v3"  # {A,L,Y,B}_v3.npy, the engine's DATASET_VERSION setting
+FILE_SUFFIX = "v4"  # {A,L,Y,B}_v4.npy, the engine's DATASET_VERSION setting. Zenodo record
+# 10.5281/zenodo.3533196 ships only _v4 files, for every year 1995-2011 (checked 2026-09-26).
 # As https://zenodo.org/api/records/3533196 returns it (checked 2026-09-26).
 DATASET = {
     "name": "EXIOBASE v3.3.sm",
@@ -488,7 +489,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="store_true", help="really run the full-size engine (~4.0 GB peak)")
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
-    parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v3.npy")
+    parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v4.npy")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     if not args.run:
