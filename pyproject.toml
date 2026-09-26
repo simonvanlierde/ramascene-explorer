@@ -1,0 +1,16 @@
+[project]
+name = "ramascene-explorer"
+version = "0.1.0"
+description = "Precomputed RaMa-Scene scenario results and a static page to explore them"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2", "django>=5.2,<6"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
