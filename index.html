@@ -69,6 +69,19 @@
   pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
   .fail { color: var(--increase); font-weight: 700; }
   footer { color: var(--muted); font-size: 1rem; margin-top: 24px; }
+  /* Live panel: only shown with ?api= (live.js). */
+  #live { border: 2px dashed var(--axis); border-radius: 8px; padding: 16px; margin-top: 40px; }
+  #live h2 { margin-top: 0; }
+  .live-label { display: inline-block; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border);
+                border-radius: 4px; padding: 2px 8px; margin: 0 0 12px; }
+  #live-form { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin-bottom: 16px; }
+  #live-form label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; }
+  #live-form input { font: inherit; font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+                     border-radius: 8px; padding: 8px 10px; width: 100%; }
+  #live-form button { font: inherit; font-weight: 600; justify-self: start; align-self: end; padding: 8px 16px; border-radius: 8px;
+                      border: 1px solid var(--axis); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  #live-form button:disabled { cursor: progress; opacity: .6; }
+  #live-state { font-size: 1rem; color: var(--text-2); }
   @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dt { margin-top: 10px; } }
 </style>
 </head>
@@ -98,6 +111,30 @@
     </details>
     <footer id="footer"></footer>
   </div>
+
+  <section id="live" aria-labelledby="live-title" hidden>
+    <h2 id="live-title">Run a custom scenario</h2>
+    <p class="live-label" id="live-label"></p>
+    <p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (about a minute; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
+    <form id="live-form">
+      <label for="live-product">Product <select id="live-product" required></select></label>
+      <label for="live-origin">Produced in <select id="live-origin" required></select></label>
+      <label for="live-consumer">Consumed by <select id="live-consumer" required></select></label>
+      <label for="live-consumed-reg">Consumed in <select id="live-consumed-reg" required></select></label>
+      <label for="live-change">Change (%) <input id="live-change" type="number" step="any" value="-20" required></label>
+      <label for="live-indicator">Indicator <select id="live-indicator"></select></label>
+      <button type="submit" id="live-run">Run</button>
+    </form>
+    <p id="live-state" role="status" aria-live="polite"></p>
+    <div id="live-result" hidden>
+      <p class="headline" id="live-headline"></p>
+      <div class="table-wrap"><table id="live-table"></table></div>
+      <details open>
+        <summary>Provenance (live job)</summary>
+        <dl id="live-provenance"></dl>
+      </details>
+    </div>
+  </section>
 
   <div id="empty" hidden>
     <p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
@@ -273,6 +310,20 @@ function renderProvenance(scenario) {
   item("Runtime", `Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? (p.peak_rss_bytes / 2 ** 30).toFixed(2) + " GiB" : "—"}`);
   $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${d.name}, ${d.year}. ${data.status}.`;
 }
+</script>
+<script type="module">
+// Optional live panel. Nothing here runs, and nothing is fetched, without ?api=.
+import { apiUrl, ignoredApi } from "./live.js";
+
+const api = apiUrl(location.search);
+const refused = ignoredApi(location.search);
+if (refused !== null) {
+  const span = document.createElement("span");
+  span.className = "fail";
+  span.textContent = `ignored api=${refused}`;
+  document.getElementById("status").append(span);
+}
+if (api) (await import("./live-panel.js")).mount(api);
 </script>
 </body>
 </html>
