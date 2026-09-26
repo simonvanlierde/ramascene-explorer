@@ -1,0 +1,239 @@
+{
+ "data_kind": "synthetic",
+ "status": "precomputed — not a live calculation",
+ "base_year": 2011,
+ "breakdown": "Region where the impact occurs (RaMa-Scene route three, Hotspot × Geographic)",
+ "regions": [
+  "Europe",
+  "Middle-East",
+  "America",
+  "Asia-Pacific",
+  "Africa"
+ ],
+ "indicators": [
+  {
+   "id": 5,
+   "name": "GHG emissions: Total",
+   "unit": "kg CO2 eq"
+  },
+  {
+   "id": 3,
+   "name": "Employment: Total",
+   "unit": "1000 p"
+  },
+  {
+   "id": 7,
+   "name": "Domestic Extraction Used - Metal Ores - Total",
+   "unit": "kt"
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "baseline",
+   "label": "Baseline (2011, no intervention)",
+   "description": "SYNTHETIC FIXTURE: hand-shaped numbers for page tests.",
+   "model_details": null
+  },
+  {
+   "id": "vehicle-demand-europe",
+   "label": "Final demand for European motor vehicles in Europe −20%",
+   "description": "Final demand in European regions for motor vehicles, trailers and semi-trailers produced in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      199
+     ],
+     "originReg": [
+      2
+     ],
+     "consumedBy": [
+      276
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-in-vehicles-europe",
+   "label": "Steel input to European motor-vehicle manufacturing −20%",
+   "description": "Technical coefficient of basic iron and steel (from all regions) into motor-vehicle manufacturing in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      198
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cement-in-construction",
+   "label": "Cement input to construction −20%, all regions",
+   "description": "Technical coefficient of cement, lime and plaster (from all regions) into construction work in all regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      177
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      225
+     ],
+     "consumedReg": [
+      1
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  }
+ ],
+ "results": {
+  "baseline": {
+   "5": {
+    "Europe": 4100000000000.0,
+    "Middle-East": 1900000000000.0,
+    "America": 8200000000000.0,
+    "Asia-Pacific": 16200000000000.0,
+    "Africa": 1300000000000.0
+   },
+   "3": {
+    "Europe": 260000.0,
+    "Middle-East": 60000.0,
+    "America": 290000.0,
+    "Asia-Pacific": 2100000.0,
+    "Africa": 420000.0
+   },
+   "7": {
+    "Europe": 310000.0,
+    "Middle-East": 20000.0,
+    "America": 1100000.0,
+    "Asia-Pacific": 1900000.0,
+    "Africa": 400000.0
+   }
+  },
+  "vehicle-demand-europe": {
+   "5": {
+    "Europe": 4050800000000.0,
+    "Middle-East": 1896200000000.0,
+    "America": 8191800000000.0,
+    "Asia-Pacific": 16151400000000.0,
+    "Africa": 1299350000000.0
+   },
+   "3": {
+    "Europe": 256880.0,
+    "Middle-East": 59880.0,
+    "America": 289710.0,
+    "Asia-Pacific": 2093700.0,
+    "Africa": 419790.0
+   },
+   "7": {
+    "Europe": 306280.0,
+    "Middle-East": 19960.0,
+    "America": 1098900.0,
+    "Asia-Pacific": 1894300.0,
+    "Africa": 399800.0
+   }
+  },
+  "steel-in-vehicles-europe": {
+   "5": {
+    "Europe": 4093850000000.0,
+    "Middle-East": 1899430000000.0,
+    "America": 8198360000000.0,
+    "Asia-Pacific": 16185420000000.0,
+    "Africa": 1300130000000.0
+   },
+   "3": {
+    "Europe": 259610.0,
+    "Middle-East": 59982.0,
+    "America": 289942.0,
+    "Asia-Pacific": 2098110.0,
+    "Africa": 420042.0
+   },
+   "7": {
+    "Europe": 309535.0,
+    "Middle-East": 19994.0,
+    "America": 1099780.0,
+    "Asia-Pacific": 1898290.0,
+    "Africa": 400040.0
+   }
+  },
+  "cement-in-construction": {
+   "5": {
+    "Europe": 4083600000000.0,
+    "Middle-East": 1888600000000.0,
+    "America": 8183600000000.0,
+    "Asia-Pacific": 16086600000000.0,
+    "Africa": 1293500000000.0
+   },
+   "3": {
+    "Europe": 258960.0,
+    "Middle-East": 59640.0,
+    "America": 289420.0,
+    "Asia-Pacific": 2085300.0,
+    "Africa": 417900.0
+   },
+   "7": {
+    "Europe": 308760.0,
+    "Middle-East": 19880.0,
+    "America": 1097800.0,
+    "Asia-Pacific": 1886700.0,
+    "Africa": 398000.0
+   }
+  }
+ },
+ "checks": {
+  "independent_totals": [],
+  "zero_change_control": {
+   "passed": false,
+   "max_relative_difference": null,
+   "tolerance": "relative 1e-6",
+   "model_details": []
+  }
+ },
+ "provenance": {
+  "engine": {
+   "repository": null,
+   "branch": null,
+   "commit": "synthetic-fixture-no-engine-run",
+   "dirty": false
+  },
+  "dataset": {
+   "name": "EXIOBASE-RaMa-Scene: EXIOBASE v3.3 modified to include secondary materials",
+   "doi": "10.5281/zenodo.3533196",
+   "version": "v3",
+   "year": 2011,
+   "sha256": {}
+  },
+  "command": "hand-written test fixture: tests/fixture.json",
+  "generated_at": "2026-09-26T00:00:00+00:00",
+  "python": null,
+  "numpy": null,
+  "django": null,
+  "reference_validation": {
+   "passed": false,
+   "tolerance": "relative 1e-6",
+   "files": {}
+  },
+  "peak_rss_bytes": null
+ }
+}

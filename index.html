@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RaMa-Scene scenario explorer</title>
+<meta name="description" content="Precomputed RaMa-Scene engine output: interventions on the EXIOBASE 2011 base year, compared with the baseline by region.">
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --surface-2: #f3f2ef; --border: #deddd8;
+    --text: #0b0b0b; --text-2: #4a4946; --muted: #6b6a65;
+    --decrease: #2a78d6; --increase: #e34948; --grid: #e6e5e0; --axis: #8a8984;
+    --focus: #2a78d6; --danger-bg: #b3261e; --danger-text: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface: #1a1a19; --surface-2: #242423; --border: #383835;
+      --text: #ffffff; --text-2: #c9c8bf; --muted: #a3a29a;
+      --decrease: #3987e5; --increase: #e66767; --grid: #2e2e2c; --axis: #75746f;
+      --focus: #6aa6ee;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface: #1a1a19; --surface-2: #242423; --border: #383835;
+    --text: #ffffff; --text-2: #c9c8bf; --muted: #a3a29a;
+    --decrease: #3987e5; --increase: #e66767; --grid: #2e2e2c; --axis: #75746f;
+    --focus: #6aa6ee;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: color-mix(in srgb, var(--focus) 30%, transparent); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  body { margin: 0; background: var(--surface); color: var(--text);
+         font: 18px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  .banner { background: var(--danger-bg); color: var(--danger-text); font-weight: 800; font-size: 1.75rem;
+            letter-spacing: .02em; text-align: center; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+  h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 8px; letter-spacing: -.02em; text-wrap: balance; }
+  .scope { color: var(--text-2); margin: 0 0 12px; max-width: 70ch; }
+  .status { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; font-size: 1rem; color: var(--text-2); }
+  .status strong { color: var(--text); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .controls label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; }
+  select { font: inherit; font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+           border-radius: 8px; padding: 8px 10px; width: 100%; }
+  select:hover { border-color: var(--axis); }
+  .headline { font-size: 1.375rem; font-weight: 600; margin: 0 0 4px; font-variant-numeric: tabular-nums; }
+  .scenario-text { color: var(--text-2); margin: 0 0 16px; max-width: 70ch; }
+  figure { margin: 0 0 32px; }
+  figcaption { color: var(--text-2); font-size: 1rem; margin-top: 8px; max-width: 70ch; }
+  #chart { width: 100%; display: block; overflow: visible; }
+  #chart text { fill: var(--text-2); font-size: 16px; font-variant-numeric: tabular-nums; }
+  #chart .region { fill: var(--text); }
+  #chart .value { fill: var(--text); font-weight: 600; }
+  h2 { font-size: 1.375rem; margin: 40px 0 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 1rem; }
+  th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--text-2); font-weight: 600; }
+  details { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; background: var(--surface-2); margin-top: 40px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 1.375rem; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: 1rem; margin: 16px 0 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  code, pre { font: .875rem/1.45 ui-monospace, "SF Mono", Menlo, monospace; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
+  .fail { color: var(--increase); font-weight: 700; }
+  footer { color: var(--muted); font-size: 1rem; margin-top: 24px; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dt { margin-top: 10px; } }
+</style>
+</head>
+<body>
+<main>
+  <div id="banner" class="banner" role="alert" hidden></div>
+  <h1>RaMa-Scene scenario explorer</h1>
+  <p class="scope">Interventions on the EXIOBASE 2011 base year, computed by the RaMa-Scene engine. Not a forecast: the engine changes final demand or technical coefficients in the 2011 economy and has no projection step.</p>
+  <p class="status" id="status"></p>
+
+  <div id="app" hidden>
+    <div class="controls">
+      <label for="scenario">Intervention (compared with the 2011 baseline) <select id="scenario"></select></label>
+      <label for="indicator">Indicator <select id="indicator"></select></label>
+    </div>
+    <p class="headline" id="headline"></p>
+    <p class="scenario-text" id="scenario-text"></p>
+    <figure>
+      <svg id="chart" role="img" aria-labelledby="headline" aria-describedby="caption"></svg>
+      <figcaption id="caption"></figcaption>
+    </figure>
+    <h2>Values</h2>
+    <div class="table-wrap"><table id="table"></table></div>
+    <details id="provenance-panel" open>
+      <summary>Provenance</summary>
+      <dl id="provenance"></dl>
+    </details>
+    <footer id="footer"></footer>
+  </div>
+
+  <div id="empty" hidden>
+    <p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
+    <pre>uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS_DIR" --out data/results.json</pre>
+    <p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+  </div>
+</main>
+<script type="module">
+import { banner, compare, dataUrl, formatValue, niceTicks, parseState, stateToSearch } from "./explorer.js";
+
+const $ = (id) => document.getElementById(id);
+const SVG = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, text) => {
+  const node = attrs.svg ? document.createElementNS(SVG, tag) : document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) if (k !== "svg") node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+const signed = (v) => (v > 0 ? "+" : "") + formatValue(v);
+const pct = new Intl.NumberFormat("en", { maximumSignificantDigits: 2, signDisplay: "exceptZero" });
+const fmtPct = (p) => (p === null ? "—" : `${pct.format(p)}%`);
+
+let data;
+try {
+  const response = await fetch(dataUrl(location.search), { cache: "no-cache" });
+  if (!response.ok) throw new Error(response.status);
+  data = await response.json();
+} catch {
+  $("empty").hidden = false;
+}
+
+if (data) {
+  const b = banner(data);
+  if (b.synthetic) {
+    $("banner").textContent = b.text;
+    $("banner").hidden = false;
+    document.title = `${b.text} · ${document.title}`;
+  }
+  $("status").append(
+    el("strong", {}, data.status.charAt(0).toUpperCase() + data.status.slice(1)),
+    el("span", {}, `Base year ${data.base_year}`),
+    el("span", {}, `data_kind: ${data.data_kind}`),
+  );
+  for (const s of data.scenarios.filter((s) => s.id !== "baseline")) $("scenario").append(el("option", { value: s.id }, s.label));
+  for (const i of data.indicators) $("indicator").append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
+  $("app").hidden = false;
+
+  let state = parseState(location.search, data);
+  const update = () => {
+    state = { scenario: $("scenario").value, indicator: $("indicator").value };
+    history.replaceState(null, "", stateToSearch(state, location.search) + location.hash);
+    render(state);
+  };
+  $("scenario").addEventListener("change", update);
+  $("indicator").addEventListener("change", update);
+  let width = 0;
+  new ResizeObserver(() => {
+    if ($("chart").clientWidth === width) return;
+    width = $("chart").clientWidth;
+    render(state);
+  }).observe($("chart"));
+  render(state);
+}
+
+function render(state) {
+  $("scenario").value = state.scenario;
+  $("indicator").value = state.indicator;
+  const scenario = data.scenarios.find((s) => s.id === state.scenario);
+  const indicator = data.indicators.find((i) => String(i.id) === state.indicator);
+  const rows = compare(data, state);
+  const baseTotal = rows.reduce((s, r) => s + r.baseline, 0);
+  const deltaTotal = rows.reduce((s, r) => s + r.delta, 0);
+
+  $("headline").textContent =
+    `${indicator.name}: ${signed(deltaTotal)} (${indicator.unit}), ${fmtPct(baseTotal ? (100 * deltaTotal) / baseTotal : null)} summed over all regions`;
+  $("scenario-text").textContent = scenario.description;
+  $("caption").textContent =
+    `Change in ${indicator.name} (${indicator.unit}) by region where the impact occurs, ` +
+    `intervention minus the ${data.base_year} baseline. Blue bars are decreases, red bars increases. ` +
+    `Regions are the five continental aggregates of the RaMa-Scene database.`;
+
+  drawChart(rows, indicator.unit);
+  drawTable(rows, indicator.unit);
+  renderProvenance(scenario);
+}
+
+function drawChart(rows, unit) {
+  const svg = $("chart");
+  svg.replaceChildren();
+  const width = Math.max(320, svg.clientWidth || 720);
+  const narrow = width < 520;
+  const labelW = narrow ? 104 : 140, pad = narrow ? 52 : 72, row = 44, bar = 24, axisH = 32;
+  const ticks = niceTicks(Math.min(...rows.map((r) => r.delta)), Math.max(...rows.map((r) => r.delta)), narrow ? 3 : 4);
+  const [t0, t1] = [ticks[0], ticks.at(-1)];
+  const left = labelW + pad, right = width - pad;
+  const x = (v) => left + ((v - t0) / (t1 - t0)) * (right - left);
+  const plotH = rows.length * row;
+  const height = plotH + axisH;
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("height", height);
+  const add = (tag, attrs, text) => svg.appendChild(el(tag, { svg: 1, ...attrs }, text));
+
+  for (const t of ticks) {
+    add("line", { x1: x(t), x2: x(t), y1: 0, y2: plotH, stroke: t === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": t === 0 ? 1.5 : 1 });
+    add("text", { x: x(t), y: plotH + 22, "text-anchor": "middle" }, formatValue(t));
+  }
+
+  rows.forEach((r, i) => {
+    const y = i * row + (row - bar) / 2, mid = y + bar / 2;
+    add("text", { class: "region", x: 0, y: mid, "dominant-baseline": "middle" }, r.region);
+    const x0 = x(Math.min(0, r.delta)), x1 = x(Math.max(0, r.delta)), len = x1 - x0;
+    if (len >= 1) {
+      const rad = Math.min(4, len);
+      // 4px rounded data end, square at the zero baseline
+      const d = r.delta < 0
+        ? `M${x1},${y} H${x0 + rad} Q${x0},${y} ${x0},${y + rad} V${y + bar - rad} Q${x0},${y + bar} ${x0 + rad},${y + bar} H${x1} Z`
+        : `M${x0},${y} H${x1 - rad} Q${x1},${y} ${x1},${y + rad} V${y + bar - rad} Q${x1},${y + bar} ${x1 - rad},${y + bar} H${x0} Z`;
+      const path = add("path", { d, fill: r.delta < 0 ? "var(--decrease)" : "var(--increase)" });
+      path.append(el("title", { svg: 1 }, `${r.region}: ${signed(r.delta)} ${unit} (${fmtPct(r.percent)})`));
+    }
+    const neg = r.delta < 0;
+    add("text", { class: "value", x: neg ? x0 - 8 : x1 + 8, y: mid, "dominant-baseline": "middle", "text-anchor": neg ? "end" : "start" },
+      r.delta === 0 ? "0" : signed(r.delta));
+  });
+}
+
+function drawTable(rows, unit) {
+  const table = $("table");
+  table.replaceChildren();
+  const head = el("tr");
+  for (const h of ["Region", `Baseline (${unit})`, `Intervention (${unit})`, "Change", "Change %"]) head.append(el("th", { scope: "col" }, h));
+  table.appendChild(el("thead")).append(head);
+  const body = table.appendChild(el("tbody"));
+  for (const r of rows) {
+    const tr = body.appendChild(el("tr"));
+    tr.append(el("th", { scope: "row" }, r.region));
+    for (const text of [formatValue(r.baseline), formatValue(r.scenario), signed(r.delta), fmtPct(r.percent)]) tr.append(el("td", {}, text));
+  }
+}
+
+function renderProvenance(scenario) {
+  const p = data.provenance;
+  const e = p.engine;
+  const v = p.reference_validation;
+  const control = data.checks.zero_change_control;
+  const totals = data.checks.independent_totals;
+  const dl = $("provenance");
+  dl.replaceChildren();
+  const item = (k, value, cls) => dl.append(el("dt", {}, k), el("dd", cls ? { class: cls } : {}, value));
+  item("data_kind", data.data_kind, data.data_kind === "exiobase-v3" ? undefined : "fail");
+  item("Status", data.status);
+  item("Engine", `${e.repository ?? "(no remote)"} · ${e.branch ?? "(detached)"} · ${e.commit}${e.dirty ? " · uncommitted changes" : ""}`);
+  item("Dataset", `${p.dataset.name ?? "EXIOBASE"} · version ${p.dataset.version} · year ${p.dataset.year} · doi:${p.dataset.doi}`);
+  item("Reference check", `${v.passed ? "passed" : "not passed"}: ${Object.keys(v.files).length} Octave reference files, ${v.tolerance}`, v.passed ? undefined : "fail");
+  item("Verification", `${totals.length} regional sums match B·L·ΣY: ${totals.length && totals.every((t) => t.passed) ? "yes" : "no"} · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}`);
+  item("Breakdown", data.breakdown);
+  const dd = el("dd");
+  dd.append(el("span", {}, "RaMa-Scene model_details, verbatim (global ids from the engine database; techChange in %):"),
+    el("pre", {}, scenario.model_details.map((step) => JSON.stringify(step)).join("\n")));
+  dl.append(el("dt", {}, "Scenario parameters"), dd);
+  const cmd = el("dd");
+  cmd.append(el("code", {}, p.command));
+  dl.append(el("dt", {}, "Command"), cmd);
+  item("Generated", p.generated_at);
+  item("Runtime", `Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? (p.peak_rss_bytes / 2 ** 30).toFixed(2) + " GiB" : "—"}`);
+  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${p.dataset.name ?? "EXIOBASE"}, ${p.dataset.year}. ${data.status}.`;
+}
+</script>
+</body>
+</html>
