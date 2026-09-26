@@ -1,0 +1,703 @@
+{
+ "data_kind": "exiobase-v3",
+ "status": "precomputed — not a live calculation",
+ "base_year": 2011,
+ "breakdown": "Region where the impact occurs (RaMa-Scene route three, Hotspot × Geographic)",
+ "regions": [
+  "Europe",
+  "Middle-East",
+  "America",
+  "Asia-Pacific",
+  "Africa"
+ ],
+ "indicators": [
+  {
+   "id": 5,
+   "name": "GHG emissions: Total",
+   "unit": "kg CO2 eq"
+  },
+  {
+   "id": 3,
+   "name": "Employment: Total",
+   "unit": "1000 p"
+  },
+  {
+   "id": 7,
+   "name": "Domestic Extraction Used - Metal Ores - Total",
+   "unit": "kt"
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "baseline",
+   "label": "Baseline (2011, no intervention)",
+   "description": "EXIOBASE 2011 as stored, no intervention.",
+   "model_details": null
+  },
+  {
+   "id": "vehicle-demand-europe",
+   "label": "Final demand for European motor vehicles in Europe −20%",
+   "description": "Final demand in European regions for motor vehicles, trailers and semi-trailers produced in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      199
+     ],
+     "originReg": [
+      2
+     ],
+     "consumedBy": [
+      276
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-in-vehicles-europe",
+   "label": "Steel input to European motor-vehicle manufacturing −20%",
+   "description": "Technical coefficient of basic iron and steel (from all regions) into motor-vehicle manufacturing in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      198
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cement-in-construction",
+   "label": "Cement input to construction −20%, all regions",
+   "description": "Technical coefficient of cement, lime and plaster (from all regions) into construction work in all regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      177
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      225
+     ],
+     "consumedReg": [
+      1
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  }
+ ],
+ "results": {
+  "baseline": {
+   "5": {
+    "Europe": 6655937424690.395,
+    "Middle-East": 2692582915572.6094,
+    "America": 8555484883515.842,
+    "Asia-Pacific": 18901682714039.836,
+    "Africa": 1574067721322.4976
+   },
+   "3": {
+    "Europe": 461689.8979999999,
+    "Middle-East": 62800.0,
+    "America": 425554.5249999999,
+    "Asia-Pacific": 1750100.1,
+    "Africa": 372800.4
+   },
+   "7": {
+    "Europe": 505260.6459934233,
+    "Middle-East": 131024.80012371935,
+    "America": 2813670.0978104514,
+    "Asia-Pacific": 4012293.4500250164,
+    "Africa": 401900.5367003789
+   }
+  },
+  "vehicle-demand-europe": {
+   "5": {
+    "Europe": 6634440486663.207,
+    "Middle-East": 2690759149034.017,
+    "America": 8553824851418.188,
+    "Asia-Pacific": 18894885830364.215,
+    "Africa": 1573183601901.9502
+   },
+   "3": {
+    "Europe": 459532.82768733264,
+    "Middle-East": 62772.77344008575,
+    "America": 425483.7831769179,
+    "Asia-Pacific": 1749595.4513009987,
+    "Africa": 372644.2794828966
+   },
+   "7": {
+    "Europe": 502794.6931386387,
+    "Middle-East": 130877.7071750263,
+    "America": 2811081.9080488062,
+    "Asia-Pacific": 4009398.399257221,
+    "Africa": 401298.56369241513
+   }
+  },
+  "steel-in-vehicles-europe": {
+   "5": {
+    "Europe": 6652927539133.059,
+    "Middle-East": 2692482338717.9097,
+    "America": 8555326594547.654,
+    "Asia-Pacific": 18900863593748.223,
+    "Africa": 1574006165725.16
+   },
+   "3": {
+    "Europe": 461625.36545730906,
+    "Middle-East": 62798.06746652394,
+    "America": 425550.58941908565,
+    "Asia-Pacific": 1750067.1806551854,
+    "Africa": 372791.0762387499
+   },
+   "7": {
+    "Europe": 504021.855740274,
+    "Middle-East": 130982.36198730464,
+    "America": 2812758.9148102817,
+    "Asia-Pacific": 4011533.129221955,
+    "Africa": 401811.6461893071
+   }
+  },
+  "cement-in-construction": {
+   "5": {
+    "Europe": 6613668527938.802,
+    "Middle-East": 2673924961051.7275,
+    "America": 8481104640626.1,
+    "Asia-Pacific": 18600529709436.406,
+    "Africa": 1566331407650.9062
+   },
+   "3": {
+    "Europe": 461113.65520250564,
+    "Middle-East": 62729.500205847304,
+    "America": 425260.82841281773,
+    "Asia-Pacific": 1748205.879504374,
+    "Africa": 372466.8716176146
+   },
+   "7": {
+    "Europe": 503101.6150580087,
+    "Middle-East": 130672.59854060842,
+    "America": 2809464.802978857,
+    "Asia-Pacific": 4006854.379563922,
+    "Africa": 401058.5730430744
+   }
+  }
+ },
+ "checks": {
+  "independent_by_region": [
+   {
+    "run": "baseline",
+    "indicator": 5,
+    "regions": {
+     "Europe": {
+      "engine": 6655937424690.395,
+      "direct": 6655937424690.395
+     },
+     "Middle-East": {
+      "engine": 2692582915572.6094,
+      "direct": 2692582915572.6094
+     },
+     "America": {
+      "engine": 8555484883515.842,
+      "direct": 8555484883515.842
+     },
+     "Asia-Pacific": {
+      "engine": 18901682714039.836,
+      "direct": 18901682714039.836
+     },
+     "Africa": {
+      "engine": 1574067721322.4976,
+      "direct": 1574067721322.4976
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 3,
+    "regions": {
+     "Europe": {
+      "engine": 461689.8979999999,
+      "direct": 461689.898
+     },
+     "Middle-East": {
+      "engine": 62800.0,
+      "direct": 62800.0
+     },
+     "America": {
+      "engine": 425554.5249999999,
+      "direct": 425554.5249999999
+     },
+     "Asia-Pacific": {
+      "engine": 1750100.1,
+      "direct": 1750100.1
+     },
+     "Africa": {
+      "engine": 372800.4,
+      "direct": 372800.4
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "baseline",
+    "indicator": 7,
+    "regions": {
+     "Europe": {
+      "engine": 505260.6459934233,
+      "direct": 505260.6459934233
+     },
+     "Middle-East": {
+      "engine": 131024.80012371935,
+      "direct": 131024.80012371935
+     },
+     "America": {
+      "engine": 2813670.0978104514,
+      "direct": 2813670.0978104514
+     },
+     "Asia-Pacific": {
+      "engine": 4012293.4500250164,
+      "direct": 4012293.4500250155
+     },
+     "Africa": {
+      "engine": 401900.5367003789,
+      "direct": 401900.5367003789
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 5,
+    "regions": {
+     "Europe": {
+      "engine": 6634440486663.207,
+      "direct": 6634440486663.207
+     },
+     "Middle-East": {
+      "engine": 2690759149034.017,
+      "direct": 2690759149034.017
+     },
+     "America": {
+      "engine": 8553824851418.188,
+      "direct": 8553824851418.188
+     },
+     "Asia-Pacific": {
+      "engine": 18894885830364.215,
+      "direct": 18894885830364.215
+     },
+     "Africa": {
+      "engine": 1573183601901.9502,
+      "direct": 1573183601901.9502
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 3,
+    "regions": {
+     "Europe": {
+      "engine": 459532.82768733264,
+      "direct": 459532.82768733264
+     },
+     "Middle-East": {
+      "engine": 62772.77344008575,
+      "direct": 62772.77344008575
+     },
+     "America": {
+      "engine": 425483.7831769179,
+      "direct": 425483.7831769178
+     },
+     "Asia-Pacific": {
+      "engine": 1749595.4513009987,
+      "direct": 1749595.4513009985
+     },
+     "Africa": {
+      "engine": 372644.2794828966,
+      "direct": 372644.2794828966
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 7,
+    "regions": {
+     "Europe": {
+      "engine": 502794.6931386387,
+      "direct": 502794.6931386387
+     },
+     "Middle-East": {
+      "engine": 130877.7071750263,
+      "direct": 130877.7071750263
+     },
+     "America": {
+      "engine": 2811081.9080488062,
+      "direct": 2811081.9080488062
+     },
+     "Asia-Pacific": {
+      "engine": 4009398.399257221,
+      "direct": 4009398.3992572203
+     },
+     "Africa": {
+      "engine": 401298.56369241513,
+      "direct": 401298.56369241513
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 5,
+    "regions": {
+     "Europe": {
+      "engine": 6652927539133.059,
+      "direct": 6652927539133.059
+     },
+     "Middle-East": {
+      "engine": 2692482338717.9097,
+      "direct": 2692482338717.9097
+     },
+     "America": {
+      "engine": 8555326594547.654,
+      "direct": 8555326594547.654
+     },
+     "Asia-Pacific": {
+      "engine": 18900863593748.223,
+      "direct": 18900863593748.223
+     },
+     "Africa": {
+      "engine": 1574006165725.16,
+      "direct": 1574006165725.16
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 3,
+    "regions": {
+     "Europe": {
+      "engine": 461625.36545730906,
+      "direct": 461625.36545730906
+     },
+     "Middle-East": {
+      "engine": 62798.06746652394,
+      "direct": 62798.06746652394
+     },
+     "America": {
+      "engine": 425550.58941908565,
+      "direct": 425550.5894190856
+     },
+     "Asia-Pacific": {
+      "engine": 1750067.1806551854,
+      "direct": 1750067.1806551851
+     },
+     "Africa": {
+      "engine": 372791.0762387499,
+      "direct": 372791.0762387499
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 7,
+    "regions": {
+     "Europe": {
+      "engine": 504021.855740274,
+      "direct": 504021.855740274
+     },
+     "Middle-East": {
+      "engine": 130982.36198730464,
+      "direct": 130982.36198730463
+     },
+     "America": {
+      "engine": 2812758.9148102817,
+      "direct": 2812758.9148102817
+     },
+     "Asia-Pacific": {
+      "engine": 4011533.129221955,
+      "direct": 4011533.129221955
+     },
+     "Africa": {
+      "engine": 401811.6461893071,
+      "direct": 401811.6461893071
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 5,
+    "regions": {
+     "Europe": {
+      "engine": 6613668527938.802,
+      "direct": 6613668527938.802
+     },
+     "Middle-East": {
+      "engine": 2673924961051.7275,
+      "direct": 2673924961051.7275
+     },
+     "America": {
+      "engine": 8481104640626.1,
+      "direct": 8481104640626.1
+     },
+     "Asia-Pacific": {
+      "engine": 18600529709436.406,
+      "direct": 18600529709436.402
+     },
+     "Africa": {
+      "engine": 1566331407650.9062,
+      "direct": 1566331407650.9062
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 3,
+    "regions": {
+     "Europe": {
+      "engine": 461113.65520250564,
+      "direct": 461113.65520250564
+     },
+     "Middle-East": {
+      "engine": 62729.500205847304,
+      "direct": 62729.500205847304
+     },
+     "America": {
+      "engine": 425260.82841281773,
+      "direct": 425260.82841281773
+     },
+     "Asia-Pacific": {
+      "engine": 1748205.879504374,
+      "direct": 1748205.879504374
+     },
+     "Africa": {
+      "engine": 372466.8716176146,
+      "direct": 372466.8716176146
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 7,
+    "regions": {
+     "Europe": {
+      "engine": 503101.6150580087,
+      "direct": 503101.6150580087
+     },
+     "Middle-East": {
+      "engine": 130672.59854060842,
+      "direct": 130672.5985406084
+     },
+     "America": {
+      "engine": 2809464.802978857,
+      "direct": 2809464.802978857
+     },
+     "Asia-Pacific": {
+      "engine": 4006854.379563922,
+      "direct": 4006854.379563922
+     },
+     "Africa": {
+      "engine": 401058.5730430744,
+      "direct": 401058.5730430744
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 5,
+    "regions": {
+     "Europe": {
+      "engine": 6655937424690.369,
+      "direct": 6655937424690.369
+     },
+     "Middle-East": {
+      "engine": 2692582915572.608,
+      "direct": 2692582915572.608
+     },
+     "America": {
+      "engine": 8555484883515.844,
+      "direct": 8555484883515.843
+     },
+     "Asia-Pacific": {
+      "engine": 18901682714039.832,
+      "direct": 18901682714039.83
+     },
+     "Africa": {
+      "engine": 1574067721322.4966,
+      "direct": 1574067721322.4966
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 3,
+    "regions": {
+     "Europe": {
+      "engine": 461689.8979999999,
+      "direct": 461689.8979999999
+     },
+     "Middle-East": {
+      "engine": 62799.999999999985,
+      "direct": 62799.999999999985
+     },
+     "America": {
+      "engine": 425554.5249999999,
+      "direct": 425554.5249999999
+     },
+     "Asia-Pacific": {
+      "engine": 1750100.0999999999,
+      "direct": 1750100.0999999996
+     },
+     "Africa": {
+      "engine": 372800.4,
+      "direct": 372800.4
+     }
+    },
+    "passed": true
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 7,
+    "regions": {
+     "Europe": {
+      "engine": 505260.645993423,
+      "direct": 505260.645993423
+     },
+     "Middle-East": {
+      "engine": 131024.80012371909,
+      "direct": 131024.80012371909
+     },
+     "America": {
+      "engine": 2813670.0978104523,
+      "direct": 2813670.0978104523
+     },
+     "Asia-Pacific": {
+      "engine": 4012293.450025016,
+      "direct": 4012293.450025016
+     },
+     "Africa": {
+      "engine": 401900.5367003786,
+      "direct": 401900.53670037864
+     }
+    },
+    "passed": true
+   }
+  ],
+  "zero_change_control": {
+   "passed": true,
+   "max_relative_difference": 3.81473312922275e-15,
+   "tolerance": "relative 1e-6",
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      198
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      0
+     ]
+    }
+   ]
+  },
+  "scenario_direction": {
+   "passed": true,
+   "references": {
+    "vehicle-demand-europe": "baseline",
+    "steel-in-vehicles-europe": "zero_change_control",
+    "cement-in-construction": "zero_change_control"
+   },
+   "unchanged": [],
+   "rises": [],
+   "rise_check_skipped_indicators": []
+  }
+ },
+ "provenance": {
+  "engine": {
+   "repository": null,
+   "branch": "perf/numerics-cleanup",
+   "commit": "35009dd28b63746f911b77c8355acf1547bad595",
+   "dirty": false
+  },
+  "dataset": {
+   "name": "EXIOBASE v3.3.sm",
+   "version": "V1",
+   "published": "2019-11-08",
+   "creators": [
+    "Franco Donati",
+    "Arjan de Koning"
+   ],
+   "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
+   "doi": "10.5281/zenodo.3533196",
+   "file_suffix": "v4",
+   "year": 2011,
+   "sha256": {
+    "A": "747330308d1c21f025b172002757b3138a336ae5a6f4eae8bb61a7bb9e59a17d",
+    "L": "67bc147df931205ff3cdebbc978d69e530224a6cf0dafcf9e68486afcc831945",
+    "Y": "5f6e9fe2e136533f6e9a43ebf15e5efbbc20b15eaeb309f9de9fcf108603bc45",
+    "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
+   }
+  },
+  "command": "uv run python precompute.py --run --engine ../ramascene --data \"$DATASETS_DIR\" --out data/results.json",
+  "generated_at": "2026-09-26T06:13:14+00:00",
+  "python": "3.14.7",
+  "numpy": "2.5.3",
+  "django": "5.2.17",
+  "reference_validation": {
+   "passed": true,
+   "tolerance": "relative 1e-6",
+   "files": {
+    "validation_analytical_1_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_2_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_3_v3.csv": {
+     "values": 3,
+     "mismatches": 0
+    },
+    "validation_analytical_4_v3.csv": {
+     "values": 19,
+     "mismatches": 0
+    }
+   }
+  },
+  "peak_rss_bytes": 3972194304
+ }
+}
