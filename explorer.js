@@ -11,6 +11,12 @@ export function dataUrl(search) {
 		: DEFAULT_DATA;
 }
 
+// The ?data= value dataUrl refused, for the status line; null if none was refused.
+export function ignoredData(search) {
+	const path = new URLSearchParams(search).get("data");
+	return path !== null && dataUrl(search) !== path ? path : null;
+}
+
 export function parseState(search, data) {
 	const params = new URLSearchParams(search);
 	const interventions = data.scenarios
@@ -38,7 +44,8 @@ export function banner(data) {
 		: { synthetic: true, text: "SYNTHETIC TEST DATA — NOT A RESULT" };
 }
 
-export function compare(data, state) {
+// factor converts to the display unit (displayIndicator); percentages are unaffected.
+export function compare(data, state, factor = 1) {
 	const base = data.results.baseline[state.indicator];
 	const scen = data.results[state.scenario][state.indicator];
 	return data.regions
@@ -46,9 +53,9 @@ export function compare(data, state) {
 			const delta = scen[region] - base[region];
 			return {
 				region,
-				baseline: base[region],
-				scenario: scen[region],
-				delta,
+				baseline: factor * base[region],
+				scenario: factor * scen[region],
+				delta: factor * delta,
 				percent: base[region] ? (100 * delta) / base[region] : null,
 			};
 		})
@@ -70,9 +77,33 @@ export function niceTicks(min, max, target = 4) {
 	return ticks;
 }
 
+// EXIOBASE employment is in thousands of persons. Shown in persons, so a
+// compact "K" never stacks on "1000 p" and reads as a millionfold.
+export function displayIndicator(indicator) {
+	return indicator.unit === "1000 p"
+		? { ...indicator, unit: "persons", factor: 1000 }
+		: { ...indicator, factor: 1 };
+}
+
 // Compact notation (3.2B, 450K) never falls back to exponent notation.
+// Persons are written out in full (18,800), never scaled.
 const compact = new Intl.NumberFormat("en", {
 	notation: "compact",
 	maximumSignificantDigits: 3,
 });
-export const formatValue = (v) => compact.format(v);
+const grouped = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
+export const formatValue = (v, unit) =>
+	(unit === "persons" ? grouped : compact).format(v);
+export const signed = (v, unit) => (v > 0 ? "+" : "") + formatValue(v, unit);
+
+const pct = new Intl.NumberFormat("en", {
+	maximumSignificantDigits: 2,
+	signDisplay: "exceptZero",
+});
+export const fmtPct = (p) => (p === null ? "—" : `${pct.format(p)}%`);
+
+// indicator from displayIndicator; totals already in its display unit.
+export function headline(indicator, deltaTotal, baseTotal) {
+	const p = baseTotal ? (100 * deltaTotal) / baseTotal : null;
+	return `Summed over all regions, ${indicator.name} changes by ${signed(deltaTotal, indicator.unit)} ${indicator.unit} (${fmtPct(p)}).`;
+}

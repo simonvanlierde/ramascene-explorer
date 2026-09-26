@@ -35,13 +35,13 @@
   body { margin: 0; background: var(--surface); color: var(--text);
          font: 18px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
-  .banner { background: var(--danger-bg); color: var(--danger-text); font-weight: 800; font-size: 1.75rem;
+  .banner { background: var(--danger-bg); color: var(--danger-text); font-weight: 800; font-size: 1.25rem;
             letter-spacing: .02em; text-align: center; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
-  h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 8px; letter-spacing: -.02em; text-wrap: balance; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; letter-spacing: -.02em; text-wrap: balance; }
   .scope { color: var(--text-2); margin: 0 0 12px; max-width: 70ch; }
   .status { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; font-size: 1rem; color: var(--text-2); }
   .status strong { color: var(--text); }
-  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .controls { display: grid; gap: 16px; max-width: 44rem; margin-bottom: 24px; }
   .controls label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; }
   select { font: inherit; font-weight: 400; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
            border-radius: 8px; padding: 8px 10px; width: 100%; }
@@ -106,7 +106,7 @@
   </div>
 </main>
 <script type="module">
-import { banner, compare, dataUrl, formatValue, niceTicks, parseState, stateToSearch } from "./explorer.js";
+import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, niceTicks, parseState, signed, stateToSearch } from "./explorer.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
@@ -116,9 +116,8 @@ const el = (tag, attrs = {}, text) => {
   if (text !== undefined) node.textContent = text;
   return node;
 };
-const signed = (v) => (v > 0 ? "+" : "") + formatValue(v);
-const pct = new Intl.NumberFormat("en", { maximumSignificantDigits: 2, signDisplay: "exceptZero" });
-const fmtPct = (p) => (p === null ? "—" : `${pct.format(p)}%`);
+const ignored = ignoredData(location.search);
+if (ignored !== null) $("status").append(el("span", { class: "fail" }, `ignored data=${ignored}`));
 
 let data;
 try {
@@ -142,7 +141,7 @@ if (data) {
     el("span", {}, `data_kind: ${data.data_kind}`),
   );
   for (const s of data.scenarios.filter((s) => s.id !== "baseline")) $("scenario").append(el("option", { value: s.id }, s.label));
-  for (const i of data.indicators) $("indicator").append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
+  for (const i of data.indicators.map(displayIndicator)) $("indicator").append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
   $("app").hidden = false;
 
   let state = parseState(location.search, data);
@@ -166,13 +165,12 @@ function render(state) {
   $("scenario").value = state.scenario;
   $("indicator").value = state.indicator;
   const scenario = data.scenarios.find((s) => s.id === state.scenario);
-  const indicator = data.indicators.find((i) => String(i.id) === state.indicator);
-  const rows = compare(data, state);
+  const indicator = displayIndicator(data.indicators.find((i) => String(i.id) === state.indicator));
+  const rows = compare(data, state, indicator.factor);
   const baseTotal = rows.reduce((s, r) => s + r.baseline, 0);
   const deltaTotal = rows.reduce((s, r) => s + r.delta, 0);
 
-  $("headline").textContent =
-    `${indicator.name}: ${signed(deltaTotal)} (${indicator.unit}), ${fmtPct(baseTotal ? (100 * deltaTotal) / baseTotal : null)} summed over all regions`;
+  $("headline").textContent = headline(indicator, deltaTotal, baseTotal);
   $("scenario-text").textContent = scenario.description;
   $("caption").textContent =
     `Change in ${indicator.name} (${indicator.unit}) by region where the impact occurs, ` +
@@ -202,7 +200,7 @@ function drawChart(rows, unit) {
 
   for (const t of ticks) {
     add("line", { x1: x(t), x2: x(t), y1: 0, y2: plotH, stroke: t === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": t === 0 ? 1.5 : 1 });
-    add("text", { x: x(t), y: plotH + 22, "text-anchor": "middle" }, formatValue(t));
+    add("text", { x: x(t), y: plotH + 22, "text-anchor": "middle" }, formatValue(t, unit));
   }
 
   rows.forEach((r, i) => {
@@ -216,11 +214,11 @@ function drawChart(rows, unit) {
         ? `M${x1},${y} H${x0 + rad} Q${x0},${y} ${x0},${y + rad} V${y + bar - rad} Q${x0},${y + bar} ${x0 + rad},${y + bar} H${x1} Z`
         : `M${x0},${y} H${x1 - rad} Q${x1},${y} ${x1},${y + rad} V${y + bar - rad} Q${x1},${y + bar} ${x1 - rad},${y + bar} H${x0} Z`;
       const path = add("path", { d, fill: r.delta < 0 ? "var(--decrease)" : "var(--increase)" });
-      path.append(el("title", { svg: 1 }, `${r.region}: ${signed(r.delta)} ${unit} (${fmtPct(r.percent)})`));
+      path.append(el("title", { svg: 1 }, `${r.region}: ${signed(r.delta, unit)} ${unit} (${fmtPct(r.percent)})`));
     }
     const neg = r.delta < 0;
     add("text", { class: "value", x: neg ? x0 - 8 : x1 + 8, y: mid, "dominant-baseline": "middle", "text-anchor": neg ? "end" : "start" },
-      r.delta === 0 ? "0" : signed(r.delta));
+      r.delta === 0 ? "0" : signed(r.delta, unit));
   });
 }
 
@@ -234,7 +232,7 @@ function drawTable(rows, unit) {
   for (const r of rows) {
     const tr = body.appendChild(el("tr"));
     tr.append(el("th", { scope: "row" }, r.region));
-    for (const text of [formatValue(r.baseline), formatValue(r.scenario), signed(r.delta), fmtPct(r.percent)]) tr.append(el("td", {}, text));
+    for (const text of [formatValue(r.baseline, unit), formatValue(r.scenario, unit), signed(r.delta, unit), fmtPct(r.percent)]) tr.append(el("td", {}, text));
   }
 }
 
@@ -243,16 +241,26 @@ function renderProvenance(scenario) {
   const e = p.engine;
   const v = p.reference_validation;
   const control = data.checks.zero_change_control;
-  const totals = data.checks.independent_totals;
+  const independent = data.checks.independent_by_region;
+  const direction = data.checks.scenario_direction;
+  const regionValues = independent.reduce((n, c) => n + Object.keys(c.regions).length, 0);
+  const runs = new Set(independent.map((c) => c.run)).size;
   const dl = $("provenance");
   dl.replaceChildren();
   const item = (k, value, cls) => dl.append(el("dt", {}, k), el("dd", cls ? { class: cls } : {}, value));
   item("data_kind", data.data_kind, data.data_kind === "exiobase-v3" ? undefined : "fail");
   item("Status", data.status);
   item("Engine", `${e.repository ?? "(no remote)"} · ${e.branch ?? "(detached)"} · ${e.commit}${e.dirty ? " · uncommitted changes" : ""}`);
-  item("Dataset", `${p.dataset.name ?? "EXIOBASE"} · version ${p.dataset.version} · year ${p.dataset.year} · doi:${p.dataset.doi}`);
-  item("Reference check", `${v.passed ? "passed" : "not passed"}: ${Object.keys(v.files).length} Octave reference files, ${v.tolerance}`, v.passed ? undefined : "fail");
-  item("Verification", `${totals.length} regional sums match B·L·ΣY: ${totals.length && totals.every((t) => t.passed) ? "yes" : "no"} · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}`);
+  const d = p.dataset;
+  item("Dataset", `${d.name} (${(d.creators ?? []).join(", ")}; Zenodo ${d.version}, ${d.published}) · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`);
+  item("Reference check", `Octave reference (routes two and four; value added and GHG): ${v.passed ? "passed" : "not passed"}, ${v.tolerance}. Route three, shown here, is checked against B·L·ΣY per region (next line).`, v.passed ? undefined : "fail");
+  const verified = regionValues > 0 && independent.every((c) => c.passed);
+  item("Verification",
+    `${regionValues} regional values (${runs} runs × ${data.indicators.length} indicators × ${data.regions.length} regions) match B·L·ΣY within relative 1e-9: ${verified ? "yes" : "no"}` +
+    ` · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}` +
+    ` · every cut changes the result and raises no indicator total: ${direction.passed ? "yes" : "no"}` +
+    (direction.rise_check_skipped_indicators.length ? ` (rise check skipped for indicators ${direction.rise_check_skipped_indicators.join(", ")})` : ""),
+    verified && control.passed && direction.passed ? undefined : "fail");
   item("Breakdown", data.breakdown);
   const dd = el("dd");
   dd.append(el("span", {}, "RaMa-Scene model_details, verbatim (global ids from the engine database; techChange in %):"),
@@ -263,7 +271,7 @@ function renderProvenance(scenario) {
   dl.append(el("dt", {}, "Command"), cmd);
   item("Generated", p.generated_at);
   item("Runtime", `Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? (p.peak_rss_bytes / 2 ** 30).toFixed(2) + " GiB" : "—"}`);
-  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${p.dataset.name ?? "EXIOBASE"}, ${p.dataset.year}. ${data.status}.`;
+  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${d.name}, ${d.year}. ${data.status}.`;
 }
 </script>
 </body>

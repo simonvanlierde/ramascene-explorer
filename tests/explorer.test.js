@@ -5,7 +5,10 @@ import {
 	banner,
 	compare,
 	dataUrl,
+	displayIndicator,
 	formatValue,
+	headline,
+	ignoredData,
 	niceTicks,
 	parseState,
 	stateToSearch,
@@ -64,6 +67,15 @@ test("data defaults to the shipped file and accepts only same-site relative JSON
 	}
 });
 
+test("a rejected data path is reported, an accepted or absent one is not", () => {
+	assert.equal(
+		ignoredData("?data=https://evil.example/x.json"),
+		"https://evil.example/x.json",
+	);
+	assert.equal(ignoredData("?data=tests/fixture.json"), null);
+	assert.equal(ignoredData(""), null);
+});
+
 test("synthetic data gets the red banner", () => {
 	assert.deepEqual(banner(data), {
 		synthetic: true,
@@ -87,6 +99,15 @@ test("compare gives per-region change, largest cut first", () => {
 	const base = data.results.baseline["5"].Europe;
 	assert.equal(europe.delta, data.results[first]["5"].Europe - base);
 	assert.equal(europe.percent, (100 * europe.delta) / base);
+	const scaled = compare(data, { scenario: first, indicator: "5" }, 1000);
+	assert.equal(
+		scaled.find((r) => r.region === "Europe").delta,
+		1000 * europe.delta,
+	);
+	assert.equal(
+		scaled.find((r) => r.region === "Europe").percent,
+		europe.percent,
+	);
 });
 
 test("a zero baseline gives no percentage rather than Infinity", () => {
@@ -131,6 +152,44 @@ test("values never print in exponent notation", () => {
 	}
 	assert.equal(formatValue(-3.2e9), "-3.2B");
 	assert.equal(formatValue(0), "0");
+});
+
+test("employment shows in persons, never as a compact K on thousands of persons", () => {
+	const employment = displayIndicator({
+		id: 3,
+		name: "Employment: Total",
+		unit: "1000 p",
+	});
+	assert.deepEqual(employment, {
+		id: 3,
+		name: "Employment: Total",
+		unit: "persons",
+		factor: 1000,
+	});
+	assert.equal(
+		formatValue(-18.8 * employment.factor, employment.unit),
+		"-18,800",
+	);
+	assert.doesNotMatch(formatValue(2.1e9, "persons"), /[KMB]/);
+	const ghg = displayIndicator({
+		id: 5,
+		name: "GHG emissions: Total",
+		unit: "kg CO2 eq",
+	});
+	assert.equal(ghg.factor, 1);
+	assert.equal(formatValue(-3.2e9, ghg.unit), "-3.2B");
+});
+
+test("the headline carries no colon beyond the one in the indicator name", () => {
+	const text = headline(
+		displayIndicator({ name: "Employment: Total", unit: "1000 p" }),
+		-18800,
+		5e6,
+	);
+	assert.equal(text.split(":").length, 2, text);
+	assert.match(text, /-18,800 persons/);
+	assert.match(text, /\(-0\.38%\)/);
+	assert.match(headline({ name: "X", unit: "kt", factor: 1 }, 5, 0), /\(—\)/);
 });
 
 test("a shipped data file is real engine output, never synthetic", () => {
