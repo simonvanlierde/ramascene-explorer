@@ -1,0 +1,22 @@
+# GitHub reads this for its "Cite this repository" button, Zenodo when it
+# archives a release. It cites the explorer; the engine and EXIOBASE have
+# their own citations (see README.md).
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "RaMa-Scene scenario explorer"
+abstract: "Precomputed RaMa-Scene scenario results and a static page to explore them"
+authors:
+  - given-names: "Simon"
+    family-names: "van Lierde"
+    orcid: "https://orcid.org/0009-0006-6953-909X"
+repository-code: "https://github.com/simonvanlierde/ramascene-explorer"
+references:
+  - type: data
+    title: "EXIOBASE v3.3.sm"
+    authors:
+      - given-names: "Franco"
+        family-names: "Donati"
+      - given-names: "Arjan"
+        family-names: "de Koning"
+    doi: 10.5281/zenodo.3533196
+    date-released: 2019-11-08
