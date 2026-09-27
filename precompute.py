@@ -21,6 +21,12 @@ process's ru_maxrss, measured the way the engine's own numbers were, and its
 matrices are gone before the next starts. --run is required so the full-size
 path is never started by accident.
 
+Solver: with an engine that has LeontiefLU (branch perf/lu-reuse), apply_model
+passes it to Modelling, so each modified A is factorized once and the three
+routes and the checks of that scenario solve from the same factors; with any
+other engine Modelling keeps its own default. provenance.engine.solver records
+which. No two scenarios share an A, so the factors live and die with the worker.
+
 Nothing is written unless the engine first reproduces the four Octave
 reference files shipped with RaMa-Scene on the matrices given (checked before
 any solve), the baseline matches an independent B . (L . sum Y) per region and the
@@ -34,6 +40,7 @@ import argparse
 import datetime
 import gc
 import hashlib
+import importlib
 import json
 import math
 import platform
@@ -718,7 +725,8 @@ def run_log(doc):
     lines = [
         "# Precompute run log",
         "",
-        f"- Engine: {e.get('label') or e.get('commit')} ({'uncommitted changes' if e.get('dirty') else 'clean tree'})",
+        f"- Engine: {e.get('label') or e.get('commit')} ({'uncommitted changes' if e.get('dirty') else 'clean tree'})"
+        + (f", solver {e['solver']}" if e.get("solver") else ""),
         f"- Generated: {p['generated_at']}",
         f"- Dataset: {p['dataset']['name']} {p['dataset']['year']}, doi:{p['dataset']['doi']}",
         f"- Command: `{p['command']}`",
@@ -932,12 +940,29 @@ def model_inputs(model_details):
     return ready, load_A
 
 
+def leontief_solver():
+    """The engine's kept-LU solver (LeontiefLU, perf/lu-reuse), or None for an engine without it."""
+    return getattr(importlib.import_module("ramascene.modelling"), "LeontiefLU", None)
+
+
+def solver_name():
+    solver = leontief_solver()
+    return solver.__name__ if solver else "engine default"
+
+
 def apply_model(model_details, Y):
-    """(Y, L) after the intervention, via ramascene.modelling.Modelling."""
+    """(Y, L) after the intervention, via ramascene.modelling.Modelling.
+
+    With LeontiefLU a modified A is factorized once, and the three routes and
+    every check of the scenario solve from those factors; the engine default
+    (LeontiefSolve) factorizes again on every L.dot.
+    """
     from ramascene.modelling import Modelling
 
     ready, load_A = model_inputs(model_details)
-    Y_s, L_s = Modelling(ready, Y, load_A, YEAR, model_details).apply_model()
+    solver = leontief_solver()
+    options = {"solver": solver} if solver else {}  # an engine without it takes no solver argument
+    Y_s, L_s = Modelling(ready, Y, load_A, YEAR, model_details, **options).apply_model()
     # the Modelling instance (and its modified A) is dropped here, unlike
     # tasks.execute_calc, which holds it through the route call
     return Y_s, L_s
@@ -1068,6 +1093,7 @@ def real_engine(engine_dir=None, data_dir=None):
         region_leaves=region_leaves(),
         reference_validation=reference_validation,
         scenario=worker_scenario(engine_dir, data_dir) if engine_dir else None,
+        solver=solver_name(),
     )
 
 
@@ -1126,6 +1152,8 @@ def main(argv=None):
                 "refusing to write: the engine checkout changed during the run, from "
                 f"{revision['label']} (dirty {revision['dirty']}) to {now['label']} (dirty {now['dirty']})"
             )
+        # recorded after the checkout comparison, which is over the git state only
+        provenance["engine"]["solver"] = getattr(engine, "solver", None)
         peak = peak_rss_bytes()
         output = assemble(computed, indicators, provenance, peak)
         sidecars = {}
