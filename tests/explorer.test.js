@@ -11,6 +11,7 @@ import {
 	ignoredData,
 	niceTicks,
 	parseState,
+	sameRun,
 	stateToSearch,
 } from "../explorer.js";
 
@@ -274,4 +275,21 @@ test("the run summary reads counts, wall and RSS from the provenance", () => {
 		"78 scenarios run, 77 passed every check, 1 failed (excluded) · wall per scenario job median 9.2 s, max 10.9 s · peak RSS per worker median 1.54 GiB, max 1.55 GiB",
 	);
 	assert.equal(runSummary({ scenarios_run: 3, passed: 3, failed: 0 }), "3 scenarios run, 3 passed every check, 0 failed (excluded)");
+});
+
+test("a sidecar is shown only next to the results of its own run", () => {
+	const provenance = {
+		dataset: { sha256: { A: "a", L: "l" } },
+		engine: { commit: "c1" },
+		generated_at: "2026-09-27T10:04:04+00:00",
+	};
+	const results = { data_kind: "exiobase-v3", provenance };
+	const doc = (p) => ({ data_kind: "exiobase-v3", provenance: { ...provenance, ...p } });
+	assert.equal(sameRun(doc({}), results), true);
+	assert.equal(sameRun(null, results), false);
+	assert.equal(sameRun({ ...doc({}), data_kind: "synthetic" }, results), false);
+	assert.equal(sameRun(doc({ dataset: { sha256: { A: "x", L: "l" } } }), results), false);
+	// same dataset, older run: a results.json regenerated without --out-regions/--out-flows
+	assert.equal(sameRun(doc({ engine: { commit: "c0" } }), results), false);
+	assert.equal(sameRun(doc({ generated_at: "2026-09-26T08:00:00+00:00" }), results), false);
 });

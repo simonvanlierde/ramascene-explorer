@@ -2,7 +2,7 @@
 // map.js and sankey.js. index.html calls loadVisuals once, then the render
 // functions on every change of the selection.
 
-import { fmtPct, formatValue, signed } from "./explorer.js";
+import { fmtPct, formatValue, sameRun, signed } from "./explorer.js";
 import {
 	classFill,
 	classify,
@@ -45,25 +45,20 @@ async function fetchJson(url) {
 	}
 }
 
-// The sidecars sit next to results.json and must come from the same dataset
-// files; anything else is not shown next to it.
+// The sidecars sit next to results.json and must come from the same run
+// (sameRun); anything else is not shown next to it.
 export async function loadVisuals(dataPath, data) {
 	const topo = await fetchJson("geo/countries-110m.topo.json");
 	features = topo ? decodeTopology(topo, "countries") : null;
 	if (!dataPath.endsWith("results.json")) return {};
-	const same = (doc) =>
-		doc &&
-		doc.data_kind === data.data_kind &&
-		JSON.stringify(doc.provenance?.dataset?.sha256) ===
-			JSON.stringify(data.provenance?.dataset?.sha256);
 	const [regions, flows] = await Promise.all(
 		["regions.json", "flows.json"].map((n) =>
 			fetchJson(dataPath.replace(/results\.json$/, n)),
 		),
 	);
 	return {
-		regions: same(regions) ? regions : null,
-		flows: same(flows) ? flows : null,
+		regions: sameRun(regions, data) ? regions : null,
+		flows: sameRun(flows, data) ? flows : null,
 	};
 }
 
