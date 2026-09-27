@@ -4,6 +4,7 @@
 - Generated: 2026-09-27T00:08:26+00:00
 - Dataset: EXIOBASE v3.3.sm 2011, doi:10.5281/zenodo.3533196
 - Command: `uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" --out /tmp/b2-full/results.json`
+- Output: written to `/tmp/b2-full/results.json`, then copied to `data/results.json`
 - Octave reference files: 4 (122 values), passed at relative 1e-6
 - Scenarios run: 78, passed every check: 78, failed: 0
 - Wall per scenario job (process start to exit): median 23.45 s, max 39.76 s, total 1925.79 s over 78 jobs

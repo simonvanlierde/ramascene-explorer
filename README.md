@@ -6,8 +6,9 @@ year, three indicators, broken down by the region where the impact occurs. Nothi
 nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
-The repository ships **no result data**. `data/results.json` exists only after
-the precompute below has run against the real dataset. `tests/fixture.json` is
+`data/results.json` is the output of one precompute run (engine
+`perf/solve-not-invert @ a258e63`, 2026-09-27; see `data/run-log.md`). Re-run
+the precompute below to regenerate it. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
 "SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
 not `exiobase-v3`.
@@ -73,11 +74,12 @@ uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DI
 ```
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix: about 1.7 GB peak per job with the solving engine
-(about 4.0 GB with the inverting one). Each scenario runs in a fresh worker
-process (`precompute.py --worker`, one at a time), so its wall time and peak
-RSS (`ru_maxrss`) are that process's, the way the engine's own numbers were
-measured. The script first checks that the engine reproduces the four Octave
+dense 9800 × 9800 matrix: about 1.6 GB (1.53 GiB) peak per worker in the
+shipped run, with the solving engine. The inverting engine peaked at 3.97 GB
+per job, as measured in the solve-not-invert pull request description. Each
+scenario runs in a fresh worker process (`precompute.py --worker`, one at a
+time), so its wall time and peak RSS (`ru_maxrss`) are that process's, the
+way the engine's own numbers were measured. The script first checks that the engine reproduces the four Octave
 reference files shipped with RaMa-Scene (routes two and four; value added and
 GHG) and stops, before any solve, if it does not. It then runs the baseline,
 each scenario, and a 0% control through the modified-A path. Run-level

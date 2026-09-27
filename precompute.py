@@ -13,8 +13,9 @@ five products x five continental regions x three cut sizes (75), all defined
 as data below.
 
 Memory and process model: each technical-coefficient scenario solves against a
-dense 9800x9800 (I - A). With the perf/solve-not-invert engine that peaks near
-1.7 GB per job; the earlier inverting engine near 4.0 GB. Each scenario runs
+dense 9800x9800 (I - A). With the perf/solve-not-invert engine that peaked at
+about 1.6 GB (1.53 GiB) per worker in the shipped run; the earlier inverting
+engine at 3.97 GB per job (solve-not-invert PR description). Each scenario runs
 in a fresh worker process (this script with --worker) so its peak RSS is that
 process's ru_maxrss, measured the way the engine's own numbers were, and its
 matrices are gone before the next starts. --run is required so the full-size
@@ -783,7 +784,7 @@ SCENARIO_SETS = {"all": lambda: ALL_SCENARIOS, "original": lambda: SCENARIOS, "g
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--run", action="store_true", help="really run the full-size engine (~1.7 GB peak per worker)")
+    parser.add_argument("--run", action="store_true", help="really run the full-size engine (about 1.6 GB (1.53 GiB) peak per worker in the shipped run)")
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
     parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v4.npy")
     parser.add_argument("--out", type=Path, help="results JSON; data/run-log.md is written beside it")
@@ -799,7 +800,7 @@ def main(argv=None):
     if not args.out:
         parser.error("--out is required")
     if not args.run:
-        parser.error("refusing to start the full-size engine (~1.7 GB peak per scenario) without --run")
+        parser.error("refusing to start the full-size engine (about 1.6 GB peak per scenario) without --run")
     scenarios = SCENARIO_SETS[args.scenarios]()[: args.limit]
 
     with tempfile.TemporaryDirectory() as tmp:
