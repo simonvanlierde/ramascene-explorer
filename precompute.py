@@ -624,6 +624,8 @@ BASELINE = {
 
 
 def assemble(computed, indicators, provenance, peak_rss_bytes):
+    if not provenance["engine"].get("commit"):
+        raise ValueError("no engine commit in the provenance: output that cannot name its engine is not exiobase-v3")
     results, failed = computed["results"], computed["failed"]
     published = [s for s in computed["scenarios"] if s["id"] in results]
     child_peaks = [r["peak_rss_bytes"] for r in computed["runs"].values() if r.get("peak_rss_bytes")]
@@ -758,26 +760,42 @@ def run_log(doc):
     return "\n".join(lines) + "\n"
 
 
-def collect_provenance(engine_dir, data_dir, argv):
-    import django
+def engine_revision(engine_dir):
+    """The engine checkout's remote, branch, commit and dirty flag.
+
+    commit is None unless engine_dir is the top level of a git work tree with
+    a commit: a copy without .git, or a directory inside some other repository,
+    cannot name the engine it holds.
+    """
 
     def git(*a):
         done = subprocess.run(["git", "-C", str(engine_dir), *a], capture_output=True, text=True, check=False)
         return done.stdout.strip() if done.returncode == 0 else None
 
+    top = git("rev-parse", "--show-toplevel")
+    own = top is not None and Path(top).resolve() == Path(engine_dir).resolve()
+    commit = git("rev-parse", "HEAD") if own else None
+    if commit is None:
+        return {"repository": None, "branch": None, "commit": None, "label": None, "dirty": None}
+    branch = git("branch", "--show-current")
+    return {
+        "repository": public_remote(git("remote", "get-url", "origin")),
+        "branch": branch,
+        "commit": commit,
+        "label": f"{branch or '(detached)'} @ {commit[:7]}",
+        "dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
+    }
+
+
+def collect_provenance(engine_dir, data_dir, argv):
+    import django
+
     def sha256(path):
         with open(path, "rb") as f:
             return hashlib.file_digest(f, "sha256").hexdigest()
 
-    branch, commit = git("branch", "--show-current"), git("rev-parse", "HEAD")
     return {
-        "engine": {
-            "repository": public_remote(git("remote", "get-url", "origin")),
-            "branch": branch,
-            "commit": commit,
-            "label": f"{branch or '(detached)'} @ {commit[:7]}" if commit else None,
-            "dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
-        },
+        "engine": engine_revision(engine_dir),
         "dataset": {
             **DATASET,
             "year": YEAR,
@@ -1081,6 +1099,11 @@ def main(argv=None):
         parser.error("--out is required")
     if not args.run:
         parser.error("refusing to start the full-size engine (about 1.6 GB peak per scenario) without --run")
+    if engine_revision(args.engine)["commit"] is None:
+        parser.error(
+            f"refusing to run: {args.engine} is not the top of a git checkout, so the output could not "
+            "record an engine commit"
+        )
     scenarios = SCENARIO_SETS[args.scenarios]()[: args.limit]
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -392,6 +392,38 @@ def test_cli_refuses_to_run_the_engine_without_the_explicit_flag(capsys):
     assert "--run" in capsys.readouterr().err
 
 
+def git_repo(path):
+    path.mkdir(parents=True, exist_ok=True)
+    git = ["git", "-C", str(path), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run([*git, "init", "-q"], check=True)
+    subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "engine"], check=True)
+    return path
+
+
+def test_cli_refuses_an_engine_that_is_not_a_git_checkout_before_running_it(tmp_path, capsys):
+    engine, out = tmp_path / "engine", tmp_path / "o.json"
+    engine.mkdir()
+    with pytest.raises(SystemExit) as exit_info:
+        precompute.main(["--run", "--engine", str(engine), "--data", str(tmp_path), "--out", str(out)])
+    assert exit_info.value.code != 0
+    assert "engine commit" in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_an_engine_inside_another_repository_has_no_commit_of_its_own(tmp_path):
+    engine = tmp_path / "outer" / "engine"
+    git_repo(tmp_path / "outer")
+    engine.mkdir()
+    assert precompute.engine_revision(engine)["commit"] is None
+    assert len(precompute.engine_revision(tmp_path / "outer")["commit"]) == 40
+
+
+def test_output_without_an_engine_commit_is_not_assembled():
+    provenance = {**PROVENANCE, "engine": {**PROVENANCE["engine"], "commit": None, "label": None}}
+    with pytest.raises(ValueError, match="engine commit"):
+        precompute.assemble(run(fake_engine()), INDICATOR_META, provenance, peak_rss_bytes=1)
+
+
 def test_page_fixture_is_synthetic_and_shaped_like_real_output():
     from pathlib import Path
 
