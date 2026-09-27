@@ -163,3 +163,26 @@ Any static server, for example `python3 -m http.server`, then open
 `?scenario=steel-europe-20&indicator=7`.
 Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
 selection lives in the query string, so a view is shareable.
+
+## Live scenarios (optional)
+
+With `?api=<origin>` the page adds a "Run a custom scenario" panel that sends one
+intervention (product, origin region, consuming sector, consuming region, change
+in %) to the RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The
+result is compared with the baseline computed in the same job and labelled
+"computed live by the job API — not precomputed", with its own provenance: engine
+commit, dataset, the job's duration and peak memory.
+
+Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
+and the page fetches only its data file, so the static build stays static. The
+parameter accepts a bare origin, `http://` only on loopback (a local run or an
+SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
+the status line.
+
+```sh
+# job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 8000
+python3 -m http.server 8000
+# then open http://127.0.0.1:8000/?api=http://127.0.0.1:8020
+```
+
+`live.js` holds the logic (`node --test` covers it); `live-panel.js` the DOM.
