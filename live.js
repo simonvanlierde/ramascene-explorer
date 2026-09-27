@@ -5,6 +5,7 @@
 export const LIVE_STATUS = "computed live by the job API — not precomputed";
 
 // Loopback (a local run, or an SSH tunnel) over http, anything else over https.
+// Not [::1]: the job API only allows the 127.0.0.1 and localhost hosts.
 // A bare origin: no path, query, fragment or credentials.
 export function apiUrl(search) {
 	const raw = new URLSearchParams(search).get("api");
@@ -15,7 +16,7 @@ export function apiUrl(search) {
 	} catch {
 		return null;
 	}
-	const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
+	const loopback = ["127.0.0.1", "localhost"].includes(url.hostname);
 	const scheme = url.protocol === "https:" || (loopback && url.protocol === "http:");
 	const bare = url.username === "" && url.password === "" && url.search === "" && url.hash === "";
 	return scheme && bare && (url.pathname === "/" || url.pathname === "") ? url.origin : null;
