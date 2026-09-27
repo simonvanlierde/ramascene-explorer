@@ -443,7 +443,7 @@ export function renderSankey(ctx, t = 1) {
 			const y = ys[i];
 			const edge = anchorLeft ? n.x0 : n.x1;
 			const dir = anchorLeft ? -1 : 1;
-			if (off(i))
+			if (t === 1 && off(i))
 				add(nodes, "path", {
 					d: `M${edge + dir * 2},${centre(n)} L${edge + dir * (gap - 5)},${y - 7}`,
 					class: "leader",
@@ -458,12 +458,15 @@ export function renderSankey(ctx, t = 1) {
 				{ x, y: y - 2, "text-anchor": anchor, class: "label" },
 				name,
 			);
-			add(
-				nodes,
-				"text",
-				{ x, y: y + (narrow ? 14 : 15), "text-anchor": anchor, class: "value" },
-				`${signed(n.net, unit)}`,
-			);
+			// mid-replay a band's width is an interpolation, not an engine
+			// result: no value is printed until the end state
+			if (t === 1)
+				add(
+					nodes,
+					"text",
+					{ x, y: y + (narrow ? 14 : 15), "text-anchor": anchor, class: "value" },
+					`${signed(n.net, unit)}`,
+				);
 		}
 	};
 	labels(layout.sources, true);
@@ -526,28 +529,47 @@ function drawSankeyTable(result, f, unit) {
 const reduced = () =>
 	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// The map fades from the neutral baseline (CSS transition on fill) while the
-// Sankey bands grow from nothing; with reduced motion, the end state at once.
+// One replay at a time: a new replay, or any new render of the selection,
+// cancels the running one (its frames would otherwise draw a stale scenario).
+let replay = 0;
+export function stopReplay() {
+	replay++;
+	$("map").classList.remove("slow", "instant");
+}
+
+// The map's fills tween from the neutral baseline (CSS transition on fill)
+// while the Sankey bands grow from nothing, both on the same ease-out over
+// the same duration. With reduced motion there is no tween: the baseline is
+// held for a moment, then the intervention replaces it in one step.
 export function animateFromBaseline(ctx, ms = 1400) {
-	if (reduced()) {
-		renderMap(ctx);
-		renderSankey(ctx);
-		return;
-	}
+	stopReplay();
+	const id = replay;
 	const svg = $("map");
 	// jump to the baseline without a transition (a reversed one would be cut
-	// short to ~0 s), then let the fills transition to the intervention
+	// short to ~0 s)
 	svg.classList.add("instant");
 	renderMap({ ...ctx, baselineView: true });
 	svg.getBoundingClientRect(); // commit the baseline fills
+	if (reduced()) {
+		renderSankey(ctx, 0.001);
+		setTimeout(() => {
+			if (id !== replay) return;
+			svg.classList.remove("instant");
+			renderMap(ctx);
+			renderSankey(ctx);
+		}, 700);
+		return;
+	}
+	// then let the fills transition to the intervention
 	svg.classList.replace("instant", "slow");
 	svg.getBoundingClientRect();
-	requestAnimationFrame(() => renderMap(ctx));
-	setTimeout(() => svg.classList.remove("slow"), ms + 100);
+	requestAnimationFrame(() => id === replay && renderMap(ctx));
+	setTimeout(() => id === replay && svg.classList.remove("slow"), ms + 100);
 	const start = performance.now();
 	const frame = (now) => {
+		if (id !== replay) return;
 		const p = Math.min(1, (now - start) / ms);
-		const t = 1 - (1 - p) ** 3; // ease out
+		const t = 1 - (1 - p) ** 3; // ease-out cubic, as the map's CSS curve
 		renderSankey(ctx, Math.max(t, 0.001));
 		if (p < 1) requestAnimationFrame(frame);
 		else renderSankey(ctx);

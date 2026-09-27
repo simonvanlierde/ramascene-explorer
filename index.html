@@ -114,7 +114,8 @@
   tr.selected th, tr.selected td { background: var(--surface-2); font-weight: 700; }
   details.table-fallback { margin-top: 16px; }
   details.table-fallback summary { font-size: 1rem; }
-  #map.slow path.country { transition-duration: 1.4s; }
+  /* replay: 1.4 s ease-out cubic, the curve visuals.js gives the Sankey */
+  #map.slow path.country { transition-duration: 1.4s; transition-timing-function: cubic-bezier(.33, 1, .68, 1); }
   #map.instant path.country { transition: none; }
   #sankey { overflow: visible; }
   #sankey .band { opacity: .5; }
@@ -238,7 +239,7 @@
 <script type="module">
 import { banner, compare, dataUrl, displayIndicator, fmtPct, formatValue, headline, ignoredData, lookupGrid, niceTicks, parseState, pickerState, runSummary, scenarioMenu, signed, stateToSearch } from "./explorer.js";
 import { regionParam, withRegion } from "./map.js";
-import { animateFromBaseline, loadVisuals, renderMap, renderSankey } from "./visuals.js";
+import { animateFromBaseline, loadVisuals, renderMap, renderSankey, stopReplay } from "./visuals.js";
 
 const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
@@ -315,6 +316,7 @@ if (data) {
 }
 
 function render(state) {
+  stopReplay();
   // the pickers may point at an excluded or never-run cell; state holds the last published one
   const target = lookupGrid(data, picker);
   $("scenario").value = picker.scenario;
