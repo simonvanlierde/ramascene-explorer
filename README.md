@@ -7,8 +7,10 @@ nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
 `data/results.json` is the output of one precompute run (engine
-`perf/solve-not-invert @ a258e63`, 2026-09-27; see `data/run-log.md`). Re-run
-the precompute below to regenerate it. `tests/fixture.json` is
+`perf/solve-not-invert @ a258e63`, 2026-09-27; see `data/run-log.md`); its
+`provenance` block records the engine commit, the dataset checksums and the
+command. Re-run the precompute below to regenerate it. Nothing else in the
+repository is a result except its `regions.json` and `flows.json` sidecars. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
 "SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
 not `exiobase-v3`.

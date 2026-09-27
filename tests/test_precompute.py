@@ -371,6 +371,20 @@ def test_command_records_the_dataset_directory_not_a_local_path():
         assert '"$DATASETS_DIR"' in command and command.endswith("--run")
 
 
+def test_command_hides_an_absolute_engine_path_but_keeps_a_relative_one():
+    for argv in (["--engine", "/tmp/someone/engine", "--run"], ["--engine=/home/someone/engine", "--run"]):
+        command = precompute.public_command(argv)
+        assert "someone" not in command
+        assert '"$ENGINE_DIR"' in command and command.endswith("--run")
+    assert precompute.public_command(["--engine", "../ramascene"]).endswith("--engine ../ramascene")
+
+
+def test_scenarios_without_a_technology_change_are_refused_by_name():
+    final_demand_only = [s for s in precompute.SCENARIOS if s["model_details"][0]["consumedBy"] == [FINAL_CONSUMPTION]]
+    with pytest.raises(ValueError, match="zero_change_control"):
+        precompute.compute(fake_engine(), final_demand_only, INDICATORS)
+
+
 def test_cli_refuses_to_run_the_engine_without_the_explicit_flag(capsys):
     with pytest.raises(SystemExit) as exit_info:
         precompute.main(["--engine", "e", "--data", "d", "--out", "o.json"])
