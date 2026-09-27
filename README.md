@@ -6,11 +6,13 @@ year, three indicators, broken down by the region where the impact occurs. Nothi
 nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
-`data/results.json` is the output of one precompute run (engine
-`perf/solve-not-invert @ a258e63`, 2026-09-27; see `data/run-log.md`); its
-`provenance` block records the engine commit, the dataset checksums and the
-command. Re-run the precompute below to regenerate it. Nothing else in the
-repository is a result except its `regions.json` and `flows.json` sidecars. `tests/fixture.json` is
+`data/results.json`, `data/regions.json` and `data/flows.json` are the output
+of one precompute run (engine `perf/solve-not-invert @ a258e63`, 2026-09-27;
+see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
+output of that run: 14 min 43 s wall, 1.62 GB maximum RSS). Each file's `provenance` block records the engine
+commit, the dataset checksums, the command and the run time, and the three
+blocks are identical. Re-run the precompute below to regenerate them. Nothing
+else in the repository is a result. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
 "SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
 not `exiobase-v3`.
@@ -64,19 +66,18 @@ float64.
 
 The engine branch and commit are recorded in the output
 (`provenance.engine.label`, for example `perf/solve-not-invert @ a258e63`).
-The shipped `data/results.json` was produced with the fork branch
-`perf/solve-not-invert` (checkout `../ramascene-pr2`), whose `apply_model`
-returns a `LeontiefSolve` that solves `(I − A) x = y` instead of forming the
-inverse. That branch is not published; which engine version to cite is the
-author's decision and is not made here.
-
-The committed files come from two engine commits: `data/results.json` from
-`perf/numerics-cleanup` 35009dd, `data/regions.json` and `data/flows.json` from
-`perf/solve-not-invert` a258e63 (same EXIOBASE matrices, same sha256). Their
-scenario totals agree to a relative 5e-11.
+`--engine` must be the top of a git checkout with a commit: the script
+refuses to start otherwise (a copy without `.git`, or a directory inside some
+other repository), so no output can claim `exiobase-v3` without naming its
+engine. The shipped files were produced with the fork branch
+`perf/solve-not-invert` (checkout `../ramascene-pr2`, clean tree), whose
+`apply_model` returns a `LeontiefSolve` that solves `(I − A) x = y` instead of
+forming the inverse. That branch is not published; which engine version to
+cite is the author's decision and is not made here.
 
 ```sh
-uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" --out data/results.json
+uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" \
+    --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
 # subsets: --scenarios original|grid, --limit N
 ```
 
@@ -114,7 +115,9 @@ Below the bar chart, a choropleth colours each country by the change in its
 EXIOBASE region, as a percentage of that region's own baseline (diverging
 blue/red around a grey "within ±E/20" class, E a round number at or above the
 largest change). `data/regions.json` carries the 49-region breakdown
-(`--out-regions`); a scenario without one (for example a grid cell) falls back
+(`--out-regions`) of the baseline and the three original interventions,
+computed inside the same worker as their continental values. A grid cell has
+none (it would multiply the sidecars by 25) and falls back
 to the five continental aggregates of `results.json`, and the page says so.
 The five "Rest of …" regions are hatched: every country in one shares its
 value. Which countries each covers follows Natural Earth continents (see
@@ -123,7 +126,7 @@ value. Which countries each covers follows Natural Earth continents (see
 
 ## Supply-chain Sankey
 
-`data/flows.json` (`--out-flows`) decomposes each scenario's change by the
+`data/flows.json` (`--out-flows`) decomposes each original intervention's change by the
 sector whose production carries the impact and the region where it occurs:
 route three (Hotspot × Geographic, the same route as the map) run once per
 level-2 product aggregate (15 sectors, which partition the 200 products) over
@@ -150,10 +153,21 @@ Malta is below the 1:110m threshold and appears only in the table.
 ## Test
 
 ```sh
-uv run pytest                                           # script logic on tiny injected matrices; grid definition; shipped results
+uv run pytest                                           # everything below except the engine adapter
 uv run pytest --engine=../ramascene-pr2                 # adds the real-engine adapter checks (768 MB)
-node --test                                             # URL state, banner, pickers, axis ticks, number format
+node --test                                             # the page logic
 ```
+
+| file | covers |
+| --- | --- |
+| `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
+| `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
+| `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
+| `tests/test_engine_plumbing.py` | the real engine adapter (ids, labels, region leaves, route three against B·L·ΣY), only with `--engine` |
+| `tests/explorer.test.js` | URL state, `?data=` whitelist, banner, per-region comparison, axis ticks, number format, grid menu and pickers, run summary |
+| `tests/map.test.js` | the 49-region table over the five aggregates, country-to-region mapping, Equal Earth projection, aggregate fallback, colour classes, `?region=` round trip |
+| `tests/sankey.test.js` | links and nodes reconcile to the total change, node order and height, the replay tween, sector labels |
+| `tests/live.test.js` | `?api=` origin rules, the job request body, a live result against its own job's baseline, live provenance, polling, the page unchanged without `?api=` |
 
 Write `--engine=PATH` with the `=`: pytest otherwise takes the path as its root
 directory and loads the engine's own `conftest.py`.
@@ -176,7 +190,8 @@ result is compared with the baseline computed in the same job and labelled
 commit, dataset, the job's duration and peak memory.
 
 Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
-and the page fetches only its data file, so the static build stays static. The
+and the page fetches only its own files (`data/*.json` and the map
+geometry), so the static build stays static. The
 parameter accepts a bare origin, `http://` only on loopback (a local run or an
 SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
 the status line.
