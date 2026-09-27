@@ -2,7 +2,7 @@
 // only when the page is opened with ?api=<job API origin>; without it the page
 // never contacts anything but its own data file, so the static build stays static.
 
-export const LIVE_STATUS = "computed live by the job API — not precomputed";
+export const LIVE_STATUS = "computed live by the job API, not precomputed";
 
 // Loopback (a local run, or an SSH tunnel) over http, anything else over https.
 // Not [::1]: the job API only allows the 127.0.0.1 and localhost hosts.

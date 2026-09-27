@@ -94,7 +94,7 @@ test("a live result is compared with its own job's baseline", () => {
 
 test("the provenance says live, not precomputed, and carries the job's measurements", () => {
 	const rows = Object.fromEntries(liveProvenance(job, "http://127.0.0.1:8020"));
-	assert.equal(rows.Status, "computed live by the job API — not precomputed");
+	assert.equal(rows.Status, "computed live by the job API, not precomputed");
 	assert.match(rows["Job API"], /127\.0\.0\.1:8020 · job abc123/);
 	assert.match(rows.Engine, /feat\/engine-package · 7fb5f4c/);
 	assert.match(rows.Computed, /60\.0 s/);

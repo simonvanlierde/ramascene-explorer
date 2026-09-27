@@ -41,7 +41,7 @@ export function stateToSearch(state, search) {
 export function banner(data) {
 	return data.data_kind === "exiobase-v3"
 		? { synthetic: false, text: "EXIOBASE v3 · engine output" }
-		: { synthetic: true, text: "SYNTHETIC TEST DATA — NOT A RESULT" };
+		: { synthetic: true, text: "SYNTHETIC TEST DATA: NOT A RESULT" };
 }
 
 // A sidecar (regions.json, flows.json) belongs next to results.json only if one

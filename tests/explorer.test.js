@@ -80,7 +80,7 @@ test("a rejected data path is reported, an accepted or absent one is not", () =>
 test("synthetic data gets the red banner", () => {
 	assert.deepEqual(banner(data), {
 		synthetic: true,
-		text: "SYNTHETIC TEST DATA — NOT A RESULT",
+		text: "SYNTHETIC TEST DATA: NOT A RESULT",
 	});
 });
 

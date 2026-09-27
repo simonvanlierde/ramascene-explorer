@@ -108,7 +108,7 @@ test("the caption names the change, not a verb that fits only some indicators", 
 		assert.match(text, new RegExp(`^Change in ${name} \\(${unit}\\), Steel input`));
 		assert.match(text, /from the sector of production where the change occurs \(left\) to the region where it occurs \(right\)/);
 		assert.match(text, /every band is a decrease/);
-		assert.match(text, /The 12 largest sector × region cells of 735/);
+		assert.match(text, /The 12 largest sector × region cells of 735 are drawn by name\. Every other cell is added/);
 		assert.ok(text.endsWith(`sum to the total change, −3.04K ${unit}.`), text);
 	}
 	assert.match(

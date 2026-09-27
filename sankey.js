@@ -111,7 +111,7 @@ export function sankeyCaption({ indicator, unit, scenario, anyIncrease, named, c
 	return (
 		`Change in ${indicator} (${unit}), ${scenario}: from the sector of production where the change occurs (left) to the region where it occurs (right). ` +
 		`Band width is the size of the change; ${anyIncrease ? "blue bands are decreases, red increases" : "every band is a decrease"}. ` +
-		`The ${named} largest sector × region cells of ${cells} are drawn by name; every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
+		`The ${named} largest sector × region cells of ${cells} are drawn by name. Every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
 		`so the bands sum to the total change, ${total} ${unit}.`
 	);
 }
