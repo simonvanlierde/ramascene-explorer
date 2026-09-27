@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { compare } from "../explorer.js";
-import { apiUrl, ignoredApi, LIVE_STATUS, liveData, liveProvenance, scenarioBody, waitForJob } from "../live.js";
+import { apiUrl, ignoredApi, LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "../live.js";
 
 // A job as GET /jobs/{id} returns it once succeeded (numbers made up, shape real).
 const job = {
@@ -115,4 +115,13 @@ test("without ?api= the page is unchanged: panel hidden, panel code loaded only 
 	assert.match(html, /if \(api\) \(await import\("\.\/live-panel\.js"\)\)\.mount\(api\);/);
 	// The panel module is the only place that fetches from the API.
 	assert.doesNotMatch(readFileSync(new URL("../live.js", import.meta.url), "utf8"), /fetch\(/);
+});
+
+test("unreachableMessage: a network failure reads as offline, an HTTP error keeps its detail", () => {
+	const offline = unreachableMessage("http://127.0.0.1:8020", new TypeError("Failed to fetch"));
+	assert.match(offline, /^Live job API not reachable \(offline\)/);
+	assert.match(offline, /precomputed results above are unaffected/);
+	assert.doesNotMatch(offline, /Failed to fetch/);
+	const http = unreachableMessage("http://127.0.0.1:8020", new Error("503: Service Unavailable"));
+	assert.match(http, /^Job API at http:\/\/127\.0\.0\.1:8020 answered with an error: 503/);
 });

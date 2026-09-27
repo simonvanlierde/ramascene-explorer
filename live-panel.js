@@ -1,7 +1,7 @@
 // DOM half of the live panel (index.html imports it only with a valid ?api=).
 // Everything from the API is written with textContent, never as markup.
 import { compare, displayIndicator, fmtPct, formatValue, headline, signed } from "./explorer.js";
-import { LIVE_STATUS, liveData, liveProvenance, scenarioBody, waitForJob } from "./live.js";
+import { LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "./live.js";
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, attrs = {}, text) => {
@@ -34,7 +34,7 @@ export async function mount(api) {
 	try {
 		catalog = await fetchJson(`${api}/catalog`);
 	} catch (e) {
-		state.textContent = `Job API at ${api} not reachable: ${e.message}`;
+		state.textContent = unreachableMessage(api, e);
 		$("live-run").disabled = true;
 		return;
 	}

@@ -27,6 +27,15 @@ export function ignoredApi(search) {
 	return raw !== null && apiUrl(search) === null ? raw : null;
 }
 
+// Status line when GET /catalog fails. fetch rejects with a TypeError when nothing
+// answers (no tunnel, laptop offline); anything else is the API's own error.
+export function unreachableMessage(api, error) {
+	if (error instanceof TypeError) {
+		return `Live job API not reachable (offline): nothing answers at ${api}. The precomputed results above are unaffected.`;
+	}
+	return `Job API at ${api} answered with an error: ${error.message}`;
+}
+
 // Form values (strings from <select>/<input>) to a POST /jobs body in the
 // explorer's model_details format. Throws on a change that is not a finite number.
 export function scenarioBody({ product, originReg, consumedBy, consumedReg, techChange, label }) {
