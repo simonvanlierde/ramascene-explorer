@@ -354,7 +354,7 @@ function render(state) {
   $("scenario-text").textContent = scenario.description;
   $("caption").textContent =
     `Change in ${indicator.name} (${indicator.unit}) by region where the impact occurs, ` +
-    `intervention minus the ${data.base_year} baseline. Blue bars are decreases, red bars increases. ` +
+    `intervention minus the ${data.base_year} baseline. ${barKey(rows)} ` +
     `Regions are the five continental aggregates of the RaMa-Scene database.`;
 
   drawChart(rows, indicator.unit);
@@ -364,6 +364,12 @@ function render(state) {
   renderMap(visual);
   renderSankey(visual);
   $("replay").onclick = () => animateFromBaseline(visual);
+}
+
+// the colour key names only the directions the bars show, as the Sankey's does
+function barKey(rows) {
+  const down = rows.some((r) => r.delta < 0), up = rows.some((r) => r.delta > 0);
+  return down && up ? "Blue bars are decreases, red bars increases." : down ? "Every bar is a decrease." : up ? "Every bar is an increase." : "No region changes.";
 }
 
 function drawChart(rows, unit) {
