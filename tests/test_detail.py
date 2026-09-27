@@ -127,3 +127,45 @@ def test_grid_cells_keep_the_continental_aggregates_only():
         "baseline",
         *(s["id"] for s in precompute.SCENARIOS),
     ]
+
+
+DATA = __import__("pathlib").Path(__file__).parent.parent / "data"
+
+
+@pytest.fixture(scope="module")
+def shipped_trio():
+    import json
+
+    paths = [DATA / f"{n}.json" for n in ("results", "regions", "flows")]
+    if not all(p.exists() for p in paths):
+        pytest.skip("no data/{results,regions,flows}.json: run precompute.py --run with --out-regions/--out-flows")
+    return [json.loads(p.read_text()) for p in paths]
+
+
+def test_shipped_sidecars_come_from_the_same_run_as_results(shipped_trio):
+    results, regions, flows = shipped_trio
+    for doc in (regions, flows):
+        assert doc["data_kind"] == "exiobase-v3"
+        for key in ("engine", "dataset", "command", "generated_at"):
+            assert doc["provenance"][key] == results["provenance"][key], key
+    originals = ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
+    assert [s["id"] for s in regions["scenarios"]] == [s["id"] for s in flows["scenarios"]] == originals
+    assert list(flows["results"]) == originals[1:]
+
+
+def test_shipped_sidecars_passed_their_checks_and_reconcile_with_results(shipped_trio):
+    results, regions, flows = shipped_trio
+    assert all(c["passed"] for k in ("independent_by_country", "aggregates") for c in regions["checks"][k])
+    assert all(c["passed"] for c in flows["checks"]["sectors"]) and flows["checks"]["flows"]["passed"]
+    for sid, by_i in regions["results"].items():
+        for i, by_country in by_i.items():
+            total = math.fsum(results["results"][sid][i].values())
+            assert math.isclose(math.fsum(by_country.values()), total, rel_tol=1e-9), (sid, i)
+            if sid != "baseline":
+                base = math.fsum(regions["results"]["baseline"][i].values())
+                change = flows["results"][sid][i]
+                assert change["reconciled"]
+                assert math.isclose(change["total_delta"], math.fsum(by_country.values()) - base, rel_tol=1e-9), (
+                    sid,
+                    i,
+                )
