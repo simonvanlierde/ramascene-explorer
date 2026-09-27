@@ -356,6 +356,8 @@ const NARROW = {
 	"Rest of Middle East": "Rest of Mid. East",
 };
 
+const labelGap = {};
+
 export function renderSankey(ctx, t = 1) {
 	const { docs, state, indicator } = ctx;
 	const regionName = EXIOBASE_REGIONS.find(
@@ -420,6 +422,16 @@ export function renderSankey(ctx, t = 1) {
 				ys[i],
 				i === ys.length - 1 ? height - 20 : ys[i + 1] - step,
 			);
+		// labels keep a minimum spacing, so a small node's label can sit beside
+		// its neighbour: then that side's labels step out and a leader line
+		// joins each displaced label to its own node
+		const centre = (n) => (n.y0 + n.y1) / 2;
+		const off = (i) => Math.abs(ys[i] - centre(list[i])) > 6;
+		// mid-replay the nodes are still growing: keep the finished layout's
+		// offset so the labels do not jump sideways between frames
+		const side = anchorLeft ? "left" : "right";
+		if (t === 1) labelGap[side] = list.some((_, i) => off(i)) ? 18 : 8;
+		const gap = labelGap[side] ?? 8;
 		for (const [i, n] of list.entries()) {
 			add(nodes, "rect", {
 				x: n.x0,
@@ -428,9 +440,15 @@ export function renderSankey(ctx, t = 1) {
 				height: Math.max(1, n.y1 - n.y0),
 				class: "node",
 			});
-			// labels keep a minimum spacing; a label then sits a little off its node
 			const y = ys[i];
-			const x = anchorLeft ? n.x0 - 8 : n.x1 + 8;
+			const edge = anchorLeft ? n.x0 : n.x1;
+			const dir = anchorLeft ? -1 : 1;
+			if (off(i))
+				add(nodes, "path", {
+					d: `M${edge + dir * 2},${centre(n)} L${edge + dir * (gap - 5)},${y - 7}`,
+					class: "leader",
+				});
+			const x = edge + dir * gap;
 			const anchor = anchorLeft ? "end" : "start";
 			const long = anchorLeft ? short(n.id) : n.id;
 			const name = narrow ? (NARROW[long] ?? long) : long;
