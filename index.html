@@ -456,7 +456,7 @@ function renderProvenance(scenario) {
   dl.append(el("dt", {}, "Command"), cmd);
   item("Generated", p.generated_at);
   item("Runtime", `Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? (p.peak_rss_bytes / 2 ** 30).toFixed(2) + " GiB" : "—"}`);
-  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${d.name}, ${d.year}. ${data.status}.`;
+  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${d.name}, ${d.year}. ${data.status.charAt(0).toUpperCase() + data.status.slice(1)}.`;
 }
 </script>
 <script type="module">
