@@ -618,6 +618,36 @@
     "id": 196,
     "name": "Electrical machinery and apparatus n.e.c.",
     "short": "Electrical machinery"
+   },
+   {
+    "slug": "copper",
+    "id": 188,
+    "name": "Copper products",
+    "short": "Copper products"
+   },
+   {
+    "slug": "glass",
+    "id": 173,
+    "name": "Glass and glass products",
+    "short": "Glass"
+   },
+   {
+    "slug": "fertiliser",
+    "id": 164,
+    "name": "N-fertiliser",
+    "short": "Nitrogen fertiliser"
+   },
+   {
+    "slug": "chemicals",
+    "id": 166,
+    "name": "Chemicals nec",
+    "short": "Other chemicals"
+   },
+   {
+    "slug": "rubber",
+    "id": 172,
+    "name": "Rubber and plastic products",
+    "short": "Rubber and plastic products"
    }
   ],
   "regions": [

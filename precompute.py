@@ -9,7 +9,7 @@ intervention on the 2011 base year through ramascene.modelling.Modelling; the
 engine makes no projection, so nothing here is a forecast.
 
 Scenarios: the three original interventions plus a material-efficiency grid,
-five products x five continental regions x three cut sizes (75), all defined
+ten products x five continental regions x three cut sizes (150), all defined
 as data below.
 
 Memory and process model: each technical-coefficient scenario solves against a
@@ -172,6 +172,11 @@ GRID_PRODUCTS = [
         "name": "Electrical machinery and apparatus n.e.c.",
         "short": "Electrical machinery",
     },
+    {"slug": "copper", "id": 188, "name": "Copper products", "short": "Copper products"},
+    {"slug": "glass", "id": 173, "name": "Glass and glass products", "short": "Glass"},
+    {"slug": "fertiliser", "id": 164, "name": "N-fertiliser", "short": "Nitrogen fertiliser"},
+    {"slug": "chemicals", "id": 166, "name": "Chemicals nec", "short": "Other chemicals"},
+    {"slug": "rubber", "id": 172, "name": "Rubber and plastic products", "short": "Rubber and plastic products"},
 ]
 # ramascene_country global ids: the five continental aggregates (REGIONS above).
 GRID_REGIONS = [
@@ -196,7 +201,7 @@ def grid_scenario_id(product, region, cut):
 
 
 def grid_scenarios():
-    """The 75 grid cells as scenarios, product-major, in GRID order."""
+    """The 150 grid cells as scenarios, product-major, in GRID order."""
     return [
         {
             "id": grid_scenario_id(p["slug"], r["slug"], cut),

@@ -1,7 +1,7 @@
 # RaMa-Scene scenario explorer
 
 A static page over **precomputed** RaMa-Scene engine output: a baseline, three
-interventions and a 75-cell material-efficiency grid on the EXIOBASE 2011 base
+interventions and a 150-cell material-efficiency grid on the EXIOBASE 2011 base
 year, three indicators, broken down by the region where the impact occurs. Nothing here is a live calculation, and
 nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
@@ -9,7 +9,8 @@ coefficients in the 2011 economy and has no projection step.
 `data/results.json`, `data/regions.json` and `data/flows.json` are the output
 of one precompute run (engine `perf/lu-reuse-solve-order @ f876faa`, 2026-09-27;
 see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 3 min 12 s wall, 941,524 KiB (0.96 GB, 0.90 GiB) maximum RSS). Each file's `provenance` block records the engine
+output of that run: 153 scenarios, 10 min 20 s wall, 942,020 KiB (0.96 GB, 0.90 GiB) maximum RSS,
+on a machine shared with other work (load average above 40 on 32 cores during the run)). Each file's `provenance` block records the engine
 commit, the dataset checksums, the command and the run time, and the three
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
@@ -45,7 +46,7 @@ one industry to the engine database's 15 industry sections (`consumedBy`
 
 | axis | values (engine database ids) |
 | --- | --- |
-| product | Basic iron and steel and of ferro-alloys and first products thereof (180) · Aluminium and aluminium products (184) · Cement, lime and plaster (177) · Plastics, basic (162) · Electrical machinery and apparatus n.e.c. (196) |
+| product | Basic iron and steel and of ferro-alloys and first products thereof (180) · Aluminium and aluminium products (184) · Cement, lime and plaster (177) · Plastics, basic (162) · Electrical machinery and apparatus n.e.c. (196) · Copper products (188) · Glass and glass products (173) · N-fertiliser (164) · Chemicals nec (166) · Rubber and plastic products (172) |
 | region | Europe (2) · Middle-East (3) · America (4) · Asia-Pacific (5) · Africa (6), the five continental aggregates |
 | cut | −10 %, −20 %, −50 % |
 
@@ -96,7 +97,9 @@ Same grid (78 scenarios), same machine, one run at a time, each under
 `uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
 value by value (every number in the three files, except provenance, run
 timings and check residuals; relative 1e-12 by default). Between the two runs
-above the largest difference is 0.
+above the largest difference is 0. The 150-cell grid shipped now keeps
+those 75 cells and three interventions with the same values (again a largest
+difference of 0) and adds five products.
 
 ```sh
 uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data "$DATASETS_DIR" \
