@@ -14,7 +14,7 @@ as data below.
 
 Memory and process model: each technical-coefficient scenario solves against a
 dense 9800x9800 (I - A). With the perf/solve-not-invert engine that peaked at
-about 1.6 GB (1.53 GiB) per worker in the shipped run; the earlier inverting
+about 1.66 GB (1.55 GiB) per worker in the shipped run; the earlier inverting
 engine at 3.97 GB per job (solve-not-invert PR description). Each scenario runs
 in a fresh worker process (this script with --worker) so its peak RSS is that
 process's ru_maxrss, measured the way the engine's own numbers were, and its

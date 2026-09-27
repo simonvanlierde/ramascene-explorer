@@ -9,7 +9,7 @@ coefficients in the 2011 economy and has no projection step.
 `data/results.json`, `data/regions.json` and `data/flows.json` are the output
 of one precompute run (engine `perf/solve-not-invert @ a258e63`, 2026-09-27;
 see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 14 min 43 s wall, 1.62 GB maximum RSS). Each file's `provenance` block records the engine
+output of that run: 14 min 43 s wall, 1,621,380 KiB (1.66 GB, 1.55 GiB) maximum RSS). Each file's `provenance` block records the engine
 commit, the dataset checksums, the command and the run time, and the three
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
@@ -82,7 +82,7 @@ uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DI
 ```
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix: about 1.6 GB (1.53 GiB) peak per worker in the
+dense 9800 × 9800 matrix: about 1.66 GB (1.55 GiB) peak per worker in the
 shipped run, with the solving engine. The inverting engine peaked at 3.97 GB
 per job, as measured in the solve-not-invert pull request description. Each
 scenario runs in a fresh worker process (`precompute.py --worker`, one at a
