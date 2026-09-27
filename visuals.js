@@ -16,7 +16,7 @@ import {
 	regionForIso,
 	regionValues,
 } from "./map.js";
-import { SECTOR_SHORT, sankeyLayout, tween } from "./sankey.js";
+import { SECTOR_SHORT, sankeyCaption, sankeyLayout, tween } from "./sankey.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const el = (tag, attrs = {}, text) => {
@@ -477,11 +477,15 @@ export function renderSankey(ctx, t = 1) {
 	$("sankey-increase").hidden = !flows.some((x) => x.delta > 0);
 	const scenario = ctx.data.scenarios.find((s) => s.id === state.scenario);
 	const named = result.flows.filter((x) => x.named).length;
-	$("sankey-caption").textContent =
-		`Change in ${indicator.name} (${unit}), ${scenario.label}: from the sector whose production emits or employs (left) to the region where that happens (right). ` +
-		`Band width is the size of the change; ${flows.some((x) => x.delta > 0) ? "blue bands are decreases, red increases" : "every band is a decrease"}. ` +
-		`The ${named} largest sector × region cells of ${result.cells} are drawn by name; every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
-		`so the bands sum to the total change, ${signed(result.total_delta * f, unit)} ${unit}.`;
+	$("sankey-caption").textContent = sankeyCaption({
+		indicator: indicator.name,
+		unit,
+		scenario: scenario.label,
+		anyIncrease: flows.some((x) => x.delta > 0),
+		named,
+		cells: result.cells,
+		total: signed(result.total_delta * f, unit),
+	});
 	$("sankey-source").textContent =
 		`Method: ${docs.flows.breakdown}. ${docs.flows.method}`;
 	drawSankeyTable(result, f, unit);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SECTOR_SHORT, sankeyLayout, tween } from "../sankey.js";
+import { SECTOR_SHORT, sankeyCaption, sankeyLayout, tween } from "../sankey.js";
 
 // Shaped like precompute.top_flows output: named cells, then lumped "other" flows.
 const flows = [
@@ -85,4 +85,34 @@ test("a tween towards the baseline shrinks bands on a fixed scale", () => {
 
 test("every level-2 sector has a short label", () => {
 	assert.equal(Object.keys(SECTOR_SHORT).length, 15);
+});
+
+test("the caption names the change, not a verb that fits only some indicators", () => {
+	const caption = (name, unit) =>
+		sankeyCaption({
+			indicator: name,
+			unit,
+			scenario: "Steel input to European motor-vehicle manufacturing −20%",
+			anyIncrease: false,
+			named: 12,
+			cells: 735,
+			total: "−3.04K",
+		});
+	for (const [name, unit] of [
+		["Domestic Extraction Used - Metal Ores - Total", "kt"],
+		["GHG emissions: Total", "kg CO2 eq"],
+		["Employment: Total", "persons"],
+	]) {
+		const text = caption(name, unit);
+		assert.doesNotMatch(text, /emits|employs/, name);
+		assert.match(text, new RegExp(`^Change in ${name} \\(${unit}\\), Steel input`));
+		assert.match(text, /from the sector of production where the change occurs \(left\) to the region where it occurs \(right\)/);
+		assert.match(text, /every band is a decrease/);
+		assert.match(text, /The 12 largest sector × region cells of 735/);
+		assert.ok(text.endsWith(`sum to the total change, −3.04K ${unit}.`), text);
+	}
+	assert.match(
+		sankeyCaption({ indicator: "x", unit: "kt", scenario: "s", anyIncrease: true, named: 1, cells: 2, total: "+1" }),
+		/blue bands are decreases, red increases/,
+	);
 });

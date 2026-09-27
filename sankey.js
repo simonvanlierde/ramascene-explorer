@@ -104,6 +104,18 @@ export function sankeyLayout(
 	};
 }
 
+// The Sankey's caption. Route three places the change where production
+// happens, so it "occurs" there: a verb such as "emits" fits one indicator only.
+// total is already formatted in the display unit.
+export function sankeyCaption({ indicator, unit, scenario, anyIncrease, named, cells, total }) {
+	return (
+		`Change in ${indicator} (${unit}), ${scenario}: from the sector of production where the change occurs (left) to the region where it occurs (right). ` +
+		`Band width is the size of the change; ${anyIncrease ? "blue bands are decreases, red increases" : "every band is a decrease"}. ` +
+		`The ${named} largest sector × region cells of ${cells} are drawn by name; every other cell is added to the band between its named sector or region and "Other sectors" / "Other regions", ` +
+		`so the bands sum to the total change, ${total} ${unit}.`
+	);
+}
+
 // The flows scaled towards the baseline: t → 0 is no change, 1 the full
 // intervention. Linear in t, as every flow is a difference to the baseline.
 export const tween = (flows, t) =>
