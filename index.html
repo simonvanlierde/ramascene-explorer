@@ -130,11 +130,16 @@
   @media (max-width: 560px) { #sankey text { font-size: 13px; } }
   .swatch.decrease { background: color-mix(in srgb, var(--decrease) 50%, var(--surface)); }
   .swatch.increase { background: color-mix(in srgb, var(--increase) 50%, var(--surface)); }
-  button.replay { font: inherit; font-size: 1rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+  button.replay { font: inherit; font-size: 1rem; font-weight: 600; color: var(--text); background: var(--surface-2); border: 1px solid var(--axis);
                   border-radius: 8px; padding: 8px 14px; cursor: pointer; }
-  button.replay:hover { border-color: var(--axis); }
+  button.replay:hover, #live-form button:hover:not(:disabled) { border-color: var(--text-2); }
   tfoot th, tfoot td { font-weight: 700; border-top: 2px solid var(--border); }
   @media (prefers-reduced-motion: reduce) { #map path.country { transition: none; } }
+  /* touch: every control at least 44 px tall; a summary's hit area grows without moving the layout */
+  @media (pointer: coarse), (max-width: 560px) {
+    select, button, #live-form input { min-height: 44px; }
+    summary { padding-block: 10px; margin-block: -10px; }
+  }
 </style>
 </head>
 <body>
@@ -172,7 +177,7 @@
       <figure class="visual">
         <svg id="map" role="img" aria-labelledby="map-heading" aria-describedby="map-caption"></svg>
         <div id="map-tip" class="tip" hidden></div>
-        <div id="map-legend" class="legend" aria-label="Map legend"></div>
+        <div id="map-legend" class="legend" role="group" aria-label="Map legend"></div>
         <figcaption id="map-caption"></figcaption>
         <p class="source" id="map-source"></p>
       </figure>
@@ -185,7 +190,7 @@
       <h2 id="sankey-heading">Where the change comes from: sector → region</h2>
       <figure class="visual">
         <svg id="sankey" role="img" aria-labelledby="sankey-heading" aria-describedby="sankey-caption"></svg>
-        <div class="legend" aria-label="Sankey legend"><div class="legend-extra">
+        <div class="legend" role="group" aria-label="Sankey legend"><div class="legend-extra">
           <span class="legend-item" id="sankey-decrease"><span class="swatch decrease"></span><span>decrease</span></span>
           <span class="legend-item" id="sankey-increase"><span class="swatch increase"></span><span>increase</span></span>
         </div></div>
