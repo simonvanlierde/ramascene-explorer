@@ -68,6 +68,7 @@ DATASET = {
 # Absolute floor for comparisons, in indicator units (kg, 1000 p, kt): far
 # below any value reported, far above the noise on a value that should be 0.
 ABS_FLOOR = 1e-9
+CHANGE_TOL = 1e-9  # a scenario must move some indicator total by more than this, relative
 STATUS = "precomputed — not a live calculation"
 
 # Global ids from the engine's db.sqlite3. Breakdown by the five continental
@@ -252,7 +253,8 @@ def modelled(engine, name, model_details, Y):
 
 
 def scenario_direction(scenarios, results, control, Y, B, indicators):
-    """Every scenario is a cut: it must change the result and, on
+    """Every scenario is a cut: it must change some indicator total by more
+    than CHANGE_TOL relative (float noise does not count) and, on
     non-negative B, y, A and L, must not raise any indicator total.
 
     Final-demand scenarios are compared with the baseline (both use the stored
@@ -269,10 +271,11 @@ def scenario_direction(scenarios, results, control, Y, B, indicators):
         ref_name = "zero_change_control" if loads_A(s) else "baseline"
         ref, got = (control if loads_A(s) else results["baseline"]), results[s["id"]]
         references[s["id"]] = ref_name
-        if got == ref:
+        totals = {i: (math.fsum(got[i].values()), math.fsum(ref[i].values())) for i in map(str, indicators)}
+        if all(relative_difference(t, r) <= CHANGE_TOL for t, r in totals.values()):
             unchanged.append(s["id"])
         for i in (str(i) for i in indicators if i not in skipped):
-            total, ref_total = math.fsum(got[i].values()), math.fsum(ref[i].values())
+            total, ref_total = totals[i]
             if total > ref_total and not math.isclose(total, ref_total, rel_tol=1e-9, abs_tol=ABS_FLOOR):
                 rises.append({"scenario": s["id"], "indicator": int(i), "total": total, "reference": ref_total})
     return {
@@ -784,7 +787,7 @@ SCENARIO_SETS = {"all": lambda: ALL_SCENARIOS, "original": lambda: SCENARIOS, "g
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--run", action="store_true", help="really run the full-size engine (about 1.6 GB (1.53 GiB) peak per worker in the shipped run)")
+    parser.add_argument("--run", action="store_true", help="really run the full-size engine (~1.6 GB peak per worker)")
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
     parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v4.npy")
     parser.add_argument("--out", type=Path, help="results JSON; data/run-log.md is written beside it")

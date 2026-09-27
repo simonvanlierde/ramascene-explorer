@@ -91,8 +91,8 @@ scenario is held to:
 - each region's value matches `B_i ∘ (L · ΣY)` recomputed outside the engine
   and summed over that region's countries (relative 1e-9);
 - the control reproduces the baseline (relative 1e-6);
-- every intervention changes the result, and no cut raises an indicator
-  total. The rise check applies only to indicators whose `B` row and `ΣY` have
+- every intervention moves at least one indicator total by more than
+  relative 1e-9, and no cut raises an indicator total. The rise check applies only to indicators whose `B` row and `ΣY` have
   no negative entries; otherwise it is skipped with a warning and recorded.
 
 A scenario that fails is recorded under `failed` with its reason and is not in

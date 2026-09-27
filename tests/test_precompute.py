@@ -208,6 +208,21 @@ def test_scenarios_identical_to_their_reference_fail():
     assert "zero_change_control" in str(info.value) and "baseline" in str(info.value)  # the reference each was held to
 
 
+def test_a_change_within_float_noise_counts_as_unchanged():
+    scenario = {"id": "noise", "model_details": [{"consumedBy": [FINAL_CONSUMPTION]}]}
+    baseline = {"1": {"R1": 1.0, "R2": 2.0}, "2": {"R1": 3.0, "R2": 4.0}}
+    Y, B = np.ones((2, 1)), np.ones((2, 2))
+
+    def direction(result):
+        results = {"baseline": baseline, "noise": result}
+        return precompute.scenario_direction([scenario], results, baseline, Y, B, INDICATORS)
+
+    noise = {"1": {"R1": 1.0 - 1e-13, "R2": 2.0}, "2": {"R1": 3.0, "R2": 4.0 - 1e-13}}
+    assert noise != baseline and direction(noise)["unchanged"] == ["noise"]
+    cut = {"1": {"R1": 0.9, "R2": 2.0}, "2": {"R1": 3.0, "R2": 4.0}}
+    assert direction(cut)["passed"]
+
+
 def test_cuts_that_raise_an_indicator_total_fail():
     with pytest.raises(ValueError, match="(?s)every scenario failed.*total rises"):
         run(fake_engine(raise_instead_of_cut=True))
