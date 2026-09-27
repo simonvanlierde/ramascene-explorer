@@ -982,7 +982,10 @@ def worker_scenario(engine_dir, data_dir):
         if done.returncode != 0:
             tail = done.stderr.strip().splitlines()[-1:] or ["(no stderr)"]
             raise ValueError(f"scenario {name}: worker exited {done.returncode}: {tail[0]}")
-        record = json.loads(done.stdout.splitlines()[-1])
+        lines = done.stdout.splitlines()
+        if not lines:
+            raise ValueError(f"scenario {name}: worker exited 0 without a record")
+        record = json.loads(lines[-1])  # JSONDecodeError is a ValueError: the scenario fails
         if "error" in record:
             raise ValueError(f"scenario {name}: {record['error']}")
         return {**record, "wall_s": wall}

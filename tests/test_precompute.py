@@ -467,3 +467,10 @@ def test_a_scenario_missing_a_region_is_recorded_as_failed_and_the_output_still_
     doc = precompute.assemble(computed, INDICATOR_META, dict(PROVENANCE), peak_rss_bytes=1)
     json.dumps(doc, allow_nan=False)  # the writer's call: a NaN here would lose the whole run
 
+
+def test_a_worker_that_prints_nothing_fails_its_scenario_not_the_run(monkeypatch):
+    done = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+    monkeypatch.setattr(precompute.subprocess, "run", lambda *a, **k: done)
+    scenario = precompute.worker_scenario("engine", "data")
+    with pytest.raises(ValueError, match="scenario s1"):
+        scenario("s1", [], [1])
