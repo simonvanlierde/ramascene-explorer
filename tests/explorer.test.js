@@ -150,7 +150,7 @@ test("values never print in exponent notation", () => {
 	for (const v of [-3.2e9, 1.5e12, 0.00042, 7, -1234567]) {
 		assert.doesNotMatch(formatValue(v), /e/i, String(v));
 	}
-	assert.equal(formatValue(-3.2e9), "-3.2B");
+	assert.equal(formatValue(-3.2e9), "\u22123.2B");
 	assert.equal(formatValue(0), "0");
 });
 
@@ -168,7 +168,7 @@ test("employment shows in persons, never as a compact K on thousands of persons"
 	});
 	assert.equal(
 		formatValue(-18.8 * employment.factor, employment.unit),
-		"-18,800",
+		"\u221218,800",
 	);
 	assert.doesNotMatch(formatValue(2.1e9, "persons"), /[KMB]/);
 	const ghg = displayIndicator({
@@ -177,7 +177,7 @@ test("employment shows in persons, never as a compact K on thousands of persons"
 		unit: "kg CO2 eq",
 	});
 	assert.equal(ghg.factor, 1);
-	assert.equal(formatValue(-3.2e9, ghg.unit), "-3.2B");
+	assert.equal(formatValue(-3.2e9, ghg.unit), "\u22123.2B");
 });
 
 test("the headline carries no colon beyond the one in the indicator name", () => {
@@ -187,8 +187,8 @@ test("the headline carries no colon beyond the one in the indicator name", () =>
 		5e6,
 	);
 	assert.equal(text.split(":").length, 2, text);
-	assert.match(text, /-18,800 persons/);
-	assert.match(text, /\(-0\.38%\)/);
+	assert.match(text, /\u221218,800 persons/);
+	assert.match(text, /\(\u22120\.38%\)/);
 	assert.match(headline({ name: "X", unit: "kt", factor: 1 }, 5, 0), /\(—\)/);
 });
 

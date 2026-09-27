@@ -92,15 +92,18 @@ const compact = new Intl.NumberFormat("en", {
 	maximumSignificantDigits: 3,
 });
 const grouped = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
+// Negative values take a true minus sign (U+2212), as the legend and the cut
+// picker do; Intl writes a hyphen-minus.
+const minus = (text) => text.replace("-", "\u2212");
 export const formatValue = (v, unit) =>
-	(unit === "persons" ? grouped : compact).format(v);
+	minus((unit === "persons" ? grouped : compact).format(v));
 export const signed = (v, unit) => (v > 0 ? "+" : "") + formatValue(v, unit);
 
 const pct = new Intl.NumberFormat("en", {
 	maximumSignificantDigits: 2,
 	signDisplay: "exceptZero",
 });
-export const fmtPct = (p) => (p === null ? "—" : `${pct.format(p)}%`);
+export const fmtPct = (p) => (p === null ? "—" : minus(`${pct.format(p)}%`));
 
 // indicator from displayIndicator; totals already in its display unit.
 export function headline(indicator, deltaTotal, baseTotal) {
