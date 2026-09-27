@@ -99,9 +99,9 @@ def fake_engine(
         live=live,
     )
 
-    def scenario(name, model_details, indicators):
+    def scenario(name, model_details, indicators, detail=False):
         live["current"] = name
-        return precompute.scenario_in_process(engine, name, model_details, indicators, load("Y"), load("B"))
+        return precompute.scenario_in_process(engine, name, model_details, indicators, load("Y"), load("B"), detail)
 
     engine.scenario = scenario
     return engine

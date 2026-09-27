@@ -76,6 +76,11 @@ STATUS = "precomputed — not a live calculation"
 REGIONS = [2, 3, 4, 5, 6]  # Europe, Middle-East, America, Asia-Pacific, Africa
 INDICATORS = [5, 3, 7]  # GHG emissions: Total; Employment: Total; DEU - Metal Ores - Total
 EUROPE, ALL_REGIONS = [2], [1]
+# Detail level of the extra outputs: the 49 leaf regions (country global ids
+# 7..55) and the 15 level-2 product aggregates (product global ids 2..16).
+COUNTRIES = list(range(7, 56))
+SECTORS = list(range(2, 17))
+TOP_FLOWS = 12
 FINAL_CONSUMPTION = 276  # ModellingProduct "Y: Final Consumption"
 
 # model_details exactly as the RaMa-Scene front end sends them (global ids).
@@ -236,8 +241,93 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
     }
 
 
+class MemoDot:
+    """L.dot(v) computed once per distinct v: a solving engine factorises on every call."""
+
+    def __init__(self, L):
+        self.L, self.seen = L, {}
+
+    def dot(self, v):
+        key = (v.shape, v.dtype.str, v.tobytes())
+        if key not in self.seen:
+            self.seen[key] = self.L.dot(v)
+        return self.seen[key]
+
+
 def relative_difference(value, reference):
     return abs(value - reference) / max(abs(reference), ABS_FLOOR)
+
+
+def reconcile_aggregates(by_aggregate, by_country, members):
+    """Each continental aggregate must equal the sum of its member countries.
+
+    members: {aggregate name: [country name]}; the members must partition the
+    countries. Relative 1e-9 with the absolute floor, per aggregate.
+    """
+    listed = sorted(c for cs in members.values() for c in cs)
+    partition = listed == sorted(by_country)
+    aggregates = {
+        agg: {
+            "aggregate": by_aggregate.get(agg, math.nan),
+            "members": math.fsum(by_country[c] for c in cs if c in by_country),
+        }
+        for agg, cs in members.items()
+    }
+    return {
+        "aggregates": aggregates,
+        "passed": partition
+        and set(by_aggregate) == set(members)
+        and all(
+            math.isclose(a["aggregate"], a["members"], rel_tol=1e-9, abs_tol=ABS_FLOOR) for a in aggregates.values()
+        ),
+    }
+
+
+def reconcile_sectors(by_country, by_sector_country):
+    """Summed over the sectors, the sector x country cells must give each country's value."""
+    sums = {c: math.fsum(cells[c] for cells in by_sector_country.values()) for c in by_country}
+    worst = max((relative_difference(sums[c], by_country[c]) for c in by_country), default=0.0)
+    return {"passed": worst <= 1e-9, "max_relative_difference": worst}
+
+
+def top_flows(baseline_cells, scenario_cells, n=TOP_FLOWS):
+    """Sector -> region flows of the change, the n largest cells by |delta| named.
+
+    Sectors and regions that appear in a named cell become nodes; every other
+    cell is added to the flow between "Other sectors" / "Other regions" (or the
+    named node on the side that is named), so the shown flows plus the "other"
+    flows sum to the total delta exactly (fsum), with nothing dropped.
+    """
+    deltas = {
+        (sector, region): scenario_cells[sector][region] - baseline_cells[sector][region]
+        for sector in baseline_cells
+        for region in baseline_cells[sector]
+    }
+    top = sorted(deltas, key=lambda k: abs(deltas[k]), reverse=True)[:n]
+    named_sectors, named_regions = {s for s, _ in top}, {r for _, r in top}
+    lumped = {}
+    for (sector, region), d in deltas.items():
+        if (sector, region) in top:
+            continue
+        key = (
+            sector if sector in named_sectors else "Other sectors",
+            region if region in named_regions else "Other regions",
+        )
+        lumped.setdefault(key, []).append(d)
+    flows = [{"sector": s, "region": r, "delta": deltas[(s, r)], "named": True} for s, r in top]
+    flows += [
+        {"sector": s, "region": r, "delta": math.fsum(v), "named": False, "cells": len(v)}
+        for (s, r), v in sorted(lumped.items())
+    ]
+    total = math.fsum(deltas.values())
+    shown = math.fsum(f["delta"] for f in flows)
+    return {
+        "total_delta": total,
+        "flows": flows,
+        "cells": len(deltas),
+        "reconciled": math.isclose(shown, total, rel_tol=1e-12, abs_tol=ABS_FLOOR),
+        "shown_plus_other": shown,
+    }
 
 
 def loads_A(scenario):
@@ -302,15 +392,49 @@ def evaluate(engine, name, Y_s, L_s, B, indicators):
     return by_indicator, independent
 
 
-def scenario_in_process(engine, name, model_details, indicators, Y, B):
+def evaluate_detail(engine, name, Y_s, L_s, B, indicators, by_indicator):
+    """The 49 leaf regions and the sector x region cells of one run, with their checks.
+
+    Each leaf region is checked against B . (L . sum Y), each continental
+    aggregate against the sum of its members, and each region's sectors against
+    its value. One MemoDot for the run: every detail route and check shares one
+    L . sum Y, solved once. Raises ValueError on non-finite output.
+    """
+    L_memo = MemoDot(L_s)
+    countries, cells = {}, {}
+    checks = {"independent_by_country": [], "aggregates": [], "sectors": []}
+    for i in indicators:
+        by_country = engine.by_country(i, Y_s, B, L_memo)
+        by_sector = engine.by_sector_country(i, Y_s, B, L_memo)
+        if not np.isfinite([*by_country.values(), *(v for c in by_sector.values() for v in c.values())]).all():
+            raise ValueError(f"non-finite engine detail output, {name}, indicator {i}")
+        countries[str(i)], cells[str(i)] = by_country, by_sector
+        tag = {"run": name, "indicator": i}
+        checks["independent_by_country"].append(
+            {**tag, **independent_by_region(i, Y_s, B, L_memo, by_country, engine.country_leaves)}
+        )
+        checks["aggregates"].append(
+            {**tag, **reconcile_aggregates(by_indicator[str(i)], by_country, engine.aggregate_members)}
+        )
+        checks["sectors"].append({**tag, **reconcile_sectors(by_country, by_sector)})
+    return {"countries": countries, "cells": cells, "checks": checks}
+
+
+def scenario_in_process(engine, name, model_details, indicators, Y, B, detail=False):
     """One scenario in this process: the record compute() consumes.
 
-    Passing modelled()'s result straight into evaluate() leaves no reference to
-    the scenario's (Y, L) once this returns, so nothing survives into the next.
+    The scenario's (Y, L) are locals here, so nothing survives into the next
+    scenario once this returns. detail=True adds the 49-region and sector x
+    region breakdown (evaluate_detail).
     """
     started = time.perf_counter()
-    by_indicator, independent = evaluate(engine, name, *modelled(engine, name, model_details, Y), B, indicators)
-    return {"results": by_indicator, "independent": independent, "engine_s": time.perf_counter() - started}
+    Y_s, L_s = modelled(engine, name, model_details, Y)
+    by_indicator, independent = evaluate(engine, name, Y_s, L_s, B, indicators)
+    record = {"results": by_indicator, "independent": independent}
+    if detail:
+        record["detail"] = evaluate_detail(engine, name, Y_s, L_s, B, indicators, by_indicator)
+    del Y_s, L_s
+    return {**record, "engine_s": time.perf_counter() - started}
 
 
 def compute(engine, scenarios, indicators):
@@ -319,8 +443,14 @@ def compute(engine, scenarios, indicators):
     engine: load(name) -> array, apply_model(model_details, Y) -> (Y, L),
     by_region(indicator, Y, B, L) -> {region: value}, region_leaves ->
     {region: [country index]}, reference_validation(Y, B, L); optionally
-    scenario(name, model_details, indicators) -> record (the real engine runs
-    each scenario in a worker process and adds wall_s and peak_rss_bytes).
+    scenario(name, model_details, indicators, detail) -> record (the real engine
+    runs each scenario in a worker process and adds wall_s and peak_rss_bytes).
+
+    Optional detail (the real engine has it, a minimal fake need not):
+    by_country, by_sector_country, country_leaves and aggregate_members give
+    the 49 leaf regions and the sector x region cells for the baseline, the
+    original interventions and the control (grid cells keep the continental
+    aggregates only). A detail check that fails writes nothing.
 
     Run-level failures raise ValueError before anything is written: a failed
     Octave reference check (before any solve), a baseline that does not match
@@ -330,15 +460,18 @@ def compute(engine, scenarios, indicators):
     scenario is not in "results".
     """
     Y, B = engine.load("Y"), engine.load("B")
-    independent, results, failed, runs = [], {}, {}, {}
+    independent, results, failed, runs, details = [], {}, {}, {}, {}
+    detailed = hasattr(engine, "by_country")
 
-    def run_here(name, model_details, indicators):
-        return scenario_in_process(engine, name, model_details, indicators, Y, B)
+    def run_here(name, model_details, indicators, detail=False):
+        return scenario_in_process(engine, name, model_details, indicators, Y, B, detail)
 
-    def run_scenario(name, model_details):
+    def run_scenario(name, model_details, detail=False):
         """The engine's record for one scenario, with wall_s measured here unless the worker reports one."""
         started = time.perf_counter()
-        record = (getattr(engine, "scenario", None) or run_here)(name, model_details, indicators)
+        record = (getattr(engine, "scenario", None) or run_here)(name, model_details, indicators, detail)
+        if "detail" in record:
+            details[name] = record["detail"]
         return {"wall_s": time.perf_counter() - started, **record}
 
     # Baseline: the stored L, as a query without model_details uses it.
@@ -352,6 +485,8 @@ def compute(engine, scenarios, indicators):
         raise ValueError(
             f"verification failed (independent_by_region, baseline), nothing written: {baseline_independent}"
         )
+    if detailed:
+        details["baseline"] = evaluate_detail(engine, "baseline", Y, L, B, indicators, results["baseline"])
     del L
     gc.collect()
 
@@ -359,7 +494,7 @@ def compute(engine, scenarios, indicators):
         name = scenario["id"]
         started = time.perf_counter()
         try:
-            record = run_scenario(name, scenario["model_details"])
+            record = run_scenario(name, scenario["model_details"], detailed and "grid" not in scenario)
         except ValueError as e:
             failed[name] = str(e)
             runs[name] = {"status": "failed", "wall_s": time.perf_counter() - started}
@@ -385,7 +520,7 @@ def compute(engine, scenarios, indicators):
     # A 0% change through the modified-A path must reproduce the stored L.
     step = next(st for s in scenarios for st in s["model_details"] if st["consumedBy"] != [FINAL_CONSUMPTION])
     control_details = [dict(step, techChange=[0])]
-    control_record = run_scenario("zero_change_control", control_details)
+    control_record = run_scenario("zero_change_control", control_details, detailed)
     control = control_record["results"]
     independent.extend(control_record["independent"])
     runs["zero_change_control"] = {k: control_record.get(k) for k in ("wall_s", "engine_s", "peak_rss_bytes")}
@@ -422,7 +557,7 @@ def compute(engine, scenarios, indicators):
         "scenario_direction": direction,
         "published_passed_every_check": True,  # by construction: anything that failed is in "failed"
     }
-    return {
+    computed = {
         "scenarios": scenarios,
         "results": results,
         "failed": failed,
@@ -430,6 +565,33 @@ def compute(engine, scenarios, indicators):
         "checks": checks,
         "validation": validation,
     }
+    if detailed:
+        computed["detail"] = detail_of(details, results, indicators)
+    return computed
+
+
+def detail_of(details, results, indicators):
+    """The published runs' detail, their checks, and the flows of each change; raises if a check fails."""
+    shown = {n: d for n, d in details.items() if n in results or n == "zero_change_control"}
+    checks = {
+        k: [c for d in shown.values() for c in d["checks"][k]]
+        for k in ("independent_by_country", "aggregates", "sectors")
+    }
+    flows = {
+        name: {str(i): top_flows(details["baseline"]["cells"][str(i)], d["cells"][str(i)]) for i in indicators}
+        for name, d in shown.items()
+        if name not in ("baseline", "zero_change_control")
+    }
+    checks["flows"] = {
+        "passed": all(f["reconciled"] for by_i in flows.values() for f in by_i.values()),
+        "tolerance": "relative 1e-12",
+    }
+    failed = [k for k, v in checks.items() if not (v["passed"] if isinstance(v, dict) else all(t["passed"] for t in v))]
+    if failed:
+        raise ValueError(
+            f"detail verification failed ({', '.join(failed)}), nothing written: {json.dumps(checks, indent=1)}"
+        )
+    return {"countries": {n: d["countries"] for n, d in shown.items()}, "flows": flows, "checks": checks}
 
 
 def run_summary(runs, validation):
@@ -451,6 +613,14 @@ def run_summary(runs, validation):
     }
 
 
+BASELINE = {
+    "id": "baseline",
+    "label": f"Baseline ({YEAR}, no intervention)",
+    "description": f"EXIOBASE {YEAR} as stored, no intervention.",
+    "model_details": None,
+}
+
+
 def assemble(computed, indicators, provenance, peak_rss_bytes):
     results, failed = computed["results"], computed["failed"]
     published = [s for s in computed["scenarios"] if s["id"] in results]
@@ -463,15 +633,7 @@ def assemble(computed, indicators, provenance, peak_rss_bytes):
         "regions": list(next(iter(results["baseline"].values()))),
         "indicators": indicators,
         "grid": GRID,
-        "scenarios": [
-            {
-                "id": "baseline",
-                "label": f"Baseline ({YEAR}, no intervention)",
-                "description": f"EXIOBASE {YEAR} as stored, no intervention.",
-                "model_details": None,
-            },
-            *published,
-        ],
+        "scenarios": [BASELINE, *published],
         "failed": [{**s, "reason": failed[s["id"]]} for s in computed["scenarios"] if s["id"] in failed],
         "results": results,
         "runs": computed["runs"],
@@ -483,6 +645,62 @@ def assemble(computed, indicators, provenance, peak_rss_bytes):
             "parent_peak_rss_bytes": peak_rss_bytes,
             "peak_rss_bytes": max([peak_rss_bytes, *child_peaks]),
         },
+    }
+
+
+def detail_scenarios(computed):
+    """Baseline and the published scenarios that carry the 49-region detail."""
+    flows = computed["detail"]["flows"]
+    return [BASELINE, *(s for s in computed["scenarios"] if s["id"] in flows)]
+
+
+def sidecar_provenance(computed, provenance, peak_rss_bytes):
+    return {**provenance, "reference_validation": computed["validation"], "peak_rss_bytes": peak_rss_bytes}
+
+
+def assemble_regions(computed, indicators, country_meta, provenance, peak_rss_bytes):
+    """The 49-region breakdown, same route as results.json but not aggregated."""
+    detail, scenarios = computed["detail"], detail_scenarios(computed)
+    return {
+        "data_kind": "exiobase-v3",
+        "status": STATUS,
+        "base_year": YEAR,
+        "breakdown": "Region where the impact occurs (RaMa-Scene route three, Hotspot × Geographic), "
+        "the 49 EXIOBASE regions",
+        "regions": [c["name"] for c in country_meta],
+        "region_codes": {c["name"]: c["code"] for c in country_meta},
+        "aggregates": {
+            agg: [c["name"] for c in country_meta if c["aggregate"] == agg]
+            for agg in dict.fromkeys(c["aggregate"] for c in country_meta)
+        },
+        "indicators": indicators,
+        "scenarios": scenarios,
+        # the published runs only; the 0% control stays in the checks
+        "results": {s["id"]: detail["countries"][s["id"]] for s in scenarios},
+        "checks": {k: detail["checks"][k] for k in ("independent_by_country", "aggregates")},
+        "provenance": sidecar_provenance(computed, provenance, peak_rss_bytes),
+    }
+
+
+def assemble_flows(computed, indicators, sector_names, provenance, peak_rss_bytes):
+    """Sector -> region flows of the change, top cells named, the rest lumped."""
+    detail = computed["detail"]
+    return {
+        "data_kind": "exiobase-v3",
+        "status": STATUS,
+        "base_year": YEAR,
+        "breakdown": "Change (intervention minus baseline) per sector of production × region where the impact "
+        "occurs; RaMa-Scene route three (Hotspot × Geographic) run once per level-2 product aggregate over the "
+        "49 regions",
+        "method": f"The {TOP_FLOWS} cells with the largest |delta| are named; every other cell is added to the flow "
+        "between the named node on its side or 'Other sectors' / 'Other regions', so named plus other flows sum "
+        "to the total delta.",
+        "sectors": sector_names,
+        "indicators": indicators,
+        "scenarios": detail_scenarios(computed),
+        "results": detail["flows"],
+        "checks": {k: detail["checks"][k] for k in ("sectors", "flows")},
+        "provenance": sidecar_provenance(computed, provenance, peak_rss_bytes),
     }
 
 
@@ -728,8 +946,8 @@ def worker_scenario(engine_dir, data_dir):
     """scenario(name, model_details, indicators) that runs `precompute.py --worker`
     in a fresh process and returns its record plus wall_s and the worker's ru_maxrss."""
 
-    def scenario(name, model_details, indicators):
-        request = json.dumps({"name": name, "model_details": model_details, "indicators": indicators})
+    def scenario(name, model_details, indicators, detail=False):
+        request = json.dumps({"name": name, "model_details": model_details, "indicators": indicators, "detail": detail})
         command = [sys.executable, __file__, "--worker", "--engine", str(engine_dir), "--data", str(data_dir)]
         started = time.perf_counter()
         done = subprocess.run(command, input=request, capture_output=True, text=True, check=False)
@@ -753,20 +971,70 @@ def worker(engine_dir, data_dir):
     engine = real_engine()
     Y, B = qm.get_numpy_objects(YEAR, "Y"), qm.get_numpy_objects(YEAR, "B")
     try:
-        record = scenario_in_process(engine, request["name"], request["model_details"], request["indicators"], Y, B)
+        record = scenario_in_process(
+            engine, request["name"], request["model_details"], request["indicators"], Y, B, request.get("detail", False)
+        )
     except ValueError as e:
         record = {"error": str(e)}
     record["peak_rss_bytes"] = peak_rss_bytes()
     print(json.dumps(record, allow_nan=True))
 
 
+def by_country(indicator, Y, B, L):
+    """Where the impact occurs (route three), per leaf region, all products."""
+    selection = {
+        "dimType": "Hotspot",
+        "vizType": "Geographic",
+        "nodesSec": [1],
+        "nodesReg": list(COUNTRIES),
+        "extn": [indicator],
+        "year": YEAR,
+    }
+    return run_route(selection, Y, B, L)
+
+
+def by_sector_country(indicator, Y, B, L):
+    """Route three once per level-2 product aggregate: {sector: {leaf region: value}}."""
+    from ramascene import querymanagement as qm
+
+    out = {}
+    for sector, name in zip(SECTORS, qm.get_names_product(SECTORS)):
+        selection = {
+            "dimType": "Hotspot",
+            "vizType": "Geographic",
+            "nodesSec": [sector],
+            "nodesReg": list(COUNTRIES),
+            "extn": [indicator],
+            "year": YEAR,
+        }
+        out[name] = run_route(selection, Y, B, L)
+    return out
+
+
+def country_meta():
+    """The 49 leaf regions of the engine database: name, code, 0-based index, aggregate."""
+    from ramascene.models import Country
+
+    parents = {c.global_id: c.name for c in Country.objects.filter(global_id__in=REGIONS)}
+    rows = Country.objects.filter(global_id__in=COUNTRIES).order_by("local_id")
+    return [{"name": c.name, "code": c.code, "index": c.local_id - 1, "aggregate": parents[c.parent_id]} for c in rows]
+
+
 def real_engine(engine_dir=None, data_dir=None):
     from ramascene import querymanagement as qm
 
+    meta = country_meta()
     return types.SimpleNamespace(
         load=lambda name: qm.get_numpy_objects(YEAR, name),
         apply_model=apply_model,
         by_region=by_region,
+        by_country=by_country,
+        by_sector_country=by_sector_country,
+        country_leaves={c["name"]: [c["index"]] for c in meta},
+        aggregate_members={
+            agg: [c["name"] for c in meta if c["aggregate"] == agg]
+            for agg in dict.fromkeys(c["aggregate"] for c in meta)
+        },
         region_leaves=region_leaves(),
         reference_validation=reference_validation,
         scenario=worker_scenario(engine_dir, data_dir) if engine_dir else None,
@@ -791,6 +1059,8 @@ def main(argv=None):
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
     parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v4.npy")
     parser.add_argument("--out", type=Path, help="results JSON; data/run-log.md is written beside it")
+    parser.add_argument("--out-regions", type=Path, help="also write the 49-region breakdown here")
+    parser.add_argument("--out-flows", type=Path, help="also write the sector → region flows of the change here")
     parser.add_argument("--scenarios", choices=sorted(SCENARIO_SETS), default="all")
     parser.add_argument("--limit", type=int, help="only the first N scenarios of the set (smoke test)")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
@@ -810,14 +1080,23 @@ def main(argv=None):
         setup_django(args.engine.resolve(), args.data.resolve(), Path(tmp) / "db.sqlite3")
         engine = real_engine(args.engine.resolve(), args.data.resolve())
         computed = compute(engine, scenarios, INDICATORS)
-        output = assemble(
-            computed,
-            indicator_meta(INDICATORS),
-            collect_provenance(args.engine, args.data, argv),
-            peak_rss_bytes(),
-        )
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(output, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
+        indicators = indicator_meta(INDICATORS)
+        provenance = collect_provenance(args.engine, args.data, argv)
+        peak = peak_rss_bytes()
+        output = assemble(computed, indicators, provenance, peak)
+        sidecars = {}
+        if args.out_regions:
+            sidecars[args.out_regions] = assemble_regions(computed, indicators, country_meta(), provenance, peak)
+        if args.out_flows:
+            from ramascene import querymanagement as qm
+
+            names = qm.get_names_product(SECTORS)
+            sidecars[args.out_flows] = assemble_flows(computed, indicators, names, provenance, peak)
+    for path, doc in {args.out: output, **sidecars}.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
+    for path in sidecars:
+        print(f"{path}: data_kind={sidecars[path]['data_kind']}, {len(sidecars[path]['scenarios'])} runs with detail")
     (args.out.parent / "run-log.md").write_text(run_log(output))
     r = output["provenance"]["run"]
     print(
