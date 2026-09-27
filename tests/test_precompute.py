@@ -474,3 +474,43 @@ def test_a_worker_that_prints_nothing_fails_its_scenario_not_the_run(monkeypatch
     scenario = precompute.worker_scenario("engine", "data")
     with pytest.raises(ValueError, match="scenario s1"):
         scenario("s1", [], [1])
+
+
+def test_cli_refuses_to_write_when_the_engine_checkout_moves_during_the_run(tmp_path, monkeypatch, capsys):
+    engine_dir, out = git_repo(tmp_path / "engine"), tmp_path / "data" / "results.json"
+    engine = fake_engine()
+    apply_model = engine.apply_model
+
+    def apply_model_then_commit(model_details, Y_in):
+        # another checkout of the engine lands mid-run: later workers would run other code
+        git = ["git", "-C", str(engine_dir), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "moved"], check=True)
+        return apply_model(model_details, Y_in)
+
+    engine.apply_model = apply_model_then_commit
+    monkeypatch.setattr(precompute, "setup_django", lambda *a: None)
+    monkeypatch.setattr(precompute, "real_engine", lambda *a: engine)
+    monkeypatch.setattr(precompute, "INDICATORS", INDICATORS)
+    monkeypatch.setattr(precompute, "indicator_meta", lambda i: INDICATOR_META)
+    monkeypatch.setattr(
+        precompute,
+        "collect_provenance",
+        lambda e, d, argv: {**PROVENANCE, "engine": precompute.engine_revision(e)},
+    )
+    with pytest.raises(SystemExit) as exit_info:
+        precompute.main(
+            [
+                "--run",
+                "--engine",
+                str(engine_dir),
+                "--data",
+                str(tmp_path),
+                "--out",
+                str(out),
+                "--scenarios",
+                "original",
+            ]
+        )
+    assert exit_info.value.code != 0
+    assert "engine checkout changed" in capsys.readouterr().err
+    assert not out.exists()

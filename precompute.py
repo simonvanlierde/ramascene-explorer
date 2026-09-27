@@ -1104,7 +1104,8 @@ def main(argv=None):
         parser.error("--out is required")
     if not args.run:
         parser.error("refusing to start the full-size engine (about 1.6 GB peak per scenario) without --run")
-    if engine_revision(args.engine)["commit"] is None:
+    revision = engine_revision(args.engine)
+    if revision["commit"] is None:
         parser.error(
             f"refusing to run: {args.engine} is not the top of a git checkout, so the output could not "
             "record an engine commit"
@@ -1117,6 +1118,14 @@ def main(argv=None):
         computed = compute(engine, scenarios, INDICATORS)
         indicators = indicator_meta(INDICATORS)
         provenance = collect_provenance(args.engine, args.data, argv)
+        # every worker imports the engine afresh: a checkout that moved (or got
+        # uncommitted changes) mid-run mixed code the provenance cannot name
+        if provenance["engine"] != revision:
+            now = provenance["engine"]
+            parser.error(
+                "refusing to write: the engine checkout changed during the run, from "
+                f"{revision['label']} (dirty {revision['dirty']}) to {now['label']} (dirty {now['dirty']})"
+            )
         peak = peak_rss_bytes()
         output = assemble(computed, indicators, provenance, peak)
         sidecars = {}

@@ -69,7 +69,9 @@ The engine branch and commit are recorded in the output
 `--engine` must be the top of a git checkout with a commit: the script
 refuses to start otherwise (a copy without `.git`, or a directory inside some
 other repository), so no output can claim `exiobase-v3` without naming its
-engine. The shipped files were produced with the fork branch
+engine. If the checkout's commit or dirty state changes during the run, it
+writes nothing, as the workers would have run code the provenance cannot name.
+The shipped files were produced with the fork branch
 `perf/solve-not-invert` (checkout `../ramascene-pr2`, clean tree), whose
 `apply_model` returns a `LeontiefSolve` that solves `(I − A) x = y` instead of
 forming the inverse. That branch is not published; which engine version to
