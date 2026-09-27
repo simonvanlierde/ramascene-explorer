@@ -229,8 +229,10 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
     """
     countries = sum(len(c) for c in region_leaves.values())
     per_country = (B[indicator - 1] * L.dot(Y.sum(axis=1))).reshape(countries, -1).sum(axis=1)
+    # a region the engine did not return is recorded as None: NaN would stop the
+    # final json.dumps(allow_nan=False) and lose the whole run
     regions = {
-        region: {"engine": engine_values.get(region, math.nan), "direct": math.fsum(per_country[leaves])}
+        region: {"engine": engine_values.get(region), "direct": math.fsum(per_country[leaves])}
         for region, leaves in region_leaves.items()
     }
     return {

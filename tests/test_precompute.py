@@ -449,3 +449,21 @@ def test_engine_remote_is_recorded_only_when_it_is_not_a_local_path():
     for public in ("https://github.com/UM-Sustainability/ramascene.git", "git@github.com:x/ramascene.git"):
         assert precompute.public_remote(public) == public
     assert precompute.public_remote(None) is None
+
+
+def test_a_scenario_missing_a_region_is_recorded_as_failed_and_the_output_still_serialises():
+    engine = fake_engine()
+    by_region = engine.by_region
+
+    def drop_r2_in_one_scenario(indicator, Y_in, B_in, L_in):
+        values = by_region(indicator, Y_in, B_in, L_in)
+        if engine.live["current"] == "cement-in-construction":
+            del values["R2"]
+        return values
+
+    engine.by_region = drop_r2_in_one_scenario
+    computed = run(engine)
+    assert "independent_by_region" in computed["failed"]["cement-in-construction"]
+    doc = precompute.assemble(computed, INDICATOR_META, dict(PROVENANCE), peak_rss_bytes=1)
+    json.dumps(doc, allow_nan=False)  # the writer's call: a NaN here would lose the whole run
+
