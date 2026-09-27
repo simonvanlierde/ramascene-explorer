@@ -228,7 +228,9 @@ def compute(engine, scenarios, indicators):
         gc.collect()
 
     # A 0% change through the modified-A path must reproduce the stored L.
-    step = next(st for s in scenarios for st in s["model_details"] if st["consumedBy"] != [FINAL_CONSUMPTION])
+    step = next((st for s in scenarios for st in s["model_details"] if st["consumedBy"] != [FINAL_CONSUMPTION]), None)
+    if step is None:
+        raise ValueError("zero_change_control needs at least one scenario that changes technical coefficients")
     control_details = [dict(step, techChange=[0])]
     control = run("zero_change_control", *modelled(engine, "zero_change_control", control_details, Y))
     gc.collect()
@@ -322,16 +324,21 @@ def public_remote(url):
 
 
 def public_command(argv):
-    """The command line, with the dataset directory as "$DATASETS_DIR", not a local path."""
-    words, after_data = [], False
+    """The command line, with the dataset directory as "$DATASETS_DIR" and an absolute
+    engine path as "$ENGINE_DIR", so no local path reaches the page."""
+    words, previous = [], None
     for a in argv:
-        if after_data:
+        if previous == "--data":
             words.append('"$DATASETS_DIR"')
+        elif previous == "--engine" and a.startswith(("/", "~")):
+            words.append('"$ENGINE_DIR"')
         elif a.startswith("--data="):
             words.append('--data="$DATASETS_DIR"')
+        elif a.startswith(("--engine=/", "--engine=~")):
+            words.append('--engine="$ENGINE_DIR"')
         else:
             words.append(shlex.quote(a))
-        after_data = a == "--data"
+        previous = a
     return " ".join(["uv run python precompute.py", *words])
 
 
