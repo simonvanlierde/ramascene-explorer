@@ -228,8 +228,9 @@
   </section>
 
   <div id="empty" hidden>
-    <p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
-    <pre>uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" --out data/results.json</pre>
+    <p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> (with <code>data/regions.json</code> for the map and <code>data/flows.json</code> for the Sankey), which only a run of the engine on the EXIOBASE dataset produces:</p>
+    <pre>uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" \
+    --out data/results.json --out-regions data/regions.json --out-flows data/flows.json</pre>
     <p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
   </div>
 </main>
