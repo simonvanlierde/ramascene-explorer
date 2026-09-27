@@ -107,3 +107,76 @@ export function headline(indicator, deltaTotal, baseTotal) {
 	const p = baseTotal ? (100 * deltaTotal) / baseTotal : null;
 	return `Summed over all regions, ${indicator.name} changes by ${signed(deltaTotal, indicator.unit)} ${indicator.unit} (${fmtPct(p)}).`;
 }
+
+// --- material-efficiency grid --------------------------------------------------
+
+export const gridScenarioId = (product, region, cut) =>
+	`${product}-${region}-${Math.abs(cut)}`;
+
+// The scenario picker: the non-grid interventions, then one entry per grid
+// product (value "grid:<slug>"); region and cut are chosen separately.
+export function scenarioMenu(data) {
+	const published = data.scenarios.filter((s) => s.id !== "baseline");
+	return {
+		interventions: published
+			.filter((s) => !s.grid)
+			.map((s) => ({ value: s.id, label: s.label })),
+		grid: (data.grid?.products ?? [])
+			.filter((p) => published.some((s) => s.grid?.product === p.slug))
+			.map((p) => ({ value: `grid:${p.slug}`, label: p.short })),
+	};
+}
+
+// The picker values that show a scenario: a grid cell gives its product,
+// region and cut; anything else gives the scenario itself and the first grid
+// region and cut as defaults, so switching to the grid lands somewhere.
+export function pickerState(data, scenarioId) {
+	const scenario = data.scenarios.find((s) => s.id === scenarioId);
+	const first = data.scenarios.find((s) => s.grid)?.grid;
+	if (scenario?.grid) {
+		return {
+			scenario: `grid:${scenario.grid.product}`,
+			region: scenario.grid.region,
+			cut: String(scenario.grid.cut),
+		};
+	}
+	return {
+		scenario: scenarioId,
+		region: first?.region ?? "",
+		cut: first ? String(first.cut) : "",
+	};
+}
+
+// What the pickers point at: {id} for a published scenario, {failed} with the
+// recorded reason for an excluded one, {missing: true} for a cell never run.
+export function lookupGrid(data, picker) {
+	if (!picker.scenario.startsWith("grid:")) return { id: picker.scenario };
+	const id = gridScenarioId(
+		picker.scenario.slice(5),
+		picker.region,
+		Number(picker.cut),
+	);
+	if (data.results[id]) return { id };
+	const failed = (data.failed ?? []).find((f) => f.id === id);
+	return failed ? { id, failed: failed.reason } : { id, missing: true };
+}
+
+const fmtSeconds = (s) => `${s.toFixed(1)} s`;
+const fmtGiB = (b) => `${(b / 2 ** 30).toFixed(2)} GiB`;
+
+// One line on the run: counts, wall and peak RSS, from provenance.run.
+export function runSummary(run) {
+	if (!run) return "";
+	const parts = [
+		`${run.scenarios_run} scenarios run, ${run.passed} passed every check, ${run.failed} failed (excluded)`,
+	];
+	if (run.wall_s)
+		parts.push(
+			`wall per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`,
+		);
+	if (run.peak_rss_bytes)
+		parts.push(
+			`peak RSS per worker median ${fmtGiB(run.peak_rss_bytes.median)}, max ${fmtGiB(run.peak_rss_bytes.max)}`,
+		);
+	return parts.join(" · ");
+}

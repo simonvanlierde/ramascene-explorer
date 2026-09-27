@@ -200,3 +200,78 @@ test("a shipped data file is real engine output, never synthetic", () => {
 		"exiobase-v3",
 	);
 });
+
+// --- material-efficiency grid --------------------------------------------------
+
+import {
+	gridScenarioId,
+	lookupGrid,
+	pickerState,
+	runSummary,
+	scenarioMenu,
+} from "../explorer.js";
+
+test("grid ids are product-region-cut with the cut unsigned", () => {
+	assert.equal(gridScenarioId("steel", "europe", -10), "steel-europe-10");
+	assert.equal(gridScenarioId("cement", "asia-pacific", 50), "cement-asia-pacific-50");
+});
+
+test("the scenario menu lists the originals, then one entry per grid product that has a published cell", () => {
+	const menu = scenarioMenu(data);
+	assert.deepEqual(
+		menu.interventions.map((o) => o.value),
+		["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"],
+	);
+	assert.deepEqual(
+		menu.grid.map((o) => o.value),
+		["grid:steel", "grid:cement"],
+	); // no published plastics/aluminium/electrical cell in the fixture
+	assert.equal(menu.grid[0].label, "Basic iron and steel");
+	assert.deepEqual(scenarioMenu({ scenarios: data.scenarios.slice(0, 2) }).grid, []);
+});
+
+test("a grid scenario sets all three pickers; an original keeps the grid defaults", () => {
+	assert.deepEqual(pickerState(data, "steel-africa-20"), {
+		scenario: "grid:steel",
+		region: "africa",
+		cut: "-20",
+	});
+	assert.deepEqual(pickerState(data, "cement-in-construction"), {
+		scenario: "cement-in-construction",
+		region: "europe",
+		cut: "-10",
+	});
+});
+
+test("the pickers resolve to a published cell, an excluded one with its reason, or nothing", () => {
+	assert.deepEqual(
+		lookupGrid(data, { scenario: "grid:steel", region: "europe", cut: "-50" }),
+		{ id: "steel-europe-50" },
+	);
+	assert.deepEqual(
+		lookupGrid(data, { scenario: "cement-in-construction", region: "x", cut: "0" }),
+		{ id: "cement-in-construction" },
+	);
+	const excluded = lookupGrid(data, { scenario: "grid:steel", region: "america", cut: "-50" });
+	assert.equal(excluded.id, "steel-america-50");
+	assert.match(excluded.failed, /excluded after a failed check/);
+	assert.deepEqual(
+		lookupGrid(data, { scenario: "grid:steel", region: "america", cut: "-10" }),
+		{ id: "steel-america-10", missing: true },
+	);
+});
+
+test("the run summary reads counts, wall and RSS from the provenance", () => {
+	assert.equal(runSummary(undefined), "");
+	assert.equal(
+		runSummary({
+			scenarios_run: 78,
+			passed: 77,
+			failed: 1,
+			wall_s: { median: 9.2, max: 10.94 },
+			peak_rss_bytes: { median: 1650000000, max: 1660000000 },
+		}),
+		"78 scenarios run, 77 passed every check, 1 failed (excluded) · wall per scenario job median 9.2 s, max 10.9 s · peak RSS per worker median 1.54 GiB, max 1.55 GiB",
+	);
+	assert.equal(runSummary({ scenarios_run: 3, passed: 3, failed: 0 }), "3 scenarios run, 3 passed every check, 0 failed (excluded)");
+});
