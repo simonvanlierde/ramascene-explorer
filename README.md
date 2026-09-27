@@ -43,6 +43,11 @@ The engine commit and branch are recorded in the output. The branch of
 branch or the published RaMa-Scene repository) is the author's decision and
 is not made here.
 
+The committed files come from two engine commits: `data/results.json` from
+`perf/numerics-cleanup` 35009dd, `data/regions.json` and `data/flows.json` from
+`perf/solve-not-invert` a258e63 (same EXIOBASE matrices, same sha256). Their
+scenario totals agree to a relative 5e-11.
+
 ```sh
 uv run python precompute.py --run --engine ../ramascene-review --data "$DATASETS_DIR" --out data/results.json
 ```
