@@ -7,9 +7,9 @@ nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
 `data/results.json`, `data/regions.json` and `data/flows.json` are the output
-of one precompute run (engine `perf/solve-not-invert @ a258e63`, 2026-09-27;
+of one precompute run (engine `perf/lu-reuse-solve-order @ f876faa`, 2026-09-27;
 see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 14 min 43 s wall, 1,621,380 KiB (1.66 GB, 1.55 GiB) maximum RSS). Each file's `provenance` block records the engine
+output of that run: 3 min 12 s wall, 941,524 KiB (0.96 GB, 0.90 GiB) maximum RSS). Each file's `provenance` block records the engine
 commit, the dataset checksums, the command and the run time, and the three
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
@@ -65,27 +65,49 @@ files, and `v4` is the file suffix, not the dataset version. The matrices are
 float64.
 
 The engine branch and commit are recorded in the output
-(`provenance.engine.label`, for example `perf/solve-not-invert @ a258e63`).
+(`provenance.engine.label`, for example `perf/lu-reuse-solve-order @ f876faa`),
+with the solver in `provenance.engine.solver`.
 `--engine` must be the top of a git checkout with a commit: the script
 refuses to start otherwise (a copy without `.git`, or a directory inside some
 other repository), so no output can claim `exiobase-v3` without naming its
 engine. If the checkout's commit or dirty state changes during the run, it
 writes nothing, as the workers would have run code the provenance cannot name.
 The shipped files were produced with the fork branch
-`perf/solve-not-invert` (checkout `../ramascene-pr2`, clean tree), whose
-`apply_model` returns a `LeontiefSolve` that solves `(I − A) x = y` instead of
-forming the inverse. That branch is not published; which engine version to
-cite is the author's decision and is not made here.
+`perf/lu-reuse-solve-order` (checkout `../ramascene-c-lu-grid`, clean tree),
+on top of `perf/lu-reuse` and `perf/solve-not-invert`. With an engine that
+has `LeontiefLU`, `precompute.py` passes it to `Modelling`: each modified `A`
+is factorized once, and the three routes and the per-region checks of that
+scenario solve from the same factors instead of factorizing again on every
+`L.dot` (`LeontiefSolve`). No two scenarios share an `A`, so the reuse is
+within a scenario. `LeontiefLU` on that branch factorizes `(I − A)` itself, as
+`np.linalg.solve` does, so the output is the same, bit for bit, as with
+`perf/solve-not-invert` (below). With any other engine, `Modelling` keeps its
+default. None of these branches is published; which engine version to cite is
+the author's decision and is not made here.
+
+Same grid (78 scenarios), same machine, one run at a time, each under
+`flock /tmp/interview-heavy.lock /usr/bin/time -v`:
+
+| engine | wall | max RSS | CPU |
+| --- | --- | --- | --- |
+| `perf/solve-not-invert @ a258e63` | 15 min 43 s | 1,621,328 KiB (1.55 GiB) | 2620% |
+| `perf/lu-reuse-solve-order @ f876faa` | 3 min 12 s | 941,524 KiB (0.90 GiB) | 2159% |
+
+`uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
+value by value (every number in the three files, except provenance, run
+timings and check residuals; relative 1e-12 by default). Between the two runs
+above the largest difference is 0.
 
 ```sh
-uv run python precompute.py --run --engine ../ramascene-pr2 --data "$DATASETS_DIR" \
+uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data "$DATASETS_DIR" \
     --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
 # subsets: --scenarios original|grid, --limit N
 ```
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix: about 1.66 GB (1.55 GiB) peak per worker in the
-shipped run, with the solving engine. The inverting engine peaked at 3.97 GB
+dense 9800 × 9800 matrix: about 0.96 GB (0.90 GiB) peak per worker in the
+shipped run, with the LU engine (1.66 GB, 1.55 GiB, with `perf/solve-not-invert`,
+whose `np.linalg.solve` copies the matrix). The inverting engine peaked at 3.97 GB
 per job, as measured in the solve-not-invert pull request description. Each
 scenario runs in a fresh worker process (`precompute.py --worker`, one at a
 time), so its wall time and peak RSS (`ru_maxrss`) are that process's, the
@@ -156,7 +178,7 @@ Malta is below the 1:110m threshold and appears only in the table.
 
 ```sh
 uv run pytest                                           # everything below except the engine adapter
-uv run pytest --engine=../ramascene-pr2                 # adds the real-engine adapter checks (768 MB)
+uv run pytest --engine=../ramascene-c-lu-grid           # adds the real-engine adapter checks (768 MB)
 node --test                                             # the page logic
 ```
 
@@ -165,6 +187,8 @@ node --test                                             # the page logic
 | `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
 | `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
 | `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
+| `tests/test_solver.py` | `apply_model` passes the engine's `LeontiefLU` when it has one and no solver argument otherwise; the solver in the provenance and run log |
+| `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
 | `tests/test_engine_plumbing.py` | the real engine adapter (ids, labels, region leaves, route three against B·L·ΣY), only with `--engine` |
 | `tests/explorer.test.js` | URL state, `?data=` whitelist, banner, per-region comparison, axis ticks, number format, grid menu and pickers, run summary |
 | `tests/map.test.js` | the 49-region table over the five aggregates, country-to-region mapping, Equal Earth projection, aggregate fallback, colour classes, `?region=` round trip |

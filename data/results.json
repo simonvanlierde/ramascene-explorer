@@ -5239,476 +5239,476 @@
  "runs": {
   "vehicle-demand-europe": {
    "status": "passed",
-   "wall_s": 1.3983560670021689,
-   "engine_s": 1.220033418998355,
-   "peak_rss_bytes": 894726144
+   "wall_s": 1.3352658649964724,
+   "engine_s": 1.1725869969814084,
+   "peak_rss_bytes": 895324160
   },
   "steel-in-vehicles-europe": {
    "status": "passed",
-   "wall_s": 21.72335193400795,
-   "engine_s": 21.383514492001268,
-   "peak_rss_bytes": 1657782272
+   "wall_s": 3.074503217008896,
+   "engine_s": 2.7649388349964283,
+   "peak_rss_bytes": 962641920
   },
   "cement-in-construction": {
    "status": "passed",
-   "wall_s": 21.599355929007288,
-   "engine_s": 21.351717408004333,
-   "peak_rss_bytes": 1659797504
+   "wall_s": 3.5490054090041667,
+   "engine_s": 3.0953105950029567,
+   "peak_rss_bytes": 962404352
   },
   "steel-europe-10": {
    "status": "passed",
-   "wall_s": 10.994217081999523,
-   "engine_s": 10.784407031998853,
-   "peak_rss_bytes": 1659064320
+   "wall_s": 1.902816376008559,
+   "engine_s": 1.6427242089994252,
+   "peak_rss_bytes": 963768320
   },
   "steel-europe-20": {
    "status": "passed",
-   "wall_s": 10.65485549600271,
-   "engine_s": 10.33982502699655,
-   "peak_rss_bytes": 1657954304
+   "wall_s": 2.096201373002259,
+   "engine_s": 1.790611461008666,
+   "peak_rss_bytes": 964022272
   },
   "steel-europe-50": {
    "status": "passed",
-   "wall_s": 12.437737797998125,
-   "engine_s": 12.244413569002063,
-   "peak_rss_bytes": 1657917440
+   "wall_s": 2.863893912988715,
+   "engine_s": 2.5848693620064296,
+   "peak_rss_bytes": 963743744
   },
   "steel-middle-east-10": {
    "status": "passed",
-   "wall_s": 12.560538955993252,
-   "engine_s": 12.381392179988325,
-   "peak_rss_bytes": 1657995264
+   "wall_s": 2.0117662890115753,
+   "engine_s": 1.77026761698653,
+   "peak_rss_bytes": 962809856
   },
   "steel-middle-east-20": {
    "status": "passed",
-   "wall_s": 9.298235324997222,
-   "engine_s": 9.014842559001409,
-   "peak_rss_bytes": 1657634816
+   "wall_s": 2.1724947770126164,
+   "engine_s": 1.8076372249925043,
+   "peak_rss_bytes": 962674688
   },
   "steel-middle-east-50": {
    "status": "passed",
-   "wall_s": 9.127736145004747,
-   "engine_s": 8.895660145004513,
-   "peak_rss_bytes": 1657303040
+   "wall_s": 3.809334775985917,
+   "engine_s": 3.3547230619878974,
+   "peak_rss_bytes": 962265088
   },
   "steel-america-10": {
    "status": "passed",
-   "wall_s": 12.189185732990154,
-   "engine_s": 11.94062504399335,
-   "peak_rss_bytes": 1659817984
+   "wall_s": 2.4247501959907822,
+   "engine_s": 2.0210906249994878,
+   "peak_rss_bytes": 963248128
   },
   "steel-america-20": {
    "status": "passed",
-   "wall_s": 9.981325057990034,
-   "engine_s": 9.672458069006098,
-   "peak_rss_bytes": 1658429440
+   "wall_s": 4.587466775003122,
+   "engine_s": 4.293280004989356,
+   "peak_rss_bytes": 963416064
   },
   "steel-america-50": {
    "status": "passed",
-   "wall_s": 11.290875147009501,
-   "engine_s": 10.879369622009108,
-   "peak_rss_bytes": 1658212352
+   "wall_s": 1.9247841720061842,
+   "engine_s": 1.7260104150045663,
+   "peak_rss_bytes": 962781184
   },
   "steel-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 11.061223398006405,
-   "engine_s": 10.876360750000458,
-   "peak_rss_bytes": 1657856000
+   "wall_s": 1.9931394749728497,
+   "engine_s": 1.765874138014624,
+   "peak_rss_bytes": 963584000
   },
   "steel-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 9.439022630002,
-   "engine_s": 9.189102844989975,
-   "peak_rss_bytes": 1658077184
+   "wall_s": 2.53056301001925,
+   "engine_s": 2.2641804199956823,
+   "peak_rss_bytes": 963997696
   },
   "steel-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 11.492967779995524,
-   "engine_s": 11.276213662000373,
-   "peak_rss_bytes": 1659191296
+   "wall_s": 2.019388191984035,
+   "engine_s": 1.7468148669868242,
+   "peak_rss_bytes": 963944448
   },
   "steel-africa-10": {
    "status": "passed",
-   "wall_s": 12.120389179006452,
-   "engine_s": 11.901899746997515,
-   "peak_rss_bytes": 1658187776
+   "wall_s": 2.2656214220041875,
+   "engine_s": 2.0879430559871253,
+   "peak_rss_bytes": 963379200
   },
   "steel-africa-20": {
    "status": "passed",
-   "wall_s": 11.273274397011846,
-   "engine_s": 11.033525521997944,
-   "peak_rss_bytes": 1658404864
+   "wall_s": 2.040698547993088,
+   "engine_s": 1.696646641008556,
+   "peak_rss_bytes": 962228224
   },
   "steel-africa-50": {
    "status": "passed",
-   "wall_s": 9.566036656004144,
-   "engine_s": 9.31741093400342,
-   "peak_rss_bytes": 1658605568
+   "wall_s": 3.169877957989229,
+   "engine_s": 2.845945100998506,
+   "peak_rss_bytes": 962523136
   },
   "aluminium-europe-10": {
    "status": "passed",
-   "wall_s": 9.473719215995516,
-   "engine_s": 9.165219119997346,
-   "peak_rss_bytes": 1658253312
+   "wall_s": 1.9311108610127121,
+   "engine_s": 1.734573683992494,
+   "peak_rss_bytes": 963919872
   },
   "aluminium-europe-20": {
    "status": "passed",
-   "wall_s": 8.973673833999783,
-   "engine_s": 8.661650285997894,
-   "peak_rss_bytes": 1657384960
+   "wall_s": 1.8139623469905928,
+   "engine_s": 1.6052630030026194,
+   "peak_rss_bytes": 963964928
   },
   "aluminium-europe-50": {
    "status": "passed",
-   "wall_s": 11.736604883000837,
-   "engine_s": 11.477831873999094,
-   "peak_rss_bytes": 1657970688
+   "wall_s": 2.0449514310166705,
+   "engine_s": 1.7456809479917865,
+   "peak_rss_bytes": 963899392
   },
   "aluminium-middle-east-10": {
    "status": "passed",
-   "wall_s": 9.392692895009532,
-   "engine_s": 8.967821148995426,
-   "peak_rss_bytes": 1657991168
+   "wall_s": 2.0000049519876484,
+   "engine_s": 1.6606575080077164,
+   "peak_rss_bytes": 962699264
   },
   "aluminium-middle-east-20": {
    "status": "passed",
-   "wall_s": 10.010214591005933,
-   "engine_s": 9.764098368003033,
-   "peak_rss_bytes": 1657872384
+   "wall_s": 1.8835174959967844,
+   "engine_s": 1.662993305013515,
+   "peak_rss_bytes": 963088384
   },
   "aluminium-middle-east-50": {
    "status": "passed",
-   "wall_s": 10.749429917996167,
-   "engine_s": 10.495641027999227,
-   "peak_rss_bytes": 1658101760
+   "wall_s": 3.497922575013945,
+   "engine_s": 3.198032473010244,
+   "peak_rss_bytes": 962740224
   },
   "aluminium-america-10": {
    "status": "passed",
-   "wall_s": 9.221377202993608,
-   "engine_s": 8.89446422101173,
-   "peak_rss_bytes": 1658322944
+   "wall_s": 3.7407331120048184,
+   "engine_s": 3.564342133991886,
+   "peak_rss_bytes": 963846144
   },
   "aluminium-america-20": {
    "status": "passed",
-   "wall_s": 9.074115591996815,
-   "engine_s": 8.799057057010941,
-   "peak_rss_bytes": 1658703872
+   "wall_s": 1.9303281219908968,
+   "engine_s": 1.6210103330085985,
+   "peak_rss_bytes": 963715072
   },
   "aluminium-america-50": {
    "status": "passed",
-   "wall_s": 9.792658118007239,
-   "engine_s": 9.46578759100521,
-   "peak_rss_bytes": 1658122240
+   "wall_s": 1.939980683993781,
+   "engine_s": 1.6225824900029693,
+   "peak_rss_bytes": 963309568
   },
   "aluminium-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 12.313093568009208,
-   "engine_s": 12.121838630991988,
-   "peak_rss_bytes": 1658712064
+   "wall_s": 2.00053215000662,
+   "engine_s": 1.7168219120067079,
+   "peak_rss_bytes": 963878912
   },
   "aluminium-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 9.971768763003638,
-   "engine_s": 9.697095919997082,
-   "peak_rss_bytes": 1658134528
+   "wall_s": 3.4658102880057413,
+   "engine_s": 3.1513280000071973,
+   "peak_rss_bytes": 963747840
   },
   "aluminium-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 9.018295347996172,
-   "engine_s": 8.743093836994376,
-   "peak_rss_bytes": 1659035648
+   "wall_s": 3.5927035660133697,
+   "engine_s": 3.3301161769777536,
+   "peak_rss_bytes": 963334144
   },
   "aluminium-africa-10": {
    "status": "passed",
-   "wall_s": 9.393392261990812,
-   "engine_s": 8.930636409990257,
-   "peak_rss_bytes": 1656922112
+   "wall_s": 1.9113182629807852,
+   "engine_s": 1.732034989981912,
+   "peak_rss_bytes": 963063808
   },
   "aluminium-africa-20": {
    "status": "passed",
-   "wall_s": 10.783438032012782,
-   "engine_s": 10.465757682002732,
-   "peak_rss_bytes": 1658179584
+   "wall_s": 2.145810315007111,
+   "engine_s": 1.693424485012656,
+   "peak_rss_bytes": 962609152
   },
   "aluminium-africa-50": {
    "status": "passed",
-   "wall_s": 10.32935435998661,
-   "engine_s": 10.120403626002371,
-   "peak_rss_bytes": 1657585664
+   "wall_s": 4.064819416002138,
+   "engine_s": 3.7081953460001387,
+   "peak_rss_bytes": 962592768
   },
   "cement-europe-10": {
    "status": "passed",
-   "wall_s": 12.30089813900122,
-   "engine_s": 12.034423114993842,
-   "peak_rss_bytes": 1659101184
+   "wall_s": 2.67240583000239,
+   "engine_s": 2.342311386979418,
+   "peak_rss_bytes": 963727360
   },
   "cement-europe-20": {
    "status": "passed",
-   "wall_s": 14.541632502994617,
-   "engine_s": 14.330822934003663,
-   "peak_rss_bytes": 1658269696
+   "wall_s": 2.9428440460178535,
+   "engine_s": 2.439128950005397,
+   "peak_rss_bytes": 963526656
   },
   "cement-europe-50": {
    "status": "passed",
-   "wall_s": 15.682374137002626,
-   "engine_s": 15.474020590991131,
-   "peak_rss_bytes": 1659875328
+   "wall_s": 2.980686719005462,
+   "engine_s": 2.7472296229971107,
+   "peak_rss_bytes": 963866624
   },
   "cement-middle-east-10": {
    "status": "passed",
-   "wall_s": 12.909787741999025,
-   "engine_s": 12.685649523002212,
-   "peak_rss_bytes": 1657901056
+   "wall_s": 2.0526666779769585,
+   "engine_s": 1.6351070610107854,
+   "peak_rss_bytes": 962605056
   },
   "cement-middle-east-20": {
    "status": "passed",
-   "wall_s": 10.816138943002443,
-   "engine_s": 10.564780065004015,
-   "peak_rss_bytes": 1657487360
+   "wall_s": 2.0569273279979825,
+   "engine_s": 1.7339193479856476,
+   "peak_rss_bytes": 963289088
   },
   "cement-middle-east-50": {
    "status": "passed",
-   "wall_s": 8.976959357998567,
-   "engine_s": 8.620788085012464,
-   "peak_rss_bytes": 1657380864
+   "wall_s": 2.0176715580164455,
+   "engine_s": 1.6969672720006201,
+   "peak_rss_bytes": 962699264
   },
   "cement-america-10": {
    "status": "passed",
-   "wall_s": 9.932677799006342,
-   "engine_s": 9.46826909999072,
-   "peak_rss_bytes": 1658400768
+   "wall_s": 1.959275791014079,
+   "engine_s": 1.6056040419789497,
+   "peak_rss_bytes": 963813376
   },
   "cement-america-20": {
    "status": "passed",
-   "wall_s": 10.289450629003113,
-   "engine_s": 10.014094001991907,
-   "peak_rss_bytes": 1658089472
+   "wall_s": 2.0301455720036756,
+   "engine_s": 1.648388002999127,
+   "peak_rss_bytes": 963366912
   },
   "cement-america-50": {
    "status": "passed",
-   "wall_s": 10.689638078009011,
-   "engine_s": 10.359551451998414,
-   "peak_rss_bytes": 1658867712
+   "wall_s": 2.130796615994768,
+   "engine_s": 1.8324288099829573,
+   "peak_rss_bytes": 963149824
   },
   "cement-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 10.718933067008038,
-   "engine_s": 10.50830319900706,
-   "peak_rss_bytes": 1660293120
+   "wall_s": 2.8612950620008633,
+   "engine_s": 2.6328762549965177,
+   "peak_rss_bytes": 963772416
   },
   "cement-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 12.42522194198682,
-   "engine_s": 12.186375524004688,
-   "peak_rss_bytes": 1658953728
+   "wall_s": 2.0143622269970365,
+   "engine_s": 1.674269168986939,
+   "peak_rss_bytes": 963219456
   },
   "cement-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 8.93460223999864,
-   "engine_s": 8.757163488000515,
-   "peak_rss_bytes": 1657880576
+   "wall_s": 2.0278699419868644,
+   "engine_s": 1.7246983170043677,
+   "peak_rss_bytes": 963014656
   },
   "cement-africa-10": {
    "status": "passed",
-   "wall_s": 9.201102648003143,
-   "engine_s": 8.986156836006558,
-   "peak_rss_bytes": 1657405440
+   "wall_s": 2.0238629009982105,
+   "engine_s": 1.8234715500148013,
+   "peak_rss_bytes": 962568192
   },
   "cement-africa-20": {
    "status": "passed",
-   "wall_s": 10.430142379002064,
-   "engine_s": 10.143674651990295,
-   "peak_rss_bytes": 1657921536
+   "wall_s": 2.9157954929978587,
+   "engine_s": 2.4836350480036344,
+   "peak_rss_bytes": 962187264
   },
   "cement-africa-50": {
    "status": "passed",
-   "wall_s": 11.19502402699436,
-   "engine_s": 10.881439660006436,
-   "peak_rss_bytes": 1657962496
+   "wall_s": 2.3622602359973826,
+   "engine_s": 2.0625278989900835,
+   "peak_rss_bytes": 962842624
   },
   "plastics-europe-10": {
    "status": "passed",
-   "wall_s": 12.56349312698876,
-   "engine_s": 12.185939763992792,
-   "peak_rss_bytes": 1658060800
+   "wall_s": 1.7910166830115486,
+   "engine_s": 1.6145567930070683,
+   "peak_rss_bytes": 963817472
   },
   "plastics-europe-20": {
    "status": "passed",
-   "wall_s": 13.343994316004682,
-   "engine_s": 13.090031668994925,
-   "peak_rss_bytes": 1658339328
+   "wall_s": 2.2865585160034243,
+   "engine_s": 1.9142976879957132,
+   "peak_rss_bytes": 963952640
   },
   "plastics-europe-50": {
    "status": "passed",
-   "wall_s": 13.23649085899524,
-   "engine_s": 12.809866947995033,
-   "peak_rss_bytes": 1657823232
+   "wall_s": 1.977277486003004,
+   "engine_s": 1.6766944019764196,
+   "peak_rss_bytes": 963932160
   },
   "plastics-middle-east-10": {
    "status": "passed",
-   "wall_s": 10.344332215987379,
-   "engine_s": 9.952241926992428,
-   "peak_rss_bytes": 1657278464
+   "wall_s": 1.9261090279906057,
+   "engine_s": 1.6070223370043095,
+   "peak_rss_bytes": 963051520
   },
   "plastics-middle-east-20": {
    "status": "passed",
-   "wall_s": 13.224944462010171,
-   "engine_s": 12.960383418001584,
-   "peak_rss_bytes": 1657999360
+   "wall_s": 2.119556960009504,
+   "engine_s": 1.8058374529937282,
+   "peak_rss_bytes": 963350528
   },
   "plastics-middle-east-50": {
    "status": "passed",
-   "wall_s": 11.199178267997922,
-   "engine_s": 10.882148473989218,
-   "peak_rss_bytes": 1658306560
+   "wall_s": 2.2748391479835846,
+   "engine_s": 1.8473694889980834,
+   "peak_rss_bytes": 962265088
   },
   "plastics-america-10": {
    "status": "passed",
-   "wall_s": 11.891148020993569,
-   "engine_s": 11.696127624993096,
-   "peak_rss_bytes": 1659625472
+   "wall_s": 1.9396022679866292,
+   "engine_s": 1.6907585689914413,
+   "peak_rss_bytes": 963547136
   },
   "plastics-america-20": {
    "status": "passed",
-   "wall_s": 11.234498777004774,
-   "engine_s": 11.035870544990757,
-   "peak_rss_bytes": 1658339328
+   "wall_s": 1.9694016430003103,
+   "engine_s": 1.6896907920017838,
+   "peak_rss_bytes": 964018176
   },
   "plastics-america-50": {
    "status": "passed",
-   "wall_s": 10.791483615001198,
-   "engine_s": 10.469535507989349,
-   "peak_rss_bytes": 1658359808
+   "wall_s": 2.0150495849957224,
+   "engine_s": 1.8055334989912808,
+   "peak_rss_bytes": 963260416
   },
   "plastics-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 13.02406171700568,
-   "engine_s": 12.73399885398976,
-   "peak_rss_bytes": 1658884096
+   "wall_s": 2.0772648450220004,
+   "engine_s": 1.7306951229984406,
+   "peak_rss_bytes": 963244032
   },
   "plastics-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 12.407194557003095,
-   "engine_s": 12.177172352996422,
-   "peak_rss_bytes": 1658707968
+   "wall_s": 1.9319267149840016,
+   "engine_s": 1.620532113010995,
+   "peak_rss_bytes": 963362816
   },
   "plastics-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 10.178550376003841,
-   "engine_s": 9.977644621001673,
-   "peak_rss_bytes": 1658986496
+   "wall_s": 1.9741887820127886,
+   "engine_s": 1.694224077014951,
+   "peak_rss_bytes": 964120576
   },
   "plastics-africa-10": {
    "status": "passed",
-   "wall_s": 10.031490042994847,
-   "engine_s": 9.764415412995731,
-   "peak_rss_bytes": 1657966592
+   "wall_s": 1.9894568619783968,
+   "engine_s": 1.6714515509956982,
+   "peak_rss_bytes": 962932736
   },
   "plastics-africa-20": {
    "status": "passed",
-   "wall_s": 9.124795499999891,
-   "engine_s": 8.914626111989492,
-   "peak_rss_bytes": 1657573376
+   "wall_s": 1.920983010000782,
+   "engine_s": 1.7437179219850805,
+   "peak_rss_bytes": 963035136
   },
   "plastics-africa-50": {
    "status": "passed",
-   "wall_s": 13.837537544997758,
-   "engine_s": 13.545012760005193,
-   "peak_rss_bytes": 1657819136
+   "wall_s": 2.1314074080146383,
+   "engine_s": 1.6882928700069897,
+   "peak_rss_bytes": 962801664
   },
   "electrical-europe-10": {
    "status": "passed",
-   "wall_s": 11.740610797001864,
-   "engine_s": 11.440089940995676,
-   "peak_rss_bytes": 1658011648
+   "wall_s": 2.9239234470005613,
+   "engine_s": 2.623425411991775,
+   "peak_rss_bytes": 963846144
   },
   "electrical-europe-20": {
    "status": "passed",
-   "wall_s": 11.833303191000596,
-   "engine_s": 11.388312978000613,
-   "peak_rss_bytes": 1658228736
+   "wall_s": 3.0589649280009326,
+   "engine_s": 2.6062437139917165,
+   "peak_rss_bytes": 963129344
   },
   "electrical-europe-50": {
    "status": "passed",
-   "wall_s": 13.775741989011294,
-   "engine_s": 13.255415289007942,
-   "peak_rss_bytes": 1659551744
+   "wall_s": 3.310780716012232,
+   "engine_s": 3.0400278119777795,
+   "peak_rss_bytes": 963936256
   },
   "electrical-middle-east-10": {
    "status": "passed",
-   "wall_s": 10.545255955992616,
-   "engine_s": 10.171080725995125,
-   "peak_rss_bytes": 1657118720
+   "wall_s": 2.3160311029932927,
+   "engine_s": 1.8736464829999022,
+   "peak_rss_bytes": 962392064
   },
   "electrical-middle-east-20": {
    "status": "passed",
-   "wall_s": 10.00851882599818,
-   "engine_s": 9.783178528989083,
-   "peak_rss_bytes": 1657303040
+   "wall_s": 1.914184255991131,
+   "engine_s": 1.618963750981493,
+   "peak_rss_bytes": 963055616
   },
   "electrical-middle-east-50": {
    "status": "passed",
-   "wall_s": 10.007208149996586,
-   "engine_s": 9.786380965000717,
-   "peak_rss_bytes": 1656922112
+   "wall_s": 2.043673715001205,
+   "engine_s": 1.7904495020047761,
+   "peak_rss_bytes": 962736128
   },
   "electrical-america-10": {
    "status": "passed",
-   "wall_s": 11.368991102004657,
-   "engine_s": 11.175102153996704,
-   "peak_rss_bytes": 1657757696
+   "wall_s": 1.8731960170262028,
+   "engine_s": 1.6953363710199483,
+   "peak_rss_bytes": 963854336
   },
   "electrical-america-20": {
    "status": "passed",
-   "wall_s": 12.131325577996904,
-   "engine_s": 11.811019042012049,
-   "peak_rss_bytes": 1659850752
+   "wall_s": 2.0095390530186705,
+   "engine_s": 1.7123905869957525,
+   "peak_rss_bytes": 963424256
   },
   "electrical-america-50": {
    "status": "passed",
-   "wall_s": 12.156260928997654,
-   "engine_s": 11.760071976998006,
-   "peak_rss_bytes": 1658159104
+   "wall_s": 3.118716372002382,
+   "engine_s": 2.7684546299860813,
+   "peak_rss_bytes": 963829760
   },
   "electrical-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 9.877242828006274,
-   "engine_s": 9.610506827986683,
-   "peak_rss_bytes": 1658830848
+   "wall_s": 2.2297678159957286,
+   "engine_s": 1.7347175090108067,
+   "peak_rss_bytes": 962961408
   },
   "electrical-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 9.520379501002026,
-   "engine_s": 9.19255984800111,
-   "peak_rss_bytes": 1658028032
+   "wall_s": 2.465905852004653,
+   "engine_s": 2.2869933230103925,
+   "peak_rss_bytes": 963993600
   },
   "electrical-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 9.15376670700789,
-   "engine_s": 8.95034118599142,
-   "peak_rss_bytes": 1658511360
+   "wall_s": 2.030395816982491,
+   "engine_s": 1.7312650280073285,
+   "peak_rss_bytes": 963133440
   },
   "electrical-africa-10": {
    "status": "passed",
-   "wall_s": 9.658421833999455,
-   "engine_s": 9.362996373994974,
-   "peak_rss_bytes": 1658212352
+   "wall_s": 2.6188162569887936,
+   "engine_s": 2.1933573379938025,
+   "peak_rss_bytes": 962539520
   },
   "electrical-africa-20": {
    "status": "passed",
-   "wall_s": 9.486851056004525,
-   "engine_s": 9.225980832998175,
-   "peak_rss_bytes": 1657393152
+   "wall_s": 1.9708289889968,
+   "engine_s": 1.7364782629883848,
+   "peak_rss_bytes": 963092480
   },
   "electrical-africa-50": {
    "status": "passed",
-   "wall_s": 11.263516908991733,
-   "engine_s": 11.045444770003087,
-   "peak_rss_bytes": 1657753600
+   "wall_s": 2.7826923110114876,
+   "engine_s": 2.3891004379838705,
+   "peak_rss_bytes": 962113536
   },
   "zero_change_control": {
-   "wall_s": 12.90924707299564,
-   "engine_s": 12.502308437004103,
-   "peak_rss_bytes": 1658048512
+   "wall_s": 3.1018380759924185,
+   "engine_s": 2.8734277279872913,
+   "peak_rss_bytes": 963022848
   }
  },
  "checks": {
@@ -12309,10 +12309,11 @@
  "provenance": {
   "engine": {
    "repository": null,
-   "branch": "perf/solve-not-invert",
-   "commit": "a258e63f38d326a8dbcad9527d4cbb7b0f4af583",
-   "label": "perf/solve-not-invert @ a258e63",
-   "dirty": false
+   "branch": "perf/lu-reuse-solve-order",
+   "commit": "f876faa779bac9299da356f421faac0bd75f1347",
+   "label": "perf/lu-reuse-solve-order @ f876faa",
+   "dirty": false,
+   "solver": "LeontiefLU"
   },
   "dataset": {
    "name": "EXIOBASE v3.3.sm",
@@ -12333,8 +12334,8 @@
     "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
    }
   },
-  "command": "uv run python precompute.py --run --engine ../ramascene-pr2 --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
-  "generated_at": "2026-09-27T10:04:04+00:00",
+  "command": "uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
+  "generated_at": "2026-09-27T16:48:15+00:00",
   "python": "3.14.7",
   "numpy": "2.5.3",
   "django": "5.2.17",
@@ -12365,25 +12366,25 @@
    "passed": 78,
    "failed": 0,
    "wall_s": {
-    "median": 10.766433975004475,
-    "max": 21.72335193400795,
+    "median": 2.0547970029874705,
+    "max": 4.587466775003122,
     "n": 78,
-    "total": 866.4476856760448
+    "total": 185.77599890803685
    },
    "engine_s": {
-    "median": 10.482588267994288,
-    "max": 21.383514492001268,
+    "median": 1.756344502500724,
+    "max": 4.293280004989356,
     "n": 78
    },
    "peak_rss_bytes": {
-    "median": 1658112000.0,
-    "max": 1660293120,
+    "median": 963254272.0,
+    "max": 964120576,
     "n": 78
    },
    "octave_reference_files": 4,
    "octave_reference_values": 122
   },
-  "parent_peak_rss_bytes": 894726144,
-  "peak_rss_bytes": 1660293120
+  "parent_peak_rss_bytes": 895324160,
+  "peak_rss_bytes": 964120576
  }
 }
