@@ -33,7 +33,7 @@
       color-scheme: dark;
       --surface: #111416; --surface-2: #1a1e21; --hair: #343a3f; --rule: #e9ecee;
       --text: #eef1f2; --text-2: #c3c9cd; --muted: #9ca5ab;
-      --band: #1f262b; --band-text: #f3f4f4; --band-2: #aeb7bd;
+      --band: #07090a; --band-text: #f3f4f4; --band-2: #aeb7bd;
       --decrease: #4d92f0; --increase: #f06a68; --danger: #ff8f86;
       --grid: #262b2f; --axis: #7a8288; --mark: #e27ddc; --focus: #e27ddc;
       --map-neutral: #2f3539; --map-nodata: #111416; --map-edge: #111416; --hatch: rgba(238,241,242,.55);
@@ -43,7 +43,7 @@
     color-scheme: dark;
     --surface: #111416; --surface-2: #1a1e21; --hair: #343a3f; --rule: #e9ecee;
     --text: #eef1f2; --text-2: #c3c9cd; --muted: #9ca5ab;
-    --band: #1f262b; --band-text: #f3f4f4; --band-2: #aeb7bd;
+    --band: #07090a; --band-text: #f3f4f4; --band-2: #aeb7bd;
     --decrease: #4d92f0; --increase: #f06a68; --danger: #ff8f86;
     --grid: #262b2f; --axis: #7a8288; --mark: #e27ddc; --focus: #e27ddc;
     --map-neutral: #2f3539; --map-nodata: #111416; --map-edge: #111416; --hatch: rgba(238,241,242,.55);
@@ -66,12 +66,13 @@
   .banner { position: sticky; top: 0; z-index: 20; background: var(--danger-bg); color: var(--danger-text);
             font: 700 1.25rem/1.25 "Barlow Semi Condensed", system-ui, sans-serif; letter-spacing: .02em;
             text-align: center; padding: 12px 16px; }
+  body.synthetic .plate { padding-top: 44px; }
   body.synthetic .plate::before { content: "Synthetic test data"; position: absolute; top: 10px; right: 12px; z-index: 1;
             font: 700 .8125rem/1 "Barlow Semi Condensed", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em;
             color: var(--danger); border: 1.5px solid var(--danger); padding: 4px 6px; background: var(--surface); }
 
   /* title band */
-  header.band { background: var(--band); color: var(--band-text); padding: 40px 0 28px; }
+  header.band { background: var(--band); color: var(--band-text); padding: 40px 0 28px; border-bottom: 1px solid var(--hair); }
   h1 { font-size: 2.75rem; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; margin: 0 0 14px; text-wrap: balance; }
   .lede { margin: 0; max-width: 37em; font-size: 1.125rem; color: var(--band-text); text-wrap: pretty; }
   .about { margin-top: 14px; max-width: 40em; color: var(--band-2); }
@@ -81,12 +82,14 @@
   .about dd { margin: 0; }
   .about p { margin: 10px 0 0; font-size: 1rem; }
   @media (max-width: 560px) {
-    header.band { padding: 22px 0 16px; }
-    .about { margin-top: 8px; }
+    header.band { padding: 16px 0 6px; }
+    .about { margin-top: 2px; }
+    .about summary { padding-block: 11px; }
     .controls { padding: 14px 0; gap: 10px; }
-    .result-head { padding-top: 20px; }
-    h1 { font-size: 2.125rem; margin-bottom: 10px; }
-    .lede { font-size: 1rem; }
+    .result-head { padding-top: 16px; }
+    .controls label { gap: 2px; }
+    h1 { font-size: 1.875rem; margin-bottom: 8px; }
+    .lede { font-size: .9375rem; line-height: 1.42; }
     .about dl { grid-template-columns: 1fr; gap: 0; } .about dt { margin-top: 8px; }
   }
 
@@ -100,8 +103,8 @@
   .titleblock .fail { grid-column: 1 / -1; padding: 8px 0; }
   /* phones: the title block packs into two dense columns so the result still reaches the first screen */
   @media (max-width: 560px) {
-    .titleblock { grid-template-columns: 1fr 1fr; gap: 0 12px; padding: 6px 0; }
-    .cell { padding: 4px 0; border-right: 0; font-size: .9375rem; line-height: 1.3; }
+    .titleblock { grid-template-columns: 1fr 1fr; gap: 0 12px; padding: 4px 0; }
+    .cell { padding: 3px 0; border-right: 0; font-size: .9375rem; line-height: 1.25; }
     .cell + .cell { padding-left: 0; }
     .cell:first-child { grid-column: 1 / -1; }
     .cell dt { font-size: .8125rem; }
@@ -111,6 +114,9 @@
   .controls { display: flex; flex-wrap: wrap; align-items: end; gap: 14px 20px; padding: 20px 0; border-bottom: 1px solid var(--hair); }
   .controls label { display: grid; gap: 4px; font-size: 1rem; font-weight: 600; }
   .controls .pick-scenario { flex: 3 1 22rem; }
+  /* the select clips a long name on a phone; the full name is repeated under it */
+  .scenario-name { display: none; font: 500 .9375rem/1.3 "Barlow", system-ui, sans-serif; color: var(--text-2); }
+  @media (max-width: 560px) { .scenario-name { display: block; } }
   .controls .pick-indicator { flex: 2 1 16rem; }
   .grid-controls { display: contents; }
   .grid-controls[hidden] { display: none; }
@@ -125,9 +131,10 @@
   @media (min-width: 960px) { .result-head { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; } }
   .big { margin: 0; font-size: 4.25rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
   .big .unit { font-size: 1.75rem; font-weight: 600; letter-spacing: 0; margin-left: .15em; }
-  .big .sign-down { color: var(--decrease); } .big .sign-up { color: var(--increase); }
   .headline { font-size: 1.125rem; font-weight: 500; margin: 14px 0 10px; max-width: 46ch; }
-  .scenario-text { color: var(--text-2); margin: 0; max-width: 46ch; }
+  .declaration { margin: 18px 0 0; padding-top: 10px; border-top: 2px solid var(--rule); max-width: 46ch; }
+  .declaration dt { font: 600 .875rem "Barlow Semi Condensed", system-ui, sans-serif; color: var(--muted); }
+  .declaration dd { margin: 2px 0 0; font-size: 1.125rem; font-weight: 500; }
   @media (max-width: 560px) { .big { font-size: 3.25rem; } .big .unit { font-size: 1.375rem; } }
 
   /* plates: every chart sits in one, and colour stays inside them */
@@ -220,7 +227,9 @@
   #provenance dd { margin: 0; overflow-wrap: anywhere; }
   @media (max-width: 560px) { #provenance { grid-template-columns: 1fr; gap: 2px; } #provenance dt { margin-top: 10px; } }
 
-  footer { color: var(--muted); font-size: .9375rem; margin: 40px 0 0; padding: 14px 0 40px; border-top: 1px solid var(--hair); }
+  footer { margin: 48px 0 0; padding: 0 0 40px; }
+  .colophon { border-top: 2px solid var(--rule); border-bottom: 1px solid var(--hair); }
+  .colophon a { text-decoration-color: var(--axis); display: inline-block; padding-block: 13px; margin-block: -13px; }
 
   /* live panel: only shown with ?api= (live.js) */
   #live { border: 2px dashed var(--axis); padding: 18px; margin-top: 48px; }
@@ -268,7 +277,7 @@
 
   <div id="app" hidden>
     <div class="controls" role="group" aria-label="Selection">
-      <label class="pick-scenario" for="scenario">Intervention, compared with the 2011 baseline <select id="scenario"></select></label>
+      <label class="pick-scenario" for="scenario">Intervention, compared with the 2011 baseline <select id="scenario" aria-describedby="scenario-name"></select><span class="scenario-name" id="scenario-name"></span></label>
       <div class="grid-controls" id="grid-controls">
         <label for="region">Region that uses less <select id="region"></select></label>
         <label for="cut">Cut <select id="cut"></select></label>
@@ -281,7 +290,7 @@
         <div>
           <p class="big" id="big" aria-hidden="true"></p>
           <p class="headline" id="headline"></p>
-          <p class="scenario-text" id="scenario-text"></p>
+          <dl class="declaration"><dt>Declared change</dt><dd id="scenario-text"></dd></dl>
         </div>
         <figure class="plate">
           <svg id="chart" role="img" aria-labelledby="headline" aria-describedby="caption"></svg>
@@ -341,7 +350,7 @@
         <dl id="provenance"></dl>
       </details>
     </section>
-    <footer id="footer"></footer>
+    <footer><div class="titleblock colophon" id="footer"></div></footer>
   </div>
 
   <section id="live" aria-labelledby="live-title" hidden>
@@ -469,6 +478,7 @@ function render(state) {
   // the pickers may point at an excluded or never-run cell; state holds the last published one
   const target = lookupGrid(data, picker);
   $("scenario").value = picker.scenario;
+  $("scenario-name").textContent = $("scenario").selectedOptions[0]?.textContent ?? "";
   $("region").value = picker.region;
   $("cut").value = picker.cut;
   $("indicator").value = state.indicator;
@@ -498,7 +508,7 @@ function render(state) {
   $("headline").textContent = headline(indicator, deltaTotal, baseTotal);
   const big = $("big");
   big.replaceChildren(
-    el("span", { class: deltaTotal < 0 ? "sign-down" : deltaTotal > 0 ? "sign-up" : "" }, signed(deltaTotal, indicator.unit)),
+    el("span", {}, signed(deltaTotal, indicator.unit)),
     el("span", { class: "unit" }, indicator.unit),
   );
   $("scenario-text").textContent = scenario.description;
@@ -636,7 +646,15 @@ function renderProvenance(scenario) {
     (direction.rise_check_skipped_indicators.length ? ` (rise check skipped for indicators ${direction.rise_check_skipped_indicators.join(", ")}).` : "."));
   if (run) check(!run.failed, runSummary(run) + ".", run.failed ? `${run.failed} excluded` : "Passed");
   item("Runtime", `Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? (p.peak_rss_bytes / 2 ** 30).toFixed(2) + " GiB" : "—"}`);
-  $("footer").textContent = `Precomputed from RaMa-Scene ${/^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : e.commit} on ${d.name}, ${d.year}.`;
+  // the colophon: only values the run recorded
+  const colophon = [cell("Engine commit", /^[0-9a-f]{40}$/.test(e.commit) ? e.commit.slice(0, 12) : String(e.commit))];
+  if (d.doi) {
+    const doi = cell("Dataset DOI", "");
+    doi.querySelector("dd").append(el("a", { href: `https://doi.org/${d.doi}` }, d.doi));
+    colophon.push(doi);
+  }
+  if (p.generated_at) colophon.push(cell("Generated", p.generated_at));
+  $("footer").replaceChildren(...colophon);
 }
 </script>
 <script type="module">
