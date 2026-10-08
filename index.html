@@ -654,6 +654,9 @@ function renderProvenance(scenario) {
     colophon.push(doi);
   }
   if (p.generated_at) colophon.push(cell("Generated", p.generated_at));
+  const author = cell("Built by", "Simon van Lierde · ");
+  author.querySelector("dd").append(el("a", { href: "https://github.com/simonvanlierde/ramascene-explorer" }, "source"));
+  colophon.push(author);
   $("footer").replaceChildren(...colophon);
 }
 </script>
