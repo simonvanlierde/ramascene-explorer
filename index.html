@@ -142,6 +142,7 @@
   .plate { position: relative; border: 1px solid var(--hair); padding: 18px 20px 16px; background: var(--surface); }
   @media (max-width: 560px) { .plate { padding: 14px 12px 12px; margin-inline: -4px; } }
   figcaption { color: var(--text-2); font-size: .9375rem; margin-top: 12px; max-width: 42em; }
+  .fig-no { font: 600 .9375rem "Barlow Semi Condensed", system-ui, sans-serif; color: var(--text); margin-right: .25em; }
   .source { color: var(--muted); font-size: .875rem; margin: 6px 0 0; max-width: 45em; }
 
   section.part { margin-top: 48px; }
@@ -294,7 +295,7 @@
         </div>
         <figure class="plate">
           <svg id="chart" role="img" aria-labelledby="headline" aria-describedby="caption"></svg>
-          <figcaption id="caption"></figcaption>
+          <figcaption><b class="fig-no">Fig. 1</b> <span id="caption"></span></figcaption>
         </figure>
       </div>
       <details class="more">
@@ -304,7 +305,7 @@
 
       <section class="part" id="map-section" aria-labelledby="map-heading" hidden>
         <h2 id="map-heading">Where the change occurs, by EXIOBASE region</h2>
-        <p class="part-lede">The same change at finer grain: each of the 49 regions as a percentage of its own 2011 baseline.</p>
+        <p class="part-lede">The change in Fig. 1 at finer grain: each of the 49 regions as a percentage of its own 2011 baseline.</p>
         <div class="map-controls">
           <label for="map-region">Highlight a region <select id="map-region"></select></label>
           <button type="button" class="replay" id="replay">Animate from the baseline</button>
@@ -313,7 +314,7 @@
           <svg id="map" role="img" aria-labelledby="map-heading" aria-describedby="map-caption"></svg>
           <div id="map-tip" class="tip" hidden></div>
           <div id="map-legend" class="legend" role="group" aria-label="Map legend"></div>
-          <figcaption id="map-caption"></figcaption>
+          <figcaption><b class="fig-no">Fig. 2</b> <span id="map-caption"></span></figcaption>
           <p class="source" id="map-source"></p>
         </figure>
         <details class="more table-fallback">
@@ -331,7 +332,7 @@
             <span class="legend-item" id="sankey-decrease"><span class="swatch decrease"></span><span>decrease</span></span>
             <span class="legend-item" id="sankey-increase"><span class="swatch increase"></span><span>increase</span></span>
           </div></div>
-          <figcaption id="sankey-caption"></figcaption>
+          <figcaption><b class="fig-no">Fig. 3</b> <span id="sankey-caption"></span></figcaption>
           <p class="source" id="sankey-source"></p>
         </figure>
         <details class="more table-fallback">

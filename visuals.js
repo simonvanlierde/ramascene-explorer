@@ -131,7 +131,7 @@ export function renderMap(ctx) {
 		`${scenario.label}${ctx.baselineView ? " (showing the baseline: no change)" : ""}. ` +
 		(view.level === "region"
 			? "44 EXIOBASE countries and 5 rest-of-world aggregates; a hatched area is one of those aggregates, so all its countries share one value. "
-			: "This scenario has no 49-region breakdown here, so every country shows its continental aggregate (all hatched). ") +
+			: "This scenario has no 49-region breakdown here, so every country shows its continental aggregate, as in Fig. 1 (all hatched). ") +
 		"The countries in each rest-of-world aggregate follow Natural Earth continents. EXIOBASE's own list may differ at the edges (Greenland, the Caucasus, Central Asia). " +
 		"Malta is too small to draw at this scale; N. Cyprus is not assigned. Values for every region are in the table below the map.";
 	$("map-source").textContent = detailed
