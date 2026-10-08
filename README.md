@@ -140,9 +140,13 @@ total change. precompute.py writes nothing unless the flows sum to the
 total (relative 1e-12), the sectors sum to each region's value, and each
 region matches B·L·ΣY (relative 1e-9). It is a production-side decomposition
 of where the change lands, not a structural path analysis through the tiers
-of the supply chain. "Replay from the baseline" animates the map and the
+of the supply chain. "Animate from the baseline" animates the map and the
 bands from no change to the intervention (instant under
 `prefers-reduced-motion`).
+
+`fonts/` holds Barlow and Barlow Semi Condensed (SIL Open Font License 1.1,
+`fonts/OFL.txt`), the latin subset as Google Fonts serves it, self-hosted so
+the page loads nothing from a third party.
 
 `geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
 **v5.1.2** (public domain), from
@@ -180,7 +184,9 @@ Any static server, for example `python3 -m http.server`, then open
 `http://localhost:8000/?scenario=steel-in-vehicles-europe&indicator=5` or
 `?scenario=steel-europe-20&indicator=7`.
 Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
-selection lives in the query string, so a view is shareable.
+selection lives in the query string, so a view is shareable. GHG emissions
+and metal-ore extraction are shown in megatonnes (the data holds kg CO2 eq
+and kt), employment in persons (the data holds thousands of persons).
 
 ## Live scenarios (optional)
 
@@ -192,8 +198,8 @@ result is compared with the baseline computed in the same job and labelled
 commit, dataset, the job's duration and peak memory.
 
 Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
-and the page fetches only its own files (`data/*.json` and the map
-geometry), so the static build stays static. The
+and the page fetches only its own files (`data/*.json`, the map
+geometry and the fonts), so the static build stays static. The
 parameter accepts a bare origin, `http://` only on loopback (a local run or an
 SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
 the status line.
