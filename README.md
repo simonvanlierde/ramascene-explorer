@@ -238,3 +238,20 @@ python3 -m http.server 8000
 ```
 
 `live.js` holds the logic (`node --test` covers it); `live-panel.js` the DOM.
+
+## Licence
+
+The code is under the MIT licence (`LICENSE`), © 2026 Simon van Lierde.
+
+The result files in `data/` are computed from **EXIOBASE v3.3.sm** by Franco
+Donati and Arjan de Koning (Zenodo, version V1, 2019-11-08,
+[doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)), which
+the Zenodo record publishes under
+[Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+The results are a changed version of that dataset: each file holds scenario
+totals computed from its matrices, not the matrices themselves. They are
+shared under CC BY 4.0 too. Reuse them with credit to EXIOBASE v3.3.sm and
+its authors, as above, and say that they were changed.
+
+The fonts and the map geometry keep their own terms, given above (SIL Open
+Font License 1.1; Natural Earth, public domain).
