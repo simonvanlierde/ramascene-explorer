@@ -14,8 +14,7 @@ import {
 	regionValues,
 } from "../map.js";
 
-const read = (path) =>
-	JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const topo = read("../geo/countries-110m.topo.json");
 const features = decodeTopology(topo, "countries");
 const fixture = read("./fixture.json");
@@ -24,8 +23,7 @@ test("the region table has the 49 EXIOBASE regions over the five aggregates", ()
 	assert.equal(EXIOBASE_REGIONS.length, 49);
 	assert.equal(new Set(EXIOBASE_REGIONS.map((r) => r.code)).size, 49);
 	const counts = {};
-	for (const r of EXIOBASE_REGIONS)
-		counts[r.aggregate] = (counts[r.aggregate] ?? 0) + 1;
+	for (const r of EXIOBASE_REGIONS) counts[r.aggregate] = (counts[r.aggregate] ?? 0) + 1;
 	// as db.sqlite3 leaf_children_local lists them
 	assert.deepEqual(counts, {
 		Europe: 32,
@@ -37,15 +35,11 @@ test("the region table has the 49 EXIOBASE regions over the five aggregates", ()
 });
 
 test("every drawn country maps to a region, except the one it names as unassigned", () => {
-	const unassigned = features
-		.filter((f) => regionForIso(f.iso) === null)
-		.map((f) => f.name);
+	const unassigned = features.filter((f) => regionForIso(f.iso) === null).map((f) => f.name);
 	assert.deepEqual(unassigned, ["N. Cyprus"]);
 	// every named region but Malta (too small for 1:110m) is drawn
 	const drawn = new Set(features.map((f) => regionForIso(f.iso)));
-	const missing = EXIOBASE_REGIONS.filter((r) => !drawn.has(r.code)).map(
-		(r) => r.code,
-	);
+	const missing = EXIOBASE_REGIONS.filter((r) => !drawn.has(r.code)).map((r) => r.code);
 	assert.deepEqual(missing, ["MT"]);
 });
 
@@ -59,9 +53,7 @@ test("a named country is itself, a rest-of country its aggregate", () => {
 	// no country is in two rest-of lists, and none is a named region
 	const listed = Object.values(REST_OF).flatMap((l) => l.split(" "));
 	assert.equal(new Set(listed).size, listed.length);
-	assert.ok(
-		listed.every((iso) => !EXIOBASE_REGIONS.some((r) => r.code === iso)),
-	);
+	assert.ok(listed.every((iso) => !EXIOBASE_REGIONS.some((r) => r.code === iso)));
 });
 
 test("Equal Earth puts the origin at 0 and is symmetric", () => {
@@ -88,9 +80,7 @@ test("five-aggregate results colour every code by its aggregate", () => {
 	const out = regionValues(fixture, state);
 	assert.equal(out.level, "aggregate");
 	assert.equal(Object.keys(out.values).length, 49);
-	const europe =
-		fixture.results[state.scenario]["5"].Europe -
-		fixture.results.baseline["5"].Europe;
+	const europe = fixture.results[state.scenario]["5"].Europe - fixture.results.baseline["5"].Europe;
 	assert.equal(out.values.DE.delta, europe);
 	assert.equal(out.values.WE.delta, europe);
 	assert.equal(out.values.DE.name, "Europe (aggregate)");
@@ -98,8 +88,7 @@ test("five-aggregate results colour every code by its aggregate", () => {
 
 test("49-region results are read per region, and a missing scenario gives null", () => {
 	const names = EXIOBASE_REGIONS.map((r) => r.name);
-	const values = (k) =>
-		Object.fromEntries(names.map((n, i) => [n, k * (i + 1)]));
+	const values = (k) => Object.fromEntries(names.map((n, i) => [n, k * (i + 1)]));
 	const data = {
 		regions: names,
 		results: { baseline: { 5: values(10) }, s: { 5: values(9) } },

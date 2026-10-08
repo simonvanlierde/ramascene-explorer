@@ -6,9 +6,7 @@ const SAFE_DATA = /^[\w-]+(\/[\w.-]+)*\.json$/;
 
 export function dataUrl(search) {
 	const path = new URLSearchParams(search).get("data");
-	return path && SAFE_DATA.test(path) && !path.split("/").includes("..")
-		? path
-		: DEFAULT_DATA;
+	return path && SAFE_DATA.test(path) && !path.split("/").includes("..") ? path : DEFAULT_DATA;
 }
 
 // The ?data= value dataUrl refused, for the status line; null if none was refused.
@@ -19,9 +17,7 @@ export function ignoredData(search) {
 
 export function parseState(search, data) {
 	const params = new URLSearchParams(search);
-	const interventions = data.scenarios
-		.map((s) => s.id)
-		.filter((id) => id !== "baseline");
+	const interventions = data.scenarios.map((s) => s.id).filter((id) => id !== "baseline");
 	const indicators = data.indicators.map((i) => String(i.id));
 	const scenario = params.get("scenario");
 	const indicator = params.get("indicator");
@@ -127,8 +123,7 @@ const grouped = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
 // Negative values take a true minus sign (U+2212), as the legend and the cut
 // picker do; Intl writes a hyphen-minus.
 const minus = (text) => text.replace("-", "\u2212");
-export const formatValue = (v, unit) =>
-	minus((SCALED.has(unit) ? grouped : compact).format(v));
+export const formatValue = (v, unit) => minus((SCALED.has(unit) ? grouped : compact).format(v));
 export const signed = (v, unit) => (v > 0 ? "+" : "") + formatValue(v, unit);
 
 const pct = new Intl.NumberFormat("en", {
@@ -142,25 +137,20 @@ export function headline(indicator, deltaTotal, baseTotal) {
 	const p = baseTotal ? (100 * deltaTotal) / baseTotal : null;
 	const short = indicator.short ?? indicator.name;
 	// "Employment" reads "employment" mid-sentence; an acronym (GHG) keeps its case
-	const name = /^.[a-z]/.test(short)
-		? short[0].toLowerCase() + short.slice(1)
-		: short;
+	const name = /^.[a-z]/.test(short) ? short[0].toLowerCase() + short.slice(1) : short;
 	return `Summed over all regions, the change in ${name} is ${signed(deltaTotal, indicator.unit)} ${indicator.unit}: ${fmtPct(p)} of the baseline total of ${formatValue(baseTotal, indicator.unit)} ${indicator.unit}.`;
 }
 
 // --- material-efficiency grid --------------------------------------------------
 
-export const gridScenarioId = (product, region, cut) =>
-	`${product}-${region}-${Math.abs(cut)}`;
+export const gridScenarioId = (product, region, cut) => `${product}-${region}-${Math.abs(cut)}`;
 
 // The scenario picker: the non-grid interventions, then one entry per grid
 // product (value "grid:<slug>"); region and cut are chosen separately.
 export function scenarioMenu(data) {
 	const published = data.scenarios.filter((s) => s.id !== "baseline");
 	return {
-		interventions: published
-			.filter((s) => !s.grid)
-			.map((s) => ({ value: s.id, label: s.label })),
+		interventions: published.filter((s) => !s.grid).map((s) => ({ value: s.id, label: s.label })),
 		grid: (data.grid?.products ?? [])
 			.filter((p) => published.some((s) => s.grid?.product === p.slug))
 			.map((p) => ({ value: `grid:${p.slug}`, label: p.short })),
@@ -191,11 +181,7 @@ export function pickerState(data, scenarioId) {
 // recorded reason for an excluded one, {missing: true} for a cell never run.
 export function lookupGrid(data, picker) {
 	if (!picker.scenario.startsWith("grid:")) return { id: picker.scenario };
-	const id = gridScenarioId(
-		picker.scenario.slice(5),
-		picker.region,
-		Number(picker.cut),
-	);
+	const id = gridScenarioId(picker.scenario.slice(5), picker.region, Number(picker.cut));
 	if (data.results[id]) return { id };
 	const failed = (data.failed ?? []).find((f) => f.id === id);
 	return failed ? { id, failed: failed.reason } : { id, missing: true };
@@ -211,9 +197,7 @@ export function runSummary(run) {
 		`${run.scenarios_run} scenarios run, ${run.passed} passed every check, ${run.failed} failed (excluded)`,
 	];
 	if (run.wall_s)
-		parts.push(
-			`wall per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`,
-		);
+		parts.push(`wall per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`);
 	if (run.peak_rss_bytes)
 		parts.push(
 			`peak RSS per worker median ${fmtGiB(run.peak_rss_bytes.median)}, max ${fmtGiB(run.peak_rss_bytes.max)}`,

@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { compare } from "../explorer.js";
-import { apiUrl, ignoredApi, LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "../live.js";
+import {
+	apiUrl,
+	ignoredApi,
+	LIVE_STATUS,
+	liveData,
+	liveProvenance,
+	scenarioBody,
+	unreachableMessage,
+	waitForJob,
+} from "../live.js";
 
 // A job as GET /jobs/{id} returns it once succeeded (numbers made up, shape real).
 const job = {
@@ -58,7 +67,6 @@ test("anything else is refused and reported", () => {
 		"https://jobs.example.org/?x=1",
 		"not a url",
 		"http://[::1]:8020", // the job API's allowed hosts refuse [::1] with 400
-
 	]) {
 		const search = `?api=${encodeURIComponent(bad)}`;
 		assert.equal(apiUrl(search), null, bad);

@@ -36,9 +36,7 @@ export const REST_OF = {
 	WA: "AF AM AZ BD BN BT FJ GE KG KH KP KZ LA LK MM MN MY NC NP NZ PG PH PK SB TH TJ TL TM UZ VN VU",
 };
 const ISO_TO_REST = Object.fromEntries(
-	Object.entries(REST_OF).flatMap(([code, list]) =>
-		list.split(" ").map((iso) => [iso, code]),
-	),
+	Object.entries(REST_OF).flatMap(([code, list]) => list.split(" ").map((iso) => [iso, code])),
 );
 const BY_CODE = Object.fromEntries(EXIOBASE_REGIONS.map((r) => [r.code, r]));
 const BY_NAME = Object.fromEntries(EXIOBASE_REGIONS.map((r) => [r.name, r]));
@@ -72,9 +70,7 @@ export function decodeTopology(topo, object) {
 		});
 	return topo.objects[object].geometries.map((g) => ({
 		...g.properties,
-		polygons: (g.type === "Polygon" ? [g.arcs] : g.arcs).map((p) =>
-			p.map(ring),
-		),
+		polygons: (g.type === "Polygon" ? [g.arcs] : g.arcs).map((p) => p.map(ring)),
 	}));
 }
 
@@ -87,26 +83,17 @@ export function equalEarth([lon, lat]) {
 	const l2 = l * l;
 	const l6 = l2 * l2 * l2;
 	return [
-		(((lon * Math.PI) / 180) * Math.cos(l)) /
-			(M * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2))),
+		(((lon * Math.PI) / 180) * Math.cos(l)) / (M * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2))),
 		l * (A1 + A2 * l2 + l6 * (A3 + A4 * l2)),
 	];
 }
 
 // SVG path data for every feature, fitted to width; returns {height, paths}.
 export function project(features, width) {
-	const projected = features.map((f) =>
-		f.polygons.map((p) => p.map((r) => r.map(equalEarth))),
-	);
+	const projected = features.map((f) => f.polygons.map((p) => p.map((r) => r.map(equalEarth))));
 	const all = projected.flat(3);
-	const [x0, x1] = [
-		Math.min(...all.map((p) => p[0])),
-		Math.max(...all.map((p) => p[0])),
-	];
-	const [y0, y1] = [
-		Math.min(...all.map((p) => p[1])),
-		Math.max(...all.map((p) => p[1])),
-	];
+	const [x0, x1] = [Math.min(...all.map((p) => p[0])), Math.max(...all.map((p) => p[0]))];
+	const [y0, y1] = [Math.min(...all.map((p) => p[1])), Math.max(...all.map((p) => p[1]))];
 	const k = width / (x1 - x0);
 	const fmt = (v) => Math.round(v * 10) / 10;
 	return {
@@ -114,10 +101,7 @@ export function project(features, width) {
 		paths: projected.map((polys) =>
 			polys
 				.flat()
-				.map(
-					(r) =>
-						`M${r.map(([x, y]) => `${fmt((x - x0) * k)},${fmt((y1 - y) * k)}`).join("L")}Z`,
-				)
+				.map((r) => `M${r.map(([x, y]) => `${fmt((x - x0) * k)},${fmt((y1 - y) * k)}`).join("L")}Z`)
 				.join(""),
 		),
 	};

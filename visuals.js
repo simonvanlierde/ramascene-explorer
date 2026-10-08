@@ -20,11 +20,8 @@ import { SECTOR_SHORT, sankeyCaption, sankeyLayout, tween } from "./sankey.js";
 
 const SVG = "http://www.w3.org/2000/svg";
 const el = (tag, attrs = {}, text) => {
-	const node = attrs.svg
-		? document.createElementNS(SVG, tag)
-		: document.createElement(tag);
-	for (const [k, v] of Object.entries(attrs))
-		if (k !== "svg" && v !== undefined) node.setAttribute(k, v);
+	const node = attrs.svg ? document.createElementNS(SVG, tag) : document.createElement(tag);
+	for (const [k, v] of Object.entries(attrs)) if (k !== "svg" && v !== undefined) node.setAttribute(k, v);
 	if (text !== undefined) node.textContent = text;
 	return node;
 };
@@ -52,9 +49,7 @@ export async function loadVisuals(dataPath, data) {
 	features = topo ? decodeTopology(topo, "countries") : null;
 	if (!dataPath.endsWith("results.json")) return {};
 	const [regions, flows] = await Promise.all(
-		["regions.json", "flows.json"].map((n) =>
-			fetchJson(dataPath.replace(/results\.json$/, n)),
-		),
+		["regions.json", "flows.json"].map((n) => fetchJson(dataPath.replace(/results\.json$/, n))),
 	);
 	return {
 		regions: sameRun(regions, data) ? regions : null,
@@ -74,26 +69,19 @@ export function renderMap(ctx) {
 	}
 	section.hidden = false;
 	// the 49-region sidecar when it has this scenario, else the continental aggregates
-	const detailed =
-		docs.regions && regionValues(docs.regions, state, indicator.factor);
+	const detailed = docs.regions && regionValues(docs.regions, state, indicator.factor);
 	const view = detailed ?? regionValues(data, state, indicator.factor);
 	const source = detailed ? docs.regions : data;
 	const values = ctx.baselineView
 		? Object.fromEntries(
-				Object.entries(view.values).map(([k, v]) => [
-					k,
-					{ ...v, delta: 0, percent: 0, scenario: v.baseline },
-				]),
+				Object.entries(view.values).map(([k, v]) => [k, { ...v, delta: 0, percent: 0, scenario: v.baseline }]),
 			)
 		: view.values;
-	const extent = divergingExtent(
-		Object.values(view.values).map((v) => v.percent),
-	);
+	const extent = divergingExtent(Object.values(view.values).map((v) => v.percent));
 
 	const svg = $("map");
 	const width = Math.max(320, svg.clientWidth || 960);
-	if (geometry.width !== width)
-		geometry = { width, ...project(features, width) };
+	if (geometry.width !== width) geometry = { width, ...project(features, width) };
 	svg.setAttribute("viewBox", `0 0 ${width} ${geometry.height}`);
 	svg.setAttribute("height", geometry.height);
 	if (svg.dataset.width !== String(width)) {
@@ -111,20 +99,14 @@ export function renderMap(ctx) {
 	for (const path of svg.querySelectorAll("path.hatch")) {
 		// every country shares a value with others: all of them at aggregate level
 		// SVG elements have no hidden property: display does it
-		path.style.display =
-			view.level === "aggregate" || isRestOf(path.dataset.code) ? "" : "none";
+		path.style.display = view.level === "aggregate" || isRestOf(path.dataset.code) ? "" : "none";
 		path.classList.toggle("selected", path.dataset.code === state.region);
 	}
 	svg._values = values;
 	svg._unit = indicator.unit;
 
 	const percents = Object.values(view.values).map((v) => v.percent ?? 0);
-	drawLegend(
-		extent,
-		view.level,
-		Math.min(0, ...percents) < 0,
-		Math.max(0, ...percents) > 0,
-	);
+	drawLegend(extent, view.level, Math.min(0, ...percents) < 0, Math.max(0, ...percents) > 0);
 	const scenario = data.scenarios.find((s) => s.id === state.scenario);
 	$("map-caption").textContent =
 		`Change in ${indicator.name} by region where the impact occurs, as a percentage of that region's own ${data.base_year} baseline: ` +
@@ -142,11 +124,8 @@ export function renderMap(ctx) {
 	const select = $("map-region");
 	if (!select.options.length) {
 		select.append(el("option", { value: "" }, "None"));
-		for (const r of EXIOBASE_REGIONS)
-			select.append(el("option", { value: r.code }, r.name));
-		select.addEventListener("change", () =>
-			current.onSelect(select.value || null),
-		);
+		for (const r of EXIOBASE_REGIONS) select.append(el("option", { value: r.code }, r.name));
+		select.addEventListener("change", () => current.onSelect(select.value || null));
 	}
 	select.value = state.region ?? "";
 }
@@ -162,9 +141,7 @@ function buildMap(svg) {
 			patternTransform: "rotate(45)",
 		}),
 	);
-	pattern.append(
-		svgEl("line", { x1: 0, y1: 0, x2: 0, y2: 6, class: "hatch-line" }),
-	);
+	pattern.append(svgEl("line", { x1: 0, y1: 0, x2: 0, y2: 6, class: "hatch-line" }));
 	const fills = svg.appendChild(svgEl("g"));
 	const hatches = svg.appendChild(svgEl("g", { "aria-hidden": "true" }));
 	features.forEach((f, i) => {
@@ -175,10 +152,7 @@ function buildMap(svg) {
 			"data-name": f.name,
 		};
 		fills.append(svgEl("path", { ...attrs, class: "country" }));
-		if (code)
-			hatches.append(
-				svgEl("path", { ...attrs, class: "hatch", fill: "url(#hatch)" }),
-			);
+		if (code) hatches.append(svgEl("path", { ...attrs, class: "hatch", fill: "url(#hatch)" }));
 	});
 	if (svg._wired) return;
 	svg._wired = true;
@@ -192,16 +166,8 @@ function buildMap(svg) {
 		const code = path.dataset.code;
 		const v = svg._values?.[code];
 		tip.replaceChildren();
-		if (!code)
-			tip.append(
-				el("strong", {}, path.dataset.name),
-				el("span", {}, "Not assigned to an EXIOBASE region"),
-			);
-		else if (!v)
-			tip.append(
-				el("strong", {}, path.dataset.name),
-				el("span", {}, "No value"),
-			);
+		if (!code) tip.append(el("strong", {}, path.dataset.name), el("span", {}, "Not assigned to an EXIOBASE region"));
+		else if (!v) tip.append(el("strong", {}, path.dataset.name), el("span", {}, "No value"));
 		else {
 			const region = EXIOBASE_REGIONS.find((r) => r.code === code);
 			const shared =
@@ -212,11 +178,7 @@ function buildMap(svg) {
 						: region.name;
 			tip.append(
 				el("strong", {}, `${fmtPct(v.percent)}`),
-				el(
-					"span",
-					{},
-					`${signed(v.delta, svg._unit)} ${svg._unit}, of ${formatValue(v.baseline, svg._unit)}`,
-				),
+				el("span", {}, `${signed(v.delta, svg._unit)} ${svg._unit}, of ${formatValue(v.baseline, svg._unit)}`),
 				el("span", {}, `${path.dataset.name} · ${shared}`),
 			);
 		}
@@ -243,9 +205,7 @@ function drawLegend(extent, level, negatives, positives) {
 	legend.replaceChildren();
 	const fmt = (v) => fmtPct(v).replace("−", "-").replace("-", "−");
 	const swatches = el("div", { class: "legend-scale" });
-	for (const row of legendClasses(extent).filter(
-		(r) => (r.cls >= 0 || negatives) && (r.cls <= 0 || positives),
-	)) {
+	for (const row of legendClasses(extent).filter((r) => (r.cls >= 0 || negatives) && (r.cls <= 0 || positives))) {
 		const item = el("span", { class: "legend-item" });
 		item.append(
 			el("span", {
@@ -255,9 +215,7 @@ function drawLegend(extent, level, negatives, positives) {
 			el(
 				"span",
 				{},
-				row.cls === 0
-					? `within ±${fmtPct(row.to).replace("+", "")}`
-					: `${fmt(row.from)} to ${fmt(row.to)}`,
+				row.cls === 0 ? `within ±${fmtPct(row.to).replace("+", "")}` : `${fmt(row.from)} to ${fmt(row.to)}`,
 			),
 		);
 		swatches.append(item);
@@ -265,19 +223,10 @@ function drawLegend(extent, level, negatives, positives) {
 	const hatch = el("span", { class: "legend-item" });
 	hatch.append(
 		el("span", { class: "swatch hatched" }),
-		el(
-			"span",
-			{},
-			level === "region"
-				? "rest-of-world aggregate (one value)"
-				: "continental aggregate (one value)",
-		),
+		el("span", {}, level === "region" ? "rest-of-world aggregate (one value)" : "continental aggregate (one value)"),
 	);
 	const none = el("span", { class: "legend-item" });
-	none.append(
-		el("span", { class: "swatch", style: "background:var(--map-nodata)" }),
-		el("span", {}, "not assigned"),
-	);
+	none.append(el("span", { class: "swatch", style: "background:var(--map-nodata)" }), el("span", {}, "not assigned"));
 	legend.append(swatches, el("div", { class: "legend-extra" }));
 	legend.lastChild.append(hatch, none);
 }
@@ -286,13 +235,7 @@ function drawMapTable(view, unit, selected) {
 	const table = $("map-table");
 	table.replaceChildren();
 	const head = el("tr");
-	for (const h of [
-		"Region",
-		"Level",
-		`Baseline (${unit})`,
-		`Change (${unit})`,
-		"Change %",
-	])
+	for (const h of ["Region", "Level", `Baseline (${unit})`, `Change (${unit})`, "Change %"])
 		head.append(el("th", { scope: "col" }, h));
 	table.appendChild(el("thead")).append(head);
 	const body = table.appendChild(el("tbody"));
@@ -307,33 +250,11 @@ function drawMapTable(view, unit, selected) {
 		const key = view.level === "aggregate" ? r.aggregate : r.code;
 		if (seen.has(key)) continue;
 		seen.add(key);
-		const tr = body.appendChild(
-			el(
-				"tr",
-				r.code === selected
-					? { class: "selected", "aria-current": "true" }
-					: {},
-			),
-		);
-		tr.append(
-			el(
-				"th",
-				{ scope: "row" },
-				view.level === "aggregate" ? r.aggregate : r.name,
-			),
-		);
+		const tr = body.appendChild(el("tr", r.code === selected ? { class: "selected", "aria-current": "true" } : {}));
+		tr.append(el("th", { scope: "row" }, view.level === "aggregate" ? r.aggregate : r.name));
 		const level =
-			view.level === "aggregate"
-				? "continental aggregate"
-				: isRestOf(r.code)
-					? "rest-of-world aggregate"
-					: "country";
-		for (const text of [
-			level,
-			formatValue(v.baseline, unit),
-			signed(v.delta, unit),
-			fmtPct(v.percent),
-		])
+			view.level === "aggregate" ? "continental aggregate" : isRestOf(r.code) ? "rest-of-world aggregate" : "country";
+		for (const text of [level, formatValue(v.baseline, unit), signed(v.delta, unit), fmtPct(v.percent)])
 			tr.append(el("td", {}, text));
 	}
 }
@@ -355,9 +276,7 @@ const labelGap = {};
 
 export function renderSankey(ctx, t = 1) {
 	const { docs, state, indicator } = ctx;
-	const regionName = EXIOBASE_REGIONS.find(
-		(r) => r.code === state.region,
-	)?.name;
+	const regionName = EXIOBASE_REGIONS.find((r) => r.code === state.region)?.name;
 	const section = $("sankey-section");
 	const result = docs.flows?.results?.[state.scenario]?.[state.indicator];
 	if (!result) {
@@ -372,10 +291,7 @@ export function renderSankey(ctx, t = 1) {
 	const width = Math.max(320, svg.clientWidth || 960);
 	const narrow = width < 560;
 	const labelW = narrow ? 118 : 250;
-	const rows = Math.max(
-		new Set(flows.map((x) => x.sector)).size,
-		new Set(flows.map((x) => x.region)).size,
-	);
+	const rows = Math.max(new Set(flows.map((x) => x.sector)).size, new Set(flows.map((x) => x.region)).size);
 	const height = Math.max(narrow ? 420 : 380, rows * (narrow ? 34 : 38) + 40);
 	const scaleAbs = flows.reduce((s, x) => s + Math.abs(x.delta), 0);
 	const layout = sankeyLayout(t === 1 ? flows : tween(flows, t), {
@@ -390,8 +306,7 @@ export function renderSankey(ctx, t = 1) {
 	svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 	svg.setAttribute("height", height);
 	svg.replaceChildren();
-	const add = (parent, tag, attrs, text) =>
-		parent.appendChild(svgEl(tag, attrs, text));
+	const add = (parent, tag, attrs, text) => parent.appendChild(svgEl(tag, attrs, text));
 	const bands = add(svg, "g", {});
 	for (const l of layout.links) {
 		const path = add(bands, "path", {
@@ -410,13 +325,9 @@ export function renderSankey(ctx, t = 1) {
 	const labels = (list, anchorLeft) => {
 		const step = narrow ? 34 : 38; // two lines: name, then value
 		const ys = [];
-		for (const n of list)
-			ys.push(Math.max((n.y0 + n.y1) / 2, (ys.at(-1) ?? -Infinity) + step));
+		for (const n of list) ys.push(Math.max((n.y0 + n.y1) / 2, (ys.at(-1) ?? -Infinity) + step));
 		for (let i = ys.length - 1; i >= 0; i--)
-			ys[i] = Math.min(
-				ys[i],
-				i === ys.length - 1 ? height - 20 : ys[i + 1] - step,
-			);
+			ys[i] = Math.min(ys[i], i === ys.length - 1 ? height - 20 : ys[i + 1] - step);
 		// labels keep a minimum spacing, so a small node's label can sit beside
 		// its neighbour: then that side's labels step out and a leader line
 		// joins each displaced label to its own node
@@ -447,12 +358,7 @@ export function renderSankey(ctx, t = 1) {
 			const anchor = anchorLeft ? "end" : "start";
 			const long = anchorLeft ? short(n.id) : n.id;
 			const name = narrow ? (NARROW[long] ?? long) : long;
-			add(
-				nodes,
-				"text",
-				{ x, y: y - 2, "text-anchor": anchor, class: "label" },
-				name,
-			);
+			add(nodes, "text", { x, y: y - 2, "text-anchor": anchor, class: "label" }, name);
 			// mid-replay a band's width is an interpolation, not an engine
 			// result: no value is printed until the end state
 			if (t === 1)
@@ -481,8 +387,7 @@ export function renderSankey(ctx, t = 1) {
 		cells: result.cells,
 		total: signed(result.total_delta * f, unit),
 	});
-	$("sankey-source").textContent =
-		`Method: ${docs.flows.breakdown}. ${docs.flows.method}`;
+	$("sankey-source").textContent = `Method: ${docs.flows.breakdown}. ${docs.flows.method}`;
 	drawSankeyTable(result, f, unit);
 }
 
@@ -490,13 +395,7 @@ function drawSankeyTable(result, f, unit) {
 	const table = $("sankey-table");
 	table.replaceChildren();
 	const head = el("tr");
-	for (const h of [
-		"Sector",
-		"Region",
-		`Change (${unit})`,
-		"Share of total",
-		"Cells",
-	])
+	for (const h of ["Sector", "Region", `Change (${unit})`, "Share of total", "Cells"])
 		head.append(el("th", { scope: "col" }, h));
 	table.appendChild(el("thead")).append(head);
 	const body = table.appendChild(el("tbody"));
@@ -515,18 +414,13 @@ function drawSankeyTable(result, f, unit) {
 	const foot = table.appendChild(el("tfoot")).appendChild(el("tr"));
 	const sum = result.flows.reduce((s, x) => s + x.delta, 0);
 	foot.append(el("th", { scope: "row" }, "Sum of the bands"), el("td", {}, ""));
-	for (const text of [
-		`${signed(sum * f, unit)} (total ${signed(total * f, unit)})`,
-		"100%",
-		String(result.cells),
-	])
+	for (const text of [`${signed(sum * f, unit)} (total ${signed(total * f, unit)})`, "100%", String(result.cells)])
 		foot.append(el("td", {}, text));
 }
 
 // --- baseline → intervention -------------------------------------------------------
 
-const reduced = () =>
-	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // One replay at a time: a new replay, or any new render of the selection,
 // cancels the running one (its frames would otherwise draw a stale scenario).

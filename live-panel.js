@@ -58,14 +58,25 @@ export async function mount(api) {
 		const table = $("live-table");
 		table.replaceChildren();
 		const head = el("tr");
-		for (const h of ["Region", `Baseline (${indicator.unit})`, `Intervention (${indicator.unit})`, "Change", "Change %"])
+		for (const h of [
+			"Region",
+			`Baseline (${indicator.unit})`,
+			`Intervention (${indicator.unit})`,
+			"Change",
+			"Change %",
+		])
 			head.append(el("th", { scope: "col" }, h));
 		table.appendChild(el("thead")).append(head);
 		const body = table.appendChild(el("tbody"));
 		for (const r of rows) {
 			const tr = body.appendChild(el("tr"));
 			tr.append(el("th", { scope: "row" }, r.region));
-			for (const text of [formatValue(r.baseline, indicator.unit), formatValue(r.scenario, indicator.unit), signed(r.delta, indicator.unit), fmtPct(r.percent)])
+			for (const text of [
+				formatValue(r.baseline, indicator.unit),
+				formatValue(r.scenario, indicator.unit),
+				signed(r.delta, indicator.unit),
+				fmtPct(r.percent),
+			])
 				tr.append(el("td", {}, text));
 		}
 		const dl = $("live-provenance");
@@ -111,7 +122,8 @@ export async function mount(api) {
 			data = liveData(job);
 			const select = $("live-indicator");
 			if (!select.options.length)
-				for (const i of data.indicators.map(displayIndicator)) select.append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
+				for (const i of data.indicators.map(displayIndicator))
+					select.append(el("option", { value: String(i.id) }, `${i.name} (${i.unit})`));
 			state.textContent = `Job ${job.id} finished in ${job.duration_s.toFixed(1)} s.`;
 			show();
 		} catch (e) {

@@ -63,14 +63,10 @@ test("nodes are ordered by size with Other last, and fill the height", () => {
 	);
 	assert.equal(out.targets.at(-1).id, "Other regions");
 	const tall = out.targets; // four nodes: the fuller side spans the height
-	assert.ok(
-		Math.abs(tall[0].y0) < 1e-9 && Math.abs(tall.at(-1).y1 - 400) < 1e-9,
-	);
+	assert.ok(Math.abs(tall[0].y0) < 1e-9 && Math.abs(tall.at(-1).y1 - 400) < 1e-9);
 	// band widths are |delta| on one scale: sources' heights equal their links'
 	for (const n of out.sources) {
-		const w = out.links
-			.filter((l) => l.sector === n.id)
-			.reduce((s, l) => s + l.width, 0);
+		const w = out.links.filter((l) => l.sector === n.id).reduce((s, l) => s + l.width, 0);
 		assert.ok(Math.abs(w - (n.y1 - n.y0)) < 1e-9);
 	}
 });
@@ -106,7 +102,10 @@ test("the caption names the change, not a verb that fits only some indicators", 
 		const text = caption(name, unit);
 		assert.doesNotMatch(text, /emits|employs/, name);
 		assert.match(text, new RegExp(`^Change in ${name} \\(${unit}\\), Steel input`));
-		assert.match(text, /from the sector of production where the change occurs \(left\) to the region where it occurs \(right\)/);
+		assert.match(
+			text,
+			/from the sector of production where the change occurs \(left\) to the region where it occurs \(right\)/,
+		);
 		assert.match(text, /every band is a decrease/);
 		assert.match(text, /The 12 largest sector × region cells of 735 are drawn by name\. Every other cell is added/);
 		assert.ok(text.endsWith(`sum to the total change, −3.04K ${unit}.`), text);
