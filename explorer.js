@@ -92,16 +92,33 @@ export function niceTicks(min, max, target = 4) {
 	return ticks;
 }
 
-// EXIOBASE employment is in thousands of persons. Shown in persons, so a
+// Display units: EXIOBASE reports GHG in kg CO2 eq, metal ores in kt and
+// employment in thousands of persons. GHG and ores are shown in megatonnes,
+// the unit the literature uses at this scale, and employment in persons, so a
 // compact "K" never stacks on "1000 p" and reads as a millionfold.
+const DISPLAY = {
+	"kg CO2 eq": { unit: "Mt CO\u2082-eq", factor: 1e-9 },
+	kt: { unit: "Mt", factor: 1e-3 },
+	"1000 p": { unit: "persons", factor: 1000 },
+};
+// Short names for the three indicators of the engine database.
+const SHORT = {
+	"GHG emissions: Total": "GHG emissions",
+	"Employment: Total": "Employment",
+	"Domestic Extraction Used - Metal Ores - Total": "Metal ore extraction",
+};
 export function displayIndicator(indicator) {
-	return indicator.unit === "1000 p"
-		? { ...indicator, unit: "persons", factor: 1000 }
-		: { ...indicator, factor: 1 };
+	return {
+		...indicator,
+		short: SHORT[indicator.name] ?? indicator.name,
+		...(DISPLAY[indicator.unit] ?? { factor: 1 }),
+	};
 }
 
-// Compact notation (3.2B, 450K) never falls back to exponent notation.
-// Persons are written out in full (18,800), never scaled.
+// A display unit is written out in full, grouped (18,800; 6,660; 0.0616).
+// Any other unit takes compact notation (3.2B, 450K). Neither ever falls
+// back to exponent notation.
+const SCALED = new Set(Object.values(DISPLAY).map((d) => d.unit));
 const compact = new Intl.NumberFormat("en", {
 	notation: "compact",
 	maximumSignificantDigits: 3,
@@ -111,7 +128,7 @@ const grouped = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
 // picker do; Intl writes a hyphen-minus.
 const minus = (text) => text.replace("-", "\u2212");
 export const formatValue = (v, unit) =>
-	minus((unit === "persons" ? grouped : compact).format(v));
+	minus((SCALED.has(unit) ? grouped : compact).format(v));
 export const signed = (v, unit) => (v > 0 ? "+" : "") + formatValue(v, unit);
 
 const pct = new Intl.NumberFormat("en", {
@@ -123,7 +140,12 @@ export const fmtPct = (p) => (p === null ? "—" : minus(`${pct.format(p)}%`));
 // indicator from displayIndicator; totals already in its display unit.
 export function headline(indicator, deltaTotal, baseTotal) {
 	const p = baseTotal ? (100 * deltaTotal) / baseTotal : null;
-	return `Summed over all regions, ${indicator.name} changes by ${signed(deltaTotal, indicator.unit)} ${indicator.unit} (${fmtPct(p)}).`;
+	const short = indicator.short ?? indicator.name;
+	// "Employment" reads "employment" mid-sentence; an acronym (GHG) keeps its case
+	const name = /^.[a-z]/.test(short)
+		? short[0].toLowerCase() + short.slice(1)
+		: short;
+	return `Summed over all regions, the change in ${name} is ${signed(deltaTotal, indicator.unit)} ${indicator.unit}: ${fmtPct(p)} of the baseline total of ${formatValue(baseTotal, indicator.unit)} ${indicator.unit}.`;
 }
 
 // --- material-efficiency grid --------------------------------------------------

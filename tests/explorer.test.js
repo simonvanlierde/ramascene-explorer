@@ -164,6 +164,7 @@ test("employment shows in persons, never as a compact K on thousands of persons"
 	assert.deepEqual(employment, {
 		id: 3,
 		name: "Employment: Total",
+		short: "Employment",
 		unit: "persons",
 		factor: 1000,
 	});
@@ -177,20 +178,37 @@ test("employment shows in persons, never as a compact K on thousands of persons"
 		name: "GHG emissions: Total",
 		unit: "kg CO2 eq",
 	});
-	assert.equal(ghg.factor, 1);
-	assert.equal(formatValue(-3.2e9, ghg.unit), "\u22123.2B");
+	assert.equal(ghg.unit, "Mt CO\u2082-eq");
+	assert.equal(formatValue(-3.2e9 * ghg.factor, ghg.unit), "\u22123.2");
+	assert.equal(formatValue(6655.4, ghg.unit), "6,660");
+	assert.equal(formatValue(-0.0000616, ghg.unit), "\u22120.0000616");
+	const ores = displayIndicator({
+		id: 7,
+		name: "Domestic Extraction Used - Metal Ores - Total",
+		unit: "kt",
+	});
+	assert.deepEqual(
+		[ores.short, ores.unit, ores.factor],
+		["Metal ore extraction", "Mt", 1e-3],
+	);
+	// an unknown unit passes through unscaled, in compact notation
+	const other = displayIndicator({ id: 9, name: "Water", unit: "Mm3" });
+	assert.deepEqual(
+		[other.short, other.unit, other.factor],
+		["Water", "Mm3", 1],
+	);
+	assert.equal(formatValue(-3.2e9, other.unit), "\u22123.2B");
 });
 
-test("the headline carries no colon beyond the one in the indicator name", () => {
+test("the headline names the change, its share and the baseline total", () => {
 	const text = headline(
 		displayIndicator({ name: "Employment: Total", unit: "1000 p" }),
 		-18800,
 		5e6,
 	);
-	assert.equal(text.split(":").length, 2, text);
-	assert.match(text, /\u221218,800 persons/);
-	assert.match(text, /\(\u22120\.38%\)/);
-	assert.match(headline({ name: "X", unit: "kt", factor: 1 }, 5, 0), /\(—\)/);
+	assert.match(text, /change in employment is \u221218,800 persons/);
+	assert.match(text, /\u22120\.38% of the baseline total of 5,000,000 persons/);
+	assert.match(headline({ name: "X", unit: "kt", factor: 1 }, 5, 0), /: — of/);
 });
 
 test("a shipped data file is real engine output, never synthetic", () => {
