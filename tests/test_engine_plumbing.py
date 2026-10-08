@@ -106,3 +106,20 @@ def test_grid_regions_resolve_to_the_five_aggregates_with_their_leaf_counts(engi
     for r in precompute.GRID_REGIONS:
         assert engine.get_leafs_country([r["id"]]) == leaves[r["name"]], r["slug"]
     assert [len(leaves[r["name"]]) for r in precompute.GRID_REGIONS] == [32, 2, 5, 8, 2]
+
+
+# --- the solver ---------------------------------------------------------------
+
+
+def test_the_solver_precompute_passes_is_one_modelling_accepts(engine):
+    import inspect
+
+    from ramascene.modelling import Modelling
+
+    solver = precompute.leontief_solver()
+    if solver is None:
+        assert "solver" not in inspect.signature(Modelling).parameters
+        assert precompute.solver_name() == "engine default"
+    else:
+        assert "solver" in inspect.signature(Modelling).parameters
+        assert precompute.solver_name() == solver.__name__ == "LeontiefLU"

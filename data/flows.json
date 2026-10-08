@@ -2641,10 +2641,11 @@
  "provenance": {
   "engine": {
    "repository": null,
-   "branch": "perf/solve-not-invert",
-   "commit": "a258e63f38d326a8dbcad9527d4cbb7b0f4af583",
-   "label": "perf/solve-not-invert @ a258e63",
-   "dirty": false
+   "branch": "perf/lu-reuse-solve-order",
+   "commit": "f876faa779bac9299da356f421faac0bd75f1347",
+   "label": "perf/lu-reuse-solve-order @ f876faa",
+   "dirty": false,
+   "solver": "LeontiefLU"
   },
   "dataset": {
    "name": "EXIOBASE v3.3.sm",
@@ -2665,8 +2666,8 @@
     "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
    }
   },
-  "command": "uv run python precompute.py --run --engine ../ramascene-pr2 --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
-  "generated_at": "2026-09-27T10:04:04+00:00",
+  "command": "uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
+  "generated_at": "2026-09-27T17:08:58+00:00",
   "python": "3.14.7",
   "numpy": "2.5.3",
   "django": "5.2.17",
@@ -2692,6 +2693,6 @@
     }
    }
   },
-  "peak_rss_bytes": 894726144
+  "peak_rss_bytes": 895479808
  }
 }

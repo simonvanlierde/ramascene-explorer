@@ -18,9 +18,9 @@ BY_ID = {s["id"]: s for s in GRID}
 RESULTS = Path(__file__).parent.parent / "data" / "results.json"
 
 
-def test_grid_is_five_products_by_five_regions_by_three_cuts():
-    assert len(GRID) == 75 and len(BY_ID) == 75
-    assert len(precompute.GRID_PRODUCTS) == 5 and len(precompute.GRID_REGIONS) == 5
+def test_grid_is_ten_products_by_five_regions_by_three_cuts():
+    assert len(GRID) == 150 and len(BY_ID) == 150
+    assert len(precompute.GRID_PRODUCTS) == 10 and len(precompute.GRID_REGIONS) == 5
     assert precompute.GRID_CUTS == [-10, -20, -50]
     products = [p["slug"] for p in precompute.GRID_PRODUCTS]
     regions = [r["slug"] for r in precompute.GRID_REGIONS]
@@ -48,6 +48,11 @@ def test_products_are_named_by_their_exiobase_product_name():
         177: "Cement, lime and plaster",
         162: "Plastics, basic",
         196: "Electrical machinery and apparatus n.e.c.",
+        188: "Copper products",
+        173: "Glass and glass products",
+        164: "N-fertiliser",
+        166: "Chemicals nec",
+        172: "Rubber and plastic products",
     }
     for p in precompute.GRID_PRODUCTS:
         assert re.fullmatch(r"[a-z]+", p["slug"]) and p["short"]
@@ -84,7 +89,7 @@ def test_consumed_by_is_the_fifteen_industry_sections():
 def test_all_scenarios_are_the_three_originals_then_the_grid_with_unique_ids():
     ids = [s["id"] for s in precompute.ALL_SCENARIOS]
     assert ids[:3] == ["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"]
-    assert ids[3:] == list(BY_ID) and len(set(ids)) == 78
+    assert ids[3:] == list(BY_ID) and len(set(ids)) == 153
     assert precompute.SCENARIO_SETS["all"]() == precompute.ALL_SCENARIOS
     assert precompute.SCENARIO_SETS["grid"]() == GRID
 
@@ -135,7 +140,7 @@ def test_shipped_provenance_names_the_engine_and_the_run(shipped):
     assert p["engine"]["label"] == f"{p['engine']['branch']} @ {p['engine']['commit'][:7]}"
     assert p["engine"]["dirty"] is False
     r = p["run"]
-    assert r["scenarios_run"] == r["passed"] + r["failed"] == 78
+    assert r["scenarios_run"] == r["passed"] + r["failed"] == 153
     assert r["octave_reference_files"] == 4 and r["octave_reference_values"] == 122
     assert r["peak_rss_bytes"]["max"] <= p["peak_rss_bytes"]
     assert (RESULTS.parent / "run-log.md").exists()
