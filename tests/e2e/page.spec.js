@@ -18,7 +18,7 @@ test("synthetic data renders the chart, table and provenance under a banner", as
 }) => {
 	await page.goto(FIXTURE);
 	await expect(page.locator("#banner")).toHaveText(
-		"SYNTHETIC TEST DATA — NOT A RESULT",
+		"SYNTHETIC TEST DATA: NOT A RESULT",
 	);
 	await expect(page.locator("#chart text.region")).toHaveCount(REGIONS);
 	await expect(page.locator("#table tbody tr")).toHaveCount(REGIONS);
