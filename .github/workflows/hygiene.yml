@@ -33,7 +33,8 @@ jobs:
         env:
           # gitleaks scans staged changes only, and CI stages nothing: GitHub
           # secret scanning is the server-side check.
-          SKIP: gitleaks
+          # ty runs in ci.yml, which has the synced environment it needs.
+          SKIP: gitleaks,ty
           # Enables zizmor's online audits (impostor commits, known-vulnerable
           # actions). Read-only, like the workflow's permissions.
           GH_TOKEN: ${{ github.token }}

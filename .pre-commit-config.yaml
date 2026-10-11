@@ -13,6 +13,24 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
+  # Rules in pyproject.toml [tool.ruff]. Keep rev in step with ruff in uv.lock.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  # ty needs the project's .venv to resolve numpy, so it runs through uv.
+  # CI runs it in ci.yml, where the environment is synced; hygiene.yml skips it.
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: uv run --frozen ty check
+        language: system
+        types: [python]
+        pass_filenames: false
+
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0
     hooks:
