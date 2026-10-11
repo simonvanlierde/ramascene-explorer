@@ -55,6 +55,14 @@ DATASET = {
 # Absolute floor for comparisons, in indicator units (kg, 1000 p, kt): far
 # below any value reported, far above the noise on a value that should be 0.
 ABS_FLOOR = 1e-9
+# Float64 results that should agree exactly: engine against the independent
+# per-region sum, and the 0% control against the stored L. Measured worst
+# cases in data/results.json are 2e-16 and 4e-15, so 1e-9 leaves room for
+# summation order and still catches any real disagreement.
+REL_TOL = 1e-9
+# The Octave reference files print values with as few as 7 significant digits,
+# so rounding alone moves a value by up to 5e-7 relative.
+OCTAVE_REL_TOL = 1e-6
 STATUS = "precomputed — not a live calculation"
 
 # Global ids from the engine's db.sqlite3. Breakdown by the five continental
@@ -137,7 +145,7 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
         "indicator": indicator,
         "regions": regions,
         "passed": set(engine_values) == set(region_leaves)
-        and all(math.isclose(r["engine"], r["direct"], rel_tol=1e-9, abs_tol=ABS_FLOOR) for r in regions.values()),
+        and all(math.isclose(r["engine"], r["direct"], rel_tol=REL_TOL, abs_tol=ABS_FLOOR) for r in regions.values()),
     }
 
 
@@ -179,7 +187,7 @@ def scenario_direction(scenarios, results, control, Y, B, indicators):
             unchanged.append(s["id"])
         for i in (str(i) for i in indicators if i not in skipped):
             total, ref_total = math.fsum(got[i].values()), math.fsum(ref[i].values())
-            if total > ref_total and not math.isclose(total, ref_total, rel_tol=1e-9, abs_tol=ABS_FLOOR):
+            if total > ref_total and not math.isclose(total, ref_total, rel_tol=REL_TOL, abs_tol=ABS_FLOOR):
                 rises.append({"scenario": s["id"], "indicator": int(i), "total": total, "reference": ref_total})
     return {
         "passed": not unchanged and not rises,
@@ -236,9 +244,9 @@ def compute(engine, scenarios, indicators):
     checks = {
         "independent_by_region": independent,
         "zero_change_control": {
-            "passed": worst <= 1e-6,
+            "passed": worst <= REL_TOL,
             "max_relative_difference": worst,
-            "tolerance": "relative 1e-6",
+            "tolerance": f"relative {REL_TOL:g}",
             "model_details": control_details,
         },
         "scenario_direction": scenario_direction(scenarios, results, control, Y, B, indicators),
@@ -455,9 +463,15 @@ def reference_validation(Y, B, L):
         selection["dimType"] = LEGACY_VOCABULARY[selection["dimType"]]
         selection["vizType"] = LEGACY_VOCABULARY[selection["vizType"]]
         got = run_route(selection, Y, B, L)
-        mismatches = [k for k, v in expected.items() if not math.isclose(got.get(k, math.nan), v, rel_tol=1e-6)]
+        mismatches = [
+            k for k, v in expected.items() if not math.isclose(got.get(k, math.nan), v, rel_tol=OCTAVE_REL_TOL)
+        ]
         files[filename] = {"values": len(expected), "mismatches": len(mismatches)}
-    return {"passed": all(f["mismatches"] == 0 for f in files.values()), "tolerance": "relative 1e-6", "files": files}
+    return {
+        "passed": all(f["mismatches"] == 0 for f in files.values()),
+        "tolerance": f"relative {OCTAVE_REL_TOL:g}",
+        "files": files,
+    }
 
 
 def region_leaves():
