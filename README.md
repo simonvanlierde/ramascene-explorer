@@ -258,15 +258,18 @@ Font License 1.1; Natural Earth, public domain).
 
 ## CI and publishing
 
-`.github/workflows/ci.yml` runs `uv run pytest` and `node --test` on every push
-and pull request. Neither needs the dataset: the engine checks skip without
-`--engine`, and the page tests read `tests/fixture.json`. `hygiene.yml` runs the
+`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `node --test` and
+`pnpm exec playwright test` on every push and pull request. None needs the
+dataset: the engine checks skip without `--engine`, the page tests read
+`tests/fixture.json`, and the browser tests load the page over the fixture and
+the committed results, in light, dark and phone layouts, with axe checking
+WCAG 2.2 AA. `hygiene.yml` runs the
 git hooks in `.pre-commit-config.yaml` and reviews new dependencies on pull
 requests.
 
 `pages.yml` publishes to GitHub Pages only when started by hand (Actions →
-pages → Run workflow). It ships `index.html`, `explorer.js` and
-`data/results.json`, and nothing else. It stops if `data/results.json` is
+pages → Run workflow). It ships the page and its modules, the fonts, the map
+geometry and the three data files, and nothing else. It stops if `data/results.json` is
 missing or isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can
 never go out. Commit the precompute output first, and set the repository's
 Pages source to GitHub Actions.
