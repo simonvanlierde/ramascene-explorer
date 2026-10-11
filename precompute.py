@@ -1,6 +1,6 @@
-"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
+r"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
 
-    uv run python precompute.py --run --engine ../ramascene-review \\
+    uv run python precompute.py --run --engine ../ramascene-review \
         --data "$DATASETS_DIR" --out data/results.json
 
 The engine is imported as a package and driven the way ramascene.tasks.execute_calc
@@ -20,7 +20,7 @@ any inversion) and every later check passes; only then is data_kind
 """
 
 import argparse
-import datetime
+import datetime as dt
 import gc
 import hashlib
 import json
@@ -35,6 +35,7 @@ import tempfile
 import types
 import warnings
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -76,7 +77,7 @@ FINAL_CONSUMPTION = 276  # ModellingProduct "Y: Final Consumption"
 # Modelling.model_final_demand / model_intermediates scale the selected cells
 # by (1 + techChange / 100). Nothing else changes: no substitution, price or
 # rebound effect is modelled.
-SCENARIOS = [
+SCENARIOS: list[dict[str, Any]] = [
     {
         "id": "vehicle-demand-europe",
         "label": "Final demand for European motor vehicles in Europe −20%",
@@ -150,10 +151,12 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
 
 
 def relative_difference(value, reference):
+    """|value - reference| relative to the reference, floored at ABS_FLOOR."""
     return abs(value - reference) / max(abs(reference), ABS_FLOOR)
 
 
 def loads_A(scenario):
+    """True when the scenario changes technical coefficients, so the engine inverts a new L."""
     return any(step["consumedBy"] != [FINAL_CONSUMPTION] for step in scenario["model_details"])
 
 
@@ -166,8 +169,9 @@ def modelled(engine, name, model_details, Y):
 
 
 def scenario_direction(scenarios, results, control, Y, B, indicators):
-    """Every scenario is a -20% cut: it must change the result and, on
-    non-negative B, y, A and L, must not raise any indicator total.
+    """Check that every -20% cut changes the result and raises no indicator total.
+
+    The rise check needs non-negative B, y, A and L.
 
     Final-demand scenarios are compared with the baseline (both use the stored
     L); technical-coefficient scenarios with the 0% control, which went through
@@ -266,6 +270,7 @@ def compute(engine, scenarios, indicators):
 
 
 def assemble(computed, indicators, provenance, peak_rss_bytes):
+    """The output document for a run that passed compute()'s checks."""
     results = computed["results"]
     return {
         "data_kind": "exiobase-v3",  # compute() raises unless the Octave reference check passed
@@ -294,14 +299,20 @@ def assemble(computed, indicators, provenance, peak_rss_bytes):
 
 
 def collect_provenance(engine_dir, data_dir, argv):
+    """Engine commit, dataset record and hashes, versions and the command, for the provenance panel."""
     import django
 
     def git(*a):
-        done = subprocess.run(["git", "-C", str(engine_dir), *a], capture_output=True, text=True, check=False)
+        done = subprocess.run(  # noqa: S603 -- fixed git arguments, no shell
+            ["git", "-C", str(engine_dir), *a],  # noqa: S607 -- git from PATH, like the user would run it
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         return done.stdout.strip() if done.returncode == 0 else None
 
     def sha256(path):
-        with open(path, "rb") as f:
+        with path.open("rb") as f:
             return hashlib.file_digest(f, "sha256").hexdigest()
 
     return {
@@ -317,7 +328,7 @@ def collect_provenance(engine_dir, data_dir, argv):
             "sha256": {n: sha256(Path(data_dir) / str(YEAR) / f"{n}_{FILE_SUFFIX}.npy") for n in "ALYB"},
         },
         "command": public_command(argv),
-        "generated_at": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
+        "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "python": platform.python_version(),
         "numpy": np.__version__,
         "django": django.get_version(),
@@ -344,6 +355,7 @@ def public_command(argv):
 
 
 def peak_rss_bytes():
+    """Peak resident memory of this process in bytes (macOS reports bytes, Linux KiB)."""
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return peak if sys.platform == "darwin" else peak * 1024
 
@@ -484,6 +496,7 @@ def region_leaves():
 
 
 def real_engine():
+    """The adapter compute() drives, backed by the RaMa-Scene package (after setup_django)."""
     from ramascene import querymanagement as qm
 
     return types.SimpleNamespace(
@@ -496,14 +509,16 @@ def real_engine():
 
 
 def indicator_meta(indicators):
+    """Id, name and unit of each indicator, from the engine database."""
     from ramascene import querymanagement as qm
 
     names = qm.get_names_indicator(indicators)
     units = qm.get_indicator_units(indicators)
-    return [{"id": i, "name": n, "unit": units[n]} for i, n in zip(indicators, names)]
+    return [{"id": i, "name": n, "unit": units[n]} for i, n in zip(indicators, names, strict=True)]
 
 
 def main(argv=None):
+    """Command-line entry point; see the module docstring."""
     argv = sys.argv[1:] if argv is None else argv
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="store_true", help="really run the full-size engine (~4.0 GB peak)")
@@ -525,9 +540,8 @@ def main(argv=None):
         )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(output, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
-    print(
-        f"{args.out}: data_kind={output['data_kind']}, peak RSS {output['provenance']['peak_rss_bytes'] / 2**30:.2f} GiB"
-    )
+    peak_gib = output["provenance"]["peak_rss_bytes"] / 2**30
+    print(f"{args.out}: data_kind={output['data_kind']}, peak RSS {peak_gib:.2f} GiB")
 
 
 if __name__ == "__main__":

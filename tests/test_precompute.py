@@ -13,6 +13,7 @@ import subprocess
 import sys
 import types
 import weakref
+from typing import Any
 
 import numpy as np
 import pytest
@@ -43,7 +44,7 @@ def fake_engine(
     if negative_B:
         B[:, 0] *= -1
     L = np.linalg.inv(np.identity(4) - A)
-    live = {"previous": None, "violations": 0, "apply_calls": 0}
+    live: dict[str, Any] = {"previous": None, "violations": 0, "apply_calls": 0}
 
     def load(name):
         return {"A": A, "Y": Y, "B": B, "L": L}[name].copy()
@@ -178,7 +179,7 @@ def test_cuts_lower_every_indicator_total():
 
 
 def test_an_engine_error_names_the_scenario():
-    with pytest.raises(ValueError, match="vehicle-demand-europe.*no leaves"):
+    with pytest.raises(ValueError, match=r"vehicle-demand-europe.*no leaves"):
         run(fake_engine(engine_error=True))
 
 
@@ -269,7 +270,10 @@ def test_document_carries_status_scenarios_verbatim_and_provenance():
 def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     engine = tmp_path / "engine"
     engine.mkdir()
-    git = lambda *a: subprocess.run(["git", "-C", str(engine), *a], check=True, capture_output=True)
+
+    def git(*a):
+        subprocess.run(["git", "-C", str(engine), *a], check=True, capture_output=True)
+
     git("init", "-q", "-b", "main")
     git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "x")
     year = tmp_path / "data" / "2011"

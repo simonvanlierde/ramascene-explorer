@@ -6,7 +6,11 @@ requires-python = ">=3.12"
 dependencies = ["numpy>=2", "django>=5.2,<6"]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.17.0",
+    "ty>=0.0.86",
+]
 
 [tool.uv]
 package = false
@@ -14,3 +18,32 @@ package = false
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.ty.analysis]
+# RaMa-Scene is a checkout passed with --engine, not an installed dependency.
+allowed-unresolved-imports = ["ramascene", "ramascene.**"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "COM812",  # conflicts with the formatter
+  "ANN",     # ty checks the types; annotating every matrix argument adds little
+  "N802", "N803", "N806",  # A, L, Y, B are the input-output notation
+  "RUF001", "RUF002",  # × and − are deliberate in strings and docstrings
+  "EM", "TRY003",  # messages built inline at the raise
+  "PLR0913", "PLR0917",  # the engine calls take Y, B, L and friends positionally
+  "T201",  # precompute.py is a command-line script
+  "CPY001",
+]
+pydocstyle.convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# The engine imports only work after setup_django() has configured Django.
+"precompute.py" = ["PLC0415"]
+# The fake engine mirrors the real adapter's signatures and knobs.
+"tests/**" = ["S101", "D1", "INP001", "PLR2004", "FBT", "PLC0415", "ARG001", "C901", "PT018", "S603", "S607"]
+"conftest.py" = ["D1", "INP001"]
