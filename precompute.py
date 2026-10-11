@@ -541,11 +541,14 @@ def compute(engine, scenarios, indicators):
     independent.extend(control_record["independent"])
     runs["zero_change_control"] = {k: control_record.get(k) for k in ("wall_s", "engine_s", "peak_rss_bytes")}
     gc.collect()
+    # Same float64 data on both sides, so only summation order differs: the
+    # shipped run measured 1.4e-14. 1e-9 leaves room for that and still catches
+    # a modified-A path that drifts, which 1e-6 would let through.
     worst = max(relative_difference(control[i][r], results["baseline"][i][r]) for i in control for r in control[i])
     zero_change = {
-        "passed": worst <= 1e-6,
+        "passed": worst <= 1e-9,
         "max_relative_difference": worst,
-        "tolerance": "relative 1e-6",
+        "tolerance": "relative 1e-9",
         "model_details": control_details,
     }
     if not all(c["passed"] for c in control_record["independent"]) or not zero_change["passed"]:

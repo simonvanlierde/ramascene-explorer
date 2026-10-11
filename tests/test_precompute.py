@@ -29,6 +29,7 @@ def fake_engine(
     lose_a_region=False,
     shift_between_regions=False,
     leaky_zero_change=False,
+    zero_change_drift=0.0,
     reference_fails=False,
     ignore_selection=False,
     raise_instead_of_cut=False,
@@ -68,6 +69,8 @@ def fake_engine(
                 A_s[1, 0] *= factor
         if leaky_zero_change:
             A_s[0, 0] += 0.01
+        if live["current"] == "zero_change_control":
+            A_s[0, 0] *= 1 + zero_change_drift
         L_s = np.linalg.inv(np.identity(4) - A_s)
         live["previous"] = weakref.ref(L_s)
         return Y_s, L_s
@@ -258,6 +261,13 @@ def test_zero_change_through_the_modelling_path_must_reproduce_the_baseline():
     assert run(fake_engine())["checks"]["zero_change_control"]["passed"]
     with pytest.raises(ValueError, match="zero_change_control"):
         run(fake_engine(leaky_zero_change=True))
+
+
+def test_zero_change_control_catches_drift_far_below_the_octave_tolerance():
+    # a 1e-7 change to one coefficient moves the results by about 1e-8,
+    # relative: inside 1e-6, far outside the 1e-14 the shipped run reached
+    with pytest.raises(ValueError, match="zero_change_control"):
+        run(fake_engine(zero_change_drift=1e-7))
 
 
 def test_zero_change_control_uses_the_modified_A_path():
