@@ -10,7 +10,7 @@
     color-scheme: light;
     --surface: #fcfcfb; --surface-2: #f3f2ef; --border: #deddd8;
     --text: #0b0b0b; --text-2: #4a4946; --muted: #6b6a65;
-    --decrease: #2a78d6; --increase: #e34948; --grid: #e6e5e0; --axis: #8a8984;
+    --decrease: #2a78d6; --increase: #e34948; --fail: #b8302f; --grid: #e6e5e0; --axis: #8a8984;
     --focus: #2a78d6; --danger-bg: #b3261e; --danger-text: #ffffff;
   }
   @media (prefers-color-scheme: dark) {
@@ -18,7 +18,7 @@
       color-scheme: dark;
       --surface: #1a1a19; --surface-2: #242423; --border: #383835;
       --text: #ffffff; --text-2: #c9c8bf; --muted: #a3a29a;
-      --decrease: #3987e5; --increase: #e66767; --grid: #2e2e2c; --axis: #75746f;
+      --decrease: #3987e5; --increase: #e66767; --fail: #e66767; --grid: #2e2e2c; --axis: #75746f;
       --focus: #6aa6ee;
     }
   }
@@ -26,7 +26,7 @@
     color-scheme: dark;
     --surface: #1a1a19; --surface-2: #242423; --border: #383835;
     --text: #ffffff; --text-2: #c9c8bf; --muted: #a3a29a;
-    --decrease: #3987e5; --increase: #e66767; --grid: #2e2e2c; --axis: #75746f;
+    --decrease: #3987e5; --increase: #e66767; --fail: #e66767; --grid: #2e2e2c; --axis: #75746f;
     --focus: #6aa6ee;
   }
   * { box-sizing: border-box; }
@@ -67,7 +67,7 @@
   dd { margin: 0; overflow-wrap: anywhere; }
   code, pre { font: .875rem/1.45 ui-monospace, "SF Mono", Menlo, monospace; }
   pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
-  .fail { color: var(--increase); font-weight: 700; }
+  .fail { color: var(--fail); font-weight: 700; }
   footer { color: var(--muted); font-size: 1rem; margin-top: 24px; }
   @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dt { margin-top: 10px; } }
 </style>
@@ -91,7 +91,7 @@
       <figcaption id="caption"></figcaption>
     </figure>
     <h2>Values</h2>
-    <div class="table-wrap"><table id="table"></table></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Results by region"><table id="table"></table></div>
     <details id="provenance-panel" open>
       <summary>Provenance</summary>
       <dl id="provenance"></dl>
