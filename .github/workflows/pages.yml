@@ -1,7 +1,8 @@
 name: pages
 
-# Manual only: nothing publishes on push. Ships index.html, explorer.js and
-# data/results.json, and refuses to ship without real precompute output.
+# Manual only: nothing publishes on push. Ships the page, its modules, fonts
+# and map geometry, and the three data files, and refuses to ship without real
+# precompute output.
 
 on:
   workflow_dispatch:
@@ -32,8 +33,9 @@ jobs:
           jq -e '.data_kind == "exiobase-v3"' data/results.json >/dev/null \
             || { echo "data/results.json is not exiobase-v3 output"; exit 1; }
           mkdir -p _site/data
-          cp index.html explorer.js _site/
-          cp data/results.json _site/data/
+          cp index.html explorer.js map.js sankey.js visuals.js live.js live-panel.js _site/
+          cp -r fonts geo _site/
+          cp data/results.json data/regions.json data/flows.json _site/data/
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
