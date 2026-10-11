@@ -27,8 +27,8 @@ the output. `ramascene/modelling.py` scales the selected cells by
 | id | What it changes | Engine path |
 | --- | --- | --- |
 | `vehicle-demand-europe` | Final demand in European regions for motor vehicles produced in European regions, −20% | `Modelling.model_final_demand` (Y), stored L |
-| `steel-in-vehicles-europe` | Coefficient of basic iron and steel (all origins) into motor-vehicle manufacturing in European regions, −20% | `Modelling.model_intermediates` (A), then `inv(I − A)` |
-| `cement-in-construction` | Coefficient of cement, lime and plaster (all origins) into construction work in all regions, −20% | `Modelling.model_intermediates` (A), then `inv(I − A)` |
+| `steel-in-vehicles-europe` | Coefficient of basic iron and steel (all origins) into motor-vehicle manufacturing in European regions, −20% | `Modelling.model_intermediates` (A), then one LU factorization of `(I − A)` |
+| `cement-in-construction` | Coefficient of cement, lime and plaster (all origins) into construction work in all regions, −20% | `Modelling.model_intermediates` (A), then one LU factorization of `(I − A)` |
 
 "European regions" is the `Europe` aggregate of the engine database: EU28 plus
 Russia, Switzerland, Norway and Rest of Europe.
