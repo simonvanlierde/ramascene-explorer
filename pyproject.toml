@@ -38,12 +38,16 @@ ignore = [
   "PLR0913", "PLR0917",  # the engine calls take Y, B, L and friends positionally
   "T201",  # precompute.py is a command-line script
   "CPY001",
+  "D102", "D103", "D107",  # helpers are named for what they return; docstrings where the contract is not obvious
 ]
 pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 # The engine imports only work after setup_django() has configured Django.
-"precompute.py" = ["PLC0415"]
+# compute() runs the checks in order and refuses at the first failure; tolerances
+# are written where they are compared; git and the worker run with fixed argv.
+"precompute.py" = ["PLC0415", "C901", "PLR0912", "PLR0915", "PLR2004", "FBT002", "S603", "S607"]
+"compare_data.py" = ["C901"]
 # The fake engine mirrors the real adapter's signatures and knobs.
-"tests/**" = ["S101", "D1", "INP001", "PLR2004", "FBT", "PLC0415", "ARG001", "C901", "PT018", "S603", "S607"]
+"tests/**" = ["S101", "D1", "INP001", "PLR2004", "FBT", "PLC0415", "ARG001", "C901", "PT018", "S603", "S607", "ARG002", "ARG005", "S108"]
 "conftest.py" = ["D1", "INP001"]

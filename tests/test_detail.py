@@ -59,12 +59,12 @@ def test_detail_has_every_run_by_indicator_by_country_and_passes_its_checks():
 
 
 def test_a_country_value_off_its_independent_recomputation_writes_nothing():
-    with pytest.raises(ValueError, match="detail verification failed.*independent_by_country"):
+    with pytest.raises(ValueError, match=r"detail verification failed.*independent_by_country"):
         run(detailed_engine(skew_country=True))
 
 
 def test_sectors_that_do_not_cover_the_country_total_write_nothing():
-    with pytest.raises(ValueError, match="detail verification failed.*sectors"):
+    with pytest.raises(ValueError, match=r"detail verification failed.*sectors"):
         run(detailed_engine(drop_sector=True))
 
 

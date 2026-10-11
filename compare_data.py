@@ -13,13 +13,14 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 FILES = ["results.json", "regions.json", "flows.json"]
 SKIPPED = {"provenance", "runs", "checks"}
 
 
 def compare(old, new, rtol=1e-12):
-    report = {"values": 0, "max_relative_difference": 0.0, "where": None, "mismatches": []}
+    report: dict[str, Any] = {"values": 0, "max_relative_difference": 0.0, "where": None, "mismatches": []}
 
     def walk(a, b, path):
         where = "/".join(path)
@@ -31,7 +32,7 @@ def compare(old, new, rtol=1e-12):
         elif isinstance(a, list) and isinstance(b, list):
             if len(a) != len(b):
                 report["mismatches"].append(f"{where}: length {len(a)} != {len(b)}")
-            for i, (x, y) in enumerate(zip(a, b)):
+            for i, (x, y) in enumerate(zip(a, b, strict=False)):
                 walk(x, y, [*path, str(i)])
         elif all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (a, b)):
             report["values"] += 1

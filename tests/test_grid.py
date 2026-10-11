@@ -81,7 +81,7 @@ def test_every_cell_is_one_verbatim_intervention_of_the_same_shape():
 
 
 def test_consumed_by_is_the_fifteen_industry_sections():
-    assert precompute.INDUSTRY_SECTIONS == list(range(1, 16))
+    assert list(range(1, 16)) == precompute.INDUSTRY_SECTIONS
     assert precompute.GRID["consumed_by"] == precompute.INDUSTRY_SECTIONS
     assert precompute.FINAL_CONSUMPTION not in precompute.INDUSTRY_SECTIONS
 

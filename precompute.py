@@ -1,4 +1,4 @@
-"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
+r"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
 
     uv run python precompute.py --run --engine ../ramascene-pr2 \\
         --data "$DATASETS_DIR" --out data/results.json
@@ -37,7 +37,7 @@ dropped silently. data_kind is "exiobase-v3" only for output that passed.
 """
 
 import argparse
-import datetime
+import datetime as dt
 import gc
 import hashlib
 import importlib
@@ -47,14 +47,15 @@ import platform
 import resource
 import shlex
 import shutil
-import subprocess
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
 import types
 import warnings
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -94,7 +95,7 @@ FINAL_CONSUMPTION = 276  # ModellingProduct "Y: Final Consumption"
 # Modelling.model_final_demand / model_intermediates scale the selected cells
 # by (1 + techChange / 100). Nothing else changes: no substitution, price or
 # rebound effect is modelled.
-SCENARIOS = [
+SCENARIOS: list[dict[str, Any]] = [
     {
         "id": "vehicle-demand-europe",
         "label": "Final demand for European motor vehicles in Europe −20%",
@@ -156,7 +157,7 @@ GRID_CUTS = [-10, -20, -50]  # techChange in %
 # sections, whose leaves together are all 200 industries.
 INDUSTRY_SECTIONS = list(range(1, 16))
 # ramascene_product global ids and names, as db.sqlite3 has them.
-GRID_PRODUCTS = [
+GRID_PRODUCTS: list[dict[str, Any]] = [
     {
         "slug": "steel",
         "id": 180,
@@ -179,7 +180,7 @@ GRID_PRODUCTS = [
     {"slug": "rubber", "id": 172, "name": "Rubber and plastic products", "short": "Rubber and plastic products"},
 ]
 # ramascene_country global ids: the five continental aggregates (REGIONS above).
-GRID_REGIONS = [
+GRID_REGIONS: list[dict[str, Any]] = [
     {"slug": "europe", "id": 2, "name": "Europe"},
     {"slug": "middle-east", "id": 3, "name": "Middle-East"},
     {"slug": "america", "id": 4, "name": "America"},
@@ -235,9 +236,10 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
     """B_i * (L . sum(Y)) per region, computed without Analyze.
 
     L.dot() rather than @: the perf/solve-not-invert engine returns a
-    LeontiefSolve, which has .dot and .T like the stored ndarray. Rows are country-major (index = country * 200 + product, as
-    productindexmanger builds them), so the vector reshapes to (country,
-    product); each region sums its leaf countries (leaf_children_local).
+    LeontiefSolve, which has .dot and .T like the stored ndarray. Rows are
+    country-major (index = country * 200 + product, as productindexmanger
+    builds them), so the vector reshapes to (country, product); each region
+    sums its leaf countries (leaf_children_local).
     """
     countries = sum(len(c) for c in region_leaves.values())
     per_country = (B[indicator - 1] * L.dot(Y.sum(axis=1))).reshape(countries, -1).sum(axis=1)
@@ -357,9 +359,11 @@ def modelled(engine, name, model_details, Y):
 
 
 def scenario_direction(scenarios, results, control, Y, B, indicators):
-    """Every scenario is a cut: it must change some indicator total by more
-    than CHANGE_TOL relative (float noise does not count) and, on
-    non-negative B, y, A and L, must not raise any indicator total.
+    """Check that every scenario is a cut.
+
+    A cut must change some indicator total by more than CHANGE_TOL relative
+    (float noise does not count) and, on non-negative B, y, A and L, must not
+    raise any indicator total.
 
     Final-demand scenarios are compared with the baseline (both use the stored
     L); technical-coefficient scenarios with the 0% control, which went through
@@ -592,7 +596,7 @@ def compute(engine, scenarios, indicators):
 def detail_of(details, results, indicators):
     """The published runs' detail, their checks, and the flows of each change; raises if a check fails."""
     shown = {n: d for n, d in details.items() if n in results or n == "zero_change_control"}
-    checks = {
+    checks: dict[str, Any] = {
         k: [c for d in shown.values() for c in d["checks"][k]]
         for k in ("independent_by_country", "aggregates", "sectors")
     }
@@ -619,12 +623,15 @@ def run_summary(runs, validation):
     walls = [r["wall_s"] for r in scenario_runs.values() if r.get("wall_s") is not None]
     engine_s = [r["engine_s"] for r in scenario_runs.values() if r.get("engine_s") is not None]
     rss = [r["peak_rss_bytes"] for r in scenario_runs.values() if r.get("peak_rss_bytes")]
-    stat = lambda xs: {"median": statistics.median(xs), "max": max(xs), "n": len(xs)} if xs else None
+
+    def stat(xs):
+        return {"median": statistics.median(xs), "max": max(xs), "n": len(xs)} if xs else None
+
     return {
         "scenarios_run": len(scenario_runs),
         "passed": sum(r["status"] == "passed" for r in scenario_runs.values()),
         "failed": sum(r["status"] == "failed" for r in scenario_runs.values()),
-        "wall_s": {**stat(walls), "total": math.fsum(walls)} if walls else None,
+        "wall_s": {**(stat(walls) or {}), "total": math.fsum(walls)} if walls else None,
         "engine_s": stat(engine_s),
         "peak_rss_bytes": stat(rss),
         "octave_reference_files": len(validation["files"]),
@@ -728,18 +735,29 @@ def assemble_flows(computed, indicators, sector_names, provenance, peak_rss_byte
 def run_log(doc):
     """data/run-log.md: engine, date, per-scenario wall/RSS and check outcome."""
     p, e, r = doc["provenance"], doc["provenance"]["engine"], doc["provenance"]["run"]
-    gib = lambda b: f"{b / 2**30:.2f}" if b else "—"
-    sec = lambda x: f"{x:.2f}" if x is not None else "—"
+
+    def gib(b):
+        return f"{b / 2**30:.2f}" if b else "—"
+
+    def sec(x):
+        return f"{x:.2f}" if x is not None else "—"
+
     lines = [
         "# Precompute run log",
         "",
-        f"- Engine: {e.get('label') or e.get('commit')} ({'uncommitted changes' if e.get('dirty') else 'clean tree'})"
-        + (f", solver {e['solver']}" if e.get("solver") else ""),
+        (
+            f"- Engine: {e.get('label') or e.get('commit')} "
+            f"({'uncommitted changes' if e.get('dirty') else 'clean tree'})"
+            + (f", solver {e['solver']}" if e.get("solver") else "")
+        ),
         f"- Generated: {p['generated_at']}",
         f"- Dataset: {p['dataset']['name']} {p['dataset']['year']}, doi:{p['dataset']['doi']}",
         f"- Command: `{p['command']}`",
-        f"- Octave reference files: {r['octave_reference_files']} ({r['octave_reference_values']} values), "
-        f"{'passed' if p['reference_validation']['passed'] else 'NOT PASSED'} at {p['reference_validation']['tolerance']}",
+        (
+            f"- Octave reference files: {r['octave_reference_files']} ({r['octave_reference_values']} values), "
+            f"{'passed' if p['reference_validation']['passed'] else 'NOT PASSED'} "
+            f"at {p['reference_validation']['tolerance']}"
+        ),
         f"- Scenarios run: {r['scenarios_run']}, passed every check: {r['passed']}, failed: {r['failed']}",
     ]
     if r["wall_s"]:
@@ -749,11 +767,13 @@ def run_log(doc):
         )
     if r["engine_s"]:
         lines.append(
-            f"- Engine time per scenario (apply_model + 3 routes + check): median {sec(r['engine_s']['median'])} s, max {sec(r['engine_s']['max'])} s"
+            f"- Engine time per scenario (apply_model + 3 routes + check): "
+            f"median {sec(r['engine_s']['median'])} s, max {sec(r['engine_s']['max'])} s"
         )
     if r["peak_rss_bytes"]:
         lines.append(
-            f"- Peak RSS per scenario worker: median {gib(r['peak_rss_bytes']['median'])} GiB, max {gib(r['peak_rss_bytes']['max'])} GiB"
+            f"- Peak RSS per scenario worker: median {gib(r['peak_rss_bytes']['median'])} GiB, "
+            f"max {gib(r['peak_rss_bytes']['max'])} GiB"
         )
     lines.append(f"- Parent process peak RSS (Octave references, baseline): {gib(p['parent_peak_rss_bytes'])} GiB")
     control = doc["checks"]["zero_change_control"]
@@ -809,7 +829,7 @@ def collect_provenance(engine_dir, data_dir, argv):
     import django
 
     def sha256(path):
-        with open(path, "rb") as f:
+        with Path(path).open("rb") as f:
             return hashlib.file_digest(f, "sha256").hexdigest()
 
     return {
@@ -820,7 +840,7 @@ def collect_provenance(engine_dir, data_dir, argv):
             "sha256": {n: sha256(Path(data_dir) / str(YEAR) / f"{n}_{FILE_SUFFIX}.npy") for n in "ALYB"},
         },
         "command": public_command(argv),
-        "generated_at": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
+        "generated_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         "python": platform.python_version(),
         "numpy": np.__version__,
         "django": django.get_version(),
@@ -833,8 +853,10 @@ def public_remote(url):
 
 
 def public_command(argv):
-    """The command line, with the dataset directory as "$DATASETS_DIR" and an absolute
-    engine path as "$ENGINE_DIR", so no local path reaches the page."""
+    """The command line, with no local path in it.
+
+    The dataset directory becomes "$DATASETS_DIR" and an absolute engine path "$ENGINE_DIR".
+    """
     words, previous = [], None
     for a in argv:
         if previous == "--data":
@@ -1003,8 +1025,11 @@ def region_leaves():
 
 
 def worker_scenario(engine_dir, data_dir):
-    """scenario(name, model_details, indicators) that runs `precompute.py --worker`
-    in a fresh process and returns its record plus wall_s and the worker's ru_maxrss."""
+    """Return scenario(name, model_details, indicators), which runs one scenario in a worker.
+
+    The worker is `precompute.py --worker` in a fresh process; the record comes back with
+    wall_s and the worker's ru_maxrss.
+    """
 
     def scenario(name, model_details, indicators, detail=False):
         request = json.dumps({"name": name, "model_details": model_details, "indicators": indicators, "detail": detail})
@@ -1026,7 +1051,7 @@ def worker_scenario(engine_dir, data_dir):
     return scenario
 
 
-def worker(engine_dir, data_dir):
+def worker(engine_dir, data_dir):  # noqa: ARG001  # same arguments as the parent process
     """Read one scenario request from stdin, run it, print the record as one JSON line."""
     from ramascene import querymanagement as qm
 
@@ -1061,7 +1086,7 @@ def by_sector_country(indicator, Y, B, L):
     from ramascene import querymanagement as qm
 
     out = {}
-    for sector, name in zip(SECTORS, qm.get_names_product(SECTORS)):
+    for sector, name in zip(SECTORS, qm.get_names_product(SECTORS), strict=False):
         selection = {
             "dimType": "Hotspot",
             "vizType": "Geographic",
@@ -1110,7 +1135,7 @@ def indicator_meta(indicators):
 
     names = qm.get_names_indicator(indicators)
     units = qm.get_indicator_units(indicators)
-    return [{"id": i, "name": n, "unit": units[n]} for i, n in zip(indicators, names)]
+    return [{"id": i, "name": n, "unit": units[n]} for i, n in zip(indicators, names, strict=False)]
 
 
 SCENARIO_SETS = {"all": lambda: ALL_SCENARIOS, "original": lambda: SCENARIOS, "grid": grid_scenarios}

@@ -26,9 +26,9 @@ def fake_modelling(monkeypatch, with_lu):
             return "Y_s", "L_s"
 
     module = types.ModuleType("ramascene.modelling")
-    module.Modelling = Modelling
+    module.__dict__["Modelling"] = Modelling
     if with_lu:
-        module.LeontiefLU = type("LeontiefLU", (), {})
+        module.__dict__["LeontiefLU"] = type("LeontiefLU", (), {})
     monkeypatch.setitem(sys.modules, "ramascene.modelling", module)
     monkeypatch.setattr(precompute, "model_inputs", lambda model_details: ({}, [True]))
     return module, calls

@@ -13,6 +13,7 @@ import subprocess
 import sys
 import types
 import weakref
+from typing import Any
 
 import numpy as np
 import pytest
@@ -44,7 +45,7 @@ def fake_engine(
     if negative_B:
         B[:, 0] *= -1
     L = np.linalg.inv(np.identity(4) - A)
-    live = {"previous": None, "violations": 0, "apply_calls": 0, "current": None}
+    live: dict[str, Any] = {"previous": None, "violations": 0, "apply_calls": 0, "current": None}
 
     def load(name):
         return {"A": A, "Y": Y, "B": B, "L": L}[name].copy()
@@ -206,7 +207,7 @@ def test_a_failed_octave_reference_check_aborts_before_any_inversion():
 
 
 def test_scenarios_identical_to_their_reference_fail():
-    with pytest.raises(ValueError, match="(?s)every scenario failed.*identical to its reference") as info:
+    with pytest.raises(ValueError, match=r"(?s)every scenario failed.*identical to its reference") as info:
         run(fake_engine(ignore_selection=True))
     assert "zero_change_control" in str(info.value) and "baseline" in str(info.value)  # the reference each was held to
 
@@ -227,7 +228,7 @@ def test_a_change_within_float_noise_counts_as_unchanged():
 
 
 def test_cuts_that_raise_an_indicator_total_fail():
-    with pytest.raises(ValueError, match="(?s)every scenario failed.*total rises"):
+    with pytest.raises(ValueError, match=r"(?s)every scenario failed.*total rises"):
         run(fake_engine(raise_instead_of_cut=True))
 
 
@@ -253,7 +254,7 @@ def test_an_engine_error_names_the_scenario_and_fails_only_that_one():
 
 
 def test_an_engine_error_on_the_control_aborts_the_run():
-    with pytest.raises(ValueError, match="zero_change_control.*no leaves"):
+    with pytest.raises(ValueError, match=r"zero_change_control.*no leaves"):
         run(fake_engine(engine_error="zero_change_control"))
 
 
@@ -305,7 +306,7 @@ def test_both_engine_intervention_kinds_are_covered():
 
 # --- output document --------------------------------------------------------
 
-PROVENANCE = {
+PROVENANCE: dict[str, Any] = {
     "engine": {"repository": "r", "branch": "b", "commit": "c" * 40, "label": "b @ ccccccc", "dirty": False},
     "dataset": {**precompute.DATASET, "year": 2011, "sha256": {}},
     "command": "uv run python precompute.py --run",
@@ -347,7 +348,10 @@ def test_document_carries_status_scenarios_verbatim_and_provenance():
 def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     engine = tmp_path / "engine"
     engine.mkdir()
-    git = lambda *a: subprocess.run(["git", "-C", str(engine), *a], check=True, capture_output=True)
+
+    def git(*a):
+        subprocess.run(["git", "-C", str(engine), *a], check=True, capture_output=True)
+
     git("init", "-q", "-b", "main")
     git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", "x")
     year = tmp_path / "data" / "2011"
