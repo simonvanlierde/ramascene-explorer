@@ -1,8 +1,9 @@
 extends: default
 
-# Copier writes this file's formatting; ours to consume, not to lint.
+# Copier and pnpm write these files' formatting; ours to consume, not to lint.
 ignore: |
   .copier-answers.yml
+  pnpm-lock.yaml
 
 rules:
   # No file in this repo opens with a `---` document marker, and comments

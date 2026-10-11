@@ -12,6 +12,7 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
+        exclude: ^fonts/OFL\.txt$  # the licence text stays byte-for-byte as issued
 
   # Rules in pyproject.toml [tool.ruff]. Keep rev in step with ruff in uv.lock.
   - repo: https://github.com/astral-sh/ruff-pre-commit
