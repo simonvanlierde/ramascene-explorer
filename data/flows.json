@@ -1,0 +1,2698 @@
+{
+ "data_kind": "exiobase-v3",
+ "status": "precomputed — not a live calculation",
+ "base_year": 2011,
+ "breakdown": "Change (intervention minus baseline) per sector of production × region where the impact occurs; RaMa-Scene route three (Hotspot × Geographic) run once per level-2 product aggregate over the 49 regions",
+ "method": "The 12 cells with the largest |delta| are named; every other cell is added to the flow between the named node on its side or 'Other sectors' / 'Other regions', so named plus other flows sum to the total delta.",
+ "sectors": [
+  "Agriculture, hunting and forestry",
+  "Fishing",
+  "Mining and quarrying",
+  "Manufacturing",
+  "Electricity, gas and water supply",
+  "Construction",
+  "Trade",
+  "Hotels and restaurants",
+  "Transport, storage and communication",
+  "Financial intermediation",
+  "Real estate, renting and business activities",
+  "Public administration",
+  "Education",
+  "Health and social work",
+  "Other service activities"
+ ],
+ "indicators": [
+  {
+   "id": 5,
+   "name": "GHG emissions: Total",
+   "unit": "kg CO2 eq"
+  },
+  {
+   "id": 3,
+   "name": "Employment: Total",
+   "unit": "1000 p"
+  },
+  {
+   "id": 7,
+   "name": "Domestic Extraction Used - Metal Ores - Total",
+   "unit": "kt"
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "baseline",
+   "label": "Baseline (2011, no intervention)",
+   "description": "EXIOBASE 2011 as stored, no intervention.",
+   "model_details": null
+  },
+  {
+   "id": "vehicle-demand-europe",
+   "label": "Final demand for European motor vehicles in Europe −20%",
+   "description": "Final demand in European regions for motor vehicles, trailers and semi-trailers produced in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      199
+     ],
+     "originReg": [
+      2
+     ],
+     "consumedBy": [
+      276
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-in-vehicles-europe",
+   "label": "Steel input to European motor-vehicle manufacturing −20%",
+   "description": "Technical coefficient of basic iron and steel (from all regions) into motor-vehicle manufacturing in European regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      198
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cement-in-construction",
+   "label": "Cement input to construction −20%, all regions",
+   "description": "Technical coefficient of cement, lime and plaster (from all regions) into construction work in all regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      177
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      225
+     ],
+     "consumedReg": [
+      1
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  }
+ ],
+ "results": {
+  "vehicle-demand-europe": {
+   "5": {
+    "total_delta": -32661739759.602596,
+    "flows": [
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Germany",
+      "delta": -2198768091.428894,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Germany",
+      "delta": -1876857827.3771667,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "China",
+      "delta": -1631899556.821289,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of Europe",
+      "delta": -1392945975.5314636,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": -1333998132.1049805,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -1235486790.8278656,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -1061531399.3755493,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Middle East",
+      "delta": -952948141.7580566,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "France",
+      "delta": -783288055.8173981,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -765693343.1505127,
+      "named": true
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Germany",
+      "delta": -605365103.3955078,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Spain",
+      "delta": -603491718.3174896,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "France",
+      "delta": -107998631.37800598,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Other regions",
+      "delta": -2839210838.031324,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of Middle East",
+      "delta": -238917251.38537598,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Russia",
+      "delta": -142442263.7331543,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -5730578375.968111,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Spain",
+      "delta": -517879489.47291565,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -404206351.69348145,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "France",
+      "delta": -37302956.071128845,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Germany",
+      "delta": -159624827.31814194,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -1362155175.0647044,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Europe",
+      "delta": -97638307.11743164,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Middle East",
+      "delta": -250267548.09851074,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Spain",
+      "delta": -31410840.508001328,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": -131802930.97278464,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "France",
+      "delta": -506323854.39971375,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Germany",
+      "delta": -829708212.0802605,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -1931633637.02725,
+      "named": false,
+      "cells": 462
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -393772531.2121115,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Middle East",
+      "delta": -112198977.41941187,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -125018795.46838951,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Spain",
+      "delta": -129354655.73426199,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "China",
+      "delta": -128443998.78179932,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "France",
+      "delta": -93495884.72367859,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Other regions",
+      "delta": -1381888700.8324583,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Europe",
+      "delta": -92608694.05374146,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Middle East",
+      "delta": -90397777.16694641,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Russia",
+      "delta": -276011535.01257324,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Spain",
+      "delta": -77172582.97075272,
+      "named": false,
+      "cells": 1
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -32661739759.602596
+   },
+   "3": {
+    "total_delta": -2915.8079117686398,
+    "flows": [
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -743.9201422107144,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Germany",
+      "delta": -145.98559431442754,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -135.0747917793633,
+      "named": true
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Europe",
+      "delta": -105.1474695808065,
+      "named": true
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Rest of Europe",
+      "delta": -84.90948237309385,
+      "named": true
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Europe",
+      "delta": -78.81881934099329,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -74.5077033105299,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Europe",
+      "delta": -71.03905108300023,
+      "named": true
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Germany",
+      "delta": -55.255435471521196,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Poland",
+      "delta": -51.17941589015891,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "United Kingdom",
+      "delta": -50.41308303833739,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": -48.26861163438298,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "China",
+      "delta": -37.27933952835156,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Germany",
+      "delta": -0.21429690970080628,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Other regions",
+      "delta": -73.74531777206562,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Poland",
+      "delta": -1.8305287201433202,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Asia and Pacific",
+      "delta": -34.01654326135758,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Russia",
+      "delta": -6.635866537477341,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "United Kingdom",
+      "delta": -0.11472274771682578,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -394.4638405494398,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": -14.644873086059079,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Germany",
+      "delta": -12.771163629478743,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -87.38190734935145,
+      "named": false,
+      "cells": 420
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Poland",
+      "delta": -3.8875372947030478,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -43.391110249895064,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -80.20570329313685,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -5.662418534526481,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "United Kingdom",
+      "delta": -5.7522407631165695,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "China",
+      "delta": -0.5114277884563307,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Other regions",
+      "delta": -102.51942068632385,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Poland",
+      "delta": -6.894354182087454,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Rest of Asia and Pacific",
+      "delta": -16.584408192440605,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "Russia",
+      "delta": -1.791474083373032,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Real estate, renting and business activities",
+      "region": "United Kingdom",
+      "delta": -9.80897787073991,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "China",
+      "delta": -16.592803480940347,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Germany",
+      "delta": -41.0246311576866,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Other regions",
+      "delta": -114.76441024486931,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Trade",
+      "region": "Poland",
+      "delta": -1.285640054390342,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Asia and Pacific",
+      "delta": -17.904347084273468,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Russia",
+      "delta": -4.495833150395811,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "United Kingdom",
+      "delta": -6.911754878112788,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "China",
+      "delta": -5.720815400629363,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Germany",
+      "delta": -18.82961876228046,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Other regions",
+      "delta": -67.10354234798439,
+      "named": false,
+      "cells": 42
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Poland",
+      "delta": -5.455473351753653,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Asia and Pacific",
+      "delta": -22.659828857409593,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Russia",
+      "delta": -4.022947553765334,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "United Kingdom",
+      "delta": -4.409192386877294,
+      "named": false,
+      "cells": 1
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -2915.8079117686398
+   },
+   "7": {
+    "total_delta": -8698.25934088209,
+    "flows": [
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -1127.8604998525698,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Brazil",
+      "delta": -928.8237868680153,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Australia",
+      "delta": -918.4554023965029,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Poland",
+      "delta": -830.2289131140569,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of America",
+      "delta": -539.8905761525966,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "United States",
+      "delta": -527.615281844046,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -366.1380178226682,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of America",
+      "delta": -342.8008467324544,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Sweden",
+      "delta": -296.15000468645303,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "South Africa",
+      "delta": -274.9953615743434,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -225.19622014314518,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Indonesia",
+      "delta": -207.57637329085264,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Australia",
+      "delta": -0.4550149028912074,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Brazil",
+      "delta": -10.069873811284197,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Indonesia",
+      "delta": 0.0,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -402.59803671945593,
+      "named": false,
+      "cells": 38
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -166.61094426148338,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -92.31615890780813,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "South Africa",
+      "delta": -0.0007241230792200959,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Sweden",
+      "delta": -36.18376873259149,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "United States",
+      "delta": -0.01074986479824247,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -907.2143550458975,
+      "named": false,
+      "cells": 38
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Poland",
+      "delta": -177.27917846168202,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Australia",
+      "delta": -18.248853343149676,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Brazil",
+      "delta": -0.8444714886422844,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Indonesia",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -138.36825507928953,
+      "named": false,
+      "cells": 494
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Poland",
+      "delta": -12.924174439627675,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of America",
+      "delta": -37.30381663831755,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -29.750531508449974,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -22.953209693806134,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "South Africa",
+      "delta": -13.618006933990754,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Sweden",
+      "delta": -45.77793244814035,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "United States",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -8698.25934088209
+   }
+  },
+  "steel-in-vehicles-europe": {
+   "5": {
+    "total_delta": -4149427269.129562,
+    "flows": [
+     {
+      "sector": "Manufacturing",
+      "region": "Germany",
+      "delta": -546950497.6701355,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -359619655.3964081,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -303989541.8900757,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": -225693038.91796875,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "France",
+      "delta": -221289906.3607025,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Germany",
+      "delta": -132089749.10906982,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Italy",
+      "delta": -116109596.20948792,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -107329311.26147461,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Czech Republic",
+      "delta": -99540585.09111404,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -94836221.65997314,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "China",
+      "delta": -86487525.28466797,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -83854271.7098999,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Czech Republic",
+      "delta": -10066796.91230011,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "France",
+      "delta": -8222966.996177673,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "India",
+      "delta": -6086565.682250977,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Italy",
+      "delta": -9033448.319641113,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Other regions",
+      "delta": -162005479.4396795,
+      "named": false,
+      "cells": 41
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of Europe",
+      "delta": -58098837.320892334,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Russia",
+      "delta": -20214620.288269043,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -783620478.580662,
+      "named": false,
+      "cells": 41
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -57115858.888793945,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Czech Republic",
+      "delta": -21149671.763389587,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "France",
+      "delta": -7059481.5299396515,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Germany",
+      "delta": -25367947.780361176,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Italy",
+      "delta": -1225548.870317459,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -187451712.31396577,
+      "named": false,
+      "cells": 41
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Europe",
+      "delta": -16896845.66542816,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": -15472818.815500617,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Czech Republic",
+      "delta": -4636724.774724622,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "France",
+      "delta": -69980213.41582304,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Germany",
+      "delta": -68760089.73904005,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -6555595.407427415,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Italy",
+      "delta": -12204844.10512942,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -164686981.0918976,
+      "named": false,
+      "cells": 492
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -20637271.6630826,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -35086569.20388985,
+      "named": false,
+      "cells": 12
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -4149427269.129562
+   },
+   "3": {
+    "total_delta": -112.64376314679429,
+    "flows": [
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -12.374466263892828,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -8.079610048385803,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Germany",
+      "delta": -4.868564912372676,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Europe",
+      "delta": -4.057546825239115,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -4.015040368132759,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Europe",
+      "delta": -3.509540762821416,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -3.3573613936805486,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Poland",
+      "delta": -3.009814810050557,
+      "named": true
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Europe",
+      "delta": -2.834905867166526,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Africa",
+      "delta": -2.8331522049484192,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -2.735454128756828,
+      "named": true
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Europe",
+      "delta": -2.556969736870087,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Germany",
+      "delta": -0.007235135528731007,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "India",
+      "delta": -0.689819368213648,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Other regions",
+      "delta": -2.4228135971153777,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Poland",
+      "delta": -0.04496133242719225,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Africa",
+      "delta": -2.3242687041056342,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Asia and Pacific",
+      "delta": -1.535800021054456,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -16.47098140983312,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Germany",
+      "delta": -0.025743110301995387,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -1.4512305916661625,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Poland",
+      "delta": -0.2991006177227291,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Africa",
+      "delta": -1.3108431035652757,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Germany",
+      "delta": -1.7774847166551595,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -0.4162533273819804,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -6.194734302721789,
+      "named": false,
+      "cells": 430
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Poland",
+      "delta": -0.37610826348671367,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Africa",
+      "delta": -0.9148684629526542,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -1.2069209158494232,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -3.6524998599153946,
+      "named": false,
+      "cells": 10
+     },
+     {
+      "sector": "Trade",
+      "region": "Germany",
+      "delta": -2.050428415859642,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "India",
+      "delta": -0.12039638702844968,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Other regions",
+      "delta": -6.597814683145714,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Trade",
+      "region": "Poland",
+      "delta": -0.08691534466007056,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Africa",
+      "delta": -0.5850597814860521,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Asia and Pacific",
+      "delta": -0.6542693593073636,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Germany",
+      "delta": -0.9636474387389171,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "India",
+      "delta": -0.4321370327306795,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Other regions",
+      "delta": -3.0891288617435215,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Poland",
+      "delta": -0.43700671316764783,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Africa",
+      "delta": -1.1215377140470082,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Transport, storage and communication",
+      "region": "Rest of Asia and Pacific",
+      "delta": -1.1513272520642204,
+      "named": false,
+      "cells": 1
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -112.64376314679429
+   },
+   "7": {
+    "total_delta": -3041.6227038652505,
+    "flows": [
+     {
+      "sector": "Mining and quarrying",
+      "region": "Brazil",
+      "delta": -675.1522998540895,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Poland",
+      "delta": -559.0492802853478,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Australia",
+      "delta": -269.5744637509342,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -262.2158549227752,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Sweden",
+      "delta": -231.76681999934226,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -156.31640788461664,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of America",
+      "delta": -117.51772350433748,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -107.87293418028275,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Poland",
+      "delta": -84.4736114937914,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Europe",
+      "delta": -79.87645187675662,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -65.86998316150857,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Canada",
+      "delta": -47.957103197608376,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Australia",
+      "delta": -0.008161978067619202,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Brazil",
+      "delta": -5.177584619894333,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Canada",
+      "delta": -0.0012221562803631514,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -2.4645787137468275e-09,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -73.4340168859207,
+      "named": false,
+      "cells": 38
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -33.905931826127926,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -41.827453630819946,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -13.807751170017582,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Sweden",
+      "delta": -4.061170104720077,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -165.85267767901968,
+      "named": false,
+      "cells": 38
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of America",
+      "delta": -29.699232281534933,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Australia",
+      "delta": -1.1117259650745837,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Brazil",
+      "delta": -0.05341006405342341,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Canada",
+      "delta": -0.10655627160643791,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -9.212368127393991e-11,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -3.123992738100168,
+      "named": false,
+      "cells": 494
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Poland",
+      "delta": -0.8102336269933039,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of America",
+      "delta": -1.5574032208785467,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -1.2076760556274053,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -2.1280333643150335,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -3.2626314642597385,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Sweden",
+      "delta": -2.8429046479913564,
+      "named": false,
+      "cells": 13
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -3041.6227038652505
+   }
+  },
+  "cement-in-construction": {
+   "5": {
+    "total_delta": -444196412437.2732,
+    "flows": [
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": -200087437701.6211,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Brazil",
+      "delta": -21781373435.76715,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -21752843385.86438,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -18428990137.588013,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "China",
+      "delta": -18069368232.50879,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "United States",
+      "delta": -17321355303.478638,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of America",
+      "delta": -17092310677.484375,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -13614844682.843018,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Mexico",
+      "delta": -12216134965.328827,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Middle East",
+      "delta": -11646981517.119995,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -7640127207.169983,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "South Korea",
+      "delta": -6754040197.197418,
+      "named": true
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Brazil",
+      "delta": -19647540.08543396,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "India",
+      "delta": -3626722334.6951904,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Mexico",
+      "delta": -16364898.602081299,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Other regions",
+      "delta": -2625024799.7532225,
+      "named": false,
+      "cells": 39
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of America",
+      "delta": -12023680.48272705,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of Asia and Pacific",
+      "delta": -138136290.45507812,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Rest of Middle East",
+      "delta": -926443570.5065918,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "Russia",
+      "delta": -325675930.7258301,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "South Korea",
+      "delta": -329200481.28845215,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Electricity, gas and water supply",
+      "region": "United States",
+      "delta": -2420061627.59375,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -51220742393.244446,
+      "named": false,
+      "cells": 39
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Brazil",
+      "delta": -60248704.598098755,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -2291458882.90213,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Mexico",
+      "delta": -43835233.03161621,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -2706589880.538734,
+      "named": false,
+      "cells": 39
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of America",
+      "delta": -261981422.50369263,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -1074758773.7580566,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Middle East",
+      "delta": -885502583.8590088,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -757879977.5003662,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "South Korea",
+      "delta": -321417899.7672806,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "United States",
+      "delta": -1366403712.6124268,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Brazil",
+      "delta": -145358952.81576186,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": -1106819907.6032252,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -351891274.52925646,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Mexico",
+      "delta": -61928420.794231355,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -2391881864.7016935,
+      "named": false,
+      "cells": 468
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of America",
+      "delta": -192091662.913368,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -755604529.1317513,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Middle East",
+      "delta": -264378630.74213406,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -398280949.9435668,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "South Korea",
+      "delta": -153671601.8881607,
+      "named": false,
+      "cells": 12
+     },
+     {
+      "sector": "Other sectors",
+      "region": "United States",
+      "delta": -538576579.7341502,
+      "named": false,
+      "cells": 12
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -444196412437.2732
+   },
+   "3": {
+    "total_delta": -3168.1880568411434,
+    "flows": [
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -486.1997313229658,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -243.01344491638883,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": -180.5610467018705,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Africa",
+      "delta": -163.0760941983317,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "China",
+      "delta": -132.6481983155827,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -121.07333108985767,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Asia and Pacific",
+      "delta": -111.77182887122035,
+      "named": true
+     },
+     {
+      "sector": "Trade",
+      "region": "China",
+      "delta": -111.56991500169534,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Europe",
+      "delta": -107.03626745074143,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Africa",
+      "delta": -92.76487470525899,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of America",
+      "delta": -91.34986033009773,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -89.37579010285481,
+      "named": true
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "India",
+      "delta": -30.585655270842835,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Other regions",
+      "delta": -15.531860505953311,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of America",
+      "delta": -9.301216122345068,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Agriculture, hunting and forestry",
+      "region": "Rest of Europe",
+      "delta": -25.402657371210807,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -403.3294136287733,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -36.06706815761845,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -28.829351101519283,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Africa",
+      "delta": -25.419691879087623,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of America",
+      "delta": -7.815493422348027,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Europe",
+      "delta": -14.149747172792559,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": -89.94963257709878,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -49.55164541352258,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -154.63226330446315,
+      "named": false,
+      "cells": 473
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Africa",
+      "delta": -32.41905531960583,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of America",
+      "delta": -13.419319486183099,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -33.531181075456516,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Europe",
+      "delta": -50.56165291078497,
+      "named": false,
+      "cells": 11
+     },
+     {
+      "sector": "Trade",
+      "region": "India",
+      "delta": -6.983039593664671,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Other regions",
+      "delta": -147.7063287407671,
+      "named": false,
+      "cells": 43
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Africa",
+      "delta": -17.159693554534897,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of America",
+      "delta": -13.635603915325191,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Asia and Pacific",
+      "delta": -13.083617787946423,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Trade",
+      "region": "Rest of Europe",
+      "delta": -18.682485522433126,
+      "named": false,
+      "cells": 1
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -3168.1880568411434
+   },
+   "7": {
+    "total_delta": -12997.561468520504,
+    "flows": [
+     {
+      "sector": "Mining and quarrying",
+      "region": "China",
+      "delta": -2697.5283407066017,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of America",
+      "delta": -2568.76216508809,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Australia",
+      "delta": -829.2576353771146,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Asia and Pacific",
+      "delta": -808.2043741086964,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Brazil",
+      "delta": -645.5524972418789,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Sweden",
+      "delta": -635.1737034726175,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Rest of Africa",
+      "delta": -576.3158653579012,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Russia",
+      "delta": -405.7775773187386,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Asia and Pacific",
+      "delta": -373.3697015810758,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Indonesia",
+      "delta": -319.63069889869075,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of America",
+      "delta": -315.8536556158506,
+      "named": true
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "India",
+      "delta": -304.14821737160673,
+      "named": true
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Australia",
+      "delta": -0.18271302164907866,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Brazil",
+      "delta": -19.802722091924807,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "India",
+      "delta": -5.343360417162145e-06,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Indonesia",
+      "delta": 0.0,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Manufacturing",
+      "region": "Other regions",
+      "delta": -603.5183996341145,
+      "named": false,
+      "cells": 39
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Other regions",
+      "delta": -1014.9434027454081,
+      "named": false,
+      "cells": 39
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Rest of Africa",
+      "delta": -136.74365329196735,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Russia",
+      "delta": -265.9105010504136,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Mining and quarrying",
+      "region": "Sweden",
+      "delta": -95.96887370733748,
+      "named": false,
+      "cells": 1
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Australia",
+      "delta": -78.39432584007591,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Brazil",
+      "delta": -2.219568677101961,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "China",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "India",
+      "delta": -3.976261628176974e-09,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Indonesia",
+      "delta": 0.0,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Other regions",
+      "delta": -41.53646266850231,
+      "named": false,
+      "cells": 507
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Africa",
+      "delta": -34.145987278922995,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of America",
+      "delta": -138.87307116139348,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Rest of Asia and Pacific",
+      "delta": -26.747113413203294,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Russia",
+      "delta": -49.465769289510064,
+      "named": false,
+      "cells": 13
+     },
+     {
+      "sector": "Other sectors",
+      "region": "Sweden",
+      "delta": -9.534467162778794,
+      "named": false,
+      "cells": 13
+     }
+    ],
+    "cells": 735,
+    "reconciled": true,
+    "shown_plus_other": -12997.561468520504
+   }
+  }
+ },
+ "checks": {
+  "sectors": [
+   {
+    "run": "baseline",
+    "indicator": 5,
+    "passed": true,
+    "max_relative_difference": 2.0811651502567462e-16
+   },
+   {
+    "run": "baseline",
+    "indicator": 3,
+    "passed": true,
+    "max_relative_difference": 2.7809891810571434e-16
+   },
+   {
+    "run": "baseline",
+    "indicator": 7,
+    "passed": true,
+    "max_relative_difference": 4.0962816396028137e-16
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 5,
+    "passed": true,
+    "max_relative_difference": 4.3492112326141557e-16
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 3,
+    "passed": true,
+    "max_relative_difference": 2.642594910699027e-16
+   },
+   {
+    "run": "vehicle-demand-europe",
+    "indicator": 7,
+    "passed": true,
+    "max_relative_difference": 3.412745581260512e-16
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 5,
+    "passed": true,
+    "max_relative_difference": 2.991280089453805e-16
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 3,
+    "passed": true,
+    "max_relative_difference": 2.2026773629665012e-16
+   },
+   {
+    "run": "steel-in-vehicles-europe",
+    "indicator": 7,
+    "passed": true,
+    "max_relative_difference": 3.3874578234909387e-16
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 5,
+    "passed": true,
+    "max_relative_difference": 2.1868382470082986e-16
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 3,
+    "passed": true,
+    "max_relative_difference": 2.1816449977469135e-16
+   },
+   {
+    "run": "cement-in-construction",
+    "indicator": 7,
+    "passed": true,
+    "max_relative_difference": 2.8354416438446175e-16
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 5,
+    "passed": true,
+    "max_relative_difference": 2.559762294906304e-16
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 3,
+    "passed": true,
+    "max_relative_difference": 2.0025424439589587e-16
+   },
+   {
+    "run": "zero_change_control",
+    "indicator": 7,
+    "passed": true,
+    "max_relative_difference": 4.0962816396028063e-16
+   }
+  ],
+  "flows": {
+   "passed": true,
+   "tolerance": "relative 1e-12"
+  }
+ },
+ "provenance": {
+  "engine": {
+   "repository": null,
+   "branch": "perf/lu-reuse-solve-order",
+   "commit": "f876faa779bac9299da356f421faac0bd75f1347",
+   "label": "perf/lu-reuse-solve-order @ f876faa",
+   "dirty": false,
+   "solver": "LeontiefLU"
+  },
+  "dataset": {
+   "name": "EXIOBASE v3.3.sm",
+   "version": "V1",
+   "published": "2019-11-08",
+   "creators": [
+    "Franco Donati",
+    "Arjan de Koning"
+   ],
+   "description": "A new version of the monetary product-by-product ITA IO database EXIOBASE v3.3 where materials produced with secondary technologies (i.e. recycling industries) are explicitly represented.",
+   "doi": "10.5281/zenodo.3533196",
+   "file_suffix": "v4",
+   "year": 2011,
+   "sha256": {
+    "A": "747330308d1c21f025b172002757b3138a336ae5a6f4eae8bb61a7bb9e59a17d",
+    "L": "67bc147df931205ff3cdebbc978d69e530224a6cf0dafcf9e68486afcc831945",
+    "Y": "5f6e9fe2e136533f6e9a43ebf15e5efbbc20b15eaeb309f9de9fcf108603bc45",
+    "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
+   }
+  },
+  "command": "uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
+  "generated_at": "2026-09-27T17:08:58+00:00",
+  "python": "3.14.7",
+  "numpy": "2.5.3",
+  "django": "5.2.17",
+  "reference_validation": {
+   "passed": true,
+   "tolerance": "relative 1e-6",
+   "files": {
+    "validation_analytical_1_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_2_v3.csv": {
+     "values": 50,
+     "mismatches": 0
+    },
+    "validation_analytical_3_v3.csv": {
+     "values": 3,
+     "mismatches": 0
+    },
+    "validation_analytical_4_v3.csv": {
+     "values": 19,
+     "mismatches": 0
+    }
+   }
+  },
+  "peak_rss_bytes": 895479808
+ }
+}

@@ -1,6 +1,7 @@
 """The real-engine adapter in precompute.py, against a RaMa-Scene checkout.
 
-Opt-in: `pytest --engine ../ramascene-review`. Needs the engine code and its
+Opt-in: `pytest --engine=../ramascene-pr2` (with `=`: a bare path argument makes
+pytest load the engine checkout's own conftest.py). Needs the engine code and its
 db.sqlite3, no dataset. The one full-size array is the harness's identity L
 (768 MB, ramascene/tests/test_engine_regression.py::synthetic_matrices);
 nothing here inverts a matrix or calls Modelling.apply_model.
@@ -20,7 +21,7 @@ N, COUNTRIES, INDICATOR_ROWS = 9800, 49, 60
 def engine(request, tmp_path_factory):
     path = request.config.getoption("--engine")
     if not path:
-        pytest.skip("needs --engine PATH (a RaMa-Scene checkout)")
+        pytest.skip("needs --engine=PATH (a RaMa-Scene checkout)")
     precompute.setup_django(
         Path(path).resolve(), tmp_path_factory.mktemp("data"), tmp_path_factory.mktemp("db") / "db.sqlite3"
     )
@@ -83,3 +84,42 @@ def test_by_region_matches_the_direct_calculation_region_by_region(engine):
         # values moved between regions, same sum: must fail
         moved = dict(values, Europe=values["Europe"] + values["Africa"], Africa=0.0)
         assert not precompute.independent_by_region(indicator, Y, B, L, moved, leaves)["passed"]
+
+
+# --- the grid -----------------------------------------------------------------
+
+
+def test_grid_products_resolve_to_the_names_the_definition_quotes(engine):
+    for p in precompute.GRID_PRODUCTS:
+        assert engine.get_names_product([p["id"]]) == [p["name"]], p["slug"]
+
+
+def test_grid_consumed_by_expands_to_every_industry_and_loads_A(engine):
+    ready, load_A = precompute.model_inputs(precompute.grid_scenarios()[0]["model_details"])
+    assert sorted(ready["consumedBy"][0]) == list(range(200))
+    assert load_A == [True]
+    assert engine.get_modelled_names_product(precompute.INDUSTRY_SECTIONS)[0] == "S: Agriculture, hunting and forestry"
+
+
+def test_grid_regions_resolve_to_the_five_aggregates_with_their_leaf_counts(engine):
+    leaves = precompute.region_leaves()
+    for r in precompute.GRID_REGIONS:
+        assert engine.get_leafs_country([r["id"]]) == leaves[r["name"]], r["slug"]
+    assert [len(leaves[r["name"]]) for r in precompute.GRID_REGIONS] == [32, 2, 5, 8, 2]
+
+
+# --- the solver ---------------------------------------------------------------
+
+
+def test_the_solver_precompute_passes_is_one_modelling_accepts(engine):
+    import inspect
+
+    from ramascene.modelling import Modelling
+
+    solver = precompute.leontief_solver()
+    if solver is None:
+        assert "solver" not in inspect.signature(Modelling).parameters
+        assert precompute.solver_name() == "engine default"
+    else:
+        assert "solver" in inspect.signature(Modelling).parameters
+        assert precompute.solver_name() == solver.__name__ == "LeontiefLU"

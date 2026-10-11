@@ -1,0 +1,12 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"root": true,
+	"files": { "includes": ["**/*.js", "biome.json", "!**/node_modules", "!**/.venv"] },
+	"formatter": { "indentStyle": "tab", "lineWidth": 120 },
+	"overrides": [
+		{
+			"includes": ["tests/**"],
+			"linter": { "rules": { "correctness": { "noNodejsModules": "off" } } }
+		}
+	]
+}
