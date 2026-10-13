@@ -29,7 +29,7 @@ jobs:
       # prek is this action author's own binary, so the digest pin above is the
       # trust anchor. The hook revs, which decide the results, are pinned in
       # .pre-commit-config.yaml.
-      - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
+      - uses: j178/prek-action@1382ad72dea72f9d53832f2bcb65b3e87a947204 # v3.0.1
         env:
           # gitleaks scans staged changes only, and CI stages nothing: GitHub
           # secret scanning is the server-side check.
