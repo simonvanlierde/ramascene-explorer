@@ -1,6 +1,6 @@
 # GitHub reads this for its "Cite this repository" button, Zenodo when it
 # archives a release. It cites the explorer; the engine and EXIOBASE have
-# their own citations (see README.md).
+# their own citations (see README.md and docs/precompute.md).
 cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: "RaMa-Scene scenario explorer"
