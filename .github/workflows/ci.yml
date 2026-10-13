@@ -1,8 +1,8 @@
 name: ci
 
 # Without the dataset: pytest skips the real-engine checks unless --engine is
-# given, node --test reads only the synthetic fixture, and Playwright serves
-# the page over the fixture and the committed results.
+# given, node --test reads only the synthetic fixture, and Playwright builds
+# the page and serves it over the fixture and the committed results.
 
 on:
   push:
@@ -72,4 +72,5 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium-headless-shell
+      - run: pnpm build
       - run: pnpm exec playwright test
