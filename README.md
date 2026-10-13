@@ -7,10 +7,11 @@ nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
 `data/results.json`, `data/regions.json` and `data/flows.json` are the output
-of one precompute run (engine `perf/lu-reuse-solve-order @ f876faa`, 2026-09-27;
+of one precompute run (engine `split/3-performance @ d9113ca`, the head of
+[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74), 2026-10-13;
 see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 153 scenarios, 10 min 20 s wall, 942,020 KiB (0.96 GB, 0.90 GiB) maximum RSS,
-on a machine shared with other work (load average above 40 on 32 cores during the run)). Each file's `provenance` block records the engine
+output of that run: 153 scenarios, 1 min 16 s wall, 1,609,984 KiB (1.65 GB, 1.54 GiB) maximum RSS,
+under `nice -n 10` with BLAS capped at 8 threads on a 32-core machine). Each file's `provenance` block records the engine
 commit, the dataset checksums, the command and the run time, and the three
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
@@ -27,8 +28,8 @@ the output. `ramascene/modelling.py` scales the selected cells by
 | id | What it changes | Engine path |
 | --- | --- | --- |
 | `vehicle-demand-europe` | Final demand in European regions for motor vehicles produced in European regions, −20% | `Modelling.model_final_demand` (Y), stored L |
-| `steel-in-vehicles-europe` | Coefficient of basic iron and steel (all origins) into motor-vehicle manufacturing in European regions, −20% | `Modelling.model_intermediates` (A), then one LU factorization of `(I − A)` |
-| `cement-in-construction` | Coefficient of cement, lime and plaster (all origins) into construction work in all regions, −20% | `Modelling.model_intermediates` (A), then one LU factorization of `(I − A)` |
+| `steel-in-vehicles-europe` | Coefficient of basic iron and steel (all origins) into motor-vehicle manufacturing in European regions, −20% | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
+| `cement-in-construction` | Coefficient of cement, lime and plaster (all origins) into construction work in all regions, −20% | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
 
 "European regions" is the `Europe` aggregate of the engine database: EU28 plus
 Russia, Switzerland, Norway and Rest of Europe.
@@ -65,59 +66,68 @@ engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`; the Zenodo record sh
 files, and `v4` is the file suffix, not the dataset version. The matrices are
 float64.
 
-The engine branch and commit are recorded in the output
-(`provenance.engine.label`, for example `perf/lu-reuse-solve-order @ f876faa`),
-with the solver in `provenance.engine.solver`.
+The engine repository, branch and commit are recorded in the output
+(`provenance.engine`, with `label` such as `split/3-performance @ d9113ca`, and
+`pull_request` when `--engine-pr` is given). Each run records the class of the
+`L` the engine returned (`runs.<id>.solver`), and `provenance.run.solvers`
+counts them.
 `--engine` must be the top of a git checkout with a commit: the script
 refuses to start otherwise (a copy without `.git`, or a directory inside some
 other repository), so no output can claim `exiobase-v3` without naming its
 engine. If the checkout's commit or dirty state changes during the run, it
 writes nothing, as the workers would have run code the provenance cannot name.
-The shipped files were produced with the fork branch
-`perf/lu-reuse-solve-order` (checkout `../ramascene-c-lu-grid`, clean tree),
-on top of `perf/lu-reuse` and `perf/solve-not-invert`. With an engine that
-has `LeontiefLU`, `precompute.py` passes it to `Modelling`: each modified `A`
-is factorized once, and the three routes and the per-region checks of that
-scenario solve from the same factors instead of factorizing again on every
-`L.dot` (`LeontiefSolve`). No two scenarios share an `A`, so the reuse is
-within a scenario. `LeontiefLU` on that branch factorizes `(I − A)` itself, as
-`np.linalg.solve` does, so the output is the same, bit for bit, as with
-`perf/solve-not-invert` (below). With any other engine, `Modelling` keeps its
-default. None of these branches is published; which engine version to cite is
-the author's decision and is not made here.
 
-Same grid (78 scenarios), same machine, one run at a time, each under
-`flock /tmp/interview-heavy.lock /usr/bin/time -v`:
+The shipped files were produced with branch `split/3-performance` of the fork
+<https://github.com/simonvanlierde/ramascene>, commit
+`d9113ca9ad38bc29d2a96392dabf74d70abf830e` (clean tree), the head of pull
+request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is
+stacked on #73 (the Django 5.2 upgrade). `precompute.py` calls `Modelling` as
+`tasks.execute_calc` does and passes no solver: the engine picks it. When at
+most 2,000 rows of `A` change and the result passes the engine's residual check
+(`‖x − A x − y‖ ≤ 1e-9 ‖y‖` for `y = 1`), `Modelling` returns a
+`LowRankLeontief`, a Woodbury update of the stored `L`: each `L.dot` is one
+product with `L` plus a small solve, with no factorization. Otherwise it
+returns a `LeontiefSolve`, which factorizes `(I − A)` once and solves from
+those factors. In the shipped run all 152 technical-coefficient scenarios and
+the control took the Woodbury update, and the final-demand scenario used the
+stored `L`; no run factorized `(I − A)`.
+
+The full 153-scenario run, before and after:
 
 | engine | wall | max RSS | CPU |
 | --- | --- | --- | --- |
-| `perf/solve-not-invert @ a258e63` | 15 min 43 s | 1,621,328 KiB (1.55 GiB) | 2620% |
-| `perf/lu-reuse-solve-order @ f876faa` | 3 min 12 s | 941,524 KiB (0.90 GiB) | 2159% |
+| `perf/lu-reuse-solve-order @ f876faa` (2026-09-27, unpublished, since lost) | 10 min 20 s | 942,020 KiB (0.90 GiB) | 2333%, machine load above 40 |
+| `split/3-performance @ d9113ca` (2026-10-13, PR #74) | 1 min 16 s | 1,609,984 KiB (1.54 GiB) | 620%, 8 BLAS threads |
 
 `uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
 value by value (every number in the three files, except provenance, run
 timings and check residuals; relative 1e-12 by default). Between the two runs
-above the largest difference is 0. The 150-cell grid shipped now keeps
-those 75 cells and three interventions with the same values (again a largest
-difference of 0) and adds five products.
+above the largest relative difference is 3.4e-14 in `results.json` and
+4.1e-13 in `regions.json`. In `flows.json` it is 3.1e-10, on the change in a
+flow, a difference of two nearly equal values; 120 of its 638 values differ by
+more than 1e-12 and none by more than 1e-9.
 
 ```sh
-uv run python precompute.py --run --engine ../ramascene-c-lu-grid --data "$DATASETS_DIR" \
+uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
+    --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 \
     --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
 # subsets: --scenarios original|grid, --limit N
 ```
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix: about 0.96 GB (0.90 GiB) peak per worker in the
-shipped run, with the LU engine (1.66 GB, 1.55 GiB, with `perf/solve-not-invert`,
-whose `np.linalg.solve` copies the matrix). The inverting engine peaked at 3.97 GB
-per job, as measured in the solve-not-invert pull request description. Each
+dense 9800 × 9800 matrix: about 1.65 GB (1.54 GiB) peak per worker in the
+shipped run. The engine memory-maps `L` and maps `A` copy-on-write, so much of
+that is file pages the workers share through the page cache, which each
+worker's RSS still counts. The original inverting engine peaked at 3.97 GB per job. Each
 scenario runs in a fresh worker process (`precompute.py --worker`, one at a
 time), so its wall time and peak RSS (`ru_maxrss`) are that process's, the
 way the engine's own numbers were measured. The script first checks that the engine reproduces the four Octave
 reference files shipped with RaMa-Scene (routes two and four; value added and
 GHG) and stops, before any solve, if it does not. It then runs the baseline,
-each scenario, and a 0% control through the modified-A path. Run-level
+each scenario, and a 0% control through the modified-A path. With the
+PR #74 engine the control is a Woodbury update with a zero change, which
+returns the stored `L` exactly, so it does not exercise the factorization
+path. Run-level
 failures write nothing: a failed Octave check, a baseline that does not match
 the independent calculation, a leaky control, or no scenario left. Every
 scenario is held to:
@@ -125,7 +135,7 @@ scenario is held to:
 - every value is finite;
 - each region's value matches `B_i ∘ (L · ΣY)` recomputed outside the engine
   and summed over that region's countries (relative 1e-9);
-- the control reproduces the baseline (relative 1e-6);
+- the control reproduces the baseline (relative 1e-9);
 - every intervention moves at least one indicator total by more than
   relative 1e-9, and no cut raises an indicator total. The rise check applies only to indicators whose `B` row and `ΣY` have
   no negative entries; otherwise it is skipped with a warning and recorded.
@@ -185,7 +195,7 @@ Malta is below the 1:110m threshold and appears only in the table.
 
 ```sh
 uv run pytest                                           # everything below except the engine adapter
-uv run pytest --engine=../ramascene-c-lu-grid           # adds the real-engine adapter checks (768 MB)
+uv run pytest --engine="$ENGINE_DIR"                    # adds the real-engine adapter checks (768 MB)
 node --test                                             # the page logic
 ```
 
@@ -194,7 +204,7 @@ node --test                                             # the page logic
 | `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
 | `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
 | `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
-| `tests/test_solver.py` | `apply_model` passes the engine's `LeontiefLU` when it has one and no solver argument otherwise; the solver in the provenance and run log |
+| `tests/test_solver.py` | `apply_model` passes no solver argument; each run records the class of its `L`, counted in the provenance and named in the run log with the pull request |
 | `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
 | `tests/test_engine_plumbing.py` | the real engine adapter (ids, labels, region leaves, route three against B·L·ΣY), only with `--engine` |
 | `tests/explorer.test.js` | URL state, `?data=` whitelist, banner, per-region comparison, axis ticks, number format, grid menu and pickers, run summary |
