@@ -33,6 +33,12 @@ any solve), the baseline matches an independent B . (L . sum Y) per region and t
 (non-finite output, regional mismatch, no change, a rise) is recorded as
 failed with its reason and left out of the published results; it is never
 dropped silently. data_kind is "exiobase-v3" only for output that passed.
+
+--out-embodied adds the flows embodied in final demand (producer country x
+section x consumer country) for the baseline and every published scenario,
+computed in the same worker from the same Y and L, and written to one Parquet
+file with one row group per run. Nothing is written unless they reconcile with
+the run's own totals (embodied_of).
 """
 
 import argparse
@@ -345,6 +351,148 @@ def top_flows(baseline_cells, scenario_cells, n=TOP_FLOWS):
     }
 
 
+def embodied_flows(B, X, indicators, section_leaves):
+    """Flows embodied in final demand, shape (indicator, producer, section, consumer).
+
+    X = L . Y holds one column per consuming country; rows are country-major
+    like everywhere else. A flow is B_i . X summed over the products of one
+    section: what producer country r releases for the final demand of
+    consumer country c. The sections must partition the products.
+    """
+    countries = X.shape[1]
+    products = X.shape[0] // countries
+    if sorted(p for leaves in section_leaves for p in leaves) != list(range(products)):
+        raise ValueError(f"the sections do not partition the {products} products")
+    out = np.empty((len(indicators), countries, len(section_leaves), countries))
+    for k, i in enumerate(indicators):
+        E = (B[i - 1][:, None] * X).reshape(countries, products, countries)
+        for s, leaves in enumerate(section_leaves):
+            out[k, :, s, :] = E[:, leaves, :].sum(axis=1)
+    return out
+
+
+def worst_relative(got, want):
+    """The largest relative_difference over two arrays."""
+    got, want = np.asarray(got, dtype=float), np.asarray(want, dtype=float)
+    return float(np.max(np.abs(got - want) / np.maximum(np.abs(want), ABS_FLOOR), initial=0.0))
+
+
+def embodied_of(flows, results, indicators, region_leaves, country_leaves=None, detail_countries=None):
+    """The published runs' flows, checked: the baseline absolute, each scenario as its change.
+
+    flows: {run: (indicator, producer, section, consumer) array} with absolute
+    values for every run. Checked to relative 1e-9 with the absolute floor:
+    each run's producer sums per continental aggregate and its world total
+    against results; for the runs with 49-region detail, each producer
+    country against the engine's value. The values are stored as float32, so
+    the float32 sums must stay within relative 1e-6 of the float64 ones, far
+    below the three significant digits the page shows. Cells that rise are
+    counted and reported, not refused. Raises ValueError if a check fails.
+    """
+    names = [n for n in results if n in flows]
+    if "baseline" not in names:
+        raise ValueError("embodied flows need the baseline")
+    base = flows["baseline"]
+    worst = dict.fromkeys(("by_region", "world", "by_country", "float32"), 0.0)
+    rises, out = {}, {}
+    for name in names:
+        absolute = flows[name]
+        stored = absolute if name == "baseline" else absolute - base
+        for k, i in enumerate(indicators):
+            producer = absolute[k].sum(axis=(1, 2))
+            engine = results[name][str(i)]
+            regions = list(region_leaves)
+            worst["by_region"] = max(
+                worst["by_region"],
+                worst_relative([producer[region_leaves[r]].sum() for r in regions], [engine[r] for r in regions]),
+            )
+            worst["world"] = max(worst["world"], relative_difference(producer.sum(), math.fsum(engine.values())))
+            if country_leaves and detail_countries and name in detail_countries:
+                countries = detail_countries[name][str(i)]
+                worst["by_country"] = max(
+                    worst["by_country"],
+                    worst_relative([producer[country_leaves[c]].sum() for c in countries], list(countries.values())),
+                )
+            exact = stored[k].sum(axis=(1, 2))
+            single = stored[k].astype(np.float32).astype(float).sum(axis=(1, 2))
+            scale = max(abs(exact.sum()), ABS_FLOOR)
+            worst["float32"] = max(
+                worst["float32"], float(np.max(np.abs(single - exact))) / scale, abs(single.sum() - exact.sum()) / scale
+            )
+        if name != "baseline":
+            rising = stored > 1e-9 * np.abs(base) + ABS_FLOOR
+            if rising.any():
+                rises[name] = {"cells": int(rising.sum()), "largest": float(stored[rising].max())}
+        out[name] = stored
+    worst = {k: float(v) for k, v in worst.items()}
+    checks = {
+        "producer_by_region": {"passed": worst["by_region"] <= 1e-9, "max_relative_difference": worst["by_region"]},
+        "world_total": {"passed": worst["world"] <= 1e-9, "max_relative_difference": worst["world"]},
+        "producer_by_country": {
+            "passed": worst["by_country"] <= 1e-9,
+            "max_relative_difference": worst["by_country"],
+            "runs": [n for n in names if detail_countries and n in detail_countries],
+        },
+        "float32": {"passed": worst["float32"] <= 1e-6, "max_relative_difference": worst["float32"]},
+        "rises": {"runs": len(rises), "by_run": rises, "tolerance": "relative 1e-9 of the baseline cell"},
+    }
+    failed = [k for k, v in checks.items() if not v.get("passed", True)]
+    if failed:
+        raise ValueError(
+            f"embodied flows verification failed ({', '.join(failed)}), nothing written: {json.dumps(checks, indent=1)}"
+        )
+    return {"runs": names, "flows": out, "checks": checks}
+
+
+def embodied_table(run, values, indicators):
+    """One run as long-format columns; cells that are exactly 0 are left out."""
+    keep = values != 0
+    k, producer, section, consumer = np.nonzero(keep)
+    return {
+        "run": np.full(len(k), run, dtype=object),
+        "indicator": np.asarray(indicators, dtype=np.int8)[k],
+        "producer": producer.astype(np.int8),
+        "section": section.astype(np.int8),
+        "consumer": consumer.astype(np.int8),
+        "value": values[keep].astype(np.float32),
+    }
+
+
+def write_embodied(path, flows, indicators, metadata):
+    """One Parquet file, one row group per run in the order of flows.
+
+    The values are float32 with BYTE_STREAM_SPLIT and snappy, which hyparquet
+    reads without extra decompressors; metadata goes into the footer as JSON
+    under the key "ramascene".
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    schema = pa.schema(
+        [
+            ("run", pa.dictionary(pa.int16(), pa.string())),
+            ("indicator", pa.int8()),
+            ("producer", pa.int8()),
+            ("section", pa.int8()),
+            ("consumer", pa.int8()),
+            ("value", pa.float32()),
+        ]
+    )
+    with pq.ParquetWriter(
+        path,
+        schema,
+        compression="snappy",
+        use_dictionary=["run", "indicator", "producer", "section", "consumer"],
+        column_encoding={"value": "BYTE_STREAM_SPLIT"},
+        write_statistics=["run", "indicator"],
+        store_schema=False,
+    ) as writer:
+        writer.add_key_value_metadata({"ramascene": json.dumps(metadata, ensure_ascii=False, allow_nan=False)})
+        for run, values in flows.items():
+            table = pa.table(embodied_table(run, values, indicators)).cast(schema)
+            writer.write_table(table, row_group_size=max(table.num_rows, 1))
+
+
 def loads_A(scenario):
     return any(step["consumedBy"] != [FINAL_CONSUMPTION] for step in scenario["model_details"])
 
@@ -437,12 +585,20 @@ def evaluate_detail(engine, name, Y_s, L_s, B, indicators, by_indicator):
     return {"countries": countries, "cells": cells, "checks": checks}
 
 
-def scenario_in_process(engine, name, model_details, indicators, Y, B, detail=False):
+def embodied_in(engine, name, Y_s, L_s, B, indicators):
+    flows = engine.embodied(indicators, Y_s, B, L_s)
+    if not np.isfinite(flows).all():
+        raise ValueError(f"non-finite embodied flows, {name}")
+    return flows
+
+
+def scenario_in_process(engine, name, model_details, indicators, Y, B, detail=False, embodied=False):
     """One scenario in this process: the record compute() consumes.
 
     The scenario's (Y, L) are locals here, so nothing survives into the next
     scenario once this returns. detail=True adds the 49-region and sector x
-    region breakdown (evaluate_detail).
+    region breakdown (evaluate_detail); embodied=True the flows embodied in
+    final demand (embodied_flows), from the same Y and L.
     """
     started = time.perf_counter()
     Y_s, L_s = modelled(engine, name, model_details, Y)
@@ -450,11 +606,13 @@ def scenario_in_process(engine, name, model_details, indicators, Y, B, detail=Fa
     record = {"results": by_indicator, "independent": independent, "solver": type(L_s).__name__}
     if detail:
         record["detail"] = evaluate_detail(engine, name, Y_s, L_s, B, indicators, by_indicator)
+    if embodied:
+        record["embodied"] = embodied_in(engine, name, Y_s, L_s, B, indicators)
     del Y_s, L_s
     return {**record, "engine_s": time.perf_counter() - started}
 
 
-def compute(engine, scenarios, indicators):
+def compute(engine, scenarios, indicators, embodied=False):
     """Octave references, baseline, each scenario, then a 0% control, one at a time.
 
     engine: load(name) -> array, apply_model(model_details, Y) -> (Y, L),
@@ -469,6 +627,10 @@ def compute(engine, scenarios, indicators):
     original interventions and the control (grid cells keep the continental
     aggregates only). A detail check that fails writes nothing.
 
+    embodied=True adds the flows embodied in final demand for the baseline and
+    every published scenario (engine.embodied, checked by embodied_of); a check
+    that fails writes nothing.
+
     Run-level failures raise ValueError before anything is written: a failed
     Octave reference check (before any solve), a baseline that does not match
     the independent calculation, a leaky 0% control, or no scenario left.
@@ -477,18 +639,20 @@ def compute(engine, scenarios, indicators):
     scenario is not in "results".
     """
     Y, B = engine.load("Y"), engine.load("B")
-    independent, results, failed, runs, details = [], {}, {}, {}, {}
+    independent, results, failed, runs, details, flows = [], {}, {}, {}, {}, {}
     detailed = hasattr(engine, "by_country")
 
-    def run_here(name, model_details, indicators, detail=False):
-        return scenario_in_process(engine, name, model_details, indicators, Y, B, detail)
+    def run_here(name, model_details, indicators, detail=False, embodied=False):
+        return scenario_in_process(engine, name, model_details, indicators, Y, B, detail, embodied)
 
-    def run_scenario(name, model_details, detail=False):
+    def run_scenario(name, model_details, detail=False, embodied=False):
         """The engine's record for one scenario, with wall_s measured here unless the worker reports one."""
         started = time.perf_counter()
-        record = (getattr(engine, "scenario", None) or run_here)(name, model_details, indicators, detail)
+        record = (getattr(engine, "scenario", None) or run_here)(name, model_details, indicators, detail, embodied)
         if "detail" in record:
             details[name] = record["detail"]
+        if "embodied" in record:
+            flows[name] = np.asarray(record.pop("embodied"))
         return {"wall_s": time.perf_counter() - started, **record}
 
     # Baseline: the stored L, as a query without model_details uses it.
@@ -504,6 +668,8 @@ def compute(engine, scenarios, indicators):
         )
     if detailed:
         details["baseline"] = evaluate_detail(engine, "baseline", Y, L, B, indicators, results["baseline"])
+    if embodied:
+        flows["baseline"] = embodied_in(engine, "baseline", Y, L, B, indicators)
     del L
     gc.collect()
 
@@ -511,7 +677,7 @@ def compute(engine, scenarios, indicators):
         name = scenario["id"]
         started = time.perf_counter()
         try:
-            record = run_scenario(name, scenario["model_details"], detailed and "grid" not in scenario)
+            record = run_scenario(name, scenario["model_details"], detailed and "grid" not in scenario, embodied)
         except ValueError as e:
             failed[name] = str(e)
             runs[name] = {"status": "failed", "wall_s": time.perf_counter() - started}
@@ -590,6 +756,15 @@ def compute(engine, scenarios, indicators):
     }
     if detailed:
         computed["detail"] = detail_of(details, results, indicators)
+    if embodied:
+        computed["embodied"] = embodied_of(
+            flows,
+            results,
+            indicators,
+            engine.region_leaves,
+            getattr(engine, "country_leaves", None),
+            computed["detail"]["countries"] if detailed else None,
+        )
     return computed
 
 
@@ -677,6 +852,14 @@ def assemble(computed, indicators, provenance, peak_rss_bytes):
     }
 
 
+def aggregates_of(country_meta):
+    """{continental aggregate: [country name]}, in engine order."""
+    return {
+        agg: [c["name"] for c in country_meta if c["aggregate"] == agg]
+        for agg in dict.fromkeys(c["aggregate"] for c in country_meta)
+    }
+
+
 def detail_scenarios(computed):
     """Baseline and the published scenarios that carry the 49-region detail."""
     flows = computed["detail"]["flows"]
@@ -698,10 +881,7 @@ def assemble_regions(computed, indicators, country_meta, provenance, peak_rss_by
         "the 49 EXIOBASE regions",
         "regions": [c["name"] for c in country_meta],
         "region_codes": {c["name"]: c["code"] for c in country_meta},
-        "aggregates": {
-            agg: [c["name"] for c in country_meta if c["aggregate"] == agg]
-            for agg in dict.fromkeys(c["aggregate"] for c in country_meta)
-        },
+        "aggregates": aggregates_of(country_meta),
         "indicators": indicators,
         "scenarios": scenarios,
         # the published runs only; the 0% control stays in the checks
@@ -729,6 +909,33 @@ def assemble_flows(computed, indicators, sector_names, provenance, peak_rss_byte
         "scenarios": detail_scenarios(computed),
         "results": detail["flows"],
         "checks": {k: detail["checks"][k] for k in ("sectors", "flows")},
+        "provenance": sidecar_provenance(computed, provenance, peak_rss_bytes),
+    }
+
+
+def assemble_embodied(computed, indicators, country_meta, sector_names, provenance, peak_rss_bytes):
+    """The footer metadata of data/embodied.parquet; the rows are computed["embodied"]["flows"]."""
+    embodied = computed["embodied"]
+    return {
+        "data_kind": "exiobase-v3",
+        "status": STATUS,
+        "base_year": YEAR,
+        "breakdown": "Flows embodied in final demand: B_i . (L . Y) per producer country (where the impact "
+        "occurs) x section (the level-2 product aggregate produced) x consumer country (whose final demand it "
+        "serves), from the same Y and L as the run's other results",
+        "layout": "One row group per run, in the order of runs. Columns run, indicator (global id), producer and "
+        "consumer (0-based country index), section (0-based), value. The baseline row group holds absolute "
+        "values; every other row group holds the change, scenario minus baseline. A cell that is exactly 0 is "
+        "left out.",
+        "countries": [c["name"] for c in country_meta],
+        "country_codes": [c["code"] for c in country_meta],
+        "aggregates": aggregates_of(country_meta),
+        "sections": sector_names,
+        "indicators": [{**i, "scale": 1} for i in indicators],
+        "value_type": "float32; value x scale is in the indicator's unit",
+        # labels and model_details are in results.json, under the same ids
+        "runs": embodied["runs"],
+        "checks": embodied["checks"],
         "provenance": sidecar_provenance(computed, provenance, peak_rss_bytes),
     }
 
@@ -1017,8 +1224,16 @@ def worker_scenario(engine_dir, data_dir):
     wall_s and the worker's ru_maxrss.
     """
 
-    def scenario(name, model_details, indicators, detail=False):
-        request = json.dumps({"name": name, "model_details": model_details, "indicators": indicators, "detail": detail})
+    def scenario(name, model_details, indicators, detail=False, embodied=False):
+        request = json.dumps(
+            {
+                "name": name,
+                "model_details": model_details,
+                "indicators": indicators,
+                "detail": detail,
+                "embodied": embodied,
+            }
+        )
         command = [sys.executable, __file__, "--worker", "--engine", str(engine_dir), "--data", str(data_dir)]
         started = time.perf_counter()
         done = subprocess.run(command, input=request, capture_output=True, text=True, check=False)
@@ -1046,8 +1261,17 @@ def worker(engine_dir, data_dir):  # noqa: ARG001  # same arguments as the paren
     Y, B = qm.get_numpy_objects(YEAR, "Y"), qm.get_numpy_objects(YEAR, "B")
     try:
         record = scenario_in_process(
-            engine, request["name"], request["model_details"], request["indicators"], Y, B, request.get("detail", False)
+            engine,
+            request["name"],
+            request["model_details"],
+            request["indicators"],
+            Y,
+            B,
+            request.get("detail", False),
+            request.get("embodied", False),
         )
+        if "embodied" in record:
+            record["embodied"] = record["embodied"].tolist()
     except ValueError as e:
         record = {"error": str(e)}
     record["peak_rss_bytes"] = peak_rss_bytes()
@@ -1094,21 +1318,29 @@ def country_meta():
     return [{"name": c.name, "code": c.code, "index": c.local_id - 1, "aggregate": parents[c.parent_id]} for c in rows]
 
 
+def section_leaves():
+    """The 0-based product indices of each level-2 product aggregate, in SECTORS order."""
+    from ramascene import querymanagement as qm
+    from ramascene.models import Product
+
+    rows = {p.global_id: p for p in Product.objects.filter(global_id__in=SECTORS)}
+    return [qm.clean_local_leafs(rows[g].leaf_children_local) for g in SECTORS]
+
+
 def real_engine(engine_dir=None, data_dir=None):
     from ramascene import querymanagement as qm
 
     meta = country_meta()
+    sections = section_leaves()
     return types.SimpleNamespace(
         load=lambda name: qm.get_numpy_objects(YEAR, name),
         apply_model=apply_model,
         by_region=by_region,
         by_country=by_country,
         by_sector_country=by_sector_country,
+        embodied=lambda indicators, Y, B, L: embodied_flows(B, L.dot(Y), indicators, sections),
         country_leaves={c["name"]: [c["index"]] for c in meta},
-        aggregate_members={
-            agg: [c["name"] for c in meta if c["aggregate"] == agg]
-            for agg in dict.fromkeys(c["aggregate"] for c in meta)
-        },
+        aggregate_members=aggregates_of(meta),
         region_leaves=region_leaves(),
         reference_validation=reference_validation,
         scenario=worker_scenario(engine_dir, data_dir) if engine_dir else None,
@@ -1136,6 +1368,9 @@ def main(argv=None):
     parser.add_argument("--out", type=Path, help="results JSON; data/run-log.md is written beside it")
     parser.add_argument("--out-regions", type=Path, help="also write the 49-region breakdown here")
     parser.add_argument("--out-flows", type=Path, help="also write the sector → region flows of the change here")
+    parser.add_argument(
+        "--out-embodied", type=Path, help="also write the flows embodied in final demand, every run, as Parquet here"
+    )
     parser.add_argument("--scenarios", choices=sorted(SCENARIO_SETS), default="all")
     parser.add_argument("--limit", type=int, help="only the first N scenarios of the set (smoke test)")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
@@ -1160,7 +1395,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         setup_django(args.engine.resolve(), args.data.resolve(), Path(tmp) / "db.sqlite3")
         engine = real_engine(args.engine.resolve(), args.data.resolve())
-        computed = compute(engine, scenarios, INDICATORS)
+        computed = compute(engine, scenarios, INDICATORS, embodied=bool(args.out_embodied))
         indicators = indicator_meta(INDICATORS)
         provenance = collect_provenance(args.engine, args.data, argv)
         # every worker imports the engine afresh: a checkout that moved (or got
@@ -1184,9 +1419,19 @@ def main(argv=None):
 
             names = qm.get_names_product(SECTORS)
             sidecars[args.out_flows] = assemble_flows(computed, indicators, names, provenance, peak)
+        if args.out_embodied:
+            from ramascene import querymanagement as qm
+
+            names = qm.get_names_product(SECTORS)
+            embodied_meta = assemble_embodied(computed, indicators, country_meta(), names, provenance, peak)
     for path, doc in {args.out: output, **sidecars}.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
+    if args.out_embodied:
+        args.out_embodied.parent.mkdir(parents=True, exist_ok=True)
+        write_embodied(args.out_embodied, computed["embodied"]["flows"], INDICATORS, embodied_meta)
+        rises = computed["embodied"]["checks"]["rises"]["runs"]
+        print(f"{args.out_embodied}: {len(embodied_meta['runs'])} runs, {rises} with a rising cell")
     for path in sidecars:
         print(f"{path}: data_kind={sidecars[path]['data_kind']}, {len(sidecars[path]['scenarios'])} runs with detail")
     (args.out.parent / "run-log.md").write_text(run_log(output))
