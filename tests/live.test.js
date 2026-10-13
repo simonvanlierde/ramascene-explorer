@@ -119,11 +119,11 @@ test("polling stops at a final status", async () => {
 	assert.deepEqual(seen, ["queued", "running", "succeeded"]);
 });
 
-test("without ?api= the page is unchanged: panel hidden, panel code loaded only on demand", () => {
-	const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-	assert.match(html, /<section id="live" aria-labelledby="live-title" hidden>/);
-	assert.match(html, /if \(api\) \(await import\("\.\/live-panel\.js"\)\)\.mount\(api\);/);
-	// The panel module is the only place that fetches from the API.
+test("without ?api= the page is unchanged: panel absent, panel code loaded only on demand", () => {
+	const app = readFileSync(new URL("../src/App.svelte", import.meta.url), "utf8");
+	assert.match(app, /\{#if api\}\{#await import\("\.\/LivePanel\.svelte"\)/);
+	assert.doesNotMatch(app, /import LivePanel|id="live"/);
+	// The panel component is the only place that fetches from the API.
 	assert.doesNotMatch(readFileSync(new URL("../live.js", import.meta.url), "utf8"), /fetch\(/);
 });
 

@@ -1,15 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// The page is static: any file server works. Both colour schemes run, since
-// the palette is redefined for dark mode and contrast is checked in each.
+// The tests run against the built site, served by vite preview (which also
+// serves the synthetic fixture the build leaves out). Both colour schemes run,
+// since the palette is redefined for dark mode and contrast is checked in each.
 export default defineConfig({
 	testDir: "tests/e2e",
 	forbidOnly: !!process.env.CI,
 	reporter: process.env.CI ? "github" : "list",
-	use: { baseURL: "http://127.0.0.1:4173/" },
+	use: { baseURL: "http://127.0.0.1:4180/" },
 	webServer: {
-		command: "python3 -m http.server 4173 --bind 127.0.0.1",
-		url: "http://127.0.0.1:4173/",
+		// CI builds in its own step, so a build error shows as that step failing
+		command: process.env.CI ? "pnpm preview" : "pnpm build && pnpm preview",
+		url: "http://127.0.0.1:4180/",
 		reuseExistingServer: !process.env.CI,
 	},
 	projects: [

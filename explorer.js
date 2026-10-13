@@ -1,4 +1,4 @@
-// Pure logic for index.html: data location, URL state, banner, comparison, axis.
+// Pure logic for the page: data location, URL state, banner, comparison, axis.
 
 const DEFAULT_DATA = "data/results.json";
 // Relative path segments of word characters, dots and dashes, ending in .json.
@@ -204,3 +204,6 @@ export function runSummary(run) {
 		);
 	return parts.join(" · ");
 }
+
+// A full 40-character commit hash shortened to 12; anything else as recorded.
+export const shortCommit = (commit) => (/^[0-9a-f]{40}$/.test(String(commit)) ? commit.slice(0, 12) : String(commit));

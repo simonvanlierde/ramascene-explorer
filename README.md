@@ -216,10 +216,19 @@ directory and loads the engine's own `conftest.py`.
 
 ## View
 
-Any static server, for example `python3 -m http.server`, then open
-`http://localhost:8000/?scenario=steel-in-vehicles-europe&indicator=5` or
+The page is Svelte 5, built with Vite. Install once with `pnpm install`, then:
+
+```sh
+pnpm dev        # dev server with live reload, on http://localhost:5173/
+pnpm build      # static site in dist/, with relative paths
+pnpm preview    # serves dist/ on http://127.0.0.1:4180/
+```
+
+Open `?scenario=steel-in-vehicles-europe&indicator=5` or
 `?scenario=steel-europe-20&indicator=7`.
 Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
+dev server and the preview serve it; the build leaves it out.
+`dist/` works from any static server and under any subpath. The
 selection lives in the query string, so a view is shareable. GHG emissions
 and metal-ore extraction are shown in megatonnes (the data holds kg CO2 eq
 and kt), employment in persons (the data holds thousands of persons).
@@ -233,7 +242,7 @@ result is compared with the baseline computed in the same job and labelled
 "computed live by the job API — not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
 
-Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
+Without `?api=` nothing changes: the panel is not there, its code is not loaded
 and the page fetches only its own files (`data/*.json`, the map
 geometry and the fonts), so the static build stays static. The
 parameter accepts a bare origin, `http://` only on loopback (a local run or an
@@ -241,12 +250,13 @@ SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
 the status line.
 
 ```sh
-# job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 8000
-python3 -m http.server 8000
-# then open http://127.0.0.1:8000/?api=http://127.0.0.1:8020
+# job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 5173
+pnpm dev
+# then open http://localhost:5173/?api=http://127.0.0.1:8020
 ```
 
-`live.js` holds the logic (`node --test` covers it); `live-panel.js` the DOM.
+`live.js` holds the logic (`node --test` covers it); `src/LivePanel.svelte` the
+panel, the only code that talks to the API.
 
 ## Licence
 
@@ -267,18 +277,18 @@ Font License 1.1; Natural Earth, public domain).
 
 ## CI and publishing
 
-`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `node --test` and
-`pnpm exec playwright test` on every push and pull request. None needs the
+`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `node --test`,
+`pnpm build` and `pnpm exec playwright test` on every push and pull request. None needs the
 dataset: the engine checks skip without `--engine`, the page tests read
-`tests/fixture.json`, and the browser tests load the page over the fixture and
+`tests/fixture.json`, and the browser tests load the built page over the fixture and
 the committed results, in light, dark and phone layouts, with axe checking
 WCAG 2.2 AA. `hygiene.yml` runs the
 git hooks in `.pre-commit-config.yaml` and reviews new dependencies on pull
 requests.
 
 `pages.yml` publishes to GitHub Pages only when started by hand (Actions →
-pages → Run workflow). It ships the page and its modules, the fonts, the map
-geometry and the three data files, and nothing else. It stops if `data/results.json` is
+pages → Run workflow). It runs `pnpm build` and ships `dist/`: the bundled
+page and fonts, the map geometry and the three data files, and nothing else. It stops if `data/results.json` is
 missing or isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can
 never go out. Commit the precompute output first, and set the repository's
 Pages source to GitHub Actions.

@@ -1,0 +1,196 @@
+/* Neutral base only. The colour tokens are the data encodings the charts and
+   map.js use: blue and red mean decrease and increase, purple marks the
+   selected region and keyboard focus. */
+
+/* Barlow and Barlow Semi Condensed (SIL OFL 1.1, fonts/OFL.txt), latin subset, self-hosted */
+@font-face {
+  font-family: "Barlow";
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/barlow-400.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/barlow-500.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/barlow-600.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/barlow-semi-condensed-600.woff2) format("woff2");
+}
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/barlow-semi-condensed-700.woff2) format("woff2");
+}
+
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --text: #111417;
+  --text-2: #3d4349;
+  --hair: #d3d6d8;
+  --decrease: #2a72d6;
+  --increase: #d93f3e;
+  --danger: #b3261e;
+  --grid: #e3e5e6;
+  --axis: #80878d;
+  --mark: #9c2399;
+  --danger-bg: #b3261e;
+  --danger-text: #ffffff;
+  --map-neutral: #e2e4e3;
+  --map-nodata: #ffffff;
+  --map-edge: #ffffff;
+  --hatch: rgba(17, 20, 23, 0.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --surface: #111416;
+    --text: #eef1f2;
+    --text-2: #c3c9cd;
+    --hair: #343a3f;
+    --decrease: #4d92f0;
+    --increase: #f06a68;
+    --danger: #ff8f86;
+    --grid: #262b2f;
+    --axis: #7a8288;
+    --mark: #e27ddc;
+    --map-neutral: #2f3539;
+    --map-nodata: #111416;
+    --map-edge: #111416;
+    --hatch: rgba(238, 241, 242, 0.55);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0 auto;
+  padding: 0 16px;
+  max-width: 1120px;
+  background: var(--surface);
+  color: var(--text);
+  font:
+    17px / 1.5 "Barlow",
+    system-ui,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+:focus-visible {
+  outline: 3px solid var(--mark);
+  outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+dd {
+  overflow-wrap: anywhere;
+}
+.fail {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* 44 px touch targets */
+button,
+select,
+input,
+summary {
+  min-height: 44px;
+}
+select,
+input,
+button {
+  font: inherit;
+}
+summary {
+  cursor: pointer;
+}
+
+/* honesty rule: synthetic data is bannered, and every figure says so */
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-weight: 700;
+  text-align: center;
+  padding: 12px 16px;
+  margin: 0 -16px;
+}
+.synthetic figure::before {
+  content: "Synthetic test data";
+  display: block;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+figure {
+  position: relative;
+  margin: 0;
+}
+svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--hair);
+  text-align: right;
+  white-space: nowrap;
+}
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+tr.selected {
+  font-weight: 700;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+}
+.swatch {
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--hair);
+  display: inline-block;
+}
+/* the legend key for the map's own hatching */
+.swatch.hatched {
+  background: repeating-linear-gradient(45deg, var(--hatch) 0 1.2px, transparent 1.2px 4.2px), var(--map-neutral);
+}
+.swatch.decrease {
+  background: color-mix(in srgb, var(--decrease) 55%, var(--surface));
+}
+.swatch.increase {
+  background: color-mix(in srgb, var(--increase) 55%, var(--surface));
+}
