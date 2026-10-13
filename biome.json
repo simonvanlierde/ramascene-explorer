@@ -1,11 +1,11 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
 	"root": true,
-	"files": { "includes": ["**/*.js", "biome.json", "!**/node_modules", "!**/.venv"] },
+	"files": { "includes": ["**/*.js", "biome.json", "!**/node_modules", "!**/.venv", "!**/dist", "!**/*.tmp.mjs"] },
 	"formatter": { "indentStyle": "tab", "lineWidth": 120 },
 	"overrides": [
 		{
-			"includes": ["tests/**"],
+			"includes": ["tests/**", "vite.config.js"],
 			"linter": { "rules": { "correctness": { "noNodejsModules": "off" } } }
 		}
 	]
