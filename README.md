@@ -16,7 +16,7 @@ commit, the dataset checksums, the command and the run time, and the three
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
-"SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
+"SYNTHETIC TEST DATA: NOT A RESULT" banner for anything whose `data_kind` is
 not `exiobase-v3`.
 
 ## Scenarios
@@ -201,7 +201,7 @@ node --test                                             # the page logic
 | file | covers |
 | --- | --- |
 | `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
-| `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
+| `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 153 runs, 122 Octave values) |
 | `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
 | `tests/test_solver.py` | `apply_model` passes no solver argument; each run records the class of its `L`, counted in the provenance and named in the run log with the pull request |
 | `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
@@ -230,7 +230,7 @@ With `?api=<origin>` the page adds a "Run a custom scenario" panel that sends on
 intervention (product, origin region, consuming sector, consuming region, change
 in %) to the RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The
 result is compared with the baseline computed in the same job and labelled
-"computed live by the job API — not precomputed", with its own provenance: engine
+"computed live by the job API, not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
 
 Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
