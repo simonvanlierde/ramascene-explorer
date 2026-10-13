@@ -5,7 +5,7 @@ description = "Precomputed RaMa-Scene scenario results and a static page to expl
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["numpy>=2", "django>=5.2,<6", "scipy>=1.15"]
+dependencies = ["numpy>=2", "django>=5.2,<7", "scipy>=1.15"]
 
 [dependency-groups]
 dev = [
