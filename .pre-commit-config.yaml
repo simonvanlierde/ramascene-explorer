@@ -1,5 +1,5 @@
 # Run with prek: prek install && prek run -a. CI runs the same hooks
-# (.github/workflows/hygiene.yml); Dependabot keeps the revs current.
+# (.github/workflows/hygiene.yml); Renovate keeps the revs current.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

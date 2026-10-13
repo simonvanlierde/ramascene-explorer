@@ -10,7 +10,7 @@ rules:
   # (not code) are what occasionally run long — not worth a hard cap.
   document-start: disable
   line-length: disable
-  # House style, used throughout .github/dependabot.yml: `{ key: value }` flow
+  # House style: `{ key: value }` flow
   # mappings take a single space of padding.
   braces:
     min-spaces-inside: 1
