@@ -1,6 +1,6 @@
 """The real-engine adapter in precompute.py, against a RaMa-Scene checkout.
 
-Opt-in: `pytest --engine=../ramascene-pr2` (with `=`: a bare path argument makes
+Opt-in: `pytest --engine="$ENGINE_DIR"` (with `=`: a bare path argument makes
 pytest load the engine checkout's own conftest.py). Needs the engine code and its
 db.sqlite3, no dataset. The one full-size array is the harness's identity L
 (768 MB, ramascene/tests/test_engine_regression.py::synthetic_matrices);
@@ -111,15 +111,16 @@ def test_grid_regions_resolve_to_the_five_aggregates_with_their_leaf_counts(engi
 # --- the solver ---------------------------------------------------------------
 
 
-def test_the_solver_precompute_passes_is_one_modelling_accepts(engine):
+def test_modelling_takes_no_solver_argument(engine):
+    """precompute.apply_model calls Modelling as tasks.execute_calc does; the engine picks the solver."""
     import inspect
 
     from ramascene.modelling import Modelling
 
-    solver = precompute.leontief_solver()
-    if solver is None:
-        assert "solver" not in inspect.signature(Modelling).parameters
-        assert precompute.solver_name() == "engine default"
-    else:
-        assert "solver" in inspect.signature(Modelling).parameters
-        assert precompute.solver_name() == solver.__name__ == "LeontiefLU"
+    assert list(inspect.signature(Modelling).parameters) == [
+        "ready_model_details",
+        "Y_data",
+        "load_A",
+        "year",
+        "model_details",
+    ]

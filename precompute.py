@@ -1,6 +1,6 @@
 r"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
 
-    uv run python precompute.py --run --engine ../ramascene-pr2 \\
+    uv run python precompute.py --run --engine "$ENGINE_DIR" \\
         --data "$DATASETS_DIR" --out data/results.json
 
 The engine is imported as a package and driven the way ramascene.tasks.execute_calc
@@ -12,20 +12,19 @@ Scenarios: the three original interventions plus a material-efficiency grid,
 ten products x five continental regions x three cut sizes (150), all defined
 as data below.
 
-Memory and process model: each technical-coefficient scenario solves against a
-dense 9800x9800 (I - A). With the perf/solve-not-invert engine that peaked at
-about 1.66 GB (1.55 GiB) per worker in the shipped run; the earlier inverting
-engine at 3.97 GB per job (solve-not-invert PR description). Each scenario runs
-in a fresh worker process (this script with --worker) so its peak RSS is that
-process's ru_maxrss, measured the way the engine's own numbers were, and its
-matrices are gone before the next starts. --run is required so the full-size
-path is never started by accident.
+Memory and process model: each technical-coefficient scenario works on a dense
+9800x9800 A. Each scenario runs in a fresh worker process (this script with
+--worker) so its peak RSS is that process's ru_maxrss, measured the way the
+engine's own numbers were, and its matrices are gone before the next starts.
+--run is required so the full-size path is never started by accident.
 
-Solver: with an engine that has LeontiefLU (branch perf/lu-reuse), apply_model
-passes it to Modelling, so each modified A is factorized once and the three
-routes and the checks of that scenario solve from the same factors; with any
-other engine Modelling keeps its own default. provenance.engine.solver records
-which. No two scenarios share an A, so the factors live and die with the worker.
+Solver: Modelling.apply_model picks it, and this script passes no solver
+argument, as tasks.execute_calc does not. The performance engine (PR #74,
+split/3-performance) returns a LowRankLeontief, a Woodbury update of the
+published L, when few rows of A change and that update passes the engine's own
+residual check, and otherwise a LeontiefSolve that factorizes (I - A) once; a
+stock engine returns its own L. Each run records the class of the L it got
+(runs.<id>.solver), and provenance.run.solvers counts them.
 
 Nothing is written unless the engine first reproduces the four Octave
 reference files shipped with RaMa-Scene on the matrices given (checked before
@@ -40,7 +39,6 @@ import argparse
 import datetime as dt
 import gc
 import hashlib
-import importlib
 import json
 import math
 import platform
@@ -54,6 +52,7 @@ import tempfile
 import time
 import types
 import warnings
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -235,8 +234,8 @@ ALL_SCENARIOS = [*SCENARIOS, *grid_scenarios()]
 def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
     """B_i * (L . sum(Y)) per region, computed without Analyze.
 
-    L.dot() rather than @: the perf/solve-not-invert engine returns a
-    LeontiefSolve, which has .dot and .T like the stored ndarray. Rows are
+    L.dot() rather than @: a scenario's L may be the engine's LeontiefSolve or
+    LowRankLeontief, which have .dot and .T like the stored ndarray. Rows are
     country-major (index = country * 200 + product, as productindexmanger
     builds them), so the vector reshapes to (country, product); each region
     sums its leaf countries (leaf_children_local).
@@ -258,7 +257,7 @@ def independent_by_region(indicator, Y, B, L, engine_values, region_leaves):
 
 
 class MemoDot:
-    """L.dot(v) computed once per distinct v: a solving engine factorises on every call."""
+    """L.dot(v) computed once per distinct v: on a scenario's L each call is a solve or a product with the full L."""
 
     def __init__(self, L):
         self.L, self.seen = L, {}
@@ -448,7 +447,7 @@ def scenario_in_process(engine, name, model_details, indicators, Y, B, detail=Fa
     started = time.perf_counter()
     Y_s, L_s = modelled(engine, name, model_details, Y)
     by_indicator, independent = evaluate(engine, name, Y_s, L_s, B, indicators)
-    record = {"results": by_indicator, "independent": independent}
+    record = {"results": by_indicator, "independent": independent, "solver": type(L_s).__name__}
     if detail:
         record["detail"] = evaluate_detail(engine, name, Y_s, L_s, B, indicators, by_indicator)
     del Y_s, L_s
@@ -525,6 +524,7 @@ def compute(engine, scenarios, indicators):
             "wall_s": record["wall_s"],
             "engine_s": record["engine_s"],
             "peak_rss_bytes": record.get("peak_rss_bytes"),
+            "solver": record.get("solver"),
         }
         mismatched = [c["indicator"] for c in record["independent"] if not c["passed"]]
         if mismatched:
@@ -543,7 +543,7 @@ def compute(engine, scenarios, indicators):
     control_record = run_scenario("zero_change_control", control_details, detailed)
     control = control_record["results"]
     independent.extend(control_record["independent"])
-    runs["zero_change_control"] = {k: control_record.get(k) for k in ("wall_s", "engine_s", "peak_rss_bytes")}
+    runs["zero_change_control"] = {k: control_record.get(k) for k in ("wall_s", "engine_s", "peak_rss_bytes", "solver")}
     gc.collect()
     # Same float64 data on both sides, so only summation order differs: the
     # shipped run measured 1.4e-14. 1e-9 leaves room for that and still catches
@@ -634,6 +634,7 @@ def run_summary(runs, validation):
         "wall_s": {**(stat(walls) or {}), "total": math.fsum(walls)} if walls else None,
         "engine_s": stat(engine_s),
         "peak_rss_bytes": stat(rss),
+        "solvers": dict(Counter(r["solver"] for r in scenario_runs.values() if r.get("solver"))),
         "octave_reference_files": len(validation["files"]),
         "octave_reference_values": sum(f["values"] for f in validation["files"].values()),
     }
@@ -748,7 +749,7 @@ def run_log(doc):
         (
             f"- Engine: {e.get('label') or e.get('commit')} "
             f"({'uncommitted changes' if e.get('dirty') else 'clean tree'})"
-            + (f", solver {e['solver']}" if e.get("solver") else "")
+            + (f", {e['pull_request']}" if e.get("pull_request") else "")
         ),
         f"- Generated: {p['generated_at']}",
         f"- Dataset: {p['dataset']['name']} {p['dataset']['year']}, doi:{p['dataset']['doi']}",
@@ -760,6 +761,8 @@ def run_log(doc):
         ),
         f"- Scenarios run: {r['scenarios_run']}, passed every check: {r['passed']}, failed: {r['failed']}",
     ]
+    if r.get("solvers"):
+        lines.append(f"- L per scenario: {', '.join(f'{k} ({n})' for k, n in r['solvers'].items())}")
     if r["wall_s"]:
         lines.append(
             f"- Wall per scenario job (process start to exit): median {sec(r['wall_s']['median'])} s, "
@@ -786,14 +789,14 @@ def run_log(doc):
         lines.append(f"- Rise check skipped for indicators {skipped} (negative entries in B or final demand)")
     lines += [
         "",
-        "| scenario | status | wall s | engine s | peak RSS GiB | note |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| scenario | status | wall s | engine s | peak RSS GiB | L | note |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     reasons = {f["id"]: f["reason"] for f in doc["failed"]}
     for name, run in doc["runs"].items():
         lines.append(
             f"| {name} | {run.get('status', 'control')} | {sec(run.get('wall_s'))} | {sec(run.get('engine_s'))} | "
-            f"{gib(run.get('peak_rss_bytes'))} | {reasons.get(name, '')} |"
+            f"{gib(run.get('peak_rss_bytes'))} | {run.get('solver') or '—'} | {reasons.get(name, '')} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -970,29 +973,12 @@ def model_inputs(model_details):
     return ready, load_A
 
 
-def leontief_solver():
-    """The engine's kept-LU solver (LeontiefLU, perf/lu-reuse), or None for an engine without it."""
-    return getattr(importlib.import_module("ramascene.modelling"), "LeontiefLU", None)
-
-
-def solver_name():
-    solver = leontief_solver()
-    return solver.__name__ if solver else "engine default"
-
-
 def apply_model(model_details, Y):
-    """(Y, L) after the intervention, via ramascene.modelling.Modelling.
-
-    With LeontiefLU a modified A is factorized once, and the three routes and
-    every check of the scenario solve from those factors; the engine default
-    (LeontiefSolve) factorizes again on every L.dot.
-    """
+    """(Y, L) after the intervention, via ramascene.modelling.Modelling, which picks the solver."""
     from ramascene.modelling import Modelling
 
     ready, load_A = model_inputs(model_details)
-    solver = leontief_solver()
-    options = {"solver": solver} if solver else {}  # an engine without it takes no solver argument
-    Y_s, L_s = Modelling(ready, Y, load_A, YEAR, model_details, **options).apply_model()
+    Y_s, L_s = Modelling(ready, Y, load_A, YEAR, model_details).apply_model()
     # the Modelling instance (and its modified A) is dropped here, unlike
     # tasks.execute_calc, which holds it through the route call
     return Y_s, L_s
@@ -1126,7 +1112,6 @@ def real_engine(engine_dir=None, data_dir=None):
         region_leaves=region_leaves(),
         reference_validation=reference_validation,
         scenario=worker_scenario(engine_dir, data_dir) if engine_dir else None,
-        solver=solver_name(),
     )
 
 
@@ -1146,6 +1131,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", action="store_true", help="really run the full-size engine (~1.6 GB peak per worker)")
     parser.add_argument("--engine", type=Path, required=True, help="RaMa-Scene checkout")
+    parser.add_argument("--engine-pr", help="URL of the pull request the engine commit belongs to, for the provenance")
     parser.add_argument("--data", type=Path, required=True, help="DATASETS_DIR holding 2011/{A,L,Y,B}_v4.npy")
     parser.add_argument("--out", type=Path, help="results JSON; data/run-log.md is written beside it")
     parser.add_argument("--out-regions", type=Path, help="also write the 49-region breakdown here")
@@ -1186,7 +1172,8 @@ def main(argv=None):
                 f"{revision['label']} (dirty {revision['dirty']}) to {now['label']} (dirty {now['dirty']})"
             )
         # recorded after the checkout comparison, which is over the git state only
-        provenance["engine"]["solver"] = getattr(engine, "solver", None)
+        if args.engine_pr:
+            provenance["engine"]["pull_request"] = args.engine_pr
         peak = peak_rss_bytes()
         output = assemble(computed, indicators, provenance, peak)
         sidecars = {}
