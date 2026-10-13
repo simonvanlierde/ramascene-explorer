@@ -8,9 +8,6 @@ from the same stored L, Y and B the engine uses. Rows are country-major
 product aggregates. Nothing is written unless every producer's flows sum to the
 engine's own per-country value in data/regions.json, and the world total
 matches, to relative 1e-9.
-
-Prototype behind the map-first flows view; it moves into precompute.py, with
-the same flows for every scenario, before the redesign ships.
 """
 
 import json

@@ -2,7 +2,7 @@
 data/regions.json: data_kind=exiobase-v3, 4 runs with detail
 data/flows.json: data_kind=exiobase-v3, 4 runs with detail
 data/results.json: data_kind=exiobase-v3, 153 of 153 scenarios passed, 0 failed; peak RSS 1.54 GiB
-	Command being timed: "uv run python precompute.py --run --engine /home/simon/code/ramascene--engine-74 --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data /home/simon/code/ramascene-data/ramascene --out data/results.json --out-regions data/regions.json --out-flows data/flows.json"
+	Command being timed: "uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json"
 	User time (seconds): 456.11
 	System time (seconds): 15.63
 	Percent of CPU this job got: 620%
