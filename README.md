@@ -1,22 +1,26 @@
 # RaMa-Scene scenario explorer
 
-A static page over **precomputed** RaMa-Scene engine output: a baseline, three
-interventions and a 150-cell material-efficiency grid on the EXIOBASE 2011 base
-year, three indicators, broken down by the region where the impact occurs. Nothing here is a live calculation, and
-nothing is a forecast: the engine changes final demand or technical
-coefficients in the 2011 economy and has no projection step.
+A static page over **precomputed** RaMa-Scene engine output. It shows a
+baseline, three interventions and a grid of 150 material-efficiency scenarios
+on the EXIOBASE 2011 base year. Each has three indicators, broken down by the
+region where the impact occurs. Nothing here is a live calculation, and nothing
+is a forecast. The engine changes final demand or technical coefficients in the
+2011 economy and has no projection step.
 
-`data/results.json`, `data/regions.json` and `data/flows.json` are the output
-of one precompute run (engine `split/3-performance @ d9113ca`, the head of
-[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74), 2026-10-13;
-see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 153 scenarios, 1 min 16 s wall, 1,609,984 KiB (1.65 GB, 1.54 GiB) maximum RSS,
-under `nice -n 10` with BLAS capped at 8 threads on a 32-core machine). Each file's `provenance` block records the engine
-commit, the dataset checksums, the command and the run time, and the three
-blocks are identical. Re-run the precompute below to regenerate them. Nothing
-else in the repository is a result. `tests/fixture.json` is
-hand-shaped synthetic data for testing the page, and the page shows a red
-"SYNTHETIC TEST DATA — NOT A RESULT" banner for anything whose `data_kind` is
+`data/results.json`, `data/regions.json` and `data/flows.json` come from one
+precompute run on 2026-10-13. The engine was `split/3-performance @ d9113ca`,
+the head of
+[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
+`data/run-log.md` logs that run, and `data/precompute-time.txt` holds its
+`/usr/bin/time -v` output: 153 scenarios, 1 min 16 s wall, 1,609,984 KiB
+(1.65 GB, 1.54 GiB) maximum RSS, under `nice -n 10` with BLAS capped at 8
+threads on a 32-core machine. Each file's `provenance` block records the engine
+commit, the dataset checksums, the command and the run time. The three blocks
+are identical. To regenerate the files, re-run the precompute below.
+
+Nothing else in the repository is a result. `tests/fixture.json` is
+hand-shaped synthetic data for testing the page. The page shows a red
+"SYNTHETIC TEST DATA: NOT A RESULT" banner for any data whose `data_kind` is
 not `exiobase-v3`.
 
 ## Scenarios
@@ -37,10 +41,10 @@ Russia, Switzerland, Norway and Rest of Europe.
 ### Material-efficiency grid
 
 150 more scenarios of one shape, defined as data in `precompute.py`
-(`GRID_PRODUCTS`, `GRID_REGIONS`, `GRID_CUTS`, `grid_scenarios()`): the
-technical coefficient of one product, from all regions, into **every industry
-of one continental region** is scaled by the cut. Every industry in that region
-then uses that much less of the product per unit of output; nothing else
+(`GRID_PRODUCTS`, `GRID_REGIONS`, `GRID_CUTS`, `grid_scenarios()`). Each one
+scales the technical coefficient of one product, from all regions, into
+**every industry of one continental region** by the cut. Every industry in that
+region then uses that much less of the product per unit of output. Nothing else
 changes. It is `cement-in-construction` with the consuming side widened from
 one industry to the engine database's 15 industry sections (`consumedBy`
 1–15, whose leaves are all 200 industries).
@@ -52,45 +56,50 @@ one industry to the engine database's 15 industry sections (`consumedBy`
 | cut | −10 %, −20 %, −50 % |
 
 Scenario ids are `<product>-<region>-<cut>`, for example `steel-europe-20`.
-The page picks a grid cell by product, region and cut; the three original
-interventions stay in the same menu.
+On the page you pick a grid cell by product, region and cut. The three
+original interventions stay in the same menu.
 
 ## Generate the data
 
-Needs a RaMa-Scene checkout and the matrices of **EXIOBASE v3.3.sm** (Franco
+You need a RaMa-Scene checkout and the matrices of **EXIOBASE v3.3.sm** (Franco
 Donati and Arjan de Koning, Zenodo version V1, 2019-11-08,
 [doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)): the
 monetary product-by-product EXIOBASE v3.3 with materials produced by
 secondary technologies (recycling industries) represented explicitly. The
-engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`; the Zenodo record ships only `_v4`
-files, and `v4` is the file suffix, not the dataset version. The matrices are
-float64.
+engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`. The Zenodo record
+ships only `_v4` files, and `v4` is the file suffix, not the dataset version.
+The matrices are float64.
 
-The engine repository, branch and commit are recorded in the output
+The output records the engine repository, branch and commit
 (`provenance.engine`, with `label` such as `split/3-performance @ d9113ca`, and
 `pull_request` when `--engine-pr` is given). Each run records the class of the
 `L` the engine returned (`runs.<id>.solver`), and `provenance.run.solvers`
 counts them.
-`--engine` must be the top of a git checkout with a commit: the script
-refuses to start otherwise (a copy without `.git`, or a directory inside some
-other repository), so no output can claim `exiobase-v3` without naming its
-engine. If the checkout's commit or dirty state changes during the run, it
-writes nothing, as the workers would have run code the provenance cannot name.
 
-The shipped files were produced with branch `split/3-performance` of the fork
+`--engine` must be the top of a git checkout with a commit. The script refuses
+to start on anything else, such as a copy without `.git` or a directory inside
+some other repository. That way no output can claim `exiobase-v3` without
+naming its engine. If the checkout's commit or dirty state changes during the
+run, the script writes nothing, because the workers would have run code that
+the provenance cannot name.
+
+I produced the shipped files with branch `split/3-performance` of the fork
 <https://github.com/simonvanlierde/ramascene>, commit
 `d9113ca9ad38bc29d2a96392dabf74d70abf830e` (clean tree), the head of pull
 request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is
 stacked on #73 (the Django 5.2 upgrade). `precompute.py` calls `Modelling` as
-`tasks.execute_calc` does and passes no solver: the engine picks it. When at
-most 2,000 rows of `A` change and the result passes the engine's residual check
-(`‖x − A x − y‖ ≤ 1e-9 ‖y‖` for `y = 1`), `Modelling` returns a
-`LowRankLeontief`, a Woodbury update of the stored `L`: each `L.dot` is one
-product with `L` plus a small solve, with no factorization. Otherwise it
-returns a `LeontiefSolve`, which factorizes `(I − A)` once and solves from
-those factors. In the shipped run all 152 technical-coefficient scenarios and
-the control took the Woodbury update, and the final-demand scenario used the
-stored `L`; no run factorized `(I − A)`.
+`tasks.execute_calc` does and passes no solver, so the engine picks one:
+
+- When at most 2,000 rows of `A` change and the result passes the engine's
+  residual check (`‖x − A x − y‖ ≤ 1e-9 ‖y‖` for `y = 1`), `Modelling` returns
+  a `LowRankLeontief`. This is a Woodbury update of the stored `L`: each
+  `L.dot` is one product with `L` plus a small solve, with no factorization.
+- Otherwise it returns a `LeontiefSolve`, which factorizes `(I − A)` once and
+  solves from those factors.
+
+In the shipped run, all 152 technical-coefficient scenarios and the control
+took the Woodbury update, and the final-demand scenario used the stored `L`.
+No run factorized `(I − A)`.
 
 The full 153-scenario run, before and after:
 
@@ -102,10 +111,10 @@ The full 153-scenario run, before and after:
 `uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
 value by value (every number in the three files, except provenance, run
 timings and check residuals; relative 1e-12 by default). Between the two runs
-above the largest relative difference is 3.4e-14 in `results.json` and
+above, the largest relative difference is 3.4e-14 in `results.json` and
 4.1e-13 in `regions.json`. In `flows.json` it is 3.1e-10, on the change in a
-flow, a difference of two nearly equal values; 120 of its 638 values differ by
-more than 1e-12 and none by more than 1e-9.
+flow, which is a difference of two nearly equal values. 120 of its 638 values
+differ by more than 1e-12, and none by more than 1e-9.
 
 ```sh
 # the command data/results.json records, verbatim
@@ -114,69 +123,81 @@ uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://git
 ```
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix: about 1.65 GB (1.54 GiB) peak per worker in the
-shipped run. The engine memory-maps `L` and maps `A` copy-on-write, so much of
-that is file pages the workers share through the page cache, which each
-worker's RSS still counts. The original inverting engine peaked at 3.97 GB per job. Each
-scenario runs in a fresh worker process (`precompute.py --worker`, one at a
-time), so its wall time and peak RSS (`ru_maxrss`) are that process's, the
-way the engine's own numbers were measured. The script first checks that the engine reproduces the four Octave
+dense 9800 × 9800 matrix. In the shipped run that took about 1.65 GB
+(1.54 GiB) at peak per worker. The engine memory-maps `L` and maps `A`
+copy-on-write. Much of that peak is therefore file pages that the workers share
+through the page cache, which each worker's RSS still counts. The original
+inverting engine peaked at 3.97 GB per job. Each scenario runs in a fresh
+worker process (`precompute.py --worker`, one at a time). Its wall time and
+peak RSS (`ru_maxrss`) are that process's own, the way the engine's own
+numbers were measured.
+
+Before any solve, the script checks that the engine reproduces the four Octave
 reference files shipped with RaMa-Scene (routes two and four; value added and
-GHG) and stops, before any solve, if it does not. It then runs the baseline,
-each scenario, and a 0% control through the modified-A path. With the
-PR #74 engine the control is a Woodbury update with a zero change, which
-returns the stored `L` exactly, so it does not exercise the factorization
-path. Run-level
-failures write nothing: a failed Octave check, a baseline that does not match
-the independent calculation, a leaky control, or no scenario left. Every
-scenario is held to:
+GHG). It stops if it does not. It then runs the baseline, each scenario, and a
+0% control through the modified-A path. With the PR #74 engine the control is a
+Woodbury update with a zero change. That returns the stored `L` exactly, so the
+control does not exercise the factorization path.
+
+A failure at run level writes nothing. That covers a failed Octave check, a
+baseline that does not match the independent calculation, a leaky control (one
+that does not reproduce the baseline), or no scenario left. Every scenario is
+held to:
 
 - every value is finite;
 - each region's value matches `B_i ∘ (L · ΣY)` recomputed outside the engine
   and summed over that region's countries (relative 1e-9);
 - the control reproduces the baseline (relative 1e-9);
 - every intervention moves at least one indicator total by more than
-  relative 1e-9, and no cut raises an indicator total. The rise check applies only to indicators whose `B` row and `ΣY` have
-  no negative entries; otherwise it is skipped with a warning and recorded.
+  relative 1e-9, and no cut raises an indicator total. The rise check applies
+  only to indicators whose `B` row and `ΣY` have no negative entries. For other
+  indicators the script skips it with a warning and records that.
 
-A scenario that fails is recorded under `failed` with its reason and is not in
-`results` or on the page; it is never dropped silently. Output that passes is
-marked `data_kind: exiobase-v3`. Beside the JSON the script writes
+A scenario that fails is recorded under `failed` with its reason. It is not in
+`results` or on the page, but it is never dropped silently. Output that passes
+is marked `data_kind: exiobase-v3`. Beside the JSON, the script writes
 `data/run-log.md`: engine, date, Octave reference count, per-scenario wall
 time, peak RSS and check outcome.
 
 ## World map
 
-Below the bar chart, a choropleth colours each country by the change in its
-EXIOBASE region, as a percentage of that region's own baseline (diverging
-blue/red around a grey "within ±E/20" class, E a round number at or above the
-largest change). `data/regions.json` carries the 49-region breakdown
-(`--out-regions`) of the baseline and the three original interventions,
-computed inside the same worker as their continental values. A grid cell has
-none (it would multiply the sidecars by 50) and falls back
+Below the bar chart, a choropleth map colours each country by the change in
+its EXIOBASE region, as a percentage of that region's own baseline. The colours
+diverge from a grey "within ±E/20" class to blue and red, where E is a round
+number at or above the largest change.
+
+`data/regions.json` carries the 49-region breakdown (`--out-regions`) of the
+baseline and the three original interventions. It is computed inside the same
+worker as their continental values. Grid cells have no 49-region breakdown,
+because that would multiply these sidecar files by 50. A grid cell falls back
 to the five continental aggregates of `results.json`, and the page says so.
-The five "Rest of …" regions are hatched: every country in one shares its
-value. Which countries each covers follows Natural Earth continents (see
-`REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
-`?region=<code>` highlights a region (click the map or use the picker).
+
+The five "Rest of …" regions are hatched, because every country in one shares
+its value. Which countries each one covers follows the Natural Earth continents
+(see `REST_OF` in `map.js`). EXIOBASE's own concordance may differ at the
+edges. `?region=<code>` highlights a region. You can also click the map or use
+the picker.
 
 ## Supply-chain Sankey
 
-`data/flows.json` (`--out-flows`) decomposes each original intervention's change by the
-sector whose production carries the impact and the region where it occurs:
-route three (Hotspot × Geographic, the same route as the map) run once per
-level-2 product aggregate (15 sectors, which partition the 200 products) over
-the 49 regions, intervention minus baseline. That gives 15 × 49 = 735 cells.
-The 12 cells with the largest |change| are named; every other cell is added
-to the flow between its sector (if named) or "Other sectors" and its region
-(if named) or "Other regions". Nothing is dropped, so the flows sum to the
-total change. precompute.py writes nothing unless the flows sum to the
-total (relative 1e-12), the sectors sum to each region's value, and each
-region matches B·L·ΣY (relative 1e-9). It is a production-side decomposition
-of where the change lands, not a structural path analysis through the tiers
-of the supply chain. "Animate from the baseline" animates the map and the
-bands from no change to the intervention (instant under
-`prefers-reduced-motion`).
+`data/flows.json` (`--out-flows`) splits each original intervention's change
+two ways: by the sector whose production carries the impact, and by the region
+where the impact occurs. To get it, the script runs route three (Hotspot ×
+Geographic, the same route as the map) once per level-2 product aggregate, over
+the 49 regions, and takes intervention minus baseline. There are 15 of these
+sectors, and they partition the 200 products. That gives 15 × 49 = 735 cells.
+
+The 12 cells with the largest |change| are named. Every other cell is added to
+the flow between its sector (if named) or "Other sectors" and its region (if
+named) or "Other regions". Nothing is dropped, so the flows sum to the total
+change. `precompute.py` writes nothing unless three checks pass: the flows sum
+to the total (relative 1e-12), the sectors sum to each region's value, and each
+region matches B·L·ΣY (relative 1e-9).
+
+This is a production-side decomposition of where the change lands. It is not a
+structural path analysis through the tiers of the supply chain. "Animate from
+the baseline" animates the map and the bands from no change to the
+intervention. Under `prefers-reduced-motion` the change is instant.
 
 `fonts/` holds Barlow and Barlow Semi Condensed (SIL Open Font License 1.1,
 `fonts/OFL.txt`), the latin subset as Google Fonts serves it, self-hosted so
@@ -185,9 +206,10 @@ the page loads nothing from a third party.
 `geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
 **v5.1.2** (public domain), from
 `nvkelso/natural-earth-vector` tag `v5.1.2`, `geojson/ne_110m_admin_0_countries.geojson`
-(sha256 `6866c877…c977f`). Properties reduced to `iso` (`ISO_A2_EH`; Somaliland
-as `SO`, N. Cyprus `null`) and `name`; Antarctica and the French Southern
-Lands dropped; converted with `geo2topo -q 1e4` (topojson-server 3.0.1).
+(sha256 `6866c877…c977f`). I kept only the properties `iso` (`ISO_A2_EH`;
+Somaliland as `SO`, N. Cyprus `null`) and `name`, dropped Antarctica and the
+French Southern Lands, and converted it with `geo2topo -q 1e4`
+(topojson-server 3.0.1).
 Malta is below the 1:110m threshold and appears only in the table.
 
 ## Test
@@ -198,10 +220,13 @@ uv run pytest --engine="$ENGINE_DIR"                    # adds the real-engine a
 node --test                                             # the page logic
 ```
 
+Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its
+root directory and loads the engine's own `conftest.py`.
+
 | file | covers |
 | --- | --- |
 | `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
-| `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
+| `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 153 runs, 122 Octave values) |
 | `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
 | `tests/test_solver.py` | `apply_model` passes no solver argument; each run records the class of its `L`, counted in the provenance and named in the run log with the pull request |
 | `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
@@ -211,18 +236,16 @@ node --test                                             # the page logic
 | `tests/sankey.test.js` | links and nodes reconcile to the total change, node order and height, the replay tween, sector labels |
 | `tests/live.test.js` | `?api=` origin rules, the job request body, a live result against its own job's baseline, live provenance, polling, the page unchanged without `?api=` |
 
-Write `--engine=PATH` with the `=`: pytest otherwise takes the path as its root
-directory and loads the engine's own `conftest.py`.
-
 ## View
 
-Any static server, for example `python3 -m http.server`, then open
-`http://localhost:8000/?scenario=steel-in-vehicles-europe&indicator=5` or
-`?scenario=steel-europe-20&indicator=7`.
+Serve the folder with any static server, for example `python3 -m http.server`.
+Then open `http://localhost:8000/?scenario=steel-in-vehicles-europe&indicator=5`
+or `?scenario=steel-europe-20&indicator=7`.
 Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
-selection lives in the query string, so a view is shareable. GHG emissions
-and metal-ore extraction are shown in megatonnes (the data holds kg CO2 eq
-and kt), employment in persons (the data holds thousands of persons).
+selection lives in the query string, so you can share a view by its URL. The
+page shows GHG emissions and metal-ore extraction in megatonnes (the data holds
+kg CO2 eq and kt), and employment in persons (the data holds thousands of
+persons).
 
 ## Live scenarios (optional)
 
@@ -230,15 +253,15 @@ With `?api=<origin>` the page adds a "Run a custom scenario" panel that sends on
 intervention (product, origin region, consuming sector, consuming region, change
 in %) to the RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The
 result is compared with the baseline computed in the same job and labelled
-"computed live by the job API — not precomputed", with its own provenance: engine
+"computed live by the job API, not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
 
-Without `?api=` nothing changes: the panel stays hidden, its code is not loaded
-and the page fetches only its own files (`data/*.json`, the map
-geometry and the fonts), so the static build stays static. The
-parameter accepts a bare origin, `http://` only on loopback (a local run or an
-SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
-the status line.
+Without `?api=` nothing changes. The panel stays hidden, its code is not
+loaded, and the page fetches only its own files (`data/*.json`, the map
+geometry and the fonts). So the static build stays static. The parameter
+accepts a bare origin: `http://` only on loopback (a local run or an SSH
+tunnel), and `https://` otherwise. The page ignores anything else and reports
+it in the status line.
 
 ```sh
 # job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 8000
@@ -246,7 +269,8 @@ python3 -m http.server 8000
 # then open http://127.0.0.1:8000/?api=http://127.0.0.1:8020
 ```
 
-`live.js` holds the logic (`node --test` covers it); `live-panel.js` the DOM.
+`live.js` holds the logic, which `node --test` covers. `live-panel.js` holds
+the DOM code.
 
 ## Licence
 
@@ -268,17 +292,16 @@ Font License 1.1; Natural Earth, public domain).
 ## CI and publishing
 
 `.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `node --test` and
-`pnpm exec playwright test` on every push and pull request. None needs the
-dataset: the engine checks skip without `--engine`, the page tests read
-`tests/fixture.json`, and the browser tests load the page over the fixture and
-the committed results, in light, dark and phone layouts, with axe checking
-WCAG 2.2 AA. `hygiene.yml` runs the
-git hooks in `.pre-commit-config.yaml` and reviews new dependencies on pull
-requests.
+`pnpm exec playwright test` on every push and pull request. None of them needs
+the dataset. The engine checks skip without `--engine`, and the page tests read
+`tests/fixture.json`. The browser tests load the page over the fixture and the
+committed results, in light, dark and phone layouts, with axe checking
+WCAG 2.2 AA. `hygiene.yml` runs the git hooks in `.pre-commit-config.yaml` and
+reviews new dependencies on pull requests.
 
 `pages.yml` publishes to GitHub Pages only when started by hand (Actions →
-pages → Run workflow). It ships the page and its modules, the fonts, the map
-geometry and the three data files, and nothing else. It stops if `data/results.json` is
-missing or isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can
-never go out. Commit the precompute output first, and set the repository's
-Pages source to GitHub Actions.
+pages → Run workflow). Before you run it, commit the precompute output and
+set the repository's Pages source to GitHub Actions. The workflow ships the
+page and its modules, the fonts, the map geometry and the three data files, and
+nothing else. It stops if `data/results.json` is missing or isn't marked
+`data_kind: exiobase-v3`, so the synthetic fixture can never go out.
