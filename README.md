@@ -108,9 +108,8 @@ flow, a difference of two nearly equal values; 120 of its 638 values differ by
 more than 1e-12 and none by more than 1e-9.
 
 ```sh
-uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
-    --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 \
-    --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
+# the command data/results.json records, verbatim
+uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
 # subsets: --scenarios original|grid, --limit N
 ```
 
