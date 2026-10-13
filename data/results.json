@@ -10219,1079 +10219,1079 @@
  "runs": {
   "vehicle-demand-europe": {
    "status": "passed",
-   "wall_s": 1.3861201969994,
-   "engine_s": 1.1000589389996094,
-   "peak_rss_bytes": 883486720,
+   "wall_s": 1.3957985379965976,
+   "engine_s": 1.1932252999977209,
+   "peak_rss_bytes": 890937344,
    "solver": "memmap"
   },
   "steel-in-vehicles-europe": {
    "status": "passed",
-   "wall_s": 1.3829834449998089,
-   "engine_s": 1.138723174000006,
-   "peak_rss_bytes": 1639272448,
+   "wall_s": 1.4880871700006537,
+   "engine_s": 1.281818764997297,
+   "peak_rss_bytes": 1632862208,
    "solver": "LowRankLeontief"
   },
   "cement-in-construction": {
    "status": "passed",
-   "wall_s": 1.596576425999956,
-   "engine_s": 1.3027183079993847,
-   "peak_rss_bytes": 1640169472,
+   "wall_s": 1.6471653479966335,
+   "engine_s": 1.373274206998758,
+   "peak_rss_bytes": 1633636352,
    "solver": "LowRankLeontief"
   },
   "steel-europe-10": {
    "status": "passed",
-   "wall_s": 0.5057756699998208,
-   "engine_s": 0.21859338500053127,
-   "peak_rss_bytes": 1647202304,
+   "wall_s": 0.5018323870026506,
+   "engine_s": 0.30007628999010194,
+   "peak_rss_bytes": 1640382464,
    "solver": "LowRankLeontief"
   },
   "steel-europe-20": {
    "status": "passed",
-   "wall_s": 0.4456209049994868,
-   "engine_s": 0.23221191800075758,
-   "peak_rss_bytes": 1647861760,
+   "wall_s": 0.5048281659983331,
+   "engine_s": 0.2978415099933045,
+   "peak_rss_bytes": 1640046592,
    "solver": "LowRankLeontief"
   },
   "steel-europe-50": {
    "status": "passed",
-   "wall_s": 0.4205717300001197,
-   "engine_s": 0.21873412300010386,
-   "peak_rss_bytes": 1647292416,
+   "wall_s": 0.5009470149961999,
+   "engine_s": 0.29821162500593346,
+   "peak_rss_bytes": 1640316928,
    "solver": "LowRankLeontief"
   },
   "steel-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.4143269350006449,
-   "engine_s": 0.20437886999934562,
-   "peak_rss_bytes": 1637941248,
+   "wall_s": 0.5022508779948112,
+   "engine_s": 0.285796914002276,
+   "peak_rss_bytes": 1630322688,
    "solver": "LowRankLeontief"
   },
   "steel-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.4244236380000075,
-   "engine_s": 0.2178590229996189,
-   "peak_rss_bytes": 1637851136,
+   "wall_s": 0.4805268029886065,
+   "engine_s": 0.2780177920067217,
+   "peak_rss_bytes": 1630539776,
    "solver": "LowRankLeontief"
   },
   "steel-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.3468613759996515,
-   "engine_s": 0.18594839599973056,
-   "peak_rss_bytes": 1637855232,
+   "wall_s": 0.5043008230131818,
+   "engine_s": 0.287352864004788,
+   "peak_rss_bytes": 1630412800,
    "solver": "LowRankLeontief"
   },
   "steel-america-10": {
    "status": "passed",
-   "wall_s": 0.4246108709994587,
-   "engine_s": 0.21724820700001146,
-   "peak_rss_bytes": 1639337984,
+   "wall_s": 0.48377115100447554,
+   "engine_s": 0.2948855900031049,
+   "peak_rss_bytes": 1632133120,
    "solver": "LowRankLeontief"
   },
   "steel-america-20": {
    "status": "passed",
-   "wall_s": 0.5893150129995774,
-   "engine_s": 0.22814845500033698,
-   "peak_rss_bytes": 1639198720,
+   "wall_s": 0.49327116599306464,
+   "engine_s": 0.2911189239966916,
+   "peak_rss_bytes": 1631866880,
    "solver": "LowRankLeontief"
   },
   "steel-america-50": {
    "status": "passed",
-   "wall_s": 0.4964436760001263,
-   "engine_s": 0.20596161100002064,
-   "peak_rss_bytes": 1639415808,
+   "wall_s": 0.533079340995755,
+   "engine_s": 0.310958935006056,
+   "peak_rss_bytes": 1631424512,
    "solver": "LowRankLeontief"
   },
   "steel-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.45481060899965087,
-   "engine_s": 0.19798693699976866,
-   "peak_rss_bytes": 1639473152,
+   "wall_s": 0.5357933170016622,
+   "engine_s": 0.2973085490084486,
+   "peak_rss_bytes": 1632763904,
    "solver": "LowRankLeontief"
   },
   "steel-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.42687419100002444,
-   "engine_s": 0.22295959100028995,
-   "peak_rss_bytes": 1639686144,
+   "wall_s": 0.4996464089927031,
+   "engine_s": 0.29171911800222006,
+   "peak_rss_bytes": 1632620544,
    "solver": "LowRankLeontief"
   },
   "steel-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.35004868500072917,
-   "engine_s": 0.20627131999935955,
-   "peak_rss_bytes": 1640202240,
+   "wall_s": 0.48709302399947774,
+   "engine_s": 0.29714302100182977,
+   "peak_rss_bytes": 1632477184,
    "solver": "LowRankLeontief"
   },
   "steel-africa-10": {
    "status": "passed",
-   "wall_s": 0.43089395799961494,
-   "engine_s": 0.2001869630003057,
-   "peak_rss_bytes": 1637957632,
+   "wall_s": 0.48390971099433955,
+   "engine_s": 0.28409365999687,
+   "peak_rss_bytes": 1630502912,
    "solver": "LowRankLeontief"
   },
   "steel-africa-20": {
    "status": "passed",
-   "wall_s": 0.5024965029997475,
-   "engine_s": 0.21722913899975538,
-   "peak_rss_bytes": 1637912576,
+   "wall_s": 0.4864526849996764,
+   "engine_s": 0.28407959900505375,
+   "peak_rss_bytes": 1630363648,
    "solver": "LowRankLeontief"
   },
   "steel-africa-50": {
    "status": "passed",
-   "wall_s": 0.3945172679996176,
-   "engine_s": 0.20574712400048156,
-   "peak_rss_bytes": 1637789696,
+   "wall_s": 0.49618714400276076,
+   "engine_s": 0.2856314749951707,
+   "peak_rss_bytes": 1630633984,
    "solver": "LowRankLeontief"
   },
   "aluminium-europe-10": {
    "status": "passed",
-   "wall_s": 0.40817445300035615,
-   "engine_s": 0.23583124599917937,
-   "peak_rss_bytes": 1647714304,
+   "wall_s": 0.550702035005088,
+   "engine_s": 0.3441306289896602,
+   "peak_rss_bytes": 1640517632,
    "solver": "LowRankLeontief"
   },
   "aluminium-europe-20": {
    "status": "passed",
-   "wall_s": 0.41818024500025786,
-   "engine_s": 0.21338403100071446,
-   "peak_rss_bytes": 1647149056,
+   "wall_s": 0.4958725449978374,
+   "engine_s": 0.2979003269865643,
+   "peak_rss_bytes": 1639903232,
    "solver": "LowRankLeontief"
   },
   "aluminium-europe-50": {
    "status": "passed",
-   "wall_s": 0.39919089599970903,
-   "engine_s": 0.2399725440000111,
-   "peak_rss_bytes": 1647955968,
+   "wall_s": 0.5194456479948713,
+   "engine_s": 0.30854389000160154,
+   "peak_rss_bytes": 1640488960,
    "solver": "LowRankLeontief"
   },
   "aluminium-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.4760487329995158,
-   "engine_s": 0.21421039800043218,
-   "peak_rss_bytes": 1638449152,
+   "wall_s": 0.5328814359963872,
+   "engine_s": 0.3220691570022609,
+   "peak_rss_bytes": 1630781440,
    "solver": "LowRankLeontief"
   },
   "aluminium-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.43761696799992933,
-   "engine_s": 0.22664813899973524,
-   "peak_rss_bytes": 1638817792,
+   "wall_s": 0.46250140300253406,
+   "engine_s": 0.2798254490044201,
+   "peak_rss_bytes": 1630892032,
    "solver": "LowRankLeontief"
   },
   "aluminium-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.42544705899945257,
-   "engine_s": 0.21978554099950998,
-   "peak_rss_bytes": 1638436864,
+   "wall_s": 0.48495546999038197,
+   "engine_s": 0.28231074099312536,
+   "peak_rss_bytes": 1630846976,
    "solver": "LowRankLeontief"
   },
   "aluminium-america-10": {
    "status": "passed",
-   "wall_s": 0.41598347000035574,
-   "engine_s": 0.21365115499975218,
-   "peak_rss_bytes": 1639436288,
+   "wall_s": 0.4964479879999999,
+   "engine_s": 0.29020307000610046,
+   "peak_rss_bytes": 1632120832,
    "solver": "LowRankLeontief"
   },
   "aluminium-america-20": {
    "status": "passed",
-   "wall_s": 0.5008913729998312,
-   "engine_s": 0.2180911310006195,
-   "peak_rss_bytes": 1639247872,
+   "wall_s": 0.49015914800111204,
+   "engine_s": 0.2924605430016527,
+   "peak_rss_bytes": 1632223232,
    "solver": "LowRankLeontief"
   },
   "aluminium-america-50": {
    "status": "passed",
-   "wall_s": 0.4139188649996868,
-   "engine_s": 0.22150473599958787,
-   "peak_rss_bytes": 1638457344,
+   "wall_s": 0.4894039589999011,
+   "engine_s": 0.28364085299836006,
+   "peak_rss_bytes": 1631956992,
    "solver": "LowRankLeontief"
   },
   "aluminium-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.41588211900034366,
-   "engine_s": 0.22036714099976962,
-   "peak_rss_bytes": 1639886848,
+   "wall_s": 0.48805466599878855,
+   "engine_s": 0.2815449139889097,
+   "peak_rss_bytes": 1632624640,
    "solver": "LowRankLeontief"
   },
   "aluminium-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.37833957800012286,
-   "engine_s": 0.22051216700037912,
-   "peak_rss_bytes": 1639550976,
+   "wall_s": 0.5001938189961948,
+   "engine_s": 0.2889927579963114,
+   "peak_rss_bytes": 1632239616,
    "solver": "LowRankLeontief"
   },
   "aluminium-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.4083359260002908,
-   "engine_s": 0.20724177099964436,
-   "peak_rss_bytes": 1640095744,
+   "wall_s": 0.5151217829989037,
+   "engine_s": 0.3002630999981193,
+   "peak_rss_bytes": 1632116736,
    "solver": "LowRankLeontief"
   },
   "aluminium-africa-10": {
    "status": "passed",
-   "wall_s": 0.4245617209999182,
-   "engine_s": 0.22153339499982394,
-   "peak_rss_bytes": 1637961728,
+   "wall_s": 0.5571468760026619,
+   "engine_s": 0.3199826519994531,
+   "peak_rss_bytes": 1629528064,
    "solver": "LowRankLeontief"
   },
   "aluminium-africa-20": {
    "status": "passed",
-   "wall_s": 0.41952226299963513,
-   "engine_s": 0.2162092919998031,
-   "peak_rss_bytes": 1637928960,
+   "wall_s": 0.5579642600059742,
+   "engine_s": 0.28844978800043464,
+   "peak_rss_bytes": 1628921856,
    "solver": "LowRankLeontief"
   },
   "aluminium-africa-50": {
    "status": "passed",
-   "wall_s": 0.5502907879999839,
-   "engine_s": 0.2216343069994764,
-   "peak_rss_bytes": 1637130240,
+   "wall_s": 0.5173349349934142,
+   "engine_s": 0.29542359900369775,
+   "peak_rss_bytes": 1629405184,
    "solver": "LowRankLeontief"
   },
   "cement-europe-10": {
    "status": "passed",
-   "wall_s": 0.3789087170007406,
-   "engine_s": 0.23333309300051042,
-   "peak_rss_bytes": 1648623616,
+   "wall_s": 0.5520378679939313,
+   "engine_s": 0.335920918994816,
+   "peak_rss_bytes": 1640275968,
    "solver": "LowRankLeontief"
   },
   "cement-europe-20": {
    "status": "passed",
-   "wall_s": 0.42069513799924607,
-   "engine_s": 0.21727824399931706,
-   "peak_rss_bytes": 1648119808,
+   "wall_s": 0.5621212440019008,
+   "engine_s": 0.34259185499104206,
+   "peak_rss_bytes": 1640054784,
    "solver": "LowRankLeontief"
   },
   "cement-europe-50": {
    "status": "passed",
-   "wall_s": 0.41919814400080213,
-   "engine_s": 0.21752201999970566,
-   "peak_rss_bytes": 1647579136,
+   "wall_s": 0.5550174140080344,
+   "engine_s": 0.30005694800638594,
+   "peak_rss_bytes": 1640714240,
    "solver": "LowRankLeontief"
   },
   "cement-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.4210760109999683,
-   "engine_s": 0.19135977200039633,
-   "peak_rss_bytes": 1637384192,
+   "wall_s": 0.4899382200092077,
+   "engine_s": 0.2875324449996697,
+   "peak_rss_bytes": 1630367744,
    "solver": "LowRankLeontief"
   },
   "cement-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.3657266759992126,
-   "engine_s": 0.20396856699971977,
-   "peak_rss_bytes": 1638084608,
+   "wall_s": 0.5138024080079049,
+   "engine_s": 0.2992239680024795,
+   "peak_rss_bytes": 1630466048,
    "solver": "LowRankLeontief"
   },
   "cement-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.5017789080002331,
-   "engine_s": 0.22123217300031683,
-   "peak_rss_bytes": 1638076416,
+   "wall_s": 0.511660784992273,
+   "engine_s": 0.2990548929956276,
+   "peak_rss_bytes": 1630212096,
    "solver": "LowRankLeontief"
   },
   "cement-america-10": {
    "status": "passed",
-   "wall_s": 0.43983863100038434,
-   "engine_s": 0.2282242759993096,
-   "peak_rss_bytes": 1639268352,
+   "wall_s": 0.5133441630023299,
+   "engine_s": 0.29662045001168735,
+   "peak_rss_bytes": 1631789056,
    "solver": "LowRankLeontief"
   },
   "cement-america-20": {
    "status": "passed",
-   "wall_s": 0.39866797200011206,
-   "engine_s": 0.22393104899947502,
-   "peak_rss_bytes": 1639251968,
+   "wall_s": 0.5187526730005629,
+   "engine_s": 0.3064747099997476,
+   "peak_rss_bytes": 1631809536,
    "solver": "LowRankLeontief"
   },
   "cement-america-50": {
    "status": "passed",
-   "wall_s": 0.4036219189993062,
-   "engine_s": 0.21321937499942578,
-   "peak_rss_bytes": 1638875136,
+   "wall_s": 0.4880079529975774,
+   "engine_s": 0.2901319739903556,
+   "peak_rss_bytes": 1631531008,
    "solver": "LowRankLeontief"
   },
   "cement-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.4538217789995542,
-   "engine_s": 0.2244573419993685,
-   "peak_rss_bytes": 1639792640,
+   "wall_s": 0.4973917769966647,
+   "engine_s": 0.29020690100151114,
+   "peak_rss_bytes": 1632165888,
    "solver": "LowRankLeontief"
   },
   "cement-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.37096932100030244,
-   "engine_s": 0.20119296600023517,
-   "peak_rss_bytes": 1640042496,
+   "wall_s": 0.5117184419941623,
+   "engine_s": 0.30679285000951495,
+   "peak_rss_bytes": 1632256000,
    "solver": "LowRankLeontief"
   },
   "cement-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.4249236250007016,
-   "engine_s": 0.22260083200035297,
-   "peak_rss_bytes": 1639837696,
+   "wall_s": 0.4915575369959697,
+   "engine_s": 0.2864603839989286,
+   "peak_rss_bytes": 1632342016,
    "solver": "LowRankLeontief"
   },
   "cement-africa-10": {
    "status": "passed",
-   "wall_s": 0.44353451799997856,
-   "engine_s": 0.22111808499994368,
-   "peak_rss_bytes": 1638199296,
+   "wall_s": 0.48193270100455265,
+   "engine_s": 0.2860058590013068,
+   "peak_rss_bytes": 1630588928,
    "solver": "LowRankLeontief"
   },
   "cement-africa-20": {
    "status": "passed",
-   "wall_s": 0.42501088500011974,
-   "engine_s": 0.20703928600050858,
-   "peak_rss_bytes": 1637785600,
+   "wall_s": 0.49972966000495944,
+   "engine_s": 0.30068204800772946,
+   "peak_rss_bytes": 1630699520,
    "solver": "LowRankLeontief"
   },
   "cement-africa-50": {
    "status": "passed",
-   "wall_s": 0.42122923399983847,
-   "engine_s": 0.19785065300038696,
-   "peak_rss_bytes": 1638395904,
+   "wall_s": 0.4969344739947701,
+   "engine_s": 0.28517626800748985,
+   "peak_rss_bytes": 1630654464,
    "solver": "LowRankLeontief"
   },
   "plastics-europe-10": {
    "status": "passed",
-   "wall_s": 0.5003993560003437,
-   "engine_s": 0.21878461800042714,
-   "peak_rss_bytes": 1647566848,
+   "wall_s": 0.5462457200046629,
+   "engine_s": 0.32691622100537643,
+   "peak_rss_bytes": 1640681472,
    "solver": "LowRankLeontief"
   },
   "plastics-europe-20": {
    "status": "passed",
-   "wall_s": 0.44844174399986514,
-   "engine_s": 0.24053898799957096,
-   "peak_rss_bytes": 1648119808,
+   "wall_s": 0.5569064110022737,
+   "engine_s": 0.3360502040013671,
+   "peak_rss_bytes": 1640202240,
    "solver": "LowRankLeontief"
   },
   "plastics-europe-50": {
    "status": "passed",
-   "wall_s": 0.5218241910006327,
-   "engine_s": 0.2330681170005846,
-   "peak_rss_bytes": 1647603712,
+   "wall_s": 0.513826058988343,
+   "engine_s": 0.307422376004979,
+   "peak_rss_bytes": 1640796160,
    "solver": "LowRankLeontief"
   },
   "plastics-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.40409911799997644,
-   "engine_s": 0.2058737730003486,
-   "peak_rss_bytes": 1638559744,
+   "wall_s": 0.49830470301094465,
+   "engine_s": 0.2887023719958961,
+   "peak_rss_bytes": 1630666752,
    "solver": "LowRankLeontief"
   },
   "plastics-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.44866082399948937,
-   "engine_s": 0.21568294299959234,
-   "peak_rss_bytes": 1638256640,
+   "wall_s": 0.5153274990007048,
+   "engine_s": 0.29339125400292687,
+   "peak_rss_bytes": 1630863360,
    "solver": "LowRankLeontief"
   },
   "plastics-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.5082009019997713,
-   "engine_s": 0.21278819399958593,
-   "peak_rss_bytes": 1638080512,
+   "wall_s": 0.4808915449975757,
+   "engine_s": 0.2854687570070382,
+   "peak_rss_bytes": 1630683136,
    "solver": "LowRankLeontief"
   },
   "plastics-america-10": {
    "status": "passed",
-   "wall_s": 0.5456452170001285,
-   "engine_s": 0.217519650000213,
-   "peak_rss_bytes": 1638920192,
+   "wall_s": 0.5013482979993569,
+   "engine_s": 0.2904848110047169,
+   "peak_rss_bytes": 1631494144,
    "solver": "LowRankLeontief"
   },
   "plastics-america-20": {
    "status": "passed",
-   "wall_s": 0.4071570980004253,
-   "engine_s": 0.18602560099952825,
-   "peak_rss_bytes": 1639022592,
+   "wall_s": 0.505934436005191,
+   "engine_s": 0.30160236499796156,
+   "peak_rss_bytes": 1631612928,
    "solver": "LowRankLeontief"
   },
   "plastics-america-50": {
    "status": "passed",
-   "wall_s": 0.40013392599939834,
-   "engine_s": 0.18935749199954444,
-   "peak_rss_bytes": 1638674432,
+   "wall_s": 0.5046311869955389,
+   "engine_s": 0.29062763099500444,
+   "peak_rss_bytes": 1631559680,
    "solver": "LowRankLeontief"
   },
   "plastics-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.5717163090002941,
-   "engine_s": 0.20806126599927666,
-   "peak_rss_bytes": 1639870464,
+   "wall_s": 0.5336080580018461,
+   "engine_s": 0.32243834099790547,
+   "peak_rss_bytes": 1632464896,
    "solver": "LowRankLeontief"
   },
   "plastics-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.44499744400036434,
-   "engine_s": 0.2220228810001572,
-   "peak_rss_bytes": 1639792640,
+   "wall_s": 0.5663100570091046,
+   "engine_s": 0.36360002899891697,
+   "peak_rss_bytes": 1632235520,
    "solver": "LowRankLeontief"
   },
   "plastics-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.4681583530000353,
-   "engine_s": 0.22286389700002474,
-   "peak_rss_bytes": 1640042496,
+   "wall_s": 0.501500300000771,
+   "engine_s": 0.28667567900265567,
+   "peak_rss_bytes": 1633013760,
    "solver": "LowRankLeontief"
   },
   "plastics-africa-10": {
    "status": "passed",
-   "wall_s": 0.5251096870006222,
-   "engine_s": 0.21809228100028122,
-   "peak_rss_bytes": 1637900288,
+   "wall_s": 0.5080946870002663,
+   "engine_s": 0.28601023100782186,
+   "peak_rss_bytes": 1630289920,
    "solver": "LowRankLeontief"
   },
   "plastics-africa-20": {
    "status": "passed",
-   "wall_s": 0.4342895589998079,
-   "engine_s": 0.20666183899993484,
-   "peak_rss_bytes": 1637453824,
+   "wall_s": 0.48531723199994303,
+   "engine_s": 0.2844497330079321,
+   "peak_rss_bytes": 1630498816,
    "solver": "LowRankLeontief"
   },
   "plastics-africa-50": {
    "status": "passed",
-   "wall_s": 0.3760046749994217,
-   "engine_s": 0.18843785900025978,
-   "peak_rss_bytes": 1638019072,
+   "wall_s": 0.48982003499986604,
+   "engine_s": 0.286921897000866,
+   "peak_rss_bytes": 1630650368,
    "solver": "LowRankLeontief"
   },
   "electrical-europe-10": {
    "status": "passed",
-   "wall_s": 0.4811570820002089,
-   "engine_s": 0.21657111200056534,
-   "peak_rss_bytes": 1647316992,
+   "wall_s": 0.5249491669965209,
+   "engine_s": 0.30917325799237005,
+   "peak_rss_bytes": 1640607744,
    "solver": "LowRankLeontief"
   },
   "electrical-europe-20": {
    "status": "passed",
-   "wall_s": 0.5176773599996523,
-   "engine_s": 0.22795665800003917,
-   "peak_rss_bytes": 1647759360,
+   "wall_s": 0.5212801370071247,
+   "engine_s": 0.3099863159877714,
+   "peak_rss_bytes": 1640484864,
    "solver": "LowRankLeontief"
   },
   "electrical-europe-50": {
    "status": "passed",
-   "wall_s": 0.4642230199997357,
-   "engine_s": 0.23614148500018928,
-   "peak_rss_bytes": 1647996928,
+   "wall_s": 0.5226028000033693,
+   "engine_s": 0.3089920750062447,
+   "peak_rss_bytes": 1640493056,
    "solver": "LowRankLeontief"
   },
   "electrical-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.49910774099953414,
-   "engine_s": 0.20618658300008974,
-   "peak_rss_bytes": 1638203392,
+   "wall_s": 0.5974649030104047,
+   "engine_s": 0.34701307700015604,
+   "peak_rss_bytes": 1630072832,
    "solver": "LowRankLeontief"
   },
   "electrical-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.4905766310002946,
-   "engine_s": 0.2057831800002532,
-   "peak_rss_bytes": 1638371328,
+   "wall_s": 0.5997565869911341,
+   "engine_s": 0.3198786029970506,
+   "peak_rss_bytes": 1630605312,
    "solver": "LowRankLeontief"
   },
   "electrical-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.36955197299994325,
-   "engine_s": 0.20800554099969304,
-   "peak_rss_bytes": 1638281216,
+   "wall_s": 0.5109869529987918,
+   "engine_s": 0.30567141600477044,
+   "peak_rss_bytes": 1630445568,
    "solver": "LowRankLeontief"
   },
   "electrical-america-10": {
    "status": "passed",
-   "wall_s": 0.42548649800028215,
-   "engine_s": 0.21682841500023642,
-   "peak_rss_bytes": 1639116800,
+   "wall_s": 0.5017309640097665,
+   "engine_s": 0.30359885600046255,
+   "peak_rss_bytes": 1631952896,
    "solver": "LowRankLeontief"
   },
   "electrical-america-20": {
    "status": "passed",
-   "wall_s": 0.40763131299991073,
-   "engine_s": 0.20566843699998572,
-   "peak_rss_bytes": 1639272448,
+   "wall_s": 0.49754847399890423,
+   "engine_s": 0.2905269830080215,
+   "peak_rss_bytes": 1631432704,
    "solver": "LowRankLeontief"
   },
   "electrical-america-50": {
    "status": "passed",
-   "wall_s": 0.4378904479999619,
-   "engine_s": 0.20641487300053996,
-   "peak_rss_bytes": 1638985728,
+   "wall_s": 0.5121775479929056,
+   "engine_s": 0.2961664189933799,
+   "peak_rss_bytes": 1632079872,
    "solver": "LowRankLeontief"
   },
   "electrical-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.41161903500051267,
-   "engine_s": 0.20368267800040485,
-   "peak_rss_bytes": 1640394752,
+   "wall_s": 0.4970622199907666,
+   "engine_s": 0.28896742800134234,
+   "peak_rss_bytes": 1632903168,
    "solver": "LowRankLeontief"
   },
   "electrical-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.5818942020005125,
-   "engine_s": 0.22411197499968694,
-   "peak_rss_bytes": 1639907328,
+   "wall_s": 0.5085833089979133,
+   "engine_s": 0.2930837060121121,
+   "peak_rss_bytes": 1632911360,
    "solver": "LowRankLeontief"
   },
   "electrical-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.41576901899952645,
-   "engine_s": 0.20603312700040988,
-   "peak_rss_bytes": 1640140800,
+   "wall_s": 0.5160718809929676,
+   "engine_s": 0.3013276230049087,
+   "peak_rss_bytes": 1633075200,
    "solver": "LowRankLeontief"
   },
   "electrical-africa-10": {
    "status": "passed",
-   "wall_s": 0.4421603620003225,
-   "engine_s": 0.2175430139996024,
-   "peak_rss_bytes": 1638154240,
+   "wall_s": 0.5450432929937961,
+   "engine_s": 0.31660113799443934,
+   "peak_rss_bytes": 1629937664,
    "solver": "LowRankLeontief"
   },
   "electrical-africa-20": {
    "status": "passed",
-   "wall_s": 0.5248591990002751,
-   "engine_s": 0.19815703499989468,
-   "peak_rss_bytes": 1637916672,
+   "wall_s": 0.5800057900050888,
+   "engine_s": 0.3249658209970221,
+   "peak_rss_bytes": 1630220288,
    "solver": "LowRankLeontief"
   },
   "electrical-africa-50": {
    "status": "passed",
-   "wall_s": 0.40380470899981447,
-   "engine_s": 0.20430360999944241,
-   "peak_rss_bytes": 1638043648,
+   "wall_s": 0.5024249150010291,
+   "engine_s": 0.29463286499958485,
+   "peak_rss_bytes": 1630568448,
    "solver": "LowRankLeontief"
   },
   "copper-europe-10": {
    "status": "passed",
-   "wall_s": 0.42134052900019014,
-   "engine_s": 0.23359326599984342,
-   "peak_rss_bytes": 1647345664,
+   "wall_s": 0.5307058080070419,
+   "engine_s": 0.31344868399901316,
+   "peak_rss_bytes": 1640468480,
    "solver": "LowRankLeontief"
   },
   "copper-europe-20": {
    "status": "passed",
-   "wall_s": 0.39818070199999056,
-   "engine_s": 0.23847383900010755,
-   "peak_rss_bytes": 1647849472,
+   "wall_s": 0.5345114939991618,
+   "engine_s": 0.31407399599265773,
+   "peak_rss_bytes": 1640615936,
    "solver": "LowRankLeontief"
   },
   "copper-europe-50": {
    "status": "passed",
-   "wall_s": 0.4716085749996637,
-   "engine_s": 0.23219771799995215,
-   "peak_rss_bytes": 1648455680,
+   "wall_s": 0.5444663200032664,
+   "engine_s": 0.3485701150057139,
+   "peak_rss_bytes": 1640763392,
    "solver": "LowRankLeontief"
   },
   "copper-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.5013621609996335,
-   "engine_s": 0.21444187599990983,
-   "peak_rss_bytes": 1637605376,
+   "wall_s": 0.49217861000215635,
+   "engine_s": 0.286171989995637,
+   "peak_rss_bytes": 1630216192,
    "solver": "LowRankLeontief"
   },
   "copper-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.40659681300076045,
-   "engine_s": 0.20285953999973572,
-   "peak_rss_bytes": 1637363712,
+   "wall_s": 0.4971005929983221,
+   "engine_s": 0.2843705709965434,
+   "peak_rss_bytes": 1630515200,
    "solver": "LowRankLeontief"
   },
   "copper-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.4296946519998528,
-   "engine_s": 0.19533453500025644,
-   "peak_rss_bytes": 1637146624,
+   "wall_s": 0.515742200994282,
+   "engine_s": 0.29354601800150704,
+   "peak_rss_bytes": 1630519296,
    "solver": "LowRankLeontief"
   },
   "copper-america-10": {
    "status": "passed",
-   "wall_s": 0.36730855599944334,
-   "engine_s": 0.19919518799997604,
-   "peak_rss_bytes": 1639256064,
+   "wall_s": 0.5641455110016977,
+   "engine_s": 0.34451587399234995,
+   "peak_rss_bytes": 1631014912,
    "solver": "LowRankLeontief"
   },
   "copper-america-20": {
    "status": "passed",
-   "wall_s": 0.42978109100022266,
-   "engine_s": 0.22188496499984467,
-   "peak_rss_bytes": 1639038976,
+   "wall_s": 0.6104874519951409,
+   "engine_s": 0.34576901998661924,
+   "peak_rss_bytes": 1632337920,
    "solver": "LowRankLeontief"
   },
   "copper-america-50": {
    "status": "passed",
-   "wall_s": 0.5018077439999615,
-   "engine_s": 0.2185278550005023,
-   "peak_rss_bytes": 1639141376,
+   "wall_s": 0.49299464099749457,
+   "engine_s": 0.2941158989997348,
+   "peak_rss_bytes": 1631617024,
    "solver": "LowRankLeontief"
   },
   "copper-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.4718176219994348,
-   "engine_s": 0.2073709290007173,
-   "peak_rss_bytes": 1639104512,
+   "wall_s": 0.48435617300856393,
+   "engine_s": 0.2961722460022429,
+   "peak_rss_bytes": 1632440320,
    "solver": "LowRankLeontief"
   },
   "copper-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.4283780169998863,
-   "engine_s": 0.2188943350001864,
-   "peak_rss_bytes": 1639260160,
+   "wall_s": 0.4854670250060735,
+   "engine_s": 0.294696520009893,
+   "peak_rss_bytes": 1632317440,
    "solver": "LowRankLeontief"
   },
   "copper-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.36930101799953263,
-   "engine_s": 0.22456001699993067,
-   "peak_rss_bytes": 1639936000,
+   "wall_s": 0.5073774329939624,
+   "engine_s": 0.311688210000284,
+   "peak_rss_bytes": 1632321536,
    "solver": "LowRankLeontief"
   },
   "copper-africa-10": {
    "status": "passed",
-   "wall_s": 0.41484916799981875,
-   "engine_s": 0.20709788299973297,
-   "peak_rss_bytes": 1637752832,
+   "wall_s": 0.49287059900234453,
+   "engine_s": 0.2966072109993547,
+   "peak_rss_bytes": 1630269440,
    "solver": "LowRankLeontief"
   },
   "copper-africa-20": {
    "status": "passed",
-   "wall_s": 0.5057447059998594,
-   "engine_s": 0.21721355099998618,
-   "peak_rss_bytes": 1637396480,
+   "wall_s": 0.5045183140027802,
+   "engine_s": 0.2921846259996528,
+   "peak_rss_bytes": 1630441472,
    "solver": "LowRankLeontief"
   },
   "copper-africa-50": {
    "status": "passed",
-   "wall_s": 0.43518983499961905,
-   "engine_s": 0.22136524699999427,
-   "peak_rss_bytes": 1637855232,
+   "wall_s": 0.5111060030030785,
+   "engine_s": 0.29541584000980947,
+   "peak_rss_bytes": 1630588928,
    "solver": "LowRankLeontief"
   },
   "glass-europe-10": {
    "status": "passed",
-   "wall_s": 0.4178642739998395,
-   "engine_s": 0.21042878900061623,
-   "peak_rss_bytes": 1647984640,
+   "wall_s": 0.542907650989946,
+   "engine_s": 0.3259736519976286,
+   "peak_rss_bytes": 1640534016,
    "solver": "LowRankLeontief"
   },
   "glass-europe-20": {
    "status": "passed",
-   "wall_s": 0.5088665869998295,
-   "engine_s": 0.22060015800070687,
-   "peak_rss_bytes": 1647640576,
+   "wall_s": 0.5451955629978329,
+   "engine_s": 0.3322550360026071,
+   "peak_rss_bytes": 1640378368,
    "solver": "LowRankLeontief"
   },
   "glass-europe-50": {
    "status": "passed",
-   "wall_s": 0.45204472099976556,
-   "engine_s": 0.21924112000033347,
-   "peak_rss_bytes": 1647685632,
+   "wall_s": 0.5799836139922263,
+   "engine_s": 0.3137390859919833,
+   "peak_rss_bytes": 1640603648,
    "solver": "LowRankLeontief"
   },
   "glass-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.3789324270001089,
-   "engine_s": 0.207001288000356,
-   "peak_rss_bytes": 1637949440,
+   "wall_s": 0.4852301930077374,
+   "engine_s": 0.2933532900060527,
+   "peak_rss_bytes": 1630879744,
    "solver": "LowRankLeontief"
   },
   "glass-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.5644836840001517,
-   "engine_s": 0.2024231340001279,
-   "peak_rss_bytes": 1638346752,
+   "wall_s": 0.5019936910102842,
+   "engine_s": 0.29372198700730223,
+   "peak_rss_bytes": 1630547968,
    "solver": "LowRankLeontief"
   },
   "glass-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.43039687399959803,
-   "engine_s": 0.22148314500009292,
-   "peak_rss_bytes": 1638051840,
+   "wall_s": 0.5146522349969018,
+   "engine_s": 0.2944814869988477,
+   "peak_rss_bytes": 1630752768,
    "solver": "LowRankLeontief"
   },
   "glass-america-10": {
    "status": "passed",
-   "wall_s": 0.5156634569993912,
-   "engine_s": 0.22130855199975485,
-   "peak_rss_bytes": 1639780352,
+   "wall_s": 0.5023989649926079,
+   "engine_s": 0.2901741870009573,
+   "peak_rss_bytes": 1631977472,
    "solver": "LowRankLeontief"
   },
   "glass-america-20": {
    "status": "passed",
-   "wall_s": 0.5035219869996581,
-   "engine_s": 0.20698854099919117,
-   "peak_rss_bytes": 1639600128,
+   "wall_s": 0.5120973430020967,
+   "engine_s": 0.29769481299445033,
+   "peak_rss_bytes": 1632014336,
    "solver": "LowRankLeontief"
   },
   "glass-america-50": {
    "status": "passed",
-   "wall_s": 0.37423452399980306,
-   "engine_s": 0.218870059999972,
-   "peak_rss_bytes": 1639419904,
+   "wall_s": 0.5289214609947521,
+   "engine_s": 0.3027995390002616,
+   "peak_rss_bytes": 1632419840,
    "solver": "LowRankLeontief"
   },
   "glass-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.4395895859997836,
-   "engine_s": 0.21889501300029224,
-   "peak_rss_bytes": 1640206336,
+   "wall_s": 0.5141129460098455,
+   "engine_s": 0.30173507099971175,
+   "peak_rss_bytes": 1632260096,
    "solver": "LowRankLeontief"
   },
   "glass-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.4180930400007128,
-   "engine_s": 0.20685370299997885,
-   "peak_rss_bytes": 1640079360,
+   "wall_s": 0.5014453119947575,
+   "engine_s": 0.3014768359862501,
+   "peak_rss_bytes": 1632342016,
    "solver": "LowRankLeontief"
   },
   "glass-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.3755898530007471,
-   "engine_s": 0.21336576900012005,
-   "peak_rss_bytes": 1640120320,
+   "wall_s": 0.5405239870015066,
+   "engine_s": 0.3060995239939075,
+   "peak_rss_bytes": 1632382976,
    "solver": "LowRankLeontief"
   },
   "glass-africa-10": {
    "status": "passed",
-   "wall_s": 0.5024273990002257,
-   "engine_s": 0.20558586999959516,
-   "peak_rss_bytes": 1637634048,
+   "wall_s": 0.5522245890024351,
+   "engine_s": 0.3132175220089266,
+   "peak_rss_bytes": 1630310400,
    "solver": "LowRankLeontief"
   },
   "glass-africa-20": {
    "status": "passed",
-   "wall_s": 0.3701932460007811,
-   "engine_s": 0.21980036000059044,
-   "peak_rss_bytes": 1637830656,
+   "wall_s": 0.5553847169940127,
+   "engine_s": 0.28950064300443046,
+   "peak_rss_bytes": 1629978624,
    "solver": "LowRankLeontief"
   },
   "glass-africa-50": {
    "status": "passed",
-   "wall_s": 0.3816121790005127,
-   "engine_s": 0.22800485599964304,
-   "peak_rss_bytes": 1637924864,
+   "wall_s": 0.4985218690126203,
+   "engine_s": 0.2844158410007367,
+   "peak_rss_bytes": 1630257152,
    "solver": "LowRankLeontief"
   },
   "fertiliser-europe-10": {
    "status": "passed",
-   "wall_s": 0.4071697339995808,
-   "engine_s": 0.230896202000622,
-   "peak_rss_bytes": 1647935488,
+   "wall_s": 0.5299739879992558,
+   "engine_s": 0.31692234599904623,
+   "peak_rss_bytes": 1640120320,
    "solver": "LowRankLeontief"
   },
   "fertiliser-europe-20": {
    "status": "passed",
-   "wall_s": 0.42566069700023945,
-   "engine_s": 0.21750968300057139,
-   "peak_rss_bytes": 1647710208,
+   "wall_s": 0.5085220179898897,
+   "engine_s": 0.3116483019985026,
+   "peak_rss_bytes": 1640361984,
    "solver": "LowRankLeontief"
   },
   "fertiliser-europe-50": {
    "status": "passed",
-   "wall_s": 0.37509777400009625,
-   "engine_s": 0.2322286049993636,
-   "peak_rss_bytes": 1648107520,
+   "wall_s": 0.5252332110103453,
+   "engine_s": 0.31481292701209895,
+   "peak_rss_bytes": 1640325120,
    "solver": "LowRankLeontief"
   },
   "fertiliser-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.4097067760003483,
-   "engine_s": 0.20444709599996713,
-   "peak_rss_bytes": 1638785024,
+   "wall_s": 0.5100221940083429,
+   "engine_s": 0.295500369000365,
+   "peak_rss_bytes": 1630998528,
    "solver": "LowRankLeontief"
   },
   "fertiliser-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.43352391600001283,
-   "engine_s": 0.22711960099968564,
-   "peak_rss_bytes": 1638342656,
+   "wall_s": 0.5192672359989956,
+   "engine_s": 0.3106365479907254,
+   "peak_rss_bytes": 1630625792,
    "solver": "LowRankLeontief"
   },
   "fertiliser-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.4107035410006574,
-   "engine_s": 0.2042635000007067,
-   "peak_rss_bytes": 1638268928,
+   "wall_s": 0.5465776049968554,
+   "engine_s": 0.31547373499779496,
+   "peak_rss_bytes": 1630609408,
    "solver": "LowRankLeontief"
   },
   "fertiliser-america-10": {
    "status": "passed",
-   "wall_s": 0.41103565800040087,
-   "engine_s": 0.2077469010000641,
-   "peak_rss_bytes": 1639571456,
+   "wall_s": 0.557574863996706,
+   "engine_s": 0.32331646599050146,
+   "peak_rss_bytes": 1631375360,
    "solver": "LowRankLeontief"
   },
   "fertiliser-america-20": {
    "status": "passed",
-   "wall_s": 0.41045546700024715,
-   "engine_s": 0.20281010899998364,
-   "peak_rss_bytes": 1639424000,
+   "wall_s": 0.5484680969966576,
+   "engine_s": 0.28832979199069086,
+   "peak_rss_bytes": 1631776768,
    "solver": "LowRankLeontief"
   },
   "fertiliser-america-50": {
    "status": "passed",
-   "wall_s": 0.4427669850001621,
-   "engine_s": 0.20372350800062122,
-   "peak_rss_bytes": 1639251968,
+   "wall_s": 0.49646801500057336,
+   "engine_s": 0.28621801899862476,
+   "peak_rss_bytes": 1632145408,
    "solver": "LowRankLeontief"
   },
   "fertiliser-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.5182223739993788,
-   "engine_s": 0.22035902599964174,
-   "peak_rss_bytes": 1639903232,
+   "wall_s": 0.49706451200472657,
+   "engine_s": 0.28549781200126745,
+   "peak_rss_bytes": 1632206848,
    "solver": "LowRankLeontief"
   },
   "fertiliser-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.6114427500006059,
-   "engine_s": 0.2652022140000554,
-   "peak_rss_bytes": 1638854656,
+   "wall_s": 0.4878417769941734,
+   "engine_s": 0.2944476700067753,
+   "peak_rss_bytes": 1632333824,
    "solver": "LowRankLeontief"
   },
   "fertiliser-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.4116705050000746,
-   "engine_s": 0.2460117860000537,
-   "peak_rss_bytes": 1639616512,
+   "wall_s": 0.4898296409955947,
+   "engine_s": 0.28808960001333617,
+   "peak_rss_bytes": 1632313344,
    "solver": "LowRankLeontief"
   },
   "fertiliser-africa-10": {
    "status": "passed",
-   "wall_s": 0.499407108000014,
-   "engine_s": 0.22008478899988404,
-   "peak_rss_bytes": 1637453824,
+   "wall_s": 0.5086507529922528,
+   "engine_s": 0.29900210500636604,
+   "peak_rss_bytes": 1630097408,
    "solver": "LowRankLeontief"
   },
   "fertiliser-africa-20": {
    "status": "passed",
-   "wall_s": 0.3973503070001243,
-   "engine_s": 0.22014342700003908,
-   "peak_rss_bytes": 1637343232,
+   "wall_s": 0.5092693699989468,
+   "engine_s": 0.2948267049941933,
+   "peak_rss_bytes": 1630027776,
    "solver": "LowRankLeontief"
   },
   "fertiliser-africa-50": {
    "status": "passed",
-   "wall_s": 0.47965384400049516,
-   "engine_s": 0.21769143700021232,
-   "peak_rss_bytes": 1637285888,
+   "wall_s": 0.5103507249878021,
+   "engine_s": 0.2893077079934301,
+   "peak_rss_bytes": 1630035968,
    "solver": "LowRankLeontief"
   },
   "chemicals-europe-10": {
    "status": "passed",
-   "wall_s": 0.39995037600056094,
-   "engine_s": 0.2255439770005978,
-   "peak_rss_bytes": 1647677440,
+   "wall_s": 0.5608022589876782,
+   "engine_s": 0.326816027998575,
+   "peak_rss_bytes": 1640517632,
    "solver": "LowRankLeontief"
   },
   "chemicals-europe-20": {
    "status": "passed",
-   "wall_s": 0.4318159439999363,
-   "engine_s": 0.2196004190000167,
-   "peak_rss_bytes": 1647620096,
+   "wall_s": 0.6336132879951037,
+   "engine_s": 0.3980899569869507,
+   "peak_rss_bytes": 1640435712,
    "solver": "LowRankLeontief"
   },
   "chemicals-europe-50": {
    "status": "passed",
-   "wall_s": 0.4523245440004757,
-   "engine_s": 0.22001120499953686,
-   "peak_rss_bytes": 1647865856,
+   "wall_s": 0.511132974002976,
+   "engine_s": 0.3120226580067538,
+   "peak_rss_bytes": 1640345600,
    "solver": "LowRankLeontief"
   },
   "chemicals-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.429315485999723,
-   "engine_s": 0.22360954499981744,
-   "peak_rss_bytes": 1638199296,
+   "wall_s": 0.5209984409884783,
+   "engine_s": 0.30887423300009686,
+   "peak_rss_bytes": 1630461952,
    "solver": "LowRankLeontief"
   },
   "chemicals-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.41182255700005044,
-   "engine_s": 0.2551826120006808,
-   "peak_rss_bytes": 1637289984,
+   "wall_s": 0.533535185008077,
+   "engine_s": 0.3104306259920122,
+   "peak_rss_bytes": 1629900800,
    "solver": "LowRankLeontief"
   },
   "chemicals-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.5751606589992662,
-   "engine_s": 0.22145449800063943,
-   "peak_rss_bytes": 1637224448,
+   "wall_s": 0.5045735229941783,
+   "engine_s": 0.2953813680069288,
+   "peak_rss_bytes": 1630584832,
    "solver": "LowRankLeontief"
   },
   "chemicals-america-10": {
    "status": "passed",
-   "wall_s": 0.44783348599958117,
-   "engine_s": 0.22883724800067284,
-   "peak_rss_bytes": 1638678528,
+   "wall_s": 0.5224593659950187,
+   "engine_s": 0.30094316000759136,
+   "peak_rss_bytes": 1631973376,
    "solver": "LowRankLeontief"
   },
   "chemicals-america-20": {
    "status": "passed",
-   "wall_s": 0.4018089510000209,
-   "engine_s": 0.22733299599985912,
-   "peak_rss_bytes": 1639051264,
+   "wall_s": 0.5121195280080428,
+   "engine_s": 0.3081657769944286,
+   "peak_rss_bytes": 1631809536,
    "solver": "LowRankLeontief"
   },
   "chemicals-america-50": {
    "status": "passed",
-   "wall_s": 0.3706364809995648,
-   "engine_s": 0.2176076429996101,
-   "peak_rss_bytes": 1639280640,
+   "wall_s": 0.5089965469960589,
+   "engine_s": 0.2942296750115929,
+   "peak_rss_bytes": 1631825920,
    "solver": "LowRankLeontief"
   },
   "chemicals-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.4971983570003431,
-   "engine_s": 0.20702491699921666,
-   "peak_rss_bytes": 1639833600,
+   "wall_s": 0.5466251650068443,
+   "engine_s": 0.31573880100040697,
+   "peak_rss_bytes": 1632575488,
    "solver": "LowRankLeontief"
   },
   "chemicals-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.42444832900037,
-   "engine_s": 0.21826742899975216,
-   "peak_rss_bytes": 1640329216,
+   "wall_s": 0.5604001059982693,
+   "engine_s": 0.34653425999567844,
+   "peak_rss_bytes": 1632284672,
    "solver": "LowRankLeontief"
   },
   "chemicals-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.4180741410000337,
-   "engine_s": 0.21941841300031228,
-   "peak_rss_bytes": 1639731200,
+   "wall_s": 0.5056735950056463,
+   "engine_s": 0.29481656799907796,
+   "peak_rss_bytes": 1632780288,
    "solver": "LowRankLeontief"
   },
   "chemicals-africa-10": {
    "status": "passed",
-   "wall_s": 0.5282402850007202,
-   "engine_s": 0.2958566039997095,
-   "peak_rss_bytes": 1636954112,
+   "wall_s": 0.520006120990729,
+   "engine_s": 0.3037803930055816,
+   "peak_rss_bytes": 1630466048,
    "solver": "LowRankLeontief"
   },
   "chemicals-africa-20": {
    "status": "passed",
-   "wall_s": 0.41207993799980613,
-   "engine_s": 0.20596505400044407,
-   "peak_rss_bytes": 1637990400,
+   "wall_s": 0.5073450679919915,
+   "engine_s": 0.2903639580035815,
+   "peak_rss_bytes": 1630531584,
    "solver": "LowRankLeontief"
   },
   "chemicals-africa-50": {
    "status": "passed",
-   "wall_s": 0.3849721070000669,
-   "engine_s": 0.20087691200023983,
-   "peak_rss_bytes": 1637662720,
+   "wall_s": 0.5025545719981892,
+   "engine_s": 0.2916320099902805,
+   "peak_rss_bytes": 1630564352,
    "solver": "LowRankLeontief"
   },
   "rubber-europe-10": {
    "status": "passed",
-   "wall_s": 0.5210348979999253,
-   "engine_s": 0.2376662579999902,
-   "peak_rss_bytes": 1647677440,
+   "wall_s": 0.5168828760070028,
+   "engine_s": 0.30767621399718337,
+   "peak_rss_bytes": 1640783872,
    "solver": "LowRankLeontief"
   },
   "rubber-europe-20": {
    "status": "passed",
-   "wall_s": 0.3700994470000296,
-   "engine_s": 0.21780577499976062,
-   "peak_rss_bytes": 1647443968,
+   "wall_s": 0.5111521739891032,
+   "engine_s": 0.3025045520043932,
+   "peak_rss_bytes": 1640718336,
    "solver": "LowRankLeontief"
   },
   "rubber-europe-50": {
    "status": "passed",
-   "wall_s": 0.41996233600002597,
-   "engine_s": 0.23339156299971364,
-   "peak_rss_bytes": 1647681536,
+   "wall_s": 0.51910345700162,
+   "engine_s": 0.3032608930079732,
+   "peak_rss_bytes": 1640644608,
    "solver": "LowRankLeontief"
   },
   "rubber-middle-east-10": {
    "status": "passed",
-   "wall_s": 0.44581742100035626,
-   "engine_s": 0.2150593360001949,
-   "peak_rss_bytes": 1638055936,
+   "wall_s": 0.5622512819973053,
+   "engine_s": 0.3391850059997523,
+   "peak_rss_bytes": 1630875648,
    "solver": "LowRankLeontief"
   },
   "rubber-middle-east-20": {
    "status": "passed",
-   "wall_s": 0.48892361100024573,
-   "engine_s": 0.20549654699971143,
-   "peak_rss_bytes": 1638354944,
+   "wall_s": 0.5832013620092766,
+   "engine_s": 0.3679357779910788,
+   "peak_rss_bytes": 1629990912,
    "solver": "LowRankLeontief"
   },
   "rubber-middle-east-50": {
    "status": "passed",
-   "wall_s": 0.4139040230002138,
-   "engine_s": 0.20523678199970163,
-   "peak_rss_bytes": 1637949440,
+   "wall_s": 0.6957095590041718,
+   "engine_s": 0.43158089599455707,
+   "peak_rss_bytes": 1630171136,
    "solver": "LowRankLeontief"
   },
   "rubber-america-10": {
    "status": "passed",
-   "wall_s": 0.3687132639997799,
-   "engine_s": 0.2139810620001299,
-   "peak_rss_bytes": 1639174144,
+   "wall_s": 0.49850624200189486,
+   "engine_s": 0.2912702839967096,
+   "peak_rss_bytes": 1632002048,
    "solver": "LowRankLeontief"
   },
   "rubber-america-20": {
    "status": "passed",
-   "wall_s": 0.4178657980000935,
-   "engine_s": 0.21396968099998048,
-   "peak_rss_bytes": 1639632896,
+   "wall_s": 0.491409283989924,
+   "engine_s": 0.29833063199475873,
+   "peak_rss_bytes": 1631629312,
    "solver": "LowRankLeontief"
   },
   "rubber-america-50": {
    "status": "passed",
-   "wall_s": 0.4253564259997802,
-   "engine_s": 0.22278842299965618,
-   "peak_rss_bytes": 1639292928,
+   "wall_s": 0.4897222589934245,
+   "engine_s": 0.29013131599640474,
+   "peak_rss_bytes": 1631891456,
    "solver": "LowRankLeontief"
   },
   "rubber-asia-pacific-10": {
    "status": "passed",
-   "wall_s": 0.498405699999239,
-   "engine_s": 0.22360139099964726,
-   "peak_rss_bytes": 1639698432,
+   "wall_s": 0.5159669170097914,
+   "engine_s": 0.303250092008966,
+   "peak_rss_bytes": 1632313344,
    "solver": "LowRankLeontief"
   },
   "rubber-asia-pacific-20": {
    "status": "passed",
-   "wall_s": 0.43324027200014825,
-   "engine_s": 0.2045757539999613,
-   "peak_rss_bytes": 1640144896,
+   "wall_s": 0.5037357660039561,
+   "engine_s": 0.2959328759898199,
+   "peak_rss_bytes": 1632542720,
    "solver": "LowRankLeontief"
   },
   "rubber-asia-pacific-50": {
    "status": "passed",
-   "wall_s": 0.3569881009998426,
-   "engine_s": 0.2079821709994576,
-   "peak_rss_bytes": 1639452672,
+   "wall_s": 0.49806415000057314,
+   "engine_s": 0.2949915869976394,
+   "peak_rss_bytes": 1632526336,
    "solver": "LowRankLeontief"
   },
   "rubber-africa-10": {
    "status": "passed",
-   "wall_s": 0.4308781039999303,
-   "engine_s": 0.20593782600008126,
-   "peak_rss_bytes": 1637761024,
+   "wall_s": 0.5048946159949992,
+   "engine_s": 0.2965661219932372,
+   "peak_rss_bytes": 1630601216,
    "solver": "LowRankLeontief"
   },
   "rubber-africa-20": {
    "status": "passed",
-   "wall_s": 0.4042983870003809,
-   "engine_s": 0.1961133120003069,
-   "peak_rss_bytes": 1637953536,
+   "wall_s": 0.5309781800024211,
+   "engine_s": 0.3094827080058167,
+   "peak_rss_bytes": 1630572544,
    "solver": "LowRankLeontief"
   },
   "rubber-africa-50": {
    "status": "passed",
-   "wall_s": 0.5041404940002394,
-   "engine_s": 0.2160816049999994,
-   "peak_rss_bytes": 1637765120,
+   "wall_s": 0.4913991470093606,
+   "engine_s": 0.2856477680034004,
+   "peak_rss_bytes": 1630498816,
    "solver": "LowRankLeontief"
   },
   "zero_change_control": {
-   "wall_s": 1.355085885000335,
-   "engine_s": 1.1447829700000511,
-   "peak_rss_bytes": 1640091648,
+   "wall_s": 1.4458257170044817,
+   "engine_s": 1.2409556759957923,
+   "peak_rss_bytes": 1632526336,
    "solver": "LowRankLeontief"
   }
  },
@@ -24068,8 +24068,8 @@
     "B": "78d65b0f15dc7ad6b5d66de3fb5ff6f331bf8caabd4e053cd55b919fa0739d77"
    }
   },
-  "command": "uv run python precompute.py --run --engine \"$ENGINE_DIR\" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json",
-  "generated_at": "2026-10-13T05:14:25+00:00",
+  "command": "uv run python precompute.py --run --engine \"$ENGINE_DIR\" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data \"$DATASETS_DIR\" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet",
+  "generated_at": "2026-10-13T23:06:47+00:00",
   "python": "3.14.7",
   "numpy": "2.5.3",
   "django": "5.2.17",
@@ -24100,19 +24100,19 @@
    "passed": 153,
    "failed": 0,
    "wall_s": {
-    "median": 0.42566069700023945,
-    "max": 1.596576425999956,
+    "median": 0.5109869529987918,
+    "max": 1.6471653479966335,
     "n": 153,
-    "total": 70.56855641200036
+    "total": 82.26537886193546
    },
    "engine_s": {
-    "median": 0.2176076429996101,
-    "max": 1.3027183079993847,
+    "median": 0.2978415099933045,
+    "max": 1.373274206998758,
     "n": 153
    },
    "peak_rss_bytes": {
-    "median": 1639247872,
-    "max": 1648623616,
+    "median": 1631866880,
+    "max": 1640796160,
     "n": 153
    },
    "solvers": {
@@ -24122,7 +24122,7 @@
    "octave_reference_files": 4,
    "octave_reference_values": 122
   },
-  "parent_peak_rss_bytes": 883486720,
-  "peak_rss_bytes": 1648623616
+  "parent_peak_rss_bytes": 879128576,
+  "peak_rss_bytes": 1640796160
  }
 }

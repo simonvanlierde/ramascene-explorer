@@ -1,29 +1,30 @@
-2026-10-13T07:13:09+02:00
+2026-10-14T01:05:16+02:00
+data/embodied.parquet: 154 runs, 0 with a rising cell
 data/regions.json: data_kind=exiobase-v3, 4 runs with detail
 data/flows.json: data_kind=exiobase-v3, 4 runs with detail
-data/results.json: data_kind=exiobase-v3, 153 of 153 scenarios passed, 0 failed; peak RSS 1.54 GiB
-	Command being timed: "uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json"
-	User time (seconds): 456.11
-	System time (seconds): 15.63
-	Percent of CPU this job got: 620%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:16.04
+data/results.json: data_kind=exiobase-v3, 153 of 153 scenarios passed, 0 failed; peak RSS 1.53 GiB
+	Command being timed: "uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet"
+	User time (seconds): 691.02
+	System time (seconds): 15.78
+	Percent of CPU this job got: 769%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:31.86
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 1609984
+	Maximum resident set size (kbytes): 1602340
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 6616222
-	Voluntary context switches: 4353
-	Involuntary context switches: 4791
+	Minor (reclaiming a frame) page faults: 8266204
+	Voluntary context switches: 13675
+	Involuntary context switches: 6631
 	Swaps: 0
 	File system inputs: 0
-	File system outputs: 246936
+	File system outputs: 347536
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0
 	Page size (bytes): 4096
 	Exit status: 0
 exit 0
-2026-10-13T07:14:25+02:00
+2026-10-14T01:06:48+02:00

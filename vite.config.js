@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 // The page fetches these at run time, by paths relative to itself, so they are
 // copied as they are rather than bundled. A data file that does not exist yet
 // is skipped: the page then shows how to generate it.
-const STATIC = ["data/results.json", "data/regions.json", "data/flows.json", "geo"];
+const STATIC = ["data/results.json", "data/regions.json", "data/flows.json", "data/embodied.parquet", "geo"];
 
 const staticFiles = {
 	name: "static-files",

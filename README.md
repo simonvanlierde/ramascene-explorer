@@ -6,13 +6,14 @@ year, three indicators, broken down by the region where the impact occurs. Nothi
 nothing is a forecast: the engine changes final demand or technical
 coefficients in the 2011 economy and has no projection step.
 
-`data/results.json`, `data/regions.json` and `data/flows.json` are the output
-of one precompute run (engine `split/3-performance @ d9113ca`, the head of
-[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74), 2026-10-13;
+`data/results.json`, `data/regions.json`, `data/flows.json` and
+`data/embodied.parquet` are the output of one precompute run (engine
+`split/3-performance @ d9113ca`, the head of
+[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74), 2026-10-14;
 see `data/run-log.md`; `data/precompute-time.txt` is the `/usr/bin/time -v`
-output of that run: 153 scenarios, 1 min 16 s wall, 1,609,984 KiB (1.65 GB, 1.54 GiB) maximum RSS,
+output of that run: 153 scenarios, 1 min 32 s wall, 1,602,340 KiB (1.64 GB, 1.53 GiB) maximum RSS,
 under `nice -n 10` with BLAS capped at 8 threads on a 32-core machine). Each file's `provenance` block records the engine
-commit, the dataset checksums, the command and the run time, and the three
+commit, the dataset checksums, the command and the run time, and the four
 blocks are identical. Re-run the precompute below to regenerate them. Nothing
 else in the repository is a result. `tests/fixture.json` is
 hand-shaped synthetic data for testing the page, and the page shows a red
@@ -98,6 +99,10 @@ The full 153-scenario run, before and after:
 | --- | --- | --- | --- |
 | `perf/lu-reuse-solve-order @ f876faa` (2026-09-27, unpublished, since lost) | 10 min 20 s | 942,020 KiB (0.90 GiB) | 2333%, machine load above 40 |
 | `split/3-performance @ d9113ca` (2026-10-13, PR #74) | 1 min 16 s | 1,609,984 KiB (1.54 GiB) | 620%, 8 BLAS threads |
+| the same, adding `--out-embodied` (2026-10-14) | 1 min 32 s | 1,602,340 KiB (1.53 GiB) | 769%, 8 BLAS threads |
+
+Adding `--out-embodied` left every value in the three JSON files exactly as it
+was (`compare_data.py`, largest relative difference 0).
 
 `uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
 value by value (every number in the three files, except provenance, run
@@ -109,7 +114,7 @@ more than 1e-12 and none by more than 1e-9.
 
 ```sh
 # the command data/results.json records, verbatim
-uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json
+uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
 # subsets: --scenarios original|grid, --limit N
 ```
 
@@ -178,6 +183,51 @@ of the supply chain. "Animate from the baseline" animates the map and the
 bands from no change to the intervention (instant under
 `prefers-reduced-motion`).
 
+## Embodied flows
+
+At 51.5 MB it stays out of git. It is the `embodied.parquet` asset of the
+[`data-2011`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011)
+release, and the Pages build downloads it from there and checks its SHA-256.
+To get it locally:
+
+```sh
+gh release download data-2011 --pattern embodied.parquet --dir data
+```
+
+`data/embodied.parquet` (`--out-embodied`) holds, for the baseline and every
+published scenario, the flows embodied in final demand: what each producer
+country releases, per section, for the final demand of each consumer country.
+A flow is `B_i ∘ (L · Y)` summed over the products of one section, with one
+column of `Y` per consumer country. Sections are the 15 level-2 product
+aggregates of the engine database, as in the Sankey. Each scenario's flows come
+from its own `Y` and `L`, in the same worker as its other results.
+
+The file is long format, one row group per run: `run`, `indicator` (global
+id), `producer`, `section`, `consumer` (0-based, in engine order) and `value`.
+The baseline row group holds absolute values. Every other row group holds the
+change, scenario minus baseline. A cell that is exactly 0 is left out, so a
+missing row means no flow or no change. The values are float32 with
+byte-stream-split encoding and snappy compression, so a browser can read the
+footer and one run over HTTP range requests (about 0.33 MB per run, of 51.5
+MB). The footer's `ramascene` key holds JSON: country and section names, the
+continental aggregates, units, the run ids in row-group order, the checks and
+the same provenance as the other files.
+
+Nothing is written unless:
+
+- for every run, the flows summed by producer and continental aggregate match
+  that run's values in `results.json`, and the world totals match (relative
+  1e-9);
+- for the baseline and the three original interventions, the flows summed by
+  producer country match the engine's 49-region values (relative 1e-9);
+- the float32 values sum to within relative 1e-6 of the float64 ones, per
+  producer and in total, relative to the run's total or total change. The
+  page shows three significant digits.
+
+Cells that rise in a scenario are counted and recorded, not refused. In the
+shipped run none rose, the largest difference in the first two checks was
+9.2e-16, and the float32 error was 2.6e-8.
+
 `fonts/` holds Barlow and Barlow Semi Condensed (SIL Open Font License 1.1,
 `fonts/OFL.txt`), the latin subset as Google Fonts serves it, self-hosted so
 the page loads nothing from a third party.
@@ -203,6 +253,7 @@ node --test                                             # the page logic
 | `tests/test_precompute.py` | orchestration on a tiny injected engine: Octave gate, per-region check, 0% control, direction, failed scenarios, worker records, provenance (no engine commit refused, local paths scrubbed), CLI guards |
 | `tests/test_grid.py` | the grid definition; the shipped `results.json` (every published scenario passed every check, 78 runs, 122 Octave values) |
 | `tests/test_detail.py` | the 49-region and sector × region detail and its checks, the flow reconciliation, grid cells without detail; the shipped `regions.json` and `flows.json` (same run as `results.json`, checks passed, totals reconcile) |
+| `tests/test_embodied.py` | the embodied flows: aggregation into sections, the checks that refuse to write, rises recorded, a Parquet round trip; the shipped `embodied.parquet` (same run as `results.json`, one row group per run, every run reconciles with `results.json`) |
 | `tests/test_solver.py` | `apply_model` passes no solver argument; each run records the class of its `L`, counted in the provenance and named in the run log with the pull request |
 | `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
 | `tests/test_engine_plumbing.py` | the real engine adapter (ids, labels, region leaves, route three against B·L·ΣY), only with `--engine` |
