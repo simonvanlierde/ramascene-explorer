@@ -46,7 +46,7 @@ repos:
   # poisoning, impostor commits behind a pinned digest. Set GH_TOKEN to enable
   # the audits that need the API; the offline subset runs without it.
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.28.0
+    rev: v1.30.1
     hooks:
       - id: zizmor
 
