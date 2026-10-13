@@ -3,6 +3,8 @@ name = "ramascene-explorer"
 version = "0.1.0"
 description = "Precomputed RaMa-Scene scenario results and a static page to explore them"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = ["numpy>=2", "django>=5.2,<6", "scipy>=1.15"]
 
 [dependency-groups]

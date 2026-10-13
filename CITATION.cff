@@ -10,6 +10,7 @@ authors:
     family-names: "van Lierde"
     orcid: "https://orcid.org/0009-0006-6953-909X"
 repository-code: "https://github.com/simonvanlierde/ramascene-explorer"
+license: MIT
 references:
   - type: data
     title: "EXIOBASE v3.3.sm"
