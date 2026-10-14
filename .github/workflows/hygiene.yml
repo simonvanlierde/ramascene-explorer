@@ -31,10 +31,10 @@ jobs:
       # .pre-commit-config.yaml.
       - uses: j178/prek-action@1382ad72dea72f9d53832f2bcb65b3e87a947204 # v3.0.1
         env:
-          # gitleaks scans staged changes only, and CI stages nothing: GitHub
+          # betterleaks scans staged changes only, and CI stages nothing: GitHub
           # secret scanning is the server-side check.
           # ty runs in ci.yml, which has the synced environment it needs.
-          SKIP: gitleaks,ty
+          SKIP: betterleaks,ty
           # Enables zizmor's online audits (impostor commits, known-vulnerable
           # actions). Read-only, like the workflow's permissions.
           GH_TOKEN: ${{ github.token }}
