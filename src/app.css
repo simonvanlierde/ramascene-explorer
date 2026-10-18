@@ -423,6 +423,23 @@ button.pill:hover {
   color: var(--mut);
   font-size: 12px;
 }
+.run.chosen {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border-color: #b9c6d0;
+  background: #f2f5f7;
+  cursor: default;
+}
+.run.chosen .change {
+  min-height: 32px;
+  padding: 0 12px;
+  background: var(--tint);
+  font-weight: 600;
+  font-size: 12px;
+}
+.run.chosen .change:hover {
+  background: var(--tint-hover);
+}
 .gridpick {
   margin-top: 10px;
   padding: 10px;

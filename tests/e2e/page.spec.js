@@ -46,8 +46,12 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
+	// the run list folds to the chosen run, and stays folded after a reload
+	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 	await page.reload();
 	await openSelection(page);
+	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
+	await page.getByRole("button", { name: "Change the intervention" }).click();
 	await expect(page.getByRole("radio", { name: /builders everywhere/i })).toHaveAttribute("aria-checked", "true");
 });
 
@@ -149,6 +153,7 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
 	await page.unroute("**/*.parquet");
+	await page.getByRole("button", { name: "Change the intervention" }).click();
 	await page.getByRole("radio", { name: /builders everywhere/i }).click();
 	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
 });

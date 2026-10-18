@@ -54,6 +54,17 @@ function radioKeys(e, list, current, choose) {
 	e.currentTarget.parentElement.querySelector(`[data-v="${next}"]`)?.focus();
 }
 const runOptions = [...NAMED, "grid"];
+// The run list folds to the chosen run once one is picked, so country,
+// direction, indicator and rail stay in view; a link to a run opens folded.
+let showRuns = $state(!new URLSearchParams(location.search).has("scenario"));
+let changeButton = $state();
+function pickRun(v) {
+	chooseRun(v);
+	showRuns = false;
+	queueMicrotask(() => changeButton?.focus());
+}
+const chosenText = $derived(capitalise(runText(data, ui.run)));
+const chosenSub = $derived(onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`);
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 
 const directionHint = $derived(
@@ -86,7 +97,13 @@ const directionHint = $derived(
 		</div>
 		{#if ui.mode === "whatif"}
 			<div class="lab sub"><span id="run-l">Intervention</span><small>{meta.runs.length - 1} precomputed runs</small></div>
-			<div class="runs" role="radiogroup" aria-labelledby="run-l">
+			{#if !showRuns}
+				<div class="run chosen">
+					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
+					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the intervention" onclick={() => (showRuns = true)}>Change</button>
+				</div>
+			{:else}
+			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
 				{#each runOptions as v (v)}
 					{@const checked = v === "grid" ? onGrid : ui.run === v}
 					<button
@@ -96,7 +113,7 @@ const directionHint = $derived(
 						data-v={v}
 						aria-checked={checked}
 						tabindex={checked ? 0 : -1}
-						onclick={() => chooseRun(v)}
+						onclick={() => pickRun(v)}
 						onkeydown={(e) => radioKeys(e, runOptions, onGrid ? "grid" : ui.run, chooseRun)}
 					>
 						<span class="dot"></span>
@@ -108,6 +125,7 @@ const directionHint = $derived(
 					</button>
 				{/each}
 			</div>
+			{/if}
 			{#if onGrid && grid}
 				<div class="gridpick">
 					<label for="g-product">Product used less</label>
