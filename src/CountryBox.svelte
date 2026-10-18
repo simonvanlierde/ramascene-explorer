@@ -88,7 +88,7 @@ function keys(e) {
 			text = meta.countries[ui.who];
 		}}
 	/>
-	<ul id="country-list" role="listbox" aria-label="Countries and regions" bind:this={list} hidden={!open}>
+	<ul id="country-list" role="listbox" tabindex="-1" aria-label="Countries and regions" bind:this={list} hidden={!open}>
 		{#each options as i, j (i)}
 			<!-- svelte-ignore a11y_click_events_have_key_events: the input owns the keyboard -->
 			<li

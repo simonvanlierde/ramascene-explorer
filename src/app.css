@@ -109,6 +109,26 @@ pre {
   padding: 6px 12px;
 }
 
+/* keyboard users jump past the controls to the sentence and the map */
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 40;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--slate);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip:focus {
+  top: 8px;
+}
+.main:focus {
+  outline: none;
+}
+
 /* --- shell ---------------------------------------------------------------------- */
 .shell {
   display: grid;
@@ -170,6 +190,12 @@ body.synthetic .shell {
   color: var(--ink);
   background: var(--tint);
   border-color: #cfd8df;
+  font-weight: 700;
+  flex: none;
+}
+.pill.unverified {
+  color: var(--danger);
+  border-color: currentColor;
   font-weight: 700;
   flex: none;
 }
@@ -539,6 +565,8 @@ button.pill:hover {
   white-space: nowrap;
 }
 .hl .tok {
+  display: inline-block;
+  min-height: 24px;
   font-weight: 600;
   border-bottom: 2px solid var(--acc);
   border-radius: 3px 3px 0 0;
@@ -1265,8 +1293,21 @@ details.more summary {
     display: block;
     height: auto;
   }
-  .top .basis {
+  /* keep "precomputed, not a forecast" on a phone; the dataset name goes */
+  .top {
+    gap: 10px;
+    padding: 0 12px;
+  }
+  .brand h1 {
+    font-size: 13.5px;
+  }
+  .top .basis .ds,
+  .top .pill.ok {
     display: none;
+  }
+  .top .pill {
+    padding: 0 8px;
+    font-size: 11px;
   }
   .side {
     border-right: 0;

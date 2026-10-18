@@ -69,7 +69,11 @@ export function pct(v) {
 	const a = Math.abs(v);
 	return `${sign(v)}${a >= 10 ? a.toFixed(0) : a >= 1 ? a.toFixed(1) : a >= 0.1 ? a.toFixed(2) : a.toFixed(3)}%`;
 }
-export const share = (a, b) => `${b > 0 ? Math.round((a / b) * 100) : 0}%`;
+// A share that is not zero never reads as 0%.
+export function share(a, b) {
+	const p = b > 0 ? (a / b) * 100 : 0;
+	return p > 0 && p < 0.5 ? "<1%" : `${Math.round(p)}%`;
+}
 export const possessive = (name) => (name.endsWith("s") ? "’" : "’s");
 
 // --- indicators ------------------------------------------------------------------
@@ -234,30 +238,16 @@ export function niceUp(m) {
 	return [1, 1.5, 2, 3, 5, 7.5, 10].map((x) => x * e).find((v) => v >= m * (1 - 1e-12));
 }
 
-// The diverging scale's extent for a run: the 98th percentile of |% change|
-// over every producer-consumer flow of the selected sections that is at
-// least a 100,000th of their world total, rounded up.
-export function fitExtent(meta, base, delta, ind, on) {
-	const N = meta.countries.length;
-	const flows = [];
-	let world = 0;
-	for (let p = 0; p < N; p++)
-		for (let c = 0; c < N; c++) {
-			let b = 0;
-			let d = 0;
-			for (const q of on) {
-				const i = at(meta, ind, p, q, c);
-				b += base[i];
-				d += delta[i];
-			}
-			world += b;
-			flows.push([b, d]);
-		}
-	const a = flows
-		.filter(([b]) => b >= world * 1e-5)
-		.map(([b, d]) => Math.abs((d / b) * 100))
+// The diverging scale's extent: the 90th percentile of |% change| among the
+// partners whose flow is at least 0.1% of the selection's total, rounded up,
+// so the colours spread over the flows the map shows rather than the whole
+// world, and one outlier does not wash the rest out (it is drawn at the cap).
+export function fitExtent(sum) {
+	const a = [...sum.vals.keys()]
+		.filter((k) => sum.vals[k] >= sum.total * 1e-3)
+		.map((k) => Math.abs(flowPct(sum, k) ?? 0))
 		.sort((x, y) => x - y);
-	return niceUp(a.length ? a[Math.min(a.length - 1, Math.floor(0.98 * (a.length - 1)))] : 1);
+	return niceUp(a.length ? a[Math.floor(0.9 * (a.length - 1))] : 0);
 }
 
 // --- colour ---------------------------------------------------------------------
@@ -506,24 +496,18 @@ export function viewSearch(v, codes, search = "") {
 
 // --- the five continents ----------------------------------------------------------
 
-// Released in each continent, over every consumer, for the selected sections:
-// [{name, base, change}] in the display unit (change 0 without a run). With
-// every section on, these are the run's continental totals in results.json.
-export function continents(meta, base, delta, sel) {
-	const f = wording(sel.id).factor;
-	const N = meta.countries.length;
+// The selection split by the partner's continent: [{name, base, change}] in
+// the display unit (change 0 without a run). The five changes add up to the
+// selection's change, so the strip answers the sentence's question.
+export function continents(meta, sum) {
 	return CONTINENTS.map((name) => {
-		let b = 0;
-		let d = 0;
+		let base = 0;
+		let change = 0;
 		for (const country of meta.aggregates[name] ?? []) {
-			const p = meta.countries.indexOf(country);
-			for (const q of sel.on)
-				for (let c = 0; c < N; c++) {
-					const i = at(meta, sel.ind, p, q, c);
-					b += base[i];
-					if (delta) d += delta[i];
-				}
+			const k = meta.countries.indexOf(country);
+			base += sum.vals[k];
+			if (sum.dv) change += sum.dv[k];
 		}
-		return { name, base: f * b, change: f * d };
+		return { name, base, change };
 	});
 }

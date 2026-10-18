@@ -19,7 +19,8 @@ test("synthetic data renders the map, sentence and method under a banner", async
 	await expect(page.locator("#headline")).toContainText("Germany");
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expectNoAxeViolations(page);
-	await page.getByRole("button", { name: /^Verified/ }).click();
+	await expect(page.getByRole("button", { name: /^Verified/ })).toHaveCount(0);
+	await page.getByRole("button", { name: "Not verified: test data" }).click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
 	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind", { useInner: true });
 });
@@ -46,6 +47,9 @@ test("the industry rail, country box and direction drive the sentence and the UR
 	await rail.getByRole("button", { name: /^Manufacturing/ }).click();
 	await expect(page.locator("#headline")).toContainText("through manufacturing");
 	await expect(page).toHaveURL(/sections=3(&|$)/);
+	// the rail is one Tab stop; arrows move inside it
+	await page.keyboard.press("ArrowDown");
+	await expect(rail.getByRole("button", { name: /^Electricity/ })).toBeFocused();
 	const box = page.getByRole("combobox", { name: "Country" });
 	await box.fill("Fra");
 	await box.press("Enter");
@@ -75,6 +79,7 @@ test("the shipped results render without the synthetic banner", async ({ page })
 	await ready(page);
 	await expect(page.locator("#banner")).toBeHidden();
 	await expect(page.locator("#headline")).toContainText("Germany’s consumption caused");
+	await expect(page.locator(".pill.ok")).toHaveCount(1); // hidden, not removed, on a phone
 	await expectNoAxeViolations(page);
 });
 

@@ -10,12 +10,14 @@ import {
 	bandGeometry,
 	continents,
 	fitExtent,
+	flowPct,
 	fmt,
 	niceUp,
 	parseView,
 	pct,
 	runText,
 	SECTION_SHORT,
+	share,
 	sankeyLayout,
 	summarise,
 	viewSearch,
@@ -88,14 +90,17 @@ test("a run's change follows the section filter too", () => {
 	assert.equal(all.changed, [...all.dv.keys()].sort((a, b) => all.dv[a] - all.dv[b])[0]);
 });
 
-test("the fitted extent rounds the 98th percentile up to a readable step", () => {
+test("the fitted extent rounds the largest change on screen up to a readable step", () => {
 	assert.equal(niceUp(0.83), 1);
 	assert.equal(niceUp(2.1), 3);
 	assert.equal(niceUp(4), 5);
 	assert.equal(niceUp(5), 5);
 	assert.equal(niceUp(0.06), 0.075);
-	const m = fitExtent(meta, base, delta, 0, ALL);
-	assert.ok(m > 0 && m <= 100);
+	const sum = summarise(meta, base, delta, sel());
+	const m = fitExtent(sum);
+	const shown = sum.others.filter((k) => sum.vals[k] >= sum.total * 1e-3).map((k) => Math.abs(flowPct(sum, k)));
+	shown.sort((a, b) => a - b);
+	assert.ok(m >= shown[Math.floor(0.9 * (shown.length - 1))] && m <= niceUp(shown.at(-1)));
 });
 
 test("bands taper along the flow: thin where it leaves, wide where it arrives", () => {
@@ -187,23 +192,31 @@ test("the view round-trips through the query string, old links included", () => 
 	assert.equal(bad.panel, null);
 });
 
-test("the five continents cover every producer once", () => {
-	const rows = continents(meta, base, delta, sel());
-	const world = summarise(meta, base, null, sel());
-	let all = 0;
-	for (let k = 0; k < 49; k++) all += summarise(meta, base, null, sel({ who: k, dir: "out" })).total;
-	assert.ok(
-		close(
-			rows.reduce((a, r) => a + r.base, 0),
-			all,
-		),
-	);
-	assert.ok(rows.every((r) => r.change <= 0));
-	assert.ok(world.total > 0);
+test("the five continents split the selection, so their changes add up to the sentence's", () => {
+	for (const dir of ["in", "out"]) {
+		const sum = summarise(meta, base, delta, sel({ dir, on: new Set([0, 3]) }));
+		const rows = continents(meta, sum);
+		assert.ok(
+			close(
+				rows.reduce((a, r) => a + r.base, 0),
+				sum.total,
+			),
+			dir,
+		);
+		assert.ok(
+			close(
+				rows.reduce((a, r) => a + r.change, 0),
+				sum.dTotal,
+			),
+			dir,
+		);
+	}
 });
 
+// Released in each continent, over every consumer: the run's continental
+// totals in results.json, from the same embodied flows.
 const REAL = path("../data/embodied.parquet");
-test("with every section on, the continents match the run's results", {
+test("the shipped flows reproduce the run's continental results", {
 	skip: !existsSync(REAL) && "no data/embodied.parquet",
 }, async () => {
 	const results = JSON.parse(readFileSync(path("../data/results.json"), "utf8"));
@@ -211,16 +224,29 @@ test("with every section on, the continents match the run's results", {
 	const b = await readRun(real, "baseline");
 	const d = await readRun(real, "cement-in-construction");
 	real.meta.indicators.forEach((ind, i) => {
-		const rows = continents(real.meta, b, d, { ind: i, id: ind.id, on: ALL });
-		const f = { 5: 1e-9, 3: 1e3, 7: 1e-3 }[ind.id];
-		for (const r of rows) {
-			const want = results.results.baseline[String(ind.id)][r.name] * f;
-			const got = results.results["cement-in-construction"][String(ind.id)][r.name] * f - want;
-			assert.ok(Math.abs(r.base - want) <= Math.abs(want) * 1e-5, `${ind.id} ${r.name} base`);
+		for (const [name, members] of Object.entries(real.meta.aggregates)) {
+			let got = 0;
+			let gotBase = 0;
+			for (const country of members) {
+				const who = real.meta.countries.indexOf(country);
+				const sum = summarise(real.meta, b, d, { ind: i, id: ind.id, who, dir: "out", on: ALL });
+				gotBase += sum.total;
+				got += sum.dTotal;
+			}
+			const f = { 5: 1e-9, 3: 1e3, 7: 1e-3 }[ind.id];
+			const want = results.results.baseline[String(ind.id)][name] * f;
+			const change = results.results["cement-in-construction"][String(ind.id)][name] * f - want;
+			assert.ok(Math.abs(gotBase - want) <= Math.abs(want) * 1e-5, `${ind.id} ${name} base`);
 			// float32 changes: relative to the baseline they are about 1e-7 exact
-			assert.ok(Math.abs(r.change - got) <= Math.abs(want) * 1e-6 + 1e-9, `${ind.id} ${r.name}: ${r.change} vs ${got}`);
+			assert.ok(Math.abs(got - change) <= Math.abs(want) * 1e-6 + 1e-9, `${ind.id} ${name}: ${got} vs ${change}`);
 		}
 	});
+});
+
+test("a share that is not zero never reads as 0%", () => {
+	assert.equal(share(0.34, 100), "<1%");
+	assert.equal(share(0, 100), "0%");
+	assert.equal(share(12.4, 100), "12%");
 });
 
 test("short units fit the legend and the map labels", () => {

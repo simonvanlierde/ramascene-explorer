@@ -340,7 +340,7 @@ const unitShort = $derived(wording(ui.indicator).unit);
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num"><span>−{fmtExtent(extent)}%</span><span>−{+(extent / 4).toPrecision(2)}</span><span>0</span><span>+{+(extent / 4).toPrecision(2)}</span><span>+{fmtExtent(extent)}%</span></div>
 			</div>
-			<p class="fn">Square-root scale fitted to this run: 98% of flows fall inside. Band width: 2011 {unitShort}.</p>
+			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unitShort}.</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->

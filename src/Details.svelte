@@ -8,6 +8,7 @@ import {
 	amountText,
 	flowPct,
 	pct,
+	runText,
 	SECTION_COLOURS,
 	SECTION_SHORT,
 	sankeyLayout,
@@ -41,7 +42,8 @@ $effect(() => {
 });
 function close() {
 	ui.panel = null;
-	lastFocus?.focus({ preventScroll: true });
+	// opened from a link, nothing had focus: return to the Details chip
+	(lastFocus && lastFocus !== document.body ? lastFocus : document.querySelector(".sel-chip button"))?.focus({ preventScroll: true });
 	lastFocus = null;
 }
 function tabKeys(e, i) {
@@ -125,7 +127,7 @@ const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`} · {amountText(sum.total, ui.indicator)} · {all ? "all industries" : `${ui.on.size} of 15 industries`} · {data.base_year}
+				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all industries" : `${ui.on.size} of 15 industries`} · {data.base_year}
 			</p>
 		</div>
 		<button type="button" class="x" aria-label="Close details" onclick={close}>

@@ -135,8 +135,10 @@ const whatif = $derived(ui.mode === "whatif" && shown !== null);
 const delta = $derived(shown?.delta);
 const run = $derived(shown?.run);
 const sum = $derived(ready ? summarise(meta, base, whatif ? delta : null, sel) : null);
-const extent = $derived(whatif ? fitExtent(meta, base, delta, ind, ui.on) : 1);
-const conts = $derived(ready && whatif ? continents(meta, base, delta, sel) : null);
+const extent = $derived(whatif ? fitExtent(sum) : 1);
+const conts = $derived(ready && whatif ? continents(meta, sum) : null);
+// "Verified" only for engine output whose every published run passed every check
+const verified = $derived(data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true);
 
 // the selection lives in the query string, so every view can be shared
 $effect(() => {
@@ -150,6 +152,7 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert">{flag.text}</div>
 {/if}
 
+<a class="skip" href="#app">Skip to the map</a>
 <div class="shell">
 	<header class="top">
 		<div class="brand">
@@ -160,18 +163,22 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis">{data.provenance.dataset.name} · {data.base_year} · precomputed, not a forecast</span>
-				<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
-					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-					Verified
-				</button>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · </span>{data.base_year} · precomputed, not a forecast</span>
+				{#if verified}
+					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
+						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+						Verified
+					</button>
+				{:else}
+					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Not verified: test data</button>
+				{/if}
 			{/if}
 		</div>
 	</header>
 
 	{#if ready}
 		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} />
-		<main class="main" id="app">
+		<main class="main" id="app" tabindex="-1">
 			<Sentence {data} {meta} {sum} {whatif} {run} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />

@@ -23,7 +23,8 @@ const scope = $derived(
 const year = $derived(data.base_year);
 const top = $derived(meta.countries[sum.others[0]] ?? name);
 const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 : 0);
-const dTot = $derived(whatif ? sum.dTotal * ui.s : 0);
+// the run's settled change: the replay animates the map, never these numbers
+const dTot = $derived(whatif ? sum.dTotal : 0);
 const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "");
 
 // eased numbers; the scrubber drives the What if… ones directly
@@ -108,7 +109,7 @@ function onDocClick(e) {
 			<b>{changed}</b>.
 		</p>
 	{/if}
-	<p class="sr-only" aria-live="polite">{ui.s === 1 || !whatif ? plain : ""}</p>
+	<p class="sr-only" aria-live="polite">{plain}</p>
 
 	{#if pop === "country"}
 		<div class="pop country" role="group" aria-label="Choose a country">
