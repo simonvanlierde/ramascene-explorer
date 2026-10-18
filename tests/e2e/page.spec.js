@@ -237,6 +237,8 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await page.getByRole("radio", { name: /European car makers/i }).click();
 	await started;
 	hold = false;
+	// picking a run folds the list: open it again for the second pick
+	await page.getByRole("button", { name: "Change the intervention" }).click();
 	await page.getByRole("radio", { name: /builders everywhere/i }).click();
 	const headline = page.locator("#headline");
 	await expect(headline).toContainText("builders everywhere used 20% less cement");
@@ -246,7 +248,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await page.waitForTimeout(800);
 	await expect(headline).toContainText("builders everywhere used 20% less cement");
 	await expect(headline).not.toContainText("European car makers");
-	await expect(page.getByRole("radio", { name: /builders everywhere/i })).toHaveAttribute("aria-checked", "true");
+	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 });
 
 test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apart", async ({ page, isMobile }) => {
