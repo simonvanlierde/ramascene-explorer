@@ -1,0 +1,65 @@
+# The page
+
+The page reads `data/results.json` (scenarios, continental totals, checks and
+provenance) and the embodied flows ([precompute.md](precompute.md#embodied-flows)).
+It shows one question at a time:
+
+- **Flows, 2011.** A sentence names the selected country's footprint (or what
+  it releases), with the country and the indicator as controls inside it. The
+  map draws the largest flows as tapered bands, thin where a flow leaves and
+  wide where it arrives, and fills each region by its flow with the selected
+  country. Flat (Equal Earth) or a globe.
+- **Industry rail.** One tab per section, its height the section's share of
+  the selection. A click isolates one section, further clicks add or remove.
+  Every number on the page follows the selection, in both modes.
+- **What if… .** The bands keep their 2011 width and take the run's % change
+  on a square-root scale fitted to the run (98% of flows inside). A scrubber
+  runs from the 2011 baseline to the run and replays on every switch; the
+  strip shows the change released in each of the five continents.
+- **Details.** A Sankey (released in → industry → consumed in), the same
+  flows as a sortable table, and the method with every check.
+
+The selection lives in the query string (`mode`, `scenario`, `indicator`,
+`region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
+links from the first version (`?scenario=&indicator=&region=`) still land.
+The five "Rest of …" regions merge their Natural Earth countries (see
+`REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
+
+The page shows GHG emissions and metal-ore extraction in megatonnes (the data
+holds kg CO2 eq and kt), and employment in jobs (the data holds thousands of
+persons).
+
+## Map geometry
+
+`geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
+**v5.1.2** (public domain), from
+`nvkelso/natural-earth-vector` tag `v5.1.2`, `geojson/ne_110m_admin_0_countries.geojson`
+(sha256 `6866c877…c977f`). I kept only the properties `iso` (`ISO_A2_EH`;
+Somaliland as `SO`, N. Cyprus `null`) and `name`, dropped Antarctica and the
+French Southern Lands, and converted it with `geo2topo -q 1e4`
+(topojson-server 3.0.1).
+Malta is below the 1:110m threshold and appears only in the table.
+
+## Live scenarios (optional)
+
+With `?api=<origin>` the page adds a "Run a custom scenario" panel that sends one
+intervention (product, origin region, consuming sector, consuming region, change
+in %) to the RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The
+result is compared with the baseline computed in the same job and labelled
+"computed live by the job API, not precomputed", with its own provenance: engine
+commit, dataset, the job's duration and peak memory.
+
+Without `?api=` the panel stays hidden, its code is not loaded, and the page
+fetches only its own files (`data/results.json`, `data/embodied.parquet`, the map geometry and the fonts). The
+parameter accepts a bare origin: `http://` only on loopback (a local run or an
+SSH tunnel), and `https://` otherwise. The page ignores anything else and
+reports it in the status line.
+
+```sh
+# job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 5173
+pnpm dev
+# then open http://localhost:5173/?api=http://127.0.0.1:8020
+```
+
+The stylesheet (`src/app.css`) names the interface colours as variables; the
+data colours live in `flows.js`, next to the scales that use them.
