@@ -1,28 +1,11 @@
 // EXIOBASE regions ↔ Natural Earth countries (ISO 3166-1 alpha-2), so the map
-// can merge countries into the 49 regions. No DOM here, so node --test covers it.
+// can merge countries into the 49 regions. The region codes come from the
+// Parquet footer (meta.country_codes): ISO alpha-2 (GB for the United Kingdom,
+// GR for Greece) except the five rest-of-world aggregates, which EXIOBASE codes
+// WA, WL, WE, WF, WM. No DOM here, so node --test covers it.
 
-// The 49 EXIOBASE v3 regions as the RaMa-Scene database (db.sqlite3,
-// ramascene_country) names and codes them, with their continental aggregate.
-// Codes are ISO alpha-2 (GB for the United Kingdom, GR for Greece) except
-// the five rest-of-world aggregates, which EXIOBASE codes WA, WL, WE, WF, WM.
-const AGG = {
-	E: "Europe",
-	M: "Middle-East",
-	A: "America",
-	P: "Asia-Pacific",
-	F: "Africa",
-};
-const ROWS = `AT Austria E|BE Belgium E|BG Bulgaria E|CY Cyprus E|CZ Czech Republic E|DE Germany E|DK Denmark E|EE Estonia E|ES Spain E|FI Finland E|FR France E|GR Greece E|HR Croatia E|HU Hungary E|IE Ireland E|IT Italy E|LT Lithuania E|LU Luxembourg E|LV Latvia E|MT Malta E|NL Netherlands E|PL Poland E|PT Portugal E|RO Romania E|SE Sweden E|SI Slovenia E|SK Slovakia E|GB United Kingdom E|US United States A|JP Japan P|CN China P|CA Canada A|KR South Korea P|BR Brazil A|IN India P|MX Mexico A|RU Russia E|AU Australia P|CH Switzerland E|TR Turkey M|TW Taiwan P|NO Norway E|ID Indonesia P|ZA South Africa F|WA Rest of Asia and Pacific P|WL Rest of America A|WE Rest of Europe E|WF Rest of Africa F|WM Rest of Middle East M`;
-export const EXIOBASE_REGIONS = ROWS.split("|").map((row) => {
-	const [code, ...rest] = row.split(" ");
-	return {
-		code,
-		name: rest.slice(0, -1).join(" "),
-		aggregate: AGG[rest.at(-1)],
-	};
-});
-
-// Which Natural Earth countries each rest-of-world aggregate stands for.
+// Which Natural Earth countries each rest-of-world aggregate stands for; the
+// footer does not carry this.
 // Rule: remaining Europe → WE, the Americas → WL, Africa → WF, Iran and
 // Western Asia except the Caucasus → WM, everything else in Asia and Oceania
 // → WA. EXIOBASE's own concordance may differ at the edges (Greenland, the
@@ -37,10 +20,10 @@ export const REST_OF = {
 const ISO_TO_REST = Object.fromEntries(
 	Object.entries(REST_OF).flatMap(([code, list]) => list.split(" ").map((iso) => [iso, code])),
 );
-const BY_CODE = Object.fromEntries(EXIOBASE_REGIONS.map((r) => [r.code, r]));
 
-// EXIOBASE region code for a Natural Earth country, or null (N. Cyprus: not assigned).
-export function regionForIso(iso) {
+// EXIOBASE region code for a Natural Earth country, or null (N. Cyprus: not
+// assigned). codes: the region codes, meta.country_codes.
+export function regionForIso(iso, codes) {
 	if (!iso) return null;
-	return BY_CODE[iso] && !REST_OF[iso] ? iso : (ISO_TO_REST[iso] ?? null);
+	return codes.includes(iso) && !REST_OF[iso] ? iso : (ISO_TO_REST[iso] ?? null);
 }

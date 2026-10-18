@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { geoEqualEarth, geoOrthographic } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../embodied.js";
 import {
@@ -8,6 +9,7 @@ import {
 	amountText,
 	arc,
 	bandGeometry,
+	bandPartners,
 	changeArm,
 	continents,
 	fitExtent,
@@ -22,6 +24,7 @@ import {
 	share,
 	summarise,
 	viewSearch,
+	wording,
 } from "../flows.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
@@ -305,4 +308,31 @@ test("a link from the first version opens its run in What if…", () => {
 	assert.equal(parseView("?scenario=steel-europe-50", opts).mode, "whatif");
 	assert.equal(parseView("?scenario=steel-europe-50&mode=flows", opts).mode, "flows");
 	assert.equal(parseView("?scenario=nope", opts).mode, "flows");
+});
+
+test("which partners get a band is decided on the sphere, so the flat map and the globe agree", () => {
+	// [lon, lat]: the selection near Germany, a neighbour 3° away, then Spain, China, the US
+	const at = [
+		[10, 51],
+		[5, 52],
+		[-3, 40],
+		[116, 40],
+		[-98, 39],
+	];
+	const ks = [1, 2, 3, 4];
+	assert.deepEqual(bandPartners(ks, 0, at), [2, 3, 4]);
+	const flat = geoEqualEarth().scale(150).translate([480, 250]);
+	const globe = geoOrthographic().scale(250).translate([480, 250]).rotate([-10, -40]);
+	for (const proj of [flat, globe]) {
+		const B = proj(at[0]);
+		const lines = bandPartners(ks, 0, at).map((k) => ({ k, v: 5, P: arc(proj(at[k]), B) }));
+		const { bands } = bandGeometry(lines, B, { k: 1, dir: "in" });
+		assert.deepEqual(bands.map((b) => b.k).sort(), [2, 3, 4]);
+	}
+});
+
+test("an indicator without wording fails loudly instead of reading as GHG", () => {
+	for (const { id } of meta.indicators) assert.ok(wording(id).unit);
+	assert.throws(() => wording(99), /indicator id 99/);
+	assert.throws(() => amountText(1, 99), /indicator id 99/);
 });

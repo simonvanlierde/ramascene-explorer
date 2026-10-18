@@ -2,6 +2,7 @@
 // wording of the live sentence, the colour scales, the tapered flow bands and
 // the drill-down Sankey. No DOM here, so node --test covers it.
 
+import { geoDistance } from "d3-geo";
 import { interpolateLab, interpolateRgb, interpolateRgbBasis, piecewise } from "d3-interpolate";
 import { cubicOut } from "svelte/easing";
 import { at } from "./embodied.js";
@@ -148,7 +149,11 @@ const WORDING = {
 		},
 	},
 };
-export const wording = (id) => WORDING[id] ?? WORDING[5];
+// An id without wording here (a new indicator in the data) is an error, not GHG.
+export function wording(id) {
+	if (!WORDING[id]) throw new Error(`No wording for indicator id ${id}; add it to WORDING in flows.js`);
+	return WORDING[id];
+}
 
 // [number, unit] for an amount in the indicator's display unit.
 export function amount(v, id) {
@@ -300,6 +305,15 @@ export const divBand = divScale(DIV_BAND);
 // arrives: thin where it leaves, full width from 60% of the way.
 export const taper = (t) => 0.16 + 0.84 * cubicOut(Math.min(1, t / 0.6));
 
+// Partners within 11° of great circle (about 1,200 km) of the selected
+// country get no band: the fill shows them, and on a desktop-sized map their
+// band would start inside the collar. Deciding it on the sphere means the flat
+// map and the globe skip the same partners.
+export const NEAR = (11 * Math.PI) / 180;
+// The partners in ks that get a band. at: [lon, lat] of each region's anchor;
+// who: the selected region.
+export const bandPartners = (ks, who, at) => ks.filter((k) => geoDistance(at[k], at[who]) >= NEAR);
+
 // Tapered bands (after Minard): one per partner, width ∝ flow, each ending on
 // a collar of radius R around the selected country B, where they meet side by
 // side. Each line runs from the partner to B (projected points); dir says which
@@ -311,7 +325,8 @@ export function bandGeometry(lines, B, { k: widthK, dir, minWidth = 0.8 }) {
 	const live = [];
 	for (const l of lines) {
 		const a = l.P[0];
-		// neighbours inside the collar read from the fill
+		// safety net for a small map: a start inside the collar leaves no room for
+		// a band (bandPartners already skips the near neighbours)
 		if (Math.hypot(a[0] - B[0], a[1] - B[1]) < R + 12) continue;
 		const e = l.P[l.P.length - 4];
 		live.push({ ...l, w: Math.max(minWidth, l.v * widthK), th: Math.atan2(e[1] - B[1], e[0] - B[0]) });

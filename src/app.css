@@ -14,9 +14,9 @@
   --soft: #eef1f3;
   --tint: #e3e9ee;
   --tint-hover: #d5dee5;
-  --self: #2b3a45; /* the selected country, as SELF in flows.js */
+  /* --self (the selected country) and --acc (the bands' colour) are set from
+     SELF and BAND in flows.js by main.js */
   --slate: #3d4f5c;
-  --acc: #a8471c;
   --neg: #2f5f8f;
   --pos: #a5493d;
   --ok: #2f6b4f;
