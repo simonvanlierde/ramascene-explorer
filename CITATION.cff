@@ -12,7 +12,7 @@ abstract: >-
   material-efficiency scenarios. Every number is one verified engine run, with
   its provenance and checks on the same page; nothing is a forecast.
 version: 0.1.0
-date-released: 2026-10-18
+date-released: 2026-10-19
 keywords:
   - input-output analysis
   - EXIOBASE
