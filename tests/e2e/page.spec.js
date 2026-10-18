@@ -104,6 +104,14 @@ test("the shipped results render without the synthetic banner", async ({ page })
 	await expectNoAxeViolations(page);
 });
 
+test("the globe draws Germany's bands from Britain and Italy, not from its close neighbours", async ({ page }) => {
+	await page.goto("?map=globe");
+	await ready(page);
+	for (const code of ["GB", "IT"]) await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(1);
+	for (const code of ["NL", "BE", "AT"])
+		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
+});
+
 test("a refused data path falls back to the default and says so", async ({ page }) => {
 	await page.goto("?data=../secret.json");
 	await expect(page.locator("#status .fail")).toHaveText("ignored data=../secret.json");

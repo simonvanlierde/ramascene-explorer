@@ -8,8 +8,10 @@ It shows one question at a time:
   it releases), with the country and the indicator as controls inside it. The
   map draws the largest flows as tapered bands, thin where a flow leaves and
   wide where it arrives, and fills each region by its flow with the selected
-  country. Flat (Equal Earth) or a globe. Partners within 11° of great
-  circle (about 1,200 km) get no band on either map; the fill shows them.
+  country. Flat (Equal Earth) or a globe. Partners within 5° of great
+  circle (about 550 km) get no band on either map; the fill shows them.
+  Further partners get a band where it fits outside the collar, so the
+  globe shows Britain and Italy for Germany and the flat world map does not.
   On the globe, a band from a partner over the horizon starts at the edge.
 - **Industry rail.** One tab per section, its height the section's share of
   the selection. A click isolates one section, further clicks add or remove.

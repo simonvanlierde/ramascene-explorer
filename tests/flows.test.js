@@ -310,25 +310,27 @@ test("a link from the first version opens its run in What if…", () => {
 	assert.equal(parseView("?scenario=nope", opts).mode, "flows");
 });
 
-test("which partners get a band is decided on the sphere, so the flat map and the globe agree", () => {
-	// [lon, lat]: the selection near Germany, a neighbour 3° away, then Spain, China, the US
+test("only the close neighbours lose their band; Britain and Italy keep theirs where the map has room", () => {
+	// [lon, lat]: the selection near Germany, a neighbour 3° away, Britain and Italy about 8.5° away, the US
 	const at = [
 		[10, 51],
 		[5, 52],
-		[-3, 40],
-		[116, 40],
+		[-2, 54],
+		[12.5, 43],
 		[-98, 39],
 	];
 	const ks = [1, 2, 3, 4];
 	assert.deepEqual(bandPartners(ks, 0, at), [2, 3, 4]);
-	const flat = geoEqualEarth().scale(150).translate([480, 250]);
-	const globe = geoOrthographic().scale(250).translate([480, 250]).rotate([-10, -40]);
-	for (const proj of [flat, globe]) {
+	const drawn = (proj) => {
 		const B = proj(at[0]);
 		const lines = bandPartners(ks, 0, at).map((k) => ({ k, v: 5, P: arc(proj(at[k]), B) }));
-		const { bands } = bandGeometry(lines, B, { k: 1, dir: "in" });
-		assert.deepEqual(bands.map((b) => b.k).sort(), [2, 3, 4]);
-	}
+		return bandGeometry(lines, B, { k: 3, dir: "in" })
+			.bands.map((b) => b.k)
+			.sort();
+	};
+	assert.deepEqual(drawn(geoOrthographic().scale(400).translate([480, 400]).rotate([-10, -51])), [2, 3, 4]);
+	// a world map 700 px wide: Britain and Italy start inside the collar
+	assert.deepEqual(drawn(geoEqualEarth().scale(130).translate([350, 200])), [4]);
 });
 
 test("an indicator without wording fails loudly instead of reading as GHG", () => {

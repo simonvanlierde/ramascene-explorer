@@ -305,11 +305,13 @@ export const divBand = divScale(DIV_BAND);
 // arrives: thin where it leaves, full width from 60% of the way.
 export const taper = (t) => 0.16 + 0.84 * cubicOut(Math.min(1, t / 0.6));
 
-// Partners within 11° of great circle (about 1,200 km) of the selected
-// country get no band: the fill shows them, and on a desktop-sized map their
-// band would start inside the collar. Deciding it on the sphere means the flat
-// map and the globe skip the same partners.
-export const NEAR = (11 * Math.PI) / 180;
+// Partners within 5° of great circle (about 550 km) of the selected country
+// get no band on either map: the fill shows them, and a band that short reads
+// as a smudge on the border. Partners further away get one wherever it fits
+// outside the collar (bandGeometry), so the globe, zoomed in on the country,
+// shows Britain and Italy for Germany, and the flat world map, where Europe is
+// a few pixels wide, does not.
+export const NEAR = (5 * Math.PI) / 180;
 // The partners in ks that get a band. at: [lon, lat] of each region's anchor;
 // who: the selected region.
 export const bandPartners = (ks, who, at) => ks.filter((k) => geoDistance(at[k], at[who]) >= NEAR);
@@ -325,8 +327,8 @@ export function bandGeometry(lines, B, { k: widthK, dir, minWidth = 0.8 }) {
 	const live = [];
 	for (const l of lines) {
 		const a = l.P[0];
-		// safety net for a small map: a start inside the collar leaves no room for
-		// a band (bandPartners already skips the near neighbours)
+		// a start inside the collar leaves no room for a band: on the flat map this,
+		// not bandPartners, is what drops the nearer partners
 		if (Math.hypot(a[0] - B[0], a[1] - B[1]) < R + 12) continue;
 		const e = l.P[l.P.length - 4];
 		live.push({ ...l, w: Math.max(minWidth, l.v * widthK), th: Math.atan2(e[1] - B[1], e[0] - B[0]) });

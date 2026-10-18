@@ -358,7 +358,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</defs>
 			{/if}
 			<g class="bands" mask={reveal < 1 ? "url(#reveal)" : undefined}>
-				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} />{/each}
+				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} data-region={meta.country_codes[b.k]} />{/each}
 			</g>
 			{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
 			<g class="lbls">
