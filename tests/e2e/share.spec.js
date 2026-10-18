@@ -22,7 +22,9 @@ test("Download CSV saves the table's flows under a name that states the basis", 
 	expect(lines.length - 1).toBe(await page.locator("#flows-table tbody tr").count());
 });
 
-test("Copy link puts the view's URL on the clipboard and says so", async ({ page, context }) => {
+test("Copy link puts the view's URL on the clipboard and says so", async ({ page, context, browserName }) => {
+	// only Chromium lets a test grant clipboard access; the fallback is tested below
+	test.skip(browserName !== "chromium", "clipboard permissions are Chromium-only in Playwright");
 	await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 	await page.goto(TABLE);
 	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
@@ -30,4 +32,17 @@ test("Copy link puts the view's URL on the clipboard and says so", async ({ page
 	await expect(page.getByRole("status").filter({ hasText: "Link copied" })).toBeVisible();
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
 	await expect(page.getByRole("status").filter({ hasText: "Link copied" })).toHaveCount(0, { timeout: 5000 });
+});
+
+test("without clipboard access, Copy link offers the URL selected to copy by hand", async ({ page }) => {
+	await page.addInitScript(() => {
+		Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+	});
+	await page.goto(TABLE);
+	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
+	await page.getByRole("button", { name: "Copy link" }).click();
+	await expect(page.getByRole("status").filter({ hasText: "Link selected" })).toBeVisible();
+	const field = page.locator("input[readonly]");
+	await expect(field).toHaveValue(page.url());
+	expect(await field.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(page.url().length);
 });
