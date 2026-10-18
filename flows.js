@@ -534,6 +534,73 @@ export function viewSearch(v, codes, search = "") {
 	return s ? `?${s}` : "";
 }
 
+// --- the table and its CSV ---------------------------------------------------------
+
+// The Details table's rows: every partner with at least a millionth of the
+// selection's total, its largest section among those shown, and in a run the
+// flow's % change (null without a run or where the flow is too small).
+export function tableRows(meta, sum, on) {
+	const secs = [...on];
+	return [...sum.vals.keys()]
+		.filter((k) => sum.vals[k] > sum.total * 1e-6)
+		.map((k) => {
+			const ts = secs.reduce((a, q) => (sum.cell(k, q) > sum.cell(k, a) ? q : a), secs[0]);
+			return { k, n: meta.countries[k], v: sum.vals[k], ind: SECTION_SHORT[ts], ts, c: flowPct(sum, k) };
+		});
+}
+
+// Column suffix and divisor from the table's display unit.
+const CSV_UNIT = {
+	"Mt CO\u2082-eq": ["mt_co2eq", 1],
+	Mt: ["mt", 1],
+	jobs: ["jobs", 1],
+	"thousand jobs": ["thousand_jobs", 1e3],
+	"million jobs": ["million_jobs", 1e6],
+};
+const slug = (t) =>
+	t
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-|-$/g, "");
+// RFC 4180: quote a field holding a comma, a quote or a line break
+const csvField = (v) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+
+// The table as one CSV file: its rows, largest flow first, in the table's
+// display unit at full precision, and a file name that states the basis
+// (data, year, region, indicator, direction, sections and the run).
+// sel: {id (global indicator id), who, dir, on}; run: the run's id in What if…, else null.
+export function flowsCsv(meta, sum, sel, { data, run = null }) {
+	const [u, div] = CSV_UNIT[amount(sum.total, sel.id)[1]];
+	const whatif = Boolean(run && sum.dv);
+	const head = ["region_code", "region_name", `flow_${u}`, "share_pct", "largest_section"];
+	if (whatif) head.push(`change_${u}`, "change_pct");
+	const lines = [head];
+	for (const r of tableRows(meta, sum, sel.on).sort((a, b) => b.v - a.v)) {
+		const row = [meta.country_codes[r.k], r.n, String(r.v / div), String((r.v / sum.total) * 100), r.ind];
+		if (whatif) row.push(String(sum.dv[r.k] / div), r.c === null ? "" : String(r.c));
+		lines.push(row);
+	}
+	const text = `${lines.map((l) => l.map(csvField).join(",")).join("\r\n")}\r\n`;
+	const secs =
+		sel.on.size === SECTION_SHORT.length
+			? "all-sections"
+			: [...sel.on]
+					.sort((a, b) => a - b)
+					.map((q) => slug(SECTION_SHORT[q]))
+					.join("-");
+	const name = [
+		"ramascene",
+		...(data.data_kind === "exiobase-v3" ? [] : ["synthetic"]),
+		data.base_year,
+		meta.country_codes[sel.who],
+		slug(wording(sel.id).label),
+		sel.dir === "in" ? "consumption" : "production",
+		secs,
+		...(whatif ? ["whatif", run] : []),
+	].join("-");
+	return { name: `${name}.csv`, text };
+}
+
 // --- the five continents ----------------------------------------------------------
 
 // The selection split by the partner's continent: [{name, base, change}] in

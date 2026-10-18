@@ -1078,6 +1078,50 @@ svg.map.live .rg {
   background: var(--soft);
   color: var(--ink);
 }
+.ph .pa {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex: none;
+}
+/* chip buttons in the slide-over: Copy link, Download CSV */
+.chipb {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--tint);
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chipb:hover {
+  background: var(--tint-hover);
+}
+.ph .copied {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--ok);
+}
+.ph .copied:empty {
+  display: none;
+}
+.ph .link {
+  width: 100%;
+  margin-top: 6px;
+  height: 32px;
+  padding: 0 8px;
+  font: 12px var(--sans);
+  color: var(--ink);
+  border: 1px solid #c9d1d7;
+  border-radius: 8px;
+}
+.tbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
 .tabs {
   display: flex;
   gap: 20px;
@@ -1391,6 +1435,7 @@ details.more summary {
     font-size: 12px;
   }
   .ph .x,
+  .chipb,
   thead th button,
   details.more summary {
     min-height: 44px;

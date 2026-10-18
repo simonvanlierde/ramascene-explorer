@@ -25,6 +25,10 @@ First release.
   change from the 2011 baseline, and five cards split it by continent.
 - Details: a Sankey (released in → industry → consumed in), the same flows as
   a sortable table, and the method with every check.
+- Download CSV in the Details table: the selection's flows, share, largest
+  section and, in What if…, the change, at full precision and with the basis
+  in the file name.
+- Copy link in Details, to share the exact view you are looking at.
 - A phone layout with the selection in a bottom sheet.
 - The embodied flows for every run as one Parquet file (the `data-2011`
   release asset), read in the browser by HTTP range request: under 1 MB of
