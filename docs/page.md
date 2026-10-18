@@ -20,7 +20,10 @@ It shows one question at a time:
   runs from the 2011 baseline to the run and replays on every switch; the
   strip shows the change released in each of the five continents.
 - **Details.** A Sankey (released in → industry → consumed in), the same
-  flows as a sortable table, and the method with every check.
+  flows as a sortable table, and the method with every check. Download CSV
+  saves the table's rows at full precision, in the table's unit, under a file
+  name that states the basis (year, region, indicator, direction, sections,
+  run, and "synthetic" for test data); Copy link copies the current view's URL.
 
 The selection lives in the query string (`mode`, `scenario`, `indicator`,
 `region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;

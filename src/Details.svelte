@@ -7,13 +7,14 @@ import { shortCommit } from "../explorer.js";
 import {
 	amount,
 	amountText,
-	flowPct,
+	flowsCsv,
 	pct,
 	runText,
 	SECTION_COLOURS,
 	SECTION_SHORT,
 	sankeyLayout,
 	share,
+	tableRows,
 	wording,
 } from "../flows.js";
 import Provenance from "./Provenance.svelte";
@@ -78,13 +79,7 @@ const fmtV = (v) => amount(v, ui.indicator)[0];
 let sortK = $state("v");
 let sortD = $state(-1);
 const rows = $derived.by(() => {
-	const secs = [...ui.on];
-	const list = [...sum.vals.keys()]
-		.filter((k) => sum.vals[k] > sum.total * 1e-6)
-		.map((k) => {
-			const ts = secs.reduce((a, q) => (sum.cell(k, q) > sum.cell(k, a) ? q : a), secs[0]);
-			return { k, n: meta.countries[k], v: sum.vals[k], ind: SECTION_SHORT[ts], ts, c: whatif ? flowPct(sum, k) : null };
-		});
+	const list = tableRows(meta, sum, ui.on);
 	const key = sortK === "sh" ? "v" : sortK;
 	return list.sort((a, b) => {
 		const x = a[key];
@@ -106,6 +101,40 @@ function sortBy(k) {
 		sortK = k;
 		sortD = k === "n" || k === "ind" ? 1 : -1;
 	}
+}
+
+// The table's rows as a CSV file, whatever the sort.
+function downloadCsv() {
+	const sel = { id: ui.indicator, who: ui.who, dir: ui.dir, on: ui.on };
+	const { name, text } = flowsCsv(meta, sum, sel, { data, run: whatif ? run : null });
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+	a.download = name;
+	a.click();
+	setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// --- copy link ----------------------------------------------------------------
+// The query string holds the whole view, so the link is the page's own URL.
+let copied = $state("");
+let linkBox = $state(null);
+let linkInput = $state();
+let copyTimer;
+async function copyLink() {
+	const href = location.href;
+	try {
+		await navigator.clipboard.writeText(href);
+		linkBox = null;
+		copied = "Link copied";
+	} catch {
+		// no Clipboard API (or it was refused): select the link for a manual copy
+		linkBox = href;
+		copied = "Link selected: press Ctrl+C or ⌘C to copy it";
+		await tick();
+		linkInput?.select();
+	}
+	clearTimeout(copyTimer);
+	copyTimer = setTimeout(() => (copied = ""), 2500);
 }
 
 // --- footer ---------------------------------------------------------------------
@@ -134,10 +163,18 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 			<p class="ps">
 				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
+			<p class="copied" role="status">{copied}</p>
+			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
 		</div>
-		<button type="button" class="x" aria-label="Close details" onclick={close}>
-			<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
-		</button>
+		<div class="pa">
+			<button type="button" class="chipb" onclick={copyLink}>
+				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1.3-1.3a2.6 2.6 0 0 1 3.7 3.7L10.7 8.2M9 11.5l-1.3 1.3a2.6 2.6 0 0 1-3.7-3.7L5.3 7.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+				Copy link
+			</button>
+			<button type="button" class="x" aria-label="Close details" onclick={close}>
+				<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+			</button>
+		</div>
 	</div>
 	<div class="tabs" role="tablist" aria-label="Detail view">
 		{#each TABS as [id, label], i (id)}
@@ -181,6 +218,12 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<div class="pb" id="tp-table" role="tabpanel" aria-labelledby="tab-table" hidden={ui.panel !== "table"}>
 		{#if ui.panel === "table"}
+			<div class="tbar">
+				<button type="button" class="chipb" onclick={downloadCsv}>
+					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					Download CSV
+				</button>
+			</div>
 			<table id="flows-table">
 				<caption>{rows.length} regions · {unit}, {data.base_year}{whatif ? " · change: this run" : ""}{all ? "" : ` · ${ui.on.size} of 15 sections`}</caption>
 				<thead>
