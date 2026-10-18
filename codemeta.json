@@ -1,0 +1,23 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "type": "SoftwareSourceCode",
+  "name": "RaMa-Scene Explorer",
+  "description": "A static, map-first explorer of the impacts embodied in each country's final demand, over precomputed RaMa-Scene engine runs on EXIOBASE v3.3.sm (2011).",
+  "version": "0.1.0",
+  "dateCreated": "2026-09-26",
+  "datePublished": "2026-10-18",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/simonvanlierde/ramascene-explorer",
+  "issueTracker": "https://github.com/simonvanlierde/ramascene-explorer/issues",
+  "programmingLanguage": ["JavaScript", "Svelte", "Python"],
+  "keywords": ["input-output analysis", "EXIOBASE", "consumption-based accounting", "embodied emissions", "scenario analysis", "data visualization"],
+  "author": [
+    {
+      "type": "Person",
+      "id": "https://orcid.org/0009-0006-6953-909X",
+      "givenName": "Simon",
+      "familyName": "van Lierde"
+    }
+  ],
+  "softwareRequirements": ["Node.js 24", "pnpm", "Python 3.12+ (precompute only)"]
+}
