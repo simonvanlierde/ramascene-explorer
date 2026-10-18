@@ -1,4 +1,5 @@
 <script>
+import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
 import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
@@ -59,7 +60,12 @@ async function load() {
 			codes: src.meta.country_codes,
 		}),
 	);
-	base = await readRun(src, "baseline");
+	try {
+		base = await readRun(src, "baseline");
+	} catch {
+		flowsError = "failed";
+		return;
+	}
 	ready = true;
 	if (ui.mode === "whatif") showRun(ui.run);
 	// the default run, so the first switch to What if… does not wait
@@ -106,7 +112,7 @@ function play() {
 	const ms = 1600;
 	const step = (now) => {
 		const p = Math.min(1, (now - start) / ms);
-		ui.s = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2; // cubic in-out
+		ui.s = cubicInOut(p);
 		if (p < 1) frame = requestAnimationFrame(step);
 	};
 	ui.s = 0;
@@ -183,7 +189,7 @@ $effect(() => {
 						Verified
 					</button>
 				{:else}
-					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Not verified: test data</button>
+					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Not verified: {flag?.synthetic ? "test data" : "a check failed"}</button>
 				{/if}
 			{/if}
 		</div>
@@ -216,6 +222,8 @@ $effect(() => {
 			{:else if flowsError === "missing"}
 				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
 				<pre>gh release download data-2011 --pattern embodied.parquet --dir data</pre>
+			{:else if flowsError === "failed"}
+				<p role="alert"><strong>The 2011 flows could not be loaded.</strong> The connection may have dropped while reading <code>{embodiedUrl(dataPath)}</code>. Reload the page to try again.</p>
 			{:else}
 				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
 			{/if}

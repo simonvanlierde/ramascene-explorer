@@ -11,6 +11,7 @@ import {
 	geoPath,
 	geoProjectionMutator,
 } from "d3-geo";
+import { cubicInOut } from "svelte/easing";
 import { merge } from "topojson-client";
 import {
 	amountShort,
@@ -18,6 +19,7 @@ import {
 	arc,
 	BAND,
 	bandGeometry,
+	changeArm,
 	divBand,
 	divFill,
 	flowPct,
@@ -159,7 +161,7 @@ $effect(() => {
 	const t0 = performance.now();
 	const step = (now) => {
 		const p = Math.min(1, (now - t0) / 800);
-		reveal = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2; // cubic in-out: the sweep crosses the bands evenly
+		reveal = cubicInOut(p); // the sweep crosses the bands evenly
 		if (p < 1) revealFrame = requestAnimationFrame(step);
 	};
 	reveal = 0;
@@ -178,7 +180,7 @@ function animate(ms, stepFn) {
 	const t0 = performance.now();
 	const frame = (now) => {
 		const p = Math.min(1, (now - t0) / ms);
-		stepFn(p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
+		stepFn(cubicInOut(p));
 		if (p < 1) tween = requestAnimationFrame(frame);
 	};
 	tween = requestAnimationFrame(frame);
@@ -284,11 +286,7 @@ const ticks = $derived.by(() => {
 });
 const seqStops = $derived(Array.from({ length: 11 }, (_, i) => seq(lo * (hi / lo) ** (i / 10))).join(","));
 // When every flow moves the same way, the legend shows only that arm of the ramp.
-const arm = $derived.by(() => {
-	if (!whatif) return 0;
-	const p = sum.others.map((k) => flowPct(sum, k) ?? 0);
-	return p.every((v) => v <= 0) ? -1 : p.every((v) => v >= 0) ? 1 : 0;
-});
+const arm = $derived(whatif ? changeArm(sum) : 0);
 const divStops = $derived(
 	Array.from({ length: 11 }, (_, i) => {
 		const t = arm === 0 ? 2 * (i / 10) - 1 : arm < 0 ? i / 10 - 1 : i / 10;
@@ -309,7 +307,7 @@ const glyphs = $derived.by(() => {
 });
 const tickText = (t) => (t >= 1e6 ? `${t / 1e6}M` : t >= 1000 ? `${t / 1000}k` : String(t));
 const fmtExtent = (m) => `${m}`.replace(/^0\./, "0.");
-const unitShort = $derived(wording(ui.indicator).unit);
+const unit = $derived(wording(ui.indicator).unit);
 </script>
 
 <div class="mapc" class:globe={ui.globe}>
@@ -386,7 +384,7 @@ const unitShort = $derived(wording(ui.indicator).unit);
 			{#if whatif}
 				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
 			{:else}
-				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unitShort}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unitShort} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
+				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
 			{/if}
 		</p>
 
@@ -408,7 +406,7 @@ const unitShort = $derived(wording(ui.indicator).unit);
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unitShort}.</p>
+			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unit}.</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
@@ -458,7 +456,9 @@ const unitShort = $derived(wording(ui.indicator).unit);
 				{/each}
 			</div>
 		{/if}
-		{#if loadingRun && ui.mode === "whatif"}<p class="fn" role="status">Loading the run’s flows…</p>{/if}
+		{#if loadingRun && ui.mode === "whatif"}
+			<p class="fn" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Pick it again, or another." : "Loading the run’s flows…"}</p>
+		{/if}
 	</div>
 
 </div>

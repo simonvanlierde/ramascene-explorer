@@ -8,6 +8,7 @@ import {
 	amountText,
 	arc,
 	bandGeometry,
+	changeArm,
 	continents,
 	fitExtent,
 	flowPct,
@@ -29,6 +30,7 @@ const src = await openEmbodied(await asyncBufferFromFile(path("./fixture-embodie
 const { meta } = src;
 const base = await readRun(src, "baseline");
 const delta = await readRun(src, "steel-europe-50");
+const mixedRun = await readRun(src, "cement-asia-pacific-20");
 const ALL = new Set(SECTION_SHORT.keys());
 const DE = meta.country_codes.indexOf("DE");
 const sel = (over) => ({ ind: 0, id: 5, who: DE, dir: "in", on: ALL, ...over });
@@ -219,7 +221,7 @@ test("the five continents split the selection, so their changes add up to the se
 // totals in results.json, from the same embodied flows.
 const REAL = path("../data/embodied.parquet");
 test("the shipped flows reproduce the run's continental results", {
-	skip: !existsSync(REAL) && "no data/embodied.parquet",
+	skip: !existsSync(REAL) && !process.env.CI && "no data/embodied.parquet",
 }, async () => {
 	const results = JSON.parse(readFileSync(path("../data/results.json"), "utf8"));
 	const real = await openEmbodied(await asyncBufferFromFile(REAL));
@@ -256,4 +258,51 @@ test("short units fit the legend and the map labels", () => {
 	assert.equal(amountShort(7_660_000, 3), "7.66M jobs");
 	assert.equal(amountShort(965_000, 3), "965k jobs");
 	assert.equal(amountShort(12, 7), "12.0 Mt");
+});
+
+test("the matrix is read the right way round: a consumer draws on itself and three producers", () => {
+	// the fixture generator gives each consumer exactly four producers
+	const into = summarise(meta, base, null, sel({ dir: "in" }));
+	assert.equal([...into.vals].filter((v) => v > 0).length, 4);
+	// read the other way, a producer serves however many consumers drew on it
+	const counts = meta.country_codes.map(
+		(_, k) => [...summarise(meta, base, null, sel({ who: k, dir: "out" })).vals].filter((v) => v > 0).length,
+	);
+	assert.ok(counts.some((c) => c !== 4));
+});
+
+test("the legend arm follows the sign of the changes on screen", () => {
+	assert.equal(changeArm(summarise(meta, base, delta, sel())), -1);
+	// in the mixed run, flows released in Asia-Pacific rise and the rest fall
+	const arms = meta.country_codes.map((_, k) => changeArm(summarise(meta, base, mixedRun, sel({ who: k }))));
+	assert.ok(arms.includes(0));
+	assert.ok(arms.includes(-1));
+	const up = Float64Array.from(delta, (v) => -v);
+	assert.equal(changeArm(summarise(meta, base, up, sel())), 1);
+});
+
+test("a run that leaves the selection unchanged names no largest change", () => {
+	const none = summarise(meta, base, new Float64Array(base.length), sel());
+	assert.equal(none.changed, null);
+	assert.equal(none.changedAbroad, null);
+	assert.equal(none.dTotal, 0);
+	// a steel cut in Europe leaves flows released elsewhere for Europe alone
+	const local = summarise(meta, base, delta, sel({ who: meta.country_codes.indexOf("US"), dir: "out" }));
+	assert.equal(local.changed, null);
+});
+
+test("numbers never take exponent notation or float noise", () => {
+	assert.equal(fmt(6e-7), "0.0000006");
+	assert.equal(fmt(99.96), "100");
+	assert.equal(fmt(9.996), "10.0");
+	assert.equal(niceUp(0.29), 0.3);
+	assert.equal(niceUp(0.13), 0.15);
+	assert.equal(niceUp(6e-6), 7.5e-6);
+});
+
+test("a link from the first version opens its run in What if…", () => {
+	const opts = { runs: meta.runs, indicators: [5, 3, 7], codes: meta.country_codes };
+	assert.equal(parseView("?scenario=steel-europe-50", opts).mode, "whatif");
+	assert.equal(parseView("?scenario=steel-europe-50&mode=flows", opts).mode, "flows");
+	assert.equal(parseView("?scenario=nope", opts).mode, "flows");
 });

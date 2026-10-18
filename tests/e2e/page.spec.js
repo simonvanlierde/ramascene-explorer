@@ -120,3 +120,84 @@ test("a phone puts the content first and the selection in a sheet", async ({ pag
 	const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
 	expect(overflow).toBe(0);
 });
+
+test("the honesty notes stay on screen: precomputed, not a forecast, and 'would have'", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	await expect(page.locator(".pill.basis")).toContainText("precomputed, not a forecast");
+	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
+	await expect(page.locator("#headline")).toContainText("would have");
+});
+
+test("with reduced motion the replay jumps to the run", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	// the animated replay takes 1.6 s; reduced motion is at the run at once
+	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100", { timeout: 400 });
+});
+
+// The two failure tests use the shipped data: the preview serves it with Range
+// support, as GitHub Pages does, so each run is its own request to fail.
+test("a run that fails to load says so, and picking it again works", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	await page.route("**/*.parquet", (route) => route.abort());
+	await page.getByRole("button", { name: "What if…" }).click();
+	await openSelection(page);
+	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
+	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
+	await page.unroute("**/*.parquet");
+	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+});
+
+test("a page whose 2011 flows fail to load says so instead of loading for ever", async ({ page }) => {
+	let gets = 0;
+	// the footer read succeeds, the baseline row group fails
+	await page.route("**/*.parquet", (route) =>
+		route.request().method() === "GET" && ++gets > 1 ? route.abort() : route.continue(),
+	);
+	await page.goto("");
+	await expect(page.getByRole("alert").filter({ hasText: "could not be loaded" })).toBeVisible();
+});
+
+test("a run with a failed check is not shown as Verified", async ({ page }) => {
+	await page.route("**/data/results.json", async (route) => {
+		const response = await route.fetch();
+		const doc = await response.json();
+		doc.checks.published_passed_every_check = false;
+		await route.fulfill({ response, json: doc });
+	});
+	await page.goto("");
+	await ready(page);
+	await expect(page.locator(".pill.ok")).toHaveCount(0);
+	await expect(page.locator(".pill.unverified")).toHaveCount(1);
+});
+
+test("the rail adds, removes and resets sections", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	await openSelection(page);
+	const rail = page.getByRole("group", { name: "Industry sections" });
+	await rail.getByRole("button", { name: /^Manufacturing/ }).click();
+	await rail.getByRole("button", { name: /^Electricity/ }).click();
+	await expect(page).toHaveURL(/sections=3,4(&|$)/);
+	await expect(page.locator("#headline")).toContainText("through 2 of 15 industry sections");
+	await rail.getByRole("button", { name: /^Manufacturing/ }).click();
+	await rail.getByRole("button", { name: /^Electricity/ }).click();
+	await expect(page).not.toHaveURL(/sections=/);
+	await expect(page.locator("#headline")).toContainText("across all 15 industry sections");
+});
+
+test("the page fetches nothing but its own files", async ({ page, baseURL }) => {
+	const elsewhere = [];
+	page.on("request", (r) => {
+		if (!r.url().startsWith(baseURL) && !r.url().startsWith("data:")) elsewhere.push(r.url());
+	});
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=steel-europe-10`);
+	await ready(page);
+	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
+	expect(elsewhere).toEqual([]);
+});

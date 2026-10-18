@@ -21,9 +21,8 @@ const KIND = { "vehicle-demand-europe": "Final demand" };
 const grid = $derived(data.grid);
 const firstGrid = $derived.by(() => meta.runs.find((r) => data.scenarios.find((s) => s.id === r)?.grid));
 
-// the grid's three pickers, starting from the shown run or the first grid run
-// svelte-ignore state_referenced_locally
 // the grid's three pickers, remembered while a named run is shown
+// svelte-ignore state_referenced_locally
 let gridPick = $state(pickerState(data, data.scenarios.find((s) => s.id === ui.run)?.grid ? ui.run : firstGrid));
 const onGrid = $derived(!NAMED.includes(ui.run));
 const gridTarget = $derived(lookupGrid(data, gridPick));
@@ -57,10 +56,9 @@ function radioKeys(e, list, current, choose) {
 const runOptions = [...NAMED, "grid"];
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 
-const WHERE = { 5: "emissions are released", 3: "people work", 7: "metal ores are mined" };
 const directionHint = $derived(
 	ui.dir === "in"
-		? `Where ${WHERE[ui.indicator] ?? "the impact occurs"} to make what ${meta.countries[ui.who]} consumes.`
+		? `Where ${w.source} to make what ${meta.countries[ui.who]} consumes.`
 		: `Where what ${meta.countries[ui.who]} makes is consumed.`,
 );
 </script>

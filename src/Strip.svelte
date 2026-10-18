@@ -1,31 +1,26 @@
 <script>
 // Three numbers under the sentence in Flows; in What if… the five continents,
 // each its change in emissions (or jobs, or ores) released there.
-import { amount, divFill, pct, placeName, SECTION_SHORT, share } from "../flows.js";
+import { amount, divFill, pct, placeName, SECTION_SHORT, share, wording } from "../flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, sum, conts, whatif, extent } = $props();
 
 const name = $derived(meta.countries[ui.who]);
 const sections = $derived(
-	ui.on.size === SECTION_SHORT.length ? "All 15 sections" : `${ui.on.size} of 15 sections`,
+	ui.on.size === SECTION_SHORT.length ? "All 15 industry sections" : `${ui.on.size} of 15 industry sections`,
 );
 const total = $derived(amount(sum.total, ui.indicator));
 const abroad = $derived(amount(sum.total - sum.home, ui.indicator));
 const k = $derived(sum.others[0]);
 const largest = $derived(amount(sum.vals[k] ?? 0, ui.indicator));
-const LABEL = {
-	5: { in: "Consumption footprint", out: "Emissions released" },
-	3: { in: "Jobs behind consumption", out: "Jobs located here" },
-	7: { in: "Ores behind consumption", out: "Ores extracted here" },
-};
 const fill = $derived(divFill(extent));
 </script>
 
 {#if !whatif}
 	<div class="kpis k3">
 		<div class="kpi">
-			<div class="kl">{LABEL[ui.indicator]?.[ui.dir] ?? "Total"}</div>
+			<div class="kl">{wording(ui.indicator).total[ui.dir]}</div>
 			<div class="kv num">{total[0]}<small>{total[1]}</small></div>
 			<div class="ks">{sections}, 2011</div>
 		</div>

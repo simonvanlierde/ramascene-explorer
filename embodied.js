@@ -3,7 +3,7 @@
 // documents the layout; the footer's "ramascene" metadata names the runs,
 // countries, sections and indicators. No DOM here, so node --test covers it.
 
-import { asyncBufferFromUrl, cachedAsyncBuffer, parquetMetadataAsync, parquetRead } from "hyparquet";
+import { asyncBufferFromUrl, parquetMetadataAsync, parquetRead } from "hyparquet";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
 // The footer is about 90 kB (run names, countries, checks, provenance);
@@ -35,8 +35,11 @@ export async function openEmbodied(file) {
 }
 
 export async function openEmbodiedUrl(url) {
-	const file = await asyncBufferFromUrl({ url });
-	return openEmbodied(cachedAsyncBuffer(file));
+	// No slice cache: the page keeps each decoded run, and a cache would keep a
+	// failed request too, so "pick it again" could never succeed. no-cache
+	// revalidates, so a redeploy never mixes old row groups with a new footer.
+	const file = await asyncBufferFromUrl({ url, requestInit: { cache: "no-cache" } });
+	return openEmbodied(file);
 }
 
 // Index into a dense run: indicator (position in meta.indicators), producer,

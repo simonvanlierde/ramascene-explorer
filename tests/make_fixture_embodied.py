@@ -3,7 +3,9 @@
 Same layout as data/embodied.parquet (precompute.write_embodied), with random
 numbers, so the page and the browser tests run without the 51 MB release asset.
 Each consumer draws on itself and three other producers, through five random
-sections; each run cuts a random share of every flow.
+sections. Each run cuts a random share of every flow, except that the
+steel-europe runs touch only flows released in Europe, and
+cement-asia-pacific-20 raises the flows released in Asia-Pacific, so the page meets a mixed-sign run.
 Run: uv run python -m tests.make_fixture_embodied
 """
 
@@ -67,10 +69,18 @@ def main():
             base[:, p, secs, c] = weight * rng.random((len(ids), 5)) * np.array([MAGNITUDE[i] for i in ids])[:, None]
     runs = ["baseline", *(sc["id"] for sc in fixture["scenarios"] if sc["id"] != "baseline")]
     flows = {"baseline": base.astype(np.float32)}
+    name_of = dict(zip(codes, names, strict=True))
+    europe = [codes.index(c) for c in AGGREGATES["Europe"].split()]
+    asia = [codes.index(c) for c in AGGREGATES["Asia-Pacific"].split()]
     for run in runs[1:]:
         cut = rng.random(base.shape) * rng.choice([0.002, 0.02, 0.1])
+        if run.startswith("steel-europe-"):
+            local = np.zeros(n, dtype=bool)
+            local[europe] = True
+            cut[:, ~local, :, :] = 0
+        if run == "cement-asia-pacific-20":
+            cut[:, asia, :, :] *= -1  # flows released in Asia-Pacific rise
         flows[run] = (-base * cut).astype(np.float32)
-    name_of = dict(zip(codes, names, strict=True))
     aggregates = {a: [name_of[c] for c in members.split()] for a, members in AGGREGATES.items()}
     meta = {
         "data_kind": fixture["data_kind"],

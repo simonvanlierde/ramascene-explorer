@@ -111,7 +111,8 @@ function sortBy(k) {
 // --- footer ---------------------------------------------------------------------
 const d = $derived(data.provenance.dataset);
 const e = $derived(data.provenance.engine);
-const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference);
+// only a passed check on engine output earns the green line
+const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer_by_country?.passed === true ? meta.checks.producer_by_country : null);
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape and the close button are the keyboard path -->
@@ -131,7 +132,7 @@ const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all industries" : `${ui.on.size} of 15 industries`} · {data.base_year}
+				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
 		</div>
 		<button type="button" class="x" aria-label="Close details" onclick={close}>
@@ -212,10 +213,10 @@ const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference
 
 	<footer class="pf">
 		<p>{d.name} {d.year} (<a href="https://doi.org/{d.doi}">doi:{d.doi}</a>) · RaMa-Scene engine {e.label ?? shortCommit(e.commit)} · demand-pull Leontief model · {w.noun}</p>
-		{#if worst != null}
+		{#if check}
 			<p class="vf">
 				<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-				Verified: flows sum to the engine's per-country totals (worst relative difference {worst.toExponential(0)})
+				Verified: flows sum to the engine's per-country totals (worst relative difference {check.max_relative_difference.toExponential(0)})
 			</p>
 		{/if}
 	</footer>

@@ -3,6 +3,7 @@
 // the drill-down Sankey. No DOM here, so node --test covers it.
 
 import { interpolateLab, interpolateRgb, interpolateRgbBasis, piecewise } from "d3-interpolate";
+import { cubicOut } from "svelte/easing";
 import { at } from "./embodied.js";
 
 // The 15 level-2 sections in the Parquet's order, short enough for the rail,
@@ -41,30 +42,31 @@ export const SECTION_COLOURS = [
 	"#d77f66",
 	"#8fadc8",
 ];
-export const CONTINENTS = ["Europe", "Middle-East", "America", "Asia-Pacific", "Africa"];
+const CONTINENTS = ["Europe", "Middle-East", "America", "Asia-Pacific", "Africa"];
 
 // Names that read better on the map than the database's.
-const LABEL = {
+const ROW_NAME = {
 	WA: "Rest of Asia–Pacific",
 	WL: "Rest of America",
 	WF: "Rest of Africa",
 	WM: "Rest of Middle East",
 	WE: "Rest of Europe",
 };
-export const placeName = (meta, k) => LABEL[meta.country_codes[k]] ?? meta.countries[k];
+export const placeName = (meta, k) => ROW_NAME[meta.country_codes[k]] ?? meta.countries[k];
 
 // --- numbers ------------------------------------------------------------------
 
 const MINUS = "−";
 const grouped = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
+const tiny = new Intl.NumberFormat("en", { maximumSignificantDigits: 1, maximumFractionDigits: 20 });
 // Three significant figures at most, never exponent notation; a true minus.
+// The thresholds sit where rounding moves a value up a step (99.96 is "100").
 export function fmt(v) {
 	const a = Math.abs(v);
-	const s = a >= 100 ? grouped.format(a) : a >= 10 ? a.toFixed(1) : a >= 0.01 ? a.toFixed(2) : a.toPrecision(1);
+	const s = a >= 99.95 ? grouped.format(a) : a >= 9.995 ? a.toFixed(1) : a >= 0.00995 ? a.toFixed(2) : tiny.format(a);
 	return (v < 0 && Number(s.replace(/,/g, "")) !== 0 ? MINUS : "") + s;
 }
 const sign = (v) => (v > 0 ? "+" : v < 0 ? MINUS : "");
-export const fmtSigned = (v) => sign(v) + fmt(Math.abs(v));
 export function pct(v) {
 	const a = Math.abs(v);
 	return `${sign(v)}${a >= 10 ? a.toFixed(0) : a >= 1 ? a.toFixed(1) : a >= 0.1 ? a.toFixed(2) : a.toFixed(3)}%`;
@@ -85,9 +87,10 @@ const WORDING = {
 	5: {
 		label: "GHG",
 		noun: "greenhouse gases",
+		source: "emissions are released",
+		total: { in: "Consumption footprint", out: "Emissions released" },
 		factor: 1e-9,
 		unit: "Mt CO₂-eq",
-		short: "Mt",
 		in: {
 			verb: " consumption caused",
 			abroad: "was released abroad",
@@ -105,9 +108,10 @@ const WORDING = {
 	3: {
 		label: "Employment",
 		noun: "jobs",
+		source: "people work",
+		total: { in: "Jobs behind consumption", out: "Jobs located here" },
 		factor: 1e3,
 		unit: "jobs",
-		short: "jobs",
 		in: {
 			verb: " consumption supported",
 			abroad: "of them were abroad",
@@ -125,9 +129,10 @@ const WORDING = {
 	7: {
 		label: "Metal ores",
 		noun: "metal ores",
+		source: "metal ores are mined",
+		total: { in: "Ores behind consumption", out: "Ores extracted here" },
 		factor: 1e-3,
 		unit: "Mt",
-		short: "Mt",
 		in: {
 			verb: " consumption required",
 			abroad: "was extracted abroad",
@@ -157,11 +162,18 @@ export function amount(v, id) {
 export const amountText = (v, id) => amount(v, id).join(" ");
 // The same with the unit cut to "Mt" or "k jobs", where space is short (map
 // labels, legend, run cards); the full unit is stated nearby.
+const SHORT_UNIT = {
+	"Mt CO\u2082-eq": "Mt",
+	Mt: "Mt",
+	"million jobs": "M jobs",
+	"thousand jobs": "k jobs",
+	jobs: "jobs",
+};
 export function amountShort(v, id) {
 	const [n, u] = amount(v, id);
-	return u === "million jobs" || u === "thousand jobs"
-		? `${n}${u[0] === "m" ? "M" : "k"} jobs`
-		: `${n} ${u.replace(" CO\u2082-eq", "")}`;
+	return SHORT_UNIT[u].startsWith("M ") || SHORT_UNIT[u].startsWith("k ")
+		? `${n}${SHORT_UNIT[u]}`
+		: `${n} ${SHORT_UNIT[u]}`;
 }
 
 // --- runs ---------------------------------------------------------------------
@@ -213,7 +225,8 @@ export function summarise(meta, base, delta, sel) {
 	const bands = others.filter((k) => vals[k] >= floor).slice(0, 18);
 	const dTotal = delta ? dv.reduce((a, b) => a + b, 0) : 0;
 	const byChange = delta ? [...dv.keys()].sort((a, b) => Math.abs(dv[b]) - Math.abs(dv[a])) : [];
-	const changed = delta ? byChange[0] : null;
+	// nothing in the selection changes: there is no largest change to name
+	const changed = delta && dv[byChange[0]] !== 0 ? byChange[0] : null;
 	// the home country often changes most; the sentence then also names the largest abroad
 	const changedAbroad = delta ? (byChange.find((k) => k !== sel.who && dv[k] !== 0) ?? null) : null;
 	return {
@@ -235,11 +248,19 @@ export function summarise(meta, base, delta, sel) {
 // carry a percentage (under a millionth of the selection's total).
 export const flowPct = (sum, k) => (sum.dv && sum.vals[k] > sum.total * 1e-6 ? (sum.dv[k] / sum.vals[k]) * 100 : null);
 
+// Which way the flows on screen move in a run: -1 all down, 1 all up, 0 both
+// (the legend then shows one arm of the change ramp, or both).
+export function changeArm(sum) {
+	const p = sum.others.map((k) => flowPct(sum, k) ?? 0);
+	return p.every((v) => v <= 0) ? -1 : p.every((v) => v >= 0) ? 1 : 0;
+}
+
 // Round up to 1, 1.5, 2, 3, 5 or 7.5 × 10^k.
 export function niceUp(m) {
 	if (!(m > 0)) return 1;
 	const e = 10 ** Math.floor(Math.log10(m));
-	return [1, 1.5, 2, 3, 5, 7.5, 10].map((x) => x * e).find((v) => v >= m * (1 - 1e-12));
+	// toPrecision drops the float noise of x × 10^k (0.30000000000000004)
+	return [1, 1.5, 2, 3, 5, 7.5, 10].map((x) => +(x * e).toPrecision(2)).find((v) => v >= m * (1 - 1e-12));
 }
 
 // The diverging scale's extent: the 90th percentile of |% change| among the
@@ -275,10 +296,9 @@ export const divBand = divScale(DIV_BAND);
 
 // --- flow bands -------------------------------------------------------------------
 
-const easeCubicOut = (t) => 1 - (1 - t) ** 3;
 // Half-width factor along a band, t = 0 at the flow's origin and 1 where it
 // arrives: thin where it leaves, full width from 60% of the way.
-export const taper = (t) => 0.16 + 0.84 * easeCubicOut(Math.min(1, t / 0.6));
+export const taper = (t) => 0.16 + 0.84 * cubicOut(Math.min(1, t / 0.6));
 
 // Tapered bands (after Minard): one per partner, width ∝ flow, each ending on
 // a collar of radius R around the selected country B, where they meet side by
@@ -470,7 +490,8 @@ export function parseView(search, { runs, indicators, codes }) {
 	const panel = q.get("panel");
 	const named = runs.filter((r) => r !== "baseline");
 	return {
-		mode: q.get("mode") === "whatif" ? "whatif" : "flows",
+		// a bare ?scenario= is a link from the first version, which always showed a run
+		mode: q.get("mode") === "whatif" || (q.get("mode") === null && named.includes(scenario)) ? "whatif" : "flows",
 		run: named.includes(scenario) ? scenario : named[0],
 		indicator: indicators.includes(indicator) ? indicator : indicators[0],
 		who: Math.max(0, codes.indexOf(codes.includes(region) ? region : "DE")),

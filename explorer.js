@@ -23,10 +23,10 @@ export function banner(data) {
 		: { synthetic: true, text: "SYNTHETIC TEST DATA: NOT A RESULT" };
 }
 
-// A sidecar (regions.json, flows.json) belongs next to results.json only if one
-// precompute run wrote both: same dataset files, engine commit and timestamp.
-// A results.json regenerated without --out-regions/--out-flows leaves the old
-// sidecars behind; they must not be shown as this run's breakdown.
+// The embodied flows (their Parquet footer) belong next to results.json only if
+// one precompute run wrote both: same dataset files, engine commit and
+// timestamp. A results.json regenerated without --out-embodied leaves the old
+// Parquet behind; it must not be shown as this run's breakdown.
 export function sameRun(doc, data) {
 	const key = (d) =>
 		JSON.stringify([

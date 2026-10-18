@@ -73,7 +73,8 @@ test("reading one run fetches that run's bytes, not the file", async () => {
 // flows over sections and consumers add up to the engine's per-country value.
 const REAL = path("../data/embodied.parquet");
 test("the shipped flows sum to the engine's per-country totals", {
-	skip: !existsSync(REAL) && "no data/embodied.parquet",
+	// in CI the asset is downloaded first, so a missing file fails rather than skips
+	skip: !existsSync(REAL) && !process.env.CI && "no data/embodied.parquet",
 }, async () => {
 	const regions = JSON.parse(readFileSync(path("../data/regions.json"), "utf8"));
 	const file = await counted(REAL);
@@ -91,4 +92,18 @@ test("the shipped flows sum to the engine's per-country totals", {
 			assert.ok(Math.abs(sum - want) <= Math.abs(want) * 1e-5 + 1e-6, `${ind.id} ${name}: ${sum} vs ${want}`);
 		});
 	});
+});
+
+test("a failed range read can be retried", async () => {
+	const inner = await asyncBufferFromFile(path("./fixture-embodied.parquet"));
+	let fail = false;
+	const file = {
+		byteLength: inner.byteLength,
+		slice: (a, b) => (fail ? ((fail = false), Promise.reject(new Error("dropped"))) : inner.slice(a, b)),
+	};
+	const src = await openEmbodied(file);
+	fail = true;
+	await assert.rejects(readRun(src, "steel-europe-10"), /dropped/);
+	const run = await readRun(src, "steel-europe-10");
+	assert.equal(run.length, src.meta.indicators.length * 49 * 15 * 49);
 });

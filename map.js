@@ -26,7 +26,7 @@ export const EXIOBASE_REGIONS = ROWS.split("|").map((row) => {
 // Rule: remaining Europe → WE, the Americas → WL, Africa → WF, Iran and
 // Western Asia except the Caucasus → WM, everything else in Asia and Oceania
 // → WA. EXIOBASE's own concordance may differ at the edges (Greenland, the
-// Caucasus, Central Asia); the page says so.
+// Caucasus, Central Asia).
 export const REST_OF = {
 	WE: "AL BA BY IS MD ME MK RS UA XK",
 	WL: "AR BO BS BZ CL CO CR CU DO EC FK GL GT GY HN HT JM NI PA PE PR PY SR SV TT UY VE",

@@ -26,6 +26,7 @@ const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 :
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? sum.dTotal : 0);
 const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "");
+const noneAbroad = $derived(sum.others.length === 0);
 const abroadToo = $derived(
 	sum.changed === ui.who && sum.changedAbroad != null ? meta.countries[sum.changedAbroad] : "",
 );
@@ -53,9 +54,9 @@ const plain = $derived.by(() => {
 	const [n, u] = amount(sum.total + (whatif ? sum.dTotal : 0), ui.indicator);
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
-		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}, most in ${top}.`;
+		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
 	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${runText(data, run)}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct((sum.dTotal / sum.total) * 100)}), the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}.`;
+	return `In the ${year} economy, if ${runText(data, run)}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -114,7 +115,7 @@ function onFocusOut(e) {
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
 			{/if}
 			in {year}{scope}; <span class="n">{Math.round(tShare.current)}%</span>
-			{out ? w.out.abroad : w.in.abroad}, most in <b>{top}</b>.
+			{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}.
 		</p>
 	{:else}
 		<p id="headline">
@@ -122,8 +123,9 @@ function onFocusOut(e) {
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
-			(<span class="n {tone}">{pct(dPct)}</span>), the largest change {out ? w.out.where : w.in.where}
-			<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}.
+			(<span class="n {tone}">{pct(dPct)}</span>),
+			{#if changed}the largest change {out ? w.out.where : w.in.where}
+				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}unchanged by this run{/if}.
 		</p>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>
