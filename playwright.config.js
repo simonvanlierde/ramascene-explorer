@@ -3,7 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 // The tests run against the built site, served by vite preview (which also
 // serves the synthetic fixtures the build leaves out). The page has one light
 // palette; the dark project checks that a dark-preferring browser still gets it
-// with full contrast.
+// with full contrast. Firefox, desktop Safari and iPhone run on Playwright's
+// Firefox and WebKit builds, so the page is checked in all three engines.
 export default defineConfig({
 	testDir: "tests/e2e",
 	forbidOnly: !!process.env.CI,
@@ -25,5 +26,8 @@ export default defineConfig({
 			use: { ...devices["Desktop Chrome"], colorScheme: "dark" },
 		},
 		{ name: "phone", use: { ...devices["Pixel 7"] } },
+		{ name: "firefox", use: { ...devices["Desktop Firefox"] } },
+		{ name: "safari", use: { ...devices["Desktop Safari"] } },
+		{ name: "iphone", use: { ...devices["iPhone 13"] } },
 	],
 });

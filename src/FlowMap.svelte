@@ -225,11 +225,12 @@ function move(e) {
 	drag.y = e.clientY;
 	drag.dx = (drag.dx ?? 0) + dx;
 	drag.dy = (drag.dy ?? 0) + dy;
-	// pointer events come faster than frames: re-project once per frame
-	drag.frame ||= requestAnimationFrame(() => {
-		if (!drag) return;
-		rot = [rot[0] + drag.dx * 0.35, Math.max(-60, Math.min(60, rot[1] - drag.dy * 0.35))];
-		drag.dx = drag.dy = drag.frame = 0;
+	// pointer events come faster than frames: re-project once per frame. The frame
+	// keeps its own reference, so a release before it runs still applies the turn.
+	const d = drag;
+	d.frame ||= requestAnimationFrame(() => {
+		rot = [rot[0] + d.dx * 0.35, Math.max(-60, Math.min(60, rot[1] - d.dy * 0.35))];
+		d.dx = d.dy = d.frame = 0;
 	});
 }
 const up = () => setTimeout(() => (drag = null));
