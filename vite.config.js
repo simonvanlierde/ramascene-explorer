@@ -5,19 +5,27 @@ import { defineConfig } from "vite";
 // The page fetches these at run time, by paths relative to itself, so they are
 // copied as they are rather than bundled. A data file that does not exist yet
 // is skipped: the page then shows how to generate it.
-const STATIC = ["data/results.json", "data/regions.json", "data/flows.json", "data/embodied.parquet", "geo"];
+const STATIC = ["data/results.json", "data/embodied.parquet", "geo"];
 
 const staticFiles = {
 	name: "static-files",
 	writeBundle({ dir }) {
 		for (const path of STATIC.filter((p) => existsSync(p))) cpSync(path, `${dir}/${path}`, { recursive: true });
 	},
-	// The synthetic fixture never ships, but the preview serves it for the browser tests.
+	// The synthetic fixtures never ship, but the preview serves them for the
+	// browser tests. The Parquet answers HEAD with its length and GET in full,
+	// which the reader falls back to when a server ignores Range.
 	configurePreviewServer(server) {
-		server.middlewares.use("/tests/fixture.json", (_req, res) => {
-			res.setHeader("Content-Type", "application/json");
-			res.end(readFileSync("tests/fixture.json"));
-		});
+		for (const [path, type] of [
+			["tests/fixture.json", "application/json"],
+			["tests/fixture-embodied.parquet", "application/vnd.apache.parquet"],
+		])
+			server.middlewares.use(`/${path}`, (req, res) => {
+				const body = readFileSync(path);
+				res.setHeader("Content-Type", type);
+				res.setHeader("Content-Length", body.length);
+				res.end(req.method === "HEAD" ? undefined : body);
+			});
 	},
 };
 

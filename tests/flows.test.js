@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../embodied.js";
 import {
+	amountShort,
 	amountText,
 	arc,
 	bandGeometry,
+	continents,
 	fitExtent,
 	fmt,
 	niceUp,
@@ -183,4 +185,47 @@ test("the view round-trips through the query string, old links included", () => 
 	assert.equal(bad.indicator, 5);
 	assert.equal(bad.on.size, 15);
 	assert.equal(bad.panel, null);
+});
+
+test("the five continents cover every producer once", () => {
+	const rows = continents(meta, base, delta, sel());
+	const world = summarise(meta, base, null, sel());
+	let all = 0;
+	for (let k = 0; k < 49; k++) all += summarise(meta, base, null, sel({ who: k, dir: "out" })).total;
+	assert.ok(
+		close(
+			rows.reduce((a, r) => a + r.base, 0),
+			all,
+		),
+	);
+	assert.ok(rows.every((r) => r.change <= 0));
+	assert.ok(world.total > 0);
+});
+
+const REAL = path("../data/embodied.parquet");
+test("with every section on, the continents match the run's results", {
+	skip: !existsSync(REAL) && "no data/embodied.parquet",
+}, async () => {
+	const results = JSON.parse(readFileSync(path("../data/results.json"), "utf8"));
+	const real = await openEmbodied(await asyncBufferFromFile(REAL));
+	const b = await readRun(real, "baseline");
+	const d = await readRun(real, "cement-in-construction");
+	real.meta.indicators.forEach((ind, i) => {
+		const rows = continents(real.meta, b, d, { ind: i, id: ind.id, on: ALL });
+		const f = { 5: 1e-9, 3: 1e3, 7: 1e-3 }[ind.id];
+		for (const r of rows) {
+			const want = results.results.baseline[String(ind.id)][r.name] * f;
+			const got = results.results["cement-in-construction"][String(ind.id)][r.name] * f - want;
+			assert.ok(Math.abs(r.base - want) <= Math.abs(want) * 1e-5, `${ind.id} ${r.name} base`);
+			// float32 changes: relative to the baseline they are about 1e-7 exact
+			assert.ok(Math.abs(r.change - got) <= Math.abs(want) * 1e-6 + 1e-9, `${ind.id} ${r.name}: ${r.change} vs ${got}`);
+		}
+	});
+});
+
+test("short units fit the legend and the map labels", () => {
+	assert.equal(amountShort(42.37, 5), "42.4 Mt");
+	assert.equal(amountShort(7_660_000, 3), "7.66M jobs");
+	assert.equal(amountShort(965_000, 3), "965k jobs");
+	assert.equal(amountShort(12, 7), "12.0 Mt");
 });

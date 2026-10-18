@@ -41,6 +41,13 @@ SECTIONS = [
     "Health and social work",
     "Other service activities",
 ]
+AGGREGATES = {
+    "Europe": "AT BE BG CY CZ DE DK EE ES FI FR GR HR HU IE IT LT LU LV MT NL PL PT RO SE SI SK GB RU CH NO WE",
+    "Middle-East": "TR WM",
+    "America": "US CA BR MX WL",
+    "Asia-Pacific": "JP CN KR IN AU TW ID WA",
+    "Africa": "ZA WF",
+}
 # typical size of one producer x section x consumer cell, in each indicator's unit
 MAGNITUDE = {5: 2e9, 3: 50.0, 7: 200.0}
 
@@ -63,6 +70,8 @@ def main():
     for run in runs[1:]:
         cut = rng.random(base.shape) * rng.choice([0.002, 0.02, 0.1])
         flows[run] = (-base * cut).astype(np.float32)
+    name_of = dict(zip(codes, names, strict=True))
+    aggregates = {a: [name_of[c] for c in members.split()] for a, members in AGGREGATES.items()}
     meta = {
         "data_kind": fixture["data_kind"],
         "status": "synthetic test fixture, not a result",
@@ -71,6 +80,7 @@ def main():
         "layout": "One row group per run, in the order of runs; baseline absolute, every other run its change.",
         "countries": list(names),
         "country_codes": list(codes),
+        "aggregates": aggregates,
         "sections": SECTIONS,
         "indicators": [{**i, "scale": 1} for i in fixture["indicators"]],
         "value_type": "float32; value x scale is in the indicator's unit",

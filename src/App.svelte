@@ -1,7 +1,14 @@
 <script>
-import { banner, dataUrl, ignoredData, shortCommit } from "../explorer.js";
+import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
+import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
+import { continents, fitExtent, parseView, summarise, viewSearch } from "../flows.js";
 import { apiUrl, ignoredApi } from "../live.js";
-import Explorer from "./Explorer.svelte";
+import Details from "./Details.svelte";
+import FlowMap from "./FlowMap.svelte";
+import Sentence from "./Sentence.svelte";
+import Sidebar from "./Sidebar.svelte";
+import Strip from "./Strip.svelte";
+import { reducedMotion, ui } from "./view.svelte.js";
 
 const search = location.search;
 const dataPath = dataUrl(search);
@@ -12,6 +19,12 @@ const refusedApi = ignoredApi(search);
 
 let data = $state.raw(null);
 let empty = $state(false);
+let src = $state.raw(null); // the opened Parquet file
+let flowsError = $state("");
+let base = $state.raw(null);
+let shown = $state.raw(null); // {run, delta}: the run on screen; the next one may still be loading
+let loadingRun = $state("");
+let ready = $state(false);
 const flag = $derived(data && banner(data));
 
 load();
@@ -28,56 +41,159 @@ async function load() {
 		document.title = `${banner(data).text} · ${document.title}`;
 		document.body.classList.add("synthetic");
 	}
+	try {
+		src = await openEmbodiedUrl(embodiedUrl(dataPath));
+	} catch {
+		flowsError = "missing";
+		return;
+	}
+	if (!sameRun(src.meta, data)) {
+		flowsError = "mismatch";
+		return;
+	}
+	Object.assign(
+		ui,
+		parseView(location.search, {
+			runs: src.meta.runs,
+			indicators: src.meta.indicators.map((i) => i.id),
+			codes: src.meta.country_codes,
+		}),
+	);
+	base = await readRun(src, "baseline");
+	ready = true;
+	if (ui.mode === "whatif") showRun(ui.run);
+	// the default run, so the first switch to What if… does not wait
+	else (window.requestIdleCallback ?? setTimeout)(() => fetchRun(ui.run).catch(() => {}));
 }
-</script>
 
-{#snippet cell(label, value)}
-	<dl class="cell"><dt>{label}</dt><dd>{value}</dd></dl>
-{/snippet}
+// --- runs: fetched once each, by range request -------------------------------------
+const cache = new Map();
+function fetchRun(run) {
+	if (!cache.has(run))
+		cache.set(
+			run,
+			readRun(src, run).catch((e) => {
+				cache.delete(run);
+				throw e;
+			}),
+		);
+	return cache.get(run);
+}
+let wanted = "";
+async function showRun(run) {
+	wanted = run;
+	loadingRun = run;
+	try {
+		const d = await fetchRun(run);
+		if (wanted !== run) return;
+		shown = { run, delta: d };
+		loadingRun = "";
+		play();
+	} catch {
+		if (wanted === run) loadingRun = `failed:${run}`;
+	}
+}
+
+// --- the replay: the scrubber from the 2011 baseline to the run -----------------------
+let frame = 0;
+function play() {
+	cancelAnimationFrame(frame);
+	if (reducedMotion()) {
+		ui.s = 1;
+		return;
+	}
+	const start = performance.now();
+	const ms = 1600;
+	const step = (now) => {
+		const p = Math.min(1, (now - start) / ms);
+		ui.s = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2; // cubic in-out
+		if (p < 1) frame = requestAnimationFrame(step);
+	};
+	ui.s = 0;
+	frame = requestAnimationFrame(step);
+}
+const stop = () => cancelAnimationFrame(frame);
+
+function setMode(mode) {
+	if (ui.mode === mode) return;
+	stop();
+	ui.mode = mode;
+	ui.s = 1;
+	if (mode === "whatif") showRun(ui.run);
+}
+function setRun(run) {
+	stop();
+	ui.run = run;
+	showRun(run);
+}
+
+// --- what the page shows ----------------------------------------------------------
+const meta = $derived(src?.meta);
+const ind = $derived(meta ? meta.indicators.findIndex((i) => i.id === ui.indicator) : 0);
+const sel = $derived({ ind, id: ui.indicator, who: ui.who, dir: ui.dir, on: ui.on });
+const whatif = $derived(ui.mode === "whatif" && shown !== null);
+const delta = $derived(shown?.delta);
+const run = $derived(shown?.run);
+const sum = $derived(ready ? summarise(meta, base, whatif ? delta : null, sel) : null);
+const extent = $derived(whatif ? fitExtent(meta, base, delta, ind, ui.on) : 1);
+const conts = $derived(ready && whatif ? continents(meta, base, delta, sel) : null);
+
+// the selection lives in the query string, so every view can be shared
+$effect(() => {
+	if (!ready) return;
+	const q = viewSearch(ui, meta.country_codes, location.search);
+	if (q !== location.search) history.replaceState(null, "", `${location.pathname}${q}${location.hash}`);
+});
+</script>
 
 {#if flag?.synthetic}
 	<div id="banner" class="banner" role="alert">{flag.text}</div>
 {/if}
-<header>
-	<h1>RaMa-Scene scenario explorer</h1>
-	<p>How would the 2011 world economy's greenhouse-gas emissions, employment and metal-ore extraction change if Europe bought fewer cars, or if industries used less steel, cement or another material per unit of output? Each view is one precomputed run of the RaMa-Scene input-output engine on EXIOBASE. None of it is a forecast.</p>
-	<details>
-		<summary>How to read this page</summary>
-		<p>The engine changes final demand or technical coefficients in the 2011 economy and recomputes it. It has no projection step, and no substitution, price or rebound effect is modelled. There are three original interventions, plus a material-efficiency grid: ten products × five continental regions × three cut sizes, each cell "every industry in the region uses that much less of the product per unit of output".</p>
-		<dl>
-			<dt>EXIOBASE</dt><dd>A global multi-regional input-output database: what each industry in each region buys from every other, with the emissions, employment and extraction of each industry. Here version 3.3.sm, 49 regions.</dd>
-			<dt>RaMa-Scene</dt><dd>The engine that scales the selected cells of the economy and recomputes every region's totals through the Leontief inverse.</dd>
-			<dt>Technical coefficient</dt><dd>How much of a product an industry buys per unit of its own output.</dd>
-			<dt>Baseline</dt><dd>The unchanged 2011 economy. Every number on the page is an intervention minus this baseline.</dd>
-		</dl>
-	</details>
-</header>
 
-<main>
-	<div class="titleblock" id="status">
-		{#if data}
-			{@render cell("Status", data.status.charAt(0).toUpperCase() + data.status.slice(1))}
-			{@render cell("Base year", String(data.base_year))}
-			{@render cell("Data kind", data.data_kind)}
-			{@render cell("Dataset", data.provenance.dataset.name)}
-			{@render cell("Engine commit", shortCommit(data.provenance.engine.commit))}
-		{/if}
-		{#if ignored !== null}<span class="fail">ignored data={ignored}</span>{/if}
-		{#if refusedApi !== null}<span class="fail">ignored api={refusedApi}</span>{/if}
-	</div>
-
-	{#if data}
-		<Explorer {data} {dataPath} />
-	{/if}
-
-	{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} />{/await}{/if}
-
-	{#if empty}
-		<div id="empty">
-			<p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> (with <code>data/regions.json</code> for the map and <code>data/flows.json</code> for the Sankey), which only a run of the engine on the EXIOBASE dataset produces:</p>
-			<pre>uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
-    --out data/results.json --out-regions data/regions.json --out-flows data/flows.json</pre>
-			<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+<div class="shell">
+	<header class="top">
+		<div class="brand">
+			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
+			<h1>RaMa-Scene Explorer</h1>
 		</div>
+		<div class="rt" id="status">
+			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
+			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
+			{#if data}
+				<span class="pill basis">{data.provenance.dataset.name} · {data.base_year} · precomputed, not a forecast</span>
+				<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
+					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					Verified
+				</button>
+			{/if}
+		</div>
+	</header>
+
+	{#if ready}
+		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} />
+		<main class="main" id="app">
+			<Sentence {data} {meta} {sum} {whatif} {run} />
+			<Strip {meta} {sum} {conts} {whatif} {extent} />
+			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
+		</main>
+		<Details {data} {meta} {sum} {whatif} {run} />
+	{:else if flowsError || empty}
+		<main class="main solo" id="empty">
+			{#if empty}
+				<p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
+				<pre>uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
+    --out data/results.json --out-embodied data/embodied.parquet</pre>
+				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+			{:else if flowsError === "missing"}
+				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
+				<pre>gh release download data-2011 --pattern embodied.parquet --dir data</pre>
+			{:else}
+				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
+			{/if}
+		</main>
+	{:else}
+		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
 	{/if}
-</main>
+</div>
+
+{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} />{/await}{/if}

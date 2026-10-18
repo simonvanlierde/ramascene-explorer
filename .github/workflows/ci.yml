@@ -2,7 +2,7 @@ name: ci
 
 # Without the dataset: pytest skips the real-engine checks unless --engine is
 # given, node --test reads only the synthetic fixtures, and Playwright builds
-# the page and serves it over the fixture and the committed results.
+# the page and serves it over the fixtures and the shipped results.
 
 on:
   push:
@@ -74,6 +74,16 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
+
+      # The shipped-data test reads the embodied flows from the release, by
+      # range request, as the live page does.
+      - name: fetch the embodied flows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          echo "806ca8addc662ea608fb4e5c834b5f1432eb0fe51108435958061fa262fd027e  data/embodied.parquet" | sha256sum --check
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium-headless-shell

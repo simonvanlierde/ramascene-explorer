@@ -1,0 +1,406 @@
+<script>
+// The map card: regions filled by the selection, tapered bands for the
+// largest flows meeting at the selected country, Flat/Globe, the legend and,
+// in What if…, the scrubber from the 2011 baseline to the run.
+import {
+	geoDistance,
+	geoEqualEarth,
+	geoEqualEarthRaw,
+	geoInterpolate,
+	geoOrthographicRaw,
+	geoPath,
+	geoProjectionMutator,
+} from "d3-geo";
+import { merge } from "topojson-client";
+import {
+	amountShort,
+	amountText,
+	arc,
+	BAND,
+	bandGeometry,
+	divBand,
+	divFill,
+	flowPct,
+	LAND,
+	pct,
+	placeName,
+	possessive,
+	SEA,
+	SECTION_COLOURS,
+	SECTION_SHORT,
+	SELF,
+	seqScale,
+	share,
+	taperGlyph,
+	wording,
+} from "../flows.js";
+import { regionForIso } from "../map.js";
+import { reducedMotion, ui } from "./view.svelte.js";
+
+let { meta, sum, whatif, extent, play, stop, loadingRun } = $props();
+
+// --- geometry: the 49 regions merged from Natural Earth countries -----------------
+let shapes = $state.raw([]);
+// where a region's label and bands meet, where its centroid misleads
+const ANCHOR = { WA: [100, 20], WL: [-62, -12], US: [-98, 39], WF: [20, 2], WM: [45, 25], WE: [25, 47], NO: [9, 61], FR: [2.5, 46.5], RU: [60, 58], CA: [-100, 56] };
+fetch("geo/countries-110m.topo.json")
+	.then((r) => r.json())
+	.then((topo) => {
+		const geoms = topo.objects.countries.geometries;
+		shapes = meta.country_codes.map((code, i) => {
+			const geometry = merge(topo, geoms.filter((g) => regionForIso(g.properties.iso) === code));
+			const feature = { type: "Feature", geometry };
+			return { i, code, feature, at: ANCHOR[code] ?? geoPath().centroid(feature) };
+		});
+	});
+
+// --- projection: Equal Earth morphing into an orthographic globe -------------------
+let W = $state(0);
+let H = $state(0);
+let alpha = $state(ui.globe ? 1 : 0);
+let rot = $state([0, 0]);
+const mutate = geoProjectionMutator((a) => (x, y) => {
+	const p = geoEqualEarthRaw(x, y);
+	const q = geoOrthographicRaw(x, y);
+	return [p[0] + a * (q[0] - p[0]), p[1] + a * (q[1] - p[1])];
+});
+const proj = mutate(0);
+const path = geoPath(proj);
+const TOP = 52; // room for the chips above the map
+const view = $derived.by(() => {
+	const w = Math.max(W, 320);
+	const h = Math.max(H, 260);
+	const flat = geoEqualEarth().fitExtent([[16, TOP], [w - 16, h - 12]], { type: "Sphere" });
+	const k1 = Math.min(w - 32, h - TOP - 12) / 2;
+	const t0 = flat.translate();
+	const t1 = [w / 2, TOP + (h - TOP - 12) / 2];
+	mutate(alpha);
+	proj
+		.scale(flat.scale() + alpha * (k1 - flat.scale()))
+		.translate([t0[0] + alpha * (t1[0] - t0[0]), t0[1] + alpha * (t1[1] - t0[1])])
+		.rotate([rot[0] * alpha, rot[1] * alpha])
+		.clipAngle(alpha > 0.02 ? Math.max(90, 179.9 - alpha * 89.9) : null)
+		.precision(0.3);
+	return { w, h, scale: Math.min(1.4, Math.max(0.8, w / 700)) };
+});
+const centre = () => [-rot[0] * alpha, -rot[1] * alpha];
+const visible = (ll) => alpha < 0.5 || geoDistance(ll, centre()) < Math.PI / 2 - 0.04;
+const regionPaths = $derived((view, shapes.map((s) => path(s.feature) ?? "")));
+const sphere = $derived((view, path({ type: "Sphere" })));
+
+// --- colour -------------------------------------------------------------------
+const hi = $derived(Math.max(...sum.others.map((k) => sum.vals[k]), 1e-12));
+const lo = $derived(hi / 1000);
+const seq = $derived(seqScale(lo, hi));
+const ff = $derived(divFill(extent));
+const fb = $derived(divBand(extent));
+const oneSection = $derived(ui.on.size === 1 ? [...ui.on][0] : null);
+function fillOf(k) {
+	if (whatif) {
+		const p = flowPct(sum, k);
+		return p === null ? LAND : ff(p * ui.s);
+	}
+	if (k === ui.who) return SELF;
+	return sum.vals[k] < lo / 10 ? LAND : seq(sum.vals[k]);
+}
+const bandColour = (k) =>
+	whatif ? fb((flowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : BAND;
+
+// --- bands and labels -----------------------------------------------------------
+const widthK = $derived((13 * view.scale) / (sum.vals[sum.bands[0]] || 1));
+const geom = $derived.by(() => {
+	view;
+	if (!shapes.length) return { R: 0, bands: [], B: [0, 0] };
+	const self = shapes[ui.who].at;
+	const B = proj(self);
+	const lines = [];
+	for (const k of sum.bands) {
+		const A = shapes[k].at;
+		if (!visible(A)) continue;
+		let P;
+		if (alpha > 0.5) {
+			const ip = geoInterpolate(A, self);
+			P = Array.from({ length: 31 }, (_, i) => proj(ip(i / 30)));
+		} else P = arc(proj(A), B);
+		if (P.some((p) => !p)) continue;
+		lines.push({ k, v: sum.vals[k], P });
+	}
+	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown: visible(self) };
+});
+const labels = $derived.by(() => {
+	const placed = [];
+	const out = [];
+	for (const b of [...geom.bands].sort((x, y) => y.v - x.v)) {
+		const p = proj(shapes[b.k].at);
+		if (!p) continue;
+		const t = placeName(meta, b.k);
+		const w = t.length * 5.6 + 6;
+		const box = [p[0] - w / 2, p[1] - 13, p[0] + w / 2, p[1] + 8];
+		if (box[0] < 4 || box[2] > view.w - 4) continue;
+		if (placed.some((q) => !(box[2] < q[0] || box[0] > q[2] || box[3] < q[1] || box[1] > q[3]))) continue;
+		placed.push(box);
+		const fp = flowPct(sum, b.k);
+		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp * ui.s)) : amountShort(b.v, ui.indicator) });
+		if (out.length > 6) break;
+	}
+	return out;
+});
+
+// --- interaction ------------------------------------------------------------------
+let tween = 0;
+function animate(ms, stepFn) {
+	cancelAnimationFrame(tween);
+	if (reducedMotion()) return stepFn(1);
+	const t0 = performance.now();
+	const frame = (now) => {
+		const p = Math.min(1, (now - t0) / ms);
+		stepFn(p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
+		if (p < 1) tween = requestAnimationFrame(frame);
+	};
+	tween = requestAnimationFrame(frame);
+}
+const facing = (ll) => [-ll[0], -Math.max(-40, Math.min(40, ll[1]))];
+function setGlobe(g) {
+	ui.globe = g;
+	if (g && shapes.length) rot = facing(shapes[ui.who].at);
+	const from = alpha;
+	animate(900, (t) => (alpha = from + t * ((g ? 1 : 0) - from)));
+}
+function turnTo(ll) {
+	if (alpha < 0.5) return;
+	const [a, b] = [rot, facing(ll)];
+	animate(800, (t) => (rot = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]));
+}
+// centre the globe on the selection once the shapes are in
+$effect(() => {
+	if (shapes.length && ui.globe && rot[0] === 0 && rot[1] === 0) rot = facing(shapes[ui.who].at);
+});
+function pick(k) {
+	ui.who = k;
+	turnTo(shapes[k].at);
+}
+
+let drag = null;
+function down(e) {
+	if (alpha < 0.5) return;
+	drag = { x: e.clientX, y: e.clientY, moved: false };
+	e.currentTarget.setPointerCapture(e.pointerId);
+}
+function move(e) {
+	if (!drag) return;
+	const dx = e.clientX - drag.x;
+	const dy = e.clientY - drag.y;
+	if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+	drag.x = e.clientX;
+	drag.y = e.clientY;
+	rot = [rot[0] + dx * 0.35, Math.max(-60, Math.min(60, rot[1] - dy * 0.35))];
+}
+const up = () => setTimeout(() => (drag = null));
+
+// --- tooltip --------------------------------------------------------------------
+let tip = $state(null);
+function hover(e, k) {
+	const r = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+	tip = { k, x: e.clientX - r.left, y: e.clientY - r.top };
+}
+const other = $derived(meta.countries[ui.who]);
+const tipText = $derived.by(() => {
+	if (!tip) return null;
+	const k = tip.k;
+	const v = sum.vals[k];
+	const name = meta.countries[k];
+	const where =
+		k === ui.who
+			? ui.dir === "in"
+				? "at home, for its own consumption"
+				: "at home and consumed at home"
+			: ui.dir === "in"
+				? `here, for consumption in ${other}`
+				: `in ${other}, for consumption here`;
+	if (whatif) {
+		const p = flowPct(sum, k);
+		if (p === null) return { name, big: "–", line: `No 2011 flow to speak of ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
+		return {
+			name,
+			big: pct(p * ui.s),
+			line: `${sum.dv[k] * ui.s > 0 ? "+" : ""}${amountText(sum.dv[k] * ui.s, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
+		};
+	}
+	const secs = [...ui.on].map((q) => [q, sum.cell(k, q)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
+	return { name, big: amountText(v, ui.indicator), line: `${where} · ${share(v, sum.total)}`, secs, v };
+});
+
+// --- scrubber -------------------------------------------------------------------
+let track = $state();
+const at = (e) => {
+	const r = track.getBoundingClientRect();
+	return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+};
+function scrubKey(e) {
+	const step = { ArrowRight: 0.05, ArrowUp: 0.05, ArrowLeft: -0.05, ArrowDown: -0.05, PageUp: 0.25, PageDown: -0.25 }[e.key];
+	if (step == null && e.key !== "Home" && e.key !== "End") return;
+	e.preventDefault();
+	stop();
+	ui.s = e.key === "Home" ? 0 : e.key === "End" ? 1 : Math.max(0, Math.min(1, ui.s + step));
+}
+
+// --- legend -----------------------------------------------------------------------
+const ticks = $derived.by(() => {
+	const out = [];
+	for (let e = Math.ceil(Math.log10(lo)); 10 ** e <= hi; e++) out.push(10 ** e);
+	// leave the right end to the unit
+	return out.map((t) => ({ t, x: (Math.log(t / lo) / Math.log(hi / lo)) * 100 })).filter((t) => t.x <= 82);
+});
+const seqStops = $derived(Array.from({ length: 11 }, (_, i) => seq(lo * (hi / lo) ** (i / 10))).join(","));
+const divStops = $derived(
+	Array.from({ length: 11 }, (_, i) => {
+		const t = 2 * (i / 10) - 1;
+		return ff(Math.sign(t) * extent * t * t);
+	}).join(","),
+);
+const glyphs = $derived.by(() => {
+	const a0 = sum.vals[sum.bands[0]] ?? 0;
+	const a1 = Number((a0 / 5).toPrecision(1));
+	return [a1, a0].filter((v) => v > 0);
+});
+const tickText = (t) => (t >= 1e6 ? `${t / 1e6}M` : t >= 1000 ? `${t / 1000}k` : String(t));
+const fmtExtent = (m) => `${m}`.replace(/^0\./, "0.");
+const unitShort = $derived(wording(ui.indicator).unit);
+</script>
+
+<div class="mapc" bind:clientWidth={W} bind:clientHeight={H}>
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
+	<svg
+		class="map"
+		class:globe={alpha > 0.5}
+		class:live={!whatif}
+		viewBox="0 0 {view.w} {view.h}"
+		role="img"
+		aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}; the table in Details lists every flow"
+		onpointerdown={down}
+		onpointermove={move}
+		onpointerup={up}
+		onpointercancel={up}
+	>
+		<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "#dedfe1" : "none"} />
+		<g class="rgs">
+			{#each shapes as s (s.code)}
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
+				<path
+					class="rg"
+					class:sel={s.i === ui.who}
+					d={regionPaths[s.i]}
+					fill={fillOf(s.i)}
+					onmousemove={(e) => hover(e, s.i)}
+					onmouseleave={() => (tip = null)}
+					onclick={() => !drag?.moved && pick(s.i)}
+				/>
+			{/each}
+		</g>
+		<g class="bands">
+			{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} />{/each}
+		</g>
+		{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
+		<g class="lbls">
+			{#each labels as l (l.k)}
+				<text x={l.x} y={l.y} text-anchor="middle">{l.t}</text>
+				<text class="b" x={l.x} y={l.y + 10} text-anchor="middle">{l.sub}</text>
+			{/each}
+		</g>
+	</svg>
+
+	<div class="mtl">
+		<div class="sel-chip">
+			<span class="sw"></span><span>{other}</span>
+			<button type="button" onclick={() => (ui.panel = "sankey")} aria-label="Details for {other}: Sankey, table and method">
+				Details
+				<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+			</button>
+		</div>
+	</div>
+	<div class="mtr">
+		<div class="seg" role="group" aria-label="Map projection">
+			<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
+			<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
+		</div>
+	</div>
+
+	<p class="mnote">
+		{#if whatif}
+			Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
+		{:else}
+			Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unitShort}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unitShort} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
+		{/if}
+	</p>
+
+	<div class="lg">
+		{#if whatif}
+			<div class="lt">% change in each 2011 flow, this run</div>
+			<div>
+				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
+				<div class="tk num"><span>−{fmtExtent(extent)}%</span><span>−{+(extent / 4).toPrecision(2)}</span><span>0</span><span>+{+(extent / 4).toPrecision(2)}</span><span>+{fmtExtent(extent)}%</span></div>
+			</div>
+			<p class="fn">Square-root scale fitted to this run: 98% of flows fall inside. Band width: 2011 {unitShort}.</p>
+			<div class="scrub">
+				<span>2011</span>
+				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
+				<div
+					class="tr"
+					bind:this={track}
+					onpointerdown={(e) => {
+						stop();
+						e.currentTarget.setPointerCapture(e.pointerId);
+						ui.s = at(e);
+						e.currentTarget.firstElementChild.focus();
+					}}
+					onpointermove={(e) => e.currentTarget.hasPointerCapture(e.pointerId) && (ui.s = at(e))}
+				>
+					<div
+						class="th"
+						role="slider"
+						tabindex="0"
+						aria-label="From the 2011 baseline to the run"
+						aria-valuemin="0"
+						aria-valuemax="100"
+						aria-valuenow={Math.round(ui.s * 100)}
+						aria-valuetext={ui.s === 0 ? "2011 baseline" : `${Math.round(ui.s * 100)}% of the run`}
+						style="left:{ui.s * 100}%"
+						onkeydown={scrubKey}
+					></div>
+				</div>
+				<span>run</span>
+				<button type="button" class="play" onclick={play}>
+					<svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z" fill="currentColor" /></svg>
+					Replay
+				</button>
+			</div>
+		{:else}
+			<div class="lt">{ui.dir === "in" ? `Released here for ${other}` : `Consumed here from ${other}`}</div>
+			<div>
+				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
+				<div class="tk num ticks">
+					{#each ticks as t (t.t)}<span style="left:{t.x}%">{tickText(t.t)}</span>{/each}
+					<span class="u">{amountShort(1, ui.indicator).replace(/^\S+ /, "")}</span>
+				</div>
+			</div>
+			<div class="aw">
+				{#each glyphs as g (g)}
+					<svg width="50" height="18" aria-hidden="true"><path d={taperGlyph(g, widthK, 48, ui.dir)} fill={oneSection !== null ? SECTION_COLOURS[oneSection] : BAND} fill-opacity=".76" /></svg>
+					<span class="num">{amountShort(g, ui.indicator)}</span>
+				{/each}
+			</div>
+		{/if}
+		{#if loadingRun && ui.mode === "whatif"}<p class="fn" role="status">Loading the run’s flows…</p>{/if}
+	</div>
+
+	{#if tipText}
+		<div class="tip" style="left:{Math.min(tip.x + 14, view.w - 234)}px;top:{Math.max(8, Math.min(tip.y - 12, view.h - 150))}px" aria-hidden="true">
+			<b>{tipText.name}</b><span class="tv">{tipText.big}</span><br />{tipText.line}
+			{#if tipText.secs?.length}
+				<div class="sb">{#each tipText.secs as [q, x] (q)}<i style="width:{(x / tipText.v) * 100}%;background:{SECTION_COLOURS[q]}"></i>{/each}</div>
+				<span class="sw" style="background:{SECTION_COLOURS[tipText.secs[0][0]]}"></span>Largest: {SECTION_SHORT[tipText.secs[0][0]]}, {share(tipText.secs[0][1], tipText.v)}
+			{/if}
+			<br /><span class="hint">Click to select</span>
+		</div>
+	{/if}
+</div>

@@ -51,7 +51,7 @@ jobs:
         with:
           node-version: "24"
 
-      # The build copies the four data files and the map geometry into dist/,
+      # The build copies results.json, the embodied flows and the map geometry into dist/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

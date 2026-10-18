@@ -85,9 +85,9 @@ const WORDING = {
 		unit: "Mt CO₂-eq",
 		short: "Mt",
 		in: {
-			verb: "’s consumption caused",
+			verb: " consumption caused",
 			abroad: "was released abroad",
-			would: "’s consumption would have caused",
+			would: " consumption would have caused",
 			where: "released in",
 		},
 		out: {
@@ -105,9 +105,9 @@ const WORDING = {
 		unit: "jobs",
 		short: "jobs",
 		in: {
-			verb: "’s consumption supported",
+			verb: " consumption supported",
 			abroad: "of them were abroad",
-			would: "’s consumption would have supported",
+			would: " consumption would have supported",
 			where: "in jobs in",
 		},
 		out: {
@@ -120,14 +120,14 @@ const WORDING = {
 	},
 	7: {
 		label: "Metal ores",
-		noun: "metal ore extraction",
+		noun: "metal ores",
 		factor: 1e-3,
 		unit: "Mt",
 		short: "Mt",
 		in: {
-			verb: "’s consumption required",
+			verb: " consumption required",
 			abroad: "was extracted abroad",
-			would: "’s consumption would have required",
+			would: " consumption would have required",
 			where: "extracted in",
 		},
 		out: {
@@ -151,6 +151,14 @@ export function amount(v, id) {
 	return [fmt(v), "jobs"];
 }
 export const amountText = (v, id) => amount(v, id).join(" ");
+// The same with the unit cut to "Mt" or "k jobs", where space is short (map
+// labels, legend, run cards); the full unit is stated nearby.
+export function amountShort(v, id) {
+	const [n, u] = amount(v, id);
+	return u === "million jobs" || u === "thousand jobs"
+		? `${n}${u[0] === "m" ? "M" : "k"} jobs`
+		: `${n} ${u.replace(" CO\u2082-eq", "")}`;
+}
 
 // --- runs ---------------------------------------------------------------------
 
@@ -494,4 +502,28 @@ export function viewSearch(v, codes, search = "") {
 	set("panel", v.panel);
 	const s = `${q}`.replace(/%2C/g, ",");
 	return s ? `?${s}` : "";
+}
+
+// --- the five continents ----------------------------------------------------------
+
+// Released in each continent, over every consumer, for the selected sections:
+// [{name, base, change}] in the display unit (change 0 without a run). With
+// every section on, these are the run's continental totals in results.json.
+export function continents(meta, base, delta, sel) {
+	const f = wording(sel.id).factor;
+	const N = meta.countries.length;
+	return CONTINENTS.map((name) => {
+		let b = 0;
+		let d = 0;
+		for (const country of meta.aggregates[name] ?? []) {
+			const p = meta.countries.indexOf(country);
+			for (const q of sel.on)
+				for (let c = 0; c < N; c++) {
+					const i = at(meta, sel.ind, p, q, c);
+					b += base[i];
+					if (delta) d += delta[i];
+				}
+		}
+		return { name, base: f * b, change: f * d };
+	});
 }

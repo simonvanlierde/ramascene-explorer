@@ -2,7 +2,6 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const FIXTURE = "?data=tests/fixture.json";
-const REGIONS = 5;
 
 async function expectNoAxeViolations(page) {
 	const { violations } = await new AxeBuilder({ page })
@@ -11,31 +10,71 @@ async function expectNoAxeViolations(page) {
 	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-test("synthetic data renders the chart, table and provenance under a banner", async ({ page }) => {
+const ready = (page) => expect(page.locator(".mapc .rg")).toHaveCount(49);
+
+test("synthetic data renders the map, sentence and method under a banner", async ({ page }) => {
 	await page.goto(FIXTURE);
 	await expect(page.locator("#banner")).toHaveText("SYNTHETIC TEST DATA: NOT A RESULT");
-	await expect(page.locator("#chart text.region")).toHaveCount(REGIONS);
-	await expect(page.locator("#table tbody tr")).toHaveCount(REGIONS);
-	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind");
-	await expect(page.locator("#headline")).not.toBeEmpty();
+	await ready(page);
+	await expect(page.locator("#headline")).toContainText("Germany");
+	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expectNoAxeViolations(page);
+	await page.getByRole("button", { name: /^Verified/ }).click();
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind", { useInner: true });
 });
 
-test("choosing an intervention re-renders and is kept in the URL", async ({ page }) => {
+test("What if… loads a run, keeps it in the URL and survives a reload", async ({ page }) => {
 	await page.goto(FIXTURE);
-	const before = await page.locator("#table tbody").textContent();
-	await page.selectOption("#scenario", "cement-in-construction");
+	await ready(page);
+	await page.getByRole("button", { name: "What if…" }).click();
+	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await expect(page).toHaveURL(/mode=whatif/);
 	await expect(page).toHaveURL(/scenario=cement-in-construction/);
-	await expect(page.locator("#table tbody")).not.toHaveText(before);
+	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
+	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
+	await expectNoAxeViolations(page);
 	await page.reload();
-	await expect(page.locator("#scenario")).toHaveValue("cement-in-construction");
+	await expect(page.getByRole("radio", { name: /builders everywhere/i })).toHaveAttribute("aria-checked", "true");
+});
+
+test("the industry rail, country box and direction drive the sentence and the URL", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const rail = page.getByRole("group", { name: "Industry sections" });
+	await rail.getByRole("button", { name: /^Manufacturing/ }).click();
+	await expect(page.locator("#headline")).toContainText("through manufacturing");
+	await expect(page).toHaveURL(/sections=3(&|$)/);
+	const box = page.getByRole("combobox", { name: "Country" });
+	await box.fill("Fra");
+	await box.press("Enter");
+	await expect(page).toHaveURL(/region=FR/);
+	await expect(page.locator("#headline")).toContainText("France");
+	await page.getByRole("button", { name: "Released in" }).click();
+	await expect(page).toHaveURL(/dir=out/);
+	await expect(page.locator("#headline")).toContainText("France released");
+});
+
+test("Details opens the Sankey and the table, and Escape closes it", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog.locator(".sk .lk").first()).toBeVisible();
+	await page.locator("#tab-table").click();
+	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
+	await expect(page).toHaveURL(/panel=table/);
+	await expectNoAxeViolations(page);
+	await page.keyboard.press("Escape");
+	await expect(dialog).toBeHidden();
 });
 
 test("the shipped results render without the synthetic banner", async ({ page }) => {
 	await page.goto("");
-	await expect(page.locator("#app")).toBeVisible();
+	await ready(page);
 	await expect(page.locator("#banner")).toBeHidden();
-	await expect(page.locator("#chart text.region")).toHaveCount(REGIONS);
+	await expect(page.locator("#headline")).toContainText("Germany’s consumption caused");
 	await expectNoAxeViolations(page);
 });
 
