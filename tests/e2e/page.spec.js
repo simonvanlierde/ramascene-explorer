@@ -87,6 +87,8 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	await expectNoAxeViolations(page);
 	await page.keyboard.press("Escape");
 	await expect(dialog).toBeHidden();
+	// focus comes back to the control that opened it, not to the page top
+	await expect(page.getByRole("button", { name: /^Details for/ })).toBeFocused();
 });
 
 test("the shipped results render without the synthetic banner", async ({ page }) => {

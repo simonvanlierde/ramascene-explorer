@@ -1,7 +1,7 @@
 <script>
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
-import { continents, fitExtent, parseView, summarise, viewSearch, wording } from "../flows.js";
+import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
 import { apiUrl, ignoredApi } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
@@ -165,9 +165,9 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert">{flag.text}</div>
 {/if}
 
-<a class="skip" href="#app">Skip to the map</a>
+<a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
 <div class="shell">
-	<header class="top">
+	<header class="top" inert={ui.panel !== null}>
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
 			<h1>RaMa-Scene Explorer</h1>
@@ -203,7 +203,7 @@ $effect(() => {
 				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 			</div>
 			<button type="button" class="filters" bind:this={sheetOpener} aria-expanded={sheet} aria-controls="side" onclick={() => (sheet = true)}>
-				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{summary}</span>
+				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{ui.mode === "whatif" && run ? `If ${runText(data, run)} · ` : ""}{summary}</span>
 			</button>
 		</nav>
 	{:else if flowsError || empty}

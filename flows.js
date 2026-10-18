@@ -212,7 +212,10 @@ export function summarise(meta, base, delta, sel) {
 	const floor = (total - home) * 0.008;
 	const bands = others.filter((k) => vals[k] >= floor).slice(0, 18);
 	const dTotal = delta ? dv.reduce((a, b) => a + b, 0) : 0;
-	const changed = delta ? [...dv.keys()].sort((a, b) => Math.abs(dv[b]) - Math.abs(dv[a]))[0] : null;
+	const byChange = delta ? [...dv.keys()].sort((a, b) => Math.abs(dv[b]) - Math.abs(dv[a])) : [];
+	const changed = delta ? byChange[0] : null;
+	// the home country often changes most; the sentence then also names the largest abroad
+	const changedAbroad = delta ? (byChange.find((k) => k !== sel.who && dv[k] !== 0) ?? null) : null;
 	return {
 		vals,
 		dv: delta ? dv : null,
@@ -223,6 +226,7 @@ export function summarise(meta, base, delta, sel) {
 		bands,
 		dTotal,
 		changed,
+		changedAbroad,
 		cell: (k, q) => f * base[cellIdx(k, q)],
 	};
 }

@@ -140,7 +140,7 @@ const labels = $derived.by(() => {
 		if (placed.some((q) => !(box[2] < q[0] || box[0] > q[2] || box[3] < q[1] || box[1] > q[3]))) continue;
 		placed.push(box);
 		const fp = flowPct(sum, b.k);
-		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp * ui.s)) : amountShort(b.v, ui.indicator) });
+		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator) });
 		if (out.length > 6) break;
 	}
 	return out;
@@ -253,8 +253,8 @@ const tipText = $derived.by(() => {
 		if (p === null) return { name, big: "–", line: `No 2011 flow to speak of ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
 		return {
 			name,
-			big: pct(p * ui.s),
-			line: `${sum.dv[k] * ui.s > 0 ? "+" : ""}${amountText(sum.dv[k] * ui.s, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
+			big: pct(p),
+			line: `${sum.dv[k] > 0 ? "+" : ""}${amountText(sum.dv[k], ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
 		};
 	}
 	const secs = [...ui.on].map((q) => [q, sum.cell(k, q)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
@@ -283,12 +283,25 @@ const ticks = $derived.by(() => {
 	return out.map((t) => ({ t, x: (Math.log(t / lo) / Math.log(hi / lo)) * 100 })).filter((t) => t.x <= 82);
 });
 const seqStops = $derived(Array.from({ length: 11 }, (_, i) => seq(lo * (hi / lo) ** (i / 10))).join(","));
+// When every flow moves the same way, the legend shows only that arm of the ramp.
+const arm = $derived.by(() => {
+	if (!whatif) return 0;
+	const p = sum.others.map((k) => flowPct(sum, k) ?? 0);
+	return p.every((v) => v <= 0) ? -1 : p.every((v) => v >= 0) ? 1 : 0;
+});
 const divStops = $derived(
 	Array.from({ length: 11 }, (_, i) => {
-		const t = 2 * (i / 10) - 1;
+		const t = arm === 0 ? 2 * (i / 10) - 1 : arm < 0 ? i / 10 - 1 : i / 10;
 		return ff(Math.sign(t) * extent * t * t);
 	}).join(","),
 );
+const divTicks = $derived.by(() => {
+	const m = fmtExtent(extent);
+	const q = +(extent / 4).toPrecision(2);
+	if (arm < 0) return [`−${m}%`, `−${q}`, "0"];
+	if (arm > 0) return ["0", `+${q}`, `+${m}%`];
+	return [`−${m}%`, `−${q}`, "0", `+${q}`, `+${m}%`];
+});
 const glyphs = $derived.by(() => {
 	const a0 = sum.vals[sum.bands[0]] ?? 0;
 	const a1 = Number((a0 / 5).toPrecision(1));
@@ -390,10 +403,10 @@ const unitShort = $derived(wording(ui.indicator).unit);
 	</div>
 	<div class="lg">
 		{#if whatif}
-			<div class="lt">% change in each 2011 flow, this run</div>
+			<div class="lt">% change in each 2011 flow, this run{arm < 0 ? ": all down" : arm > 0 ? ": all up" : ""}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
-				<div class="tk num"><span>−{fmtExtent(extent)}%</span><span>−{+(extent / 4).toPrecision(2)}</span><span>0</span><span>+{+(extent / 4).toPrecision(2)}</span><span>+{fmtExtent(extent)}%</span></div>
+				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
 			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unitShort}.</p>
 			<div class="scrub">

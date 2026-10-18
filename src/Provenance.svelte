@@ -46,7 +46,7 @@ const items = $derived.by(() => {
 		],
 		[
 			"Verification",
-			`${regionValues} regional values (${runs} runs × ${data.indicators.length} indicators × ${data.regions.length} regions) match B·L·ΣY within relative 1e-9: ${verified ? "yes" : "no"}` +
+			`${regionValues} continental values (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} continents) match B·L·ΣY within relative 1e-9: ${verified ? "yes" : "no"}` +
 				` · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}` +
 				` · every published cut changes the result and raises no indicator total: ${directionOk ? "yes" : "no"}` +
 				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")})` : ""),
@@ -73,7 +73,7 @@ const checks = $derived.by(() => {
 		],
 		[
 			verified,
-			`${regionValues.toLocaleString("en")} regional values (${runs} runs × ${data.indicators.length} indicators × ${data.regions.length} regions), recomputed outside the engine as B·L·ΣY, match within relative 1e-9.`,
+			`${regionValues.toLocaleString("en")} continental values (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} continents), recomputed outside the engine as B·L·ΣY, match within relative 1e-9.`,
 		],
 		[control.passed, "A 0% intervention through the same modified-coefficient path reproduces the baseline."],
 		[

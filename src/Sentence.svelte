@@ -26,6 +26,9 @@ const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 :
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? sum.dTotal : 0);
 const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "");
+const abroadToo = $derived(
+	sum.changed === ui.who && sum.changedAbroad != null ? meta.countries[sum.changedAbroad] : "",
+);
 
 // eased numbers; the scrubber drives the What if… ones directly
 const opts = { duration: 450, easing: cubicOut };
@@ -52,7 +55,7 @@ const plain = $derived.by(() => {
 	if (!whatif)
 		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}, most in ${top}.`;
 	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${runText(data, run)}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct((sum.dTotal / sum.total) * 100)}), the largest change ${out ? w.out.where : w.in.where} ${changed}.`;
+	return `In the ${year} economy, if ${runText(data, run)}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct((sum.dTotal / sum.total) * 100)}), the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -94,14 +97,15 @@ function onFocusOut(e) {
 <!-- Neither font has a subscript two, so CO₂ sets its 2 as <sub> in the sentence's own face -->
 {#snippet unit(u)}{#each u.split("\u2082") as part, i (i)}{#if i}<sub>2</sub>{/if}{part}{/each}{/snippet}
 
-{#snippet country()}
-	<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>
+<!-- the possessive stays on the country's line -->
+{#snippet country(after = "")}
+	<span class="u"><button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
 {/snippet}
 
 <div class="hl">
 	{#if !whatif}
 		<p id="headline">
-			{@render country()}{out ? "" : possessive(name)}{out ? w.out.verb : w.in.verb}
+			{@render country(out ? "" : possessive(name))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
@@ -115,11 +119,11 @@ function onFocusOut(e) {
 	{:else}
 		<p id="headline">
 			In the {year} economy, if <b>{runText(data, run)}</b>,
-			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country()}{possessive(name)}{w.in.would}{/if}
+			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
 			(<span class="n {tone}">{pct(dPct)}</span>), the largest change {out ? w.out.where : w.in.where}
-			<b>{changed}</b>.
+			<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}.
 		</p>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>

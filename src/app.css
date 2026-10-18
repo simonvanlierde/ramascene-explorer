@@ -247,7 +247,7 @@ button.pill:hover {
 }
 .lab.sub2 {
   margin: 10px 0 5px;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .seg {
   display: flex;
@@ -303,7 +303,7 @@ button.pill:hover {
   border: 1px solid #e6d9c8;
   border-radius: 8px;
   background: #fbf6ef;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.38;
 }
 
@@ -362,7 +362,7 @@ button.pill:hover {
 }
 .cb li span {
   color: var(--mut);
-  font-size: 11px;
+  font-size: 12px;
 }
 .cb li[aria-selected="true"] {
   background: var(--tint);
@@ -421,7 +421,7 @@ button.pill:hover {
 }
 .run small {
   color: var(--mut);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .gridpick {
   margin-top: 10px;
@@ -431,7 +431,7 @@ button.pill:hover {
 }
 .gridpick label {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   margin-bottom: 5px;
 }
@@ -478,7 +478,7 @@ button.pill:hover {
   align-items: center;
   gap: 6px;
   padding: 0 7px 0 0;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1;
   overflow: hidden;
   text-align: left;
@@ -851,7 +851,7 @@ svg.map.live .rg {
   border-radius: 8px;
   box-shadow: 0 1px 4px rgb(31 42 51 / 10%);
   padding: 9px 11px 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--mut);
   display: grid;
   gap: 7px;
@@ -905,7 +905,7 @@ svg.map.live .rg {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
   border-top: 1px solid var(--rule);
   padding-top: 8px;
@@ -943,7 +943,7 @@ svg.map.live .rg {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font: 600 11.5px var(--sans);
+  font: 600 12px var(--sans);
   padding: 4px 9px;
   background: var(--tint);
   color: var(--ink);
@@ -1112,7 +1112,7 @@ svg.map.live .rg {
   fill-opacity: 0.72;
 }
 .skc {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--mut);
   margin: 6px 0 0;
   line-height: 1.4;
@@ -1124,7 +1124,7 @@ table {
 }
 caption {
   text-align: left;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--mut);
   padding-bottom: 6px;
 }
@@ -1145,7 +1145,7 @@ thead th button {
   width: 100%;
   height: 30px;
   padding: 0 6px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--mut);
   border-radius: 0;
@@ -1177,7 +1177,7 @@ tbody th {
 }
 td.ind2 {
   color: var(--mut);
-  font-size: 11.5px;
+  font-size: 12px;
   max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1211,7 +1211,7 @@ td.pos {
   border-top: 1px solid var(--rule);
   background: #f8f9f9;
   padding: 10px 20px 12px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--mut);
   line-height: 1.45;
 }
@@ -1251,7 +1251,7 @@ td.pos {
 }
 .verdict {
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .verdict.pass {
   color: var(--ok);
@@ -1286,7 +1286,7 @@ details.more summary {
   margin-top: 14px;
   padding-top: 10px;
   border-top: 1px solid var(--rule);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 .titleblock .cell {
   margin: 0;
@@ -1371,7 +1371,7 @@ details.more summary {
   .top .pill {
     height: 32px;
     padding: 0 10px;
-    font-size: 11.5px;
+    font-size: 12px;
   }
   .ph .x,
   thead th button,
@@ -1428,11 +1428,16 @@ details.more summary {
   }
   .sel-chip,
   .mtr .seg {
-    height: 44px;
+    height: 52px;
   }
   .sel-chip button,
   .mtr .seg button {
-    min-height: 36px;
+    min-height: 44px;
+  }
+  /* the phone table keeps the columns that answer the question */
+  #flows-table thead th:nth-child(4),
+  #flows-table td.ind2 {
+    display: none;
   }
   .mtl,
   .mtr {
@@ -1494,7 +1499,7 @@ details.more summary {
     font-size: 13px;
   }
   .dock .fs {
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--mut);
     white-space: nowrap;
     overflow: hidden;

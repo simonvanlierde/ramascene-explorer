@@ -1,4 +1,5 @@
 <script>
+import { tick } from "svelte";
 // The slide-over: the selection taken apart as a Sankey (released in →
 // industry → consumed in), the same flows as a sortable table, and the
 // method with every check. Provenance and the verification stay in its footer.
@@ -40,11 +41,14 @@ $effect(() => {
 		queueMicrotask(() => panel?.querySelector(".x")?.focus({ preventScroll: true }));
 	}
 });
-function close() {
-	ui.panel = null;
-	// opened from a link, nothing had focus: return to the Details chip
-	(lastFocus && lastFocus !== document.body ? lastFocus : document.querySelector(".sel-chip button"))?.focus({ preventScroll: true });
+async function close() {
+	const back = lastFocus && lastFocus !== document.body ? lastFocus : null;
 	lastFocus = null;
+	ui.panel = null;
+	// the page is inert until this render lands, and an inert element takes no focus
+	await tick();
+	// opened from a link, nothing had focus: return to the Details chip
+	(back ?? document.querySelector(".sel-chip button"))?.focus({ preventScroll: true });
 }
 function tabKeys(e, i) {
 	if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;

@@ -88,6 +88,8 @@ test("a run's change follows the section filter too", () => {
 		),
 	);
 	assert.equal(all.changed, [...all.dv.keys()].sort((a, b) => all.dv[a] - all.dv[b])[0]);
+	assert.notEqual(all.changedAbroad, DE);
+	assert.ok(Math.abs(all.dv[all.changedAbroad]) <= Math.abs(all.dv[all.changed]));
 });
 
 test("the fitted extent rounds the largest change on screen up to a readable step", () => {
