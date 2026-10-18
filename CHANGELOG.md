@@ -6,12 +6,6 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
-
-- The map draws one round trip sooner: `results.json` now records the size and
-  SHA-256 of `embodied.parquet` (`provenance.embodied`), so the page reads the
-  Parquet footer without first asking the server for the file size.
-
 ## [0.1.0] - 2026-10-18
 
 First release.
@@ -39,6 +33,9 @@ First release.
 - The embodied flows for every run as one Parquet file (the `data-2011`
   release asset), read in the browser by HTTP range request: under 1 MB of
   51.5 MB on first load, about 0.33 MB per further run.
+- `results.json` records the size and SHA-256 of `embodied.parquet`
+  (`provenance.embodied`), so the page reads its footer without first asking
+  the server for the file size.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 

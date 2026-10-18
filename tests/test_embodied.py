@@ -220,3 +220,11 @@ def test_results_record_the_size_and_hash_of_their_parquet_file(results, parquet
         pytest.skip(f"no {parquet.name}")
     record = json.loads(results.read_text())["provenance"]["embodied"]
     assert record == {"file": parquet.name, "bytes": parquet.stat().st_size, "sha256": precompute.sha256(parquet)}
+
+
+def test_the_release_checksum_file_matches_the_results_record():
+    # CI and Pages check the downloaded asset against data/embodied.sha256; the
+    # page trusts provenance.embodied. Both must name the same file.
+    record = json.loads((SHIPPED.parent / "results.json").read_text())["provenance"]["embodied"]
+    line = (SHIPPED.parent / "embodied.sha256").read_text().split()
+    assert line == [record["sha256"], "data/embodied.parquet"]

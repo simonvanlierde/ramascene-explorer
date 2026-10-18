@@ -9,6 +9,9 @@
   `curl -sI -H 'Range: bytes=0-1' <pages url>/data/embodied.parquet` gives 206.
 - Restrict the `github-pages` environment to deployments from main (repo
   settings).
+- Open the live page on a real iPhone and an Android phone (the tests run
+  WebKit and Chromium device emulation, not the real browsers), and share the
+  link once in Slack or LinkedIn to see the preview card.
 
 ## With the next data release
 

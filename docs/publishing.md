@@ -7,7 +7,8 @@ read the synthetic fixtures and the shipped results, with `embodied.parquet`
 downloaded from the `data-2011` release and checked against the SHA-256 in
 `data/embodied.sha256` (`sha256sum --check data/embodied.sha256`); in CI
 the real-data checks fail rather than skip when it is missing. The browser
-tests run in light, dark and phone layouts, with axe checking WCAG 2.2 AA.
+tests run in Chromium (light, dark and a phone), Firefox, desktop Safari and
+an iPhone (WebKit), with axe checking WCAG 2.2 AA.
 The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
