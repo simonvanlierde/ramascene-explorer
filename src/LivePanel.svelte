@@ -1,7 +1,8 @@
 <script>
 // Optional live panel, imported only with a valid ?api=. The only code that
 // fetches from the job API. Everything from the API is rendered as text, never as markup.
-import { compare, displayIndicator, fmtPct, formatValue, headline, signed } from "../explorer.js";
+import { compare } from "../explorer.js";
+import { amountText, pct, wording } from "../flows.js";
 import { LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "../live.js";
 
 let { api } = $props();
@@ -42,13 +43,24 @@ fetchJson(`${api}/catalog`).then(
 	},
 );
 
+// Signed amount and percentage in the page's units; a zero baseline has no percentage.
+const signedText = (v, id) => (v > 0 ? "+" : "") + amountText(v, id);
+const pctText = (p) => (p === null ? "—" : pct(p));
+
 const view = $derived.by(() => {
 	if (!data) return null;
-	const indicator = displayIndicator(data.indicators.find((i) => String(i.id) === indicatorId));
-	const rows = compare(data, { scenario: "live", indicator: String(indicator.id) }, indicator.factor);
+	const id = Number(indicatorId);
+	const w = wording(id);
+	const rows = compare(data, { scenario: "live", indicator: indicatorId }, w.factor);
 	const baseTotal = rows.reduce((s, r) => s + r.baseline, 0);
 	const deltaTotal = rows.reduce((s, r) => s + r.delta, 0);
-	return { indicator, rows, headline: headline(indicator, deltaTotal, baseTotal), provenance: liveProvenance(job, api) };
+	const share = pctText(baseTotal ? (100 * deltaTotal) / baseTotal : null);
+	return {
+		id,
+		rows,
+		headline: `Summed over all regions, ${w.noun} would change by ${signedText(deltaTotal, id)} (${share}) against the job’s own baseline of ${amountText(baseTotal, id)}.`,
+		provenance: liveProvenance(job, api),
+	};
 });
 
 async function submit(event) {
@@ -82,7 +94,7 @@ async function submit(event) {
 		const d = liveData(done);
 		// the indicator list comes from the first job and stays
 		if (!indicators.length) {
-			indicators = d.indicators.map(displayIndicator);
+			indicators = d.indicators;
 			indicatorId = String(indicators[0].id);
 		}
 		job = done;
@@ -112,7 +124,7 @@ async function submit(event) {
 		<label for="live-change">Change (%) <input id="live-change" type="number" step="any" value="-20" required bind:this={changeInput} /></label>
 		<label for="live-indicator">Indicator
 			<select id="live-indicator" bind:value={indicatorId}>
-				{#each indicators as i (i.id)}<option value={String(i.id)}>{`${i.name} (${i.unit})`}</option>{/each}
+				{#each indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
 			</select>
 		</label>
 		<button type="submit" id="live-run" disabled={unreachable || running}>Run</button>
@@ -124,16 +136,16 @@ async function submit(event) {
 			<div class="table-wrap">
 				<table id="live-table">
 					<thead><tr>
-						{#each ["Region", `Baseline (${view.indicator.unit})`, `Intervention (${view.indicator.unit})`, "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
+						{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
 					</tr></thead>
 					<tbody>
 						{#each view.rows as r (r.region)}
 							<tr>
 								<th scope="row">{r.region}</th>
-								<td>{formatValue(r.baseline, view.indicator.unit)}</td>
-								<td>{formatValue(r.scenario, view.indicator.unit)}</td>
-								<td>{signed(r.delta, view.indicator.unit)}</td>
-								<td>{fmtPct(r.percent)}</td>
+								<td>{amountText(r.baseline, view.id)}</td>
+								<td>{amountText(r.scenario, view.id)}</td>
+								<td>{signedText(r.delta, view.id)}</td>
+								<td>{pctText(r.percent)}</td>
 							</tr>
 						{/each}
 					</tbody>

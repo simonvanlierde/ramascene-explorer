@@ -1,16 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import {
-	banner,
-	compare,
-	dataUrl,
-	displayIndicator,
-	formatValue,
-	headline,
-	ignoredData,
-	sameRun,
-} from "../explorer.js";
+import { banner, compare, dataUrl, ignoredData, sameRun } from "../explorer.js";
 
 // The committed synthetic fixture, shaped like precompute.py output.
 const data = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
@@ -75,57 +66,6 @@ test("a zero baseline gives no percentage rather than Infinity", () => {
 		results: { baseline: { 1: { X: 0 } }, s: { 1: { X: 2 } } },
 	};
 	assert.equal(compare(d, { scenario: "s", indicator: "1" })[0].percent, null);
-});
-
-test("values never print in exponent notation", () => {
-	for (const v of [-3.2e9, 1.5e12, 0.00042, 7, -1234567]) {
-		assert.doesNotMatch(formatValue(v), /e/i, String(v));
-	}
-	assert.equal(formatValue(-3.2e9), "\u22123.2B");
-	assert.equal(formatValue(0), "0");
-});
-
-test("employment shows in persons, never as a compact K on thousands of persons", () => {
-	const employment = displayIndicator({
-		id: 3,
-		name: "Employment: Total",
-		unit: "1000 p",
-	});
-	assert.deepEqual(employment, {
-		id: 3,
-		name: "Employment: Total",
-		short: "Employment",
-		unit: "persons",
-		factor: 1000,
-	});
-	assert.equal(formatValue(-18.8 * employment.factor, employment.unit), "\u221218,800");
-	assert.doesNotMatch(formatValue(2.1e9, "persons"), /[KMB]/);
-	const ghg = displayIndicator({
-		id: 5,
-		name: "GHG emissions: Total",
-		unit: "kg CO2 eq",
-	});
-	assert.equal(ghg.unit, "Mt CO\u2082-eq");
-	assert.equal(formatValue(-3.2e9 * ghg.factor, ghg.unit), "\u22123.2");
-	assert.equal(formatValue(6655.4, ghg.unit), "6,660");
-	assert.equal(formatValue(-0.0000616, ghg.unit), "\u22120.0000616");
-	const ores = displayIndicator({
-		id: 7,
-		name: "Domestic Extraction Used - Metal Ores - Total",
-		unit: "kt",
-	});
-	assert.deepEqual([ores.short, ores.unit, ores.factor], ["Metal ore extraction", "Mt", 1e-3]);
-	// an unknown unit passes through unscaled, in compact notation
-	const other = displayIndicator({ id: 9, name: "Water", unit: "Mm3" });
-	assert.deepEqual([other.short, other.unit, other.factor], ["Water", "Mm3", 1]);
-	assert.equal(formatValue(-3.2e9, other.unit), "\u22123.2B");
-});
-
-test("the headline names the change, its share and the baseline total", () => {
-	const text = headline(displayIndicator({ name: "Employment: Total", unit: "1000 p" }), -18800, 5e6);
-	assert.match(text, /change in employment is \u221218,800 persons/);
-	assert.match(text, /\u22120\.38% of the baseline total of 5,000,000 persons/);
-	assert.match(headline({ name: "X", unit: "kt", factor: 1 }, 5, 0), /: — of/);
 });
 
 test("a shipped data file is real engine output, never synthetic", () => {
