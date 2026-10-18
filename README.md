@@ -1,5 +1,7 @@
 # RaMa-Scene Explorer
 
+[![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
+
 A static, map-first page over **precomputed** RaMa-Scene engine output on the
 EXIOBASE 2011 base year. It shows where a country's consumption causes
 greenhouse-gas emissions, jobs and metal-ore extraction, split by 15 industry

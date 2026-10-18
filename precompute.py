@@ -1203,6 +1203,11 @@ def reference_validation(Y, B, L):
         selection["dimType"] = LEGACY_VOCABULARY[selection["dimType"]]
         selection["vizType"] = LEGACY_VOCABULARY[selection["vizType"]]
         got = run_route(selection, Y, B, L)
+        # The Octave files print 8 significant digits (104112220000, 300449.98), so
+        # their own rounding is at most 5e-8 relative. 1e-6 keeps a 20x margin over
+        # that for the gap between Octave's solve and the engine's, which the files
+        # cannot show below their 8 digits. The page's own 1e-9 checks are against
+        # B·L·ΣY, not these files.
         mismatches = [k for k, v in expected.items() if not math.isclose(got.get(k, math.nan), v, rel_tol=1e-6)]
         files[filename] = {"values": len(expected), "mismatches": len(mismatches)}
     return {"passed": all(f["mismatches"] == 0 for f in files.values()), "tolerance": "relative 1e-6", "files": files}
