@@ -9,6 +9,7 @@ repos:
       - id: check-json
       - id: check-toml
       - id: check-yaml
+        args: [--allow-multiple-documents]  # pnpm 12 writes its own pin as a first document in pnpm-lock.yaml
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
