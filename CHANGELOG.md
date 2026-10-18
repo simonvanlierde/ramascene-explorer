@@ -26,10 +26,10 @@ First release.
   a sortable table, and the method with every check.
 - A phone layout with the selection in a bottom sheet.
 - The embodied flows for every run as one Parquet file (the `data-2011`
-  release asset), read in the browser by HTTP range request: about 0.7 MB of
+  release asset), read in the browser by HTTP range request: under 1 MB of
   51.5 MB on first load, about 0.33 MB per further run.
 - The whole view in the query string, so every view can be shared. Links of
-  the form `?scenario=&indicator=&region=` still work.
+  the form `?scenario=&indicator=&region=` still open their run.
 
 [Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/simonvanlierde/ramascene-explorer/releases/tag/v0.1.0

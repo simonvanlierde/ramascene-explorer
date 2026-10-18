@@ -1,7 +1,8 @@
 name: pages
 
 # Manual only: nothing publishes on push. Builds the page with Vite and ships
-# dist/: the bundled page and fonts, the map geometry and the four data files.
+# dist/: the bundled page and fonts, the map geometry, results.json and the
+# embodied flows (from the data-2011 release, checked against their SHA-256).
 # Refuses to ship without real precompute output.
 
 on:

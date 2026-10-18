@@ -13,7 +13,8 @@ It shows one question at a time:
   the selection. A click isolates one section, further clicks add or remove.
   Every number on the page follows the selection, in both modes.
 - **What if… .** The bands keep their 2011 width and take the run's % change
-  on a square-root scale fitted to the run (98% of flows inside). A scrubber
+  on a square-root scale fitted to the flows on screen (90% of the larger
+  flows fall inside; the rest take the end colour). A scrubber
   runs from the 2011 baseline to the run and replays on every switch; the
   strip shows the change released in each of the five continents.
 - **Details.** A Sankey (released in → industry → consumed in), the same
@@ -21,7 +22,8 @@ It shows one question at a time:
 
 The selection lives in the query string (`mode`, `scenario`, `indicator`,
 `region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
-links from the first version (`?scenario=&indicator=&region=`) still land.
+links from the first version (`?scenario=&indicator=&region=`) still open
+their run.
 The five "Rest of …" regions merge their Natural Earth countries (see
 `REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
 

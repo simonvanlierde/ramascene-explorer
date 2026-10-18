@@ -21,8 +21,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       hyparquet:
-        specifier: ^1.31.4
-        version: 1.31.4
+        specifier: 1.31.3
+        version: 1.31.3
       topojson-client:
         specifier: ^3.1.0
         version: 3.1.0
@@ -330,8 +330,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  hyparquet@1.31.4:
-    resolution: {integrity: sha512-Qe37Nhu1lLvmnSL9bQuY/CN8suLDoNMPNhrTb6+ZXJDfiy1mHHRjkoVYIYPhf0krYpRdAxMMnuEWEHeSUCe40g==}
+  hyparquet@1.31.3:
+    resolution: {integrity: sha512-qThDJfCrTClFdaIQuQTtFOGp33bkbOyk+y1NrwcC8YZjvr5wxjNdKz7/PUF3xfNd7ZKLsYW+fY6N8dInjjMWJg==}
 
   internmap@2.0.3:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
@@ -706,7 +706,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  hyparquet@1.31.4: {}
+  hyparquet@1.31.3: {}
 
   internmap@2.0.3: {}
 

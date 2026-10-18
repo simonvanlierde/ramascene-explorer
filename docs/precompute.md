@@ -9,6 +9,9 @@ engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`. The Zenodo record
 ships only `_v4` files, and `v4` is the file suffix, not the dataset version.
 The matrices are float64.
 
+`ENGINE_DIR` is a git checkout of the engine at the commit named below, and
+`DATASETS_DIR` holds the Zenodo `_v4.npy` files.
+
 ```sh
 # the command data/results.json records, verbatim
 uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
@@ -30,9 +33,10 @@ value in the three JSON files exactly as it was (`compare_data.py`, largest
 relative difference 0).
 
 Each file's `provenance` block records the engine commit, the dataset
-checksums, the command and the run time. The blocks are identical, and the
-Parquet footer carries the same one. It
-also records the engine repository, branch and commit (`provenance.engine`,
+checksums, the command and the run time. The blocks are identical apart from
+each file's own run timings and peak memory, and the Parquet footer carries
+the same one. They also record the engine repository, branch and commit
+(`provenance.engine`,
 with `label` such as `split/3-performance @ d9113ca`, and `pull_request` when
 `--engine-pr` is given).
 
@@ -61,8 +65,8 @@ the final-demand scenario used the stored `L`. No run factorized `(I − A)`.
 ## Memory
 
 `--run` is required because each technical-coefficient scenario works on a
-dense 9800 × 9800 matrix. In the shipped run that took about 1.65 GB
-(1.54 GiB) at peak per worker. The engine memory-maps `L` and maps `A`
+dense 9800 × 9800 matrix. In the shipped run that took about 1.64 GB
+(1.53 GiB) at peak per worker. The engine memory-maps `L` and maps `A`
 copy-on-write, so much of that peak is file pages that the workers share
 through the page cache, which each worker's RSS still counts. Each scenario
 runs in a fresh worker process (`precompute.py --worker`, one at a time). Its

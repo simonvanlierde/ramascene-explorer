@@ -8,10 +8,11 @@ interventions and a grid of 150 material-efficiency scenarios. Nothing here is
 a live calculation, and nothing is a forecast. The engine changes final demand
 or technical coefficients in the 2011 economy and has no projection step.
 
-`data/results.json` and `data/embodied.parquet` (with the detail sidecars
-`data/regions.json` and `data/flows.json`) come from one precompute run on
-2026-10-14, with engine `split/3-performance @ d9113ca`, the head of
+`data/results.json` and `data/embodied.parquet` come from one precompute run
+on 2026-10-14, with engine `split/3-performance @ d9113ca`, the head of
 [CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
+The same run wrote `data/regions.json` and `data/flows.json`, detail files the
+precompute checks against; the page does not read them.
 The Parquet file is too large for git and ships as a release asset (see
 [docs/precompute.md](docs/precompute.md#embodied-flows)). Nothing else in the
 repository is a result. `tests/fixture.json` and
@@ -21,9 +22,15 @@ whose `data_kind` is not `exiobase-v3`.
 
 ## View
 
-The page is Svelte 5, built with Vite. Install once with `pnpm install` and
-fetch the flows with
-`gh release download data-2011 --pattern embodied.parquet --dir data`, then:
+The page is Svelte 5, built with Vite. It needs Node 24 and pnpm. Install once with
+`pnpm install`, and fetch the flows from the release (or with
+`gh release download data-2011 --pattern embodied.parquet --dir data`):
+
+```sh
+curl -L -o data/embodied.parquet https://github.com/simonvanlierde/ramascene-explorer/releases/download/data-2011/embodied.parquet
+```
+
+Then:
 
 ```sh
 pnpm dev        # dev server with live reload, on http://localhost:5173/
@@ -42,7 +49,7 @@ string, so you can share a view by its URL.
 uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
 node --test                            # the page logic (after pnpm install)
-pnpm exec playwright test              # the built page in a browser, with axe
+pnpm exec playwright test              # the built page in a browser, with axe (once: pnpm exec playwright install chromium)
 ```
 
 Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its
