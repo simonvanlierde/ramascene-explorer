@@ -143,6 +143,15 @@ MB). The footer's `ramascene` key holds JSON: country and section names, the
 continental aggregates, units, the run ids in row-group order, the checks and
 the same provenance as the other files.
 
+`results.json` records the file under `provenance.embodied`: its name, size in
+bytes and SHA-256, taken after the Parquet file is written. The page passes the
+size to its Parquet reader, which can then read the footer straight away
+instead of first sending a HEAD request to learn the size. The footer itself
+does not carry this record. `compare_data.py` skips it with the rest of the
+provenance. `tests/make_fixture_embodied.py` writes the same record for
+`tests/fixture-embodied.parquet` into `tests/fixture.json`, and
+`tests/test_embodied.py` checks that both records match their files.
+
 Nothing is written unless:
 
 - for every run, the flows summed by producer and continental aggregate match

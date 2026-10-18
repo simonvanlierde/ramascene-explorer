@@ -538,6 +538,11 @@
    },
    "octave_reference_files": 0,
    "octave_reference_values": 0
+  },
+  "embodied": {
+   "file": "fixture-embodied.parquet",
+   "bytes": 111985,
+   "sha256": "ed1e66d7be929562c81c6860dd43f620093a8e077ab408022b5bfdcbbdc47ff1"
   }
  },
  "failed": [

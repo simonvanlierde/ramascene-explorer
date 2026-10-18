@@ -6,6 +6,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The map draws one round trip sooner: `results.json` now records the size and
+  SHA-256 of `embodied.parquet` (`provenance.embodied`), so the page reads the
+  Parquet footer without first asking the server for the file size.
+
 ## [0.1.0] - 2026-10-18
 
 First release.

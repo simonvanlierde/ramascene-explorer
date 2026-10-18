@@ -24123,6 +24123,11 @@
    "octave_reference_values": 122
   },
   "parent_peak_rss_bytes": 879128576,
-  "peak_rss_bytes": 1640796160
+  "peak_rss_bytes": 1640796160,
+  "embodied": {
+   "file": "embodied.parquet",
+   "bytes": 51506455,
+   "sha256": "806ca8addc662ea608fb4e5c834b5f1432eb0fe51108435958061fa262fd027e"
+  }
  }
 }

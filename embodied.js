@@ -34,12 +34,19 @@ export async function openEmbodied(file) {
 	return { file, metadata, meta, groups };
 }
 
-export async function openEmbodiedUrl(url) {
+// byteLength (results.json's provenance.embodied.bytes) saves the HEAD request
+// that would otherwise learn the size before the footer can be read.
+export async function openEmbodiedUrl(url, byteLength) {
 	// No slice cache: the page keeps each decoded run, and a cache would keep a
 	// failed request too, so "pick it again" could never succeed. no-cache
 	// revalidates, so a redeploy never mixes old row groups with a new footer.
-	const file = await asyncBufferFromUrl({ url, requestInit: { cache: "no-cache" } });
-	return openEmbodied(file);
+	const open = async (n) =>
+		openEmbodied(await asyncBufferFromUrl({ url, byteLength: n, requestInit: { cache: "no-cache" } }));
+	if (byteLength === undefined) return open();
+	// A size smaller than the file (results.json and the Parquet file from
+	// different runs) finds no footer; the server's own size then lets the page
+	// tell a mismatched file from a missing one.
+	return open(byteLength).catch(() => open());
 }
 
 // Index into a dense run: indicator (position in meta.indicators), producer,

@@ -43,7 +43,7 @@ async function load() {
 		document.body.classList.add("synthetic");
 	}
 	try {
-		src = await openEmbodiedUrl(embodiedUrl(dataPath));
+		src = await openEmbodiedUrl(embodiedUrl(dataPath), data.provenance?.embodied?.bytes);
 	} catch {
 		flowsError = "missing";
 		return;

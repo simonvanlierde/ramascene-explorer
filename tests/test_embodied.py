@@ -6,6 +6,8 @@ the embodied call of the real adapter: each product is its own section.
 
 import json
 import math
+import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -172,3 +174,49 @@ def test_shipped_flows_come_from_the_same_run_and_reconcile_with_results():
             want = np.array([by_region[r] - (0 if name == "baseline" else base[i][r]) for r in regions])
             # float32 values: within relative 1e-6 of the run's total (or total change)
             assert np.abs(got - want).max() <= 1e-6 * abs(want.sum()), (name, i)
+
+
+def test_cli_records_the_parquet_files_size_and_hash_in_results(tmp_path, monkeypatch):
+    from tests.test_precompute import INDICATOR_META, PROVENANCE, git_repo
+
+    engine_dir, out, parquet = git_repo(tmp_path / "engine"), tmp_path / "data" / "results.json", tmp_path / "e.pq"
+    names = ["Sector one", "Sector two"]
+    qm = types.SimpleNamespace(get_names_product=lambda sectors: names)
+    monkeypatch.setitem(sys.modules, "ramascene", types.SimpleNamespace(querymanagement=qm))
+    monkeypatch.setitem(sys.modules, "ramascene.querymanagement", qm)
+    monkeypatch.setattr(precompute, "setup_django", lambda *a: None)
+    monkeypatch.setattr(precompute, "real_engine", lambda *a: embodied_engine())
+    monkeypatch.setattr(precompute, "INDICATORS", INDICATORS)
+    monkeypatch.setattr(precompute, "indicator_meta", lambda i: INDICATOR_META)
+    monkeypatch.setattr(
+        precompute,
+        "country_meta",
+        lambda: [{"name": n, "code": n, "index": k, "aggregate": f"R{k + 1}"} for k, n in enumerate(["C1", "C2"])],
+    )
+    monkeypatch.setattr(
+        precompute, "collect_provenance", lambda e, d, argv: {**PROVENANCE, "engine": precompute.engine_revision(e)}
+    )
+    argv = ["--run", "--engine", str(engine_dir), "--data", str(tmp_path), "--out", str(out)]
+    precompute.main([*argv, "--scenarios", "original", "--out-embodied", str(parquet)])
+    record = json.loads(out.read_text())["provenance"]["embodied"]
+    assert record == {"file": "e.pq", "bytes": parquet.stat().st_size, "sha256": precompute.sha256(parquet)}
+    # the footer's provenance is the run's, without the record of the file it sits in
+    meta = json.loads(pq.ParquetFile(parquet).metadata.metadata[b"ramascene"])
+    assert "embodied" not in meta["provenance"]
+
+
+@pytest.mark.parametrize(
+    ("results", "parquet"),
+    [
+        (Path(__file__).parent / "fixture.json", Path(__file__).parent / "fixture-embodied.parquet"),
+        (SHIPPED.parent / "results.json", SHIPPED),
+    ],
+    ids=["fixture", "shipped"],
+)
+def test_results_record_the_size_and_hash_of_their_parquet_file(results, parquet):
+    # the page reads the file with this size and skips the HEAD request; a
+    # regenerated Parquet file must come with an updated record
+    if not parquet.exists():
+        pytest.skip(f"no {parquet.name}")
+    record = json.loads(results.read_text())["provenance"]["embodied"]
+    assert record == {"file": parquet.name, "bytes": parquet.stat().st_size, "sha256": precompute.sha256(parquet)}

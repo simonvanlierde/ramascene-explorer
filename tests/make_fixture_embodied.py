@@ -6,6 +6,7 @@ Each consumer draws on itself and three other producers, through five random
 sections. Each run cuts a random share of every flow, except that the
 steel-europe runs touch only flows released in Europe, and
 cement-asia-pacific-20 raises the flows released in Asia-Pacific, so the page meets a mixed-sign run.
+It also records the file's size and SHA-256 in tests/fixture.json (provenance.embodied).
 Run: uv run python -m tests.make_fixture_embodied
 """
 
@@ -96,9 +97,13 @@ def main():
         "value_type": "float32; value x scale is in the indicator's unit",
         "runs": runs,
         "checks": {},
-        "provenance": fixture["provenance"],
+        # provenance.embodied describes this file, so it cannot be inside it
+        "provenance": {k: v for k, v in fixture["provenance"].items() if k != "embodied"},
     }
-    precompute.write_embodied(HERE / "fixture-embodied.parquet", flows, ids, meta)
+    path = HERE / "fixture-embodied.parquet"
+    precompute.write_embodied(path, flows, ids, meta)
+    fixture["provenance"]["embodied"] = precompute.file_record(path)
+    (HERE / "fixture.json").write_text(json.dumps(fixture, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 if __name__ == "__main__":
