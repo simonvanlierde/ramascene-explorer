@@ -9,38 +9,15 @@ import {
 	formatValue,
 	headline,
 	ignoredData,
-	niceTicks,
-	parseState,
 	sameRun,
-	stateToSearch,
 } from "../explorer.js";
 
 // The committed synthetic fixture, shaped like precompute.py output.
 const data = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
-const [first, second] = data.scenarios.slice(1).map((s) => s.id);
+const [first] = data.scenarios.slice(1).map((s) => s.id);
 
 test("the fixture is marked synthetic", () => {
 	assert.equal(data.data_kind, "synthetic");
-});
-
-test("a selection survives the URL round trip", () => {
-	const state = { scenario: second, indicator: "3" };
-	assert.deepEqual(parseState(stateToSearch(state, ""), data), state);
-});
-
-test("changing the selection keeps the other query parameters", () => {
-	const search = stateToSearch({ scenario: second, indicator: "3" }, "?data=tests/fixture.json&scenario=x");
-	const params = new URLSearchParams(search);
-	assert.equal(params.get("data"), "tests/fixture.json");
-	assert.equal(params.get("scenario"), second);
-});
-
-test("missing or unknown selections fall back to the first intervention and indicator", () => {
-	const fallback = { scenario: first, indicator: "5" };
-	assert.deepEqual(parseState("", data), fallback);
-	assert.deepEqual(parseState("?scenario=nope&indicator=99", data), fallback);
-	// baseline against itself is not a comparison
-	assert.deepEqual(parseState("?scenario=baseline", data), fallback);
 });
 
 test("data defaults to the shipped file and accepts only same-site relative JSON paths", () => {
@@ -98,28 +75,6 @@ test("a zero baseline gives no percentage rather than Infinity", () => {
 		results: { baseline: { 1: { X: 0 } }, s: { 1: { X: 2 } } },
 	};
 	assert.equal(compare(d, { scenario: "s", indicator: "1" })[0].percent, null);
-});
-
-test("axis ticks are round, include zero and cover the data", () => {
-	for (const [min, max] of [
-		[-3.2e9, 0],
-		[0, 17],
-		[-40, 115],
-		[-0.0042, 0.0007],
-		[0, 0],
-	]) {
-		const ticks = niceTicks(min, max);
-		assert.ok(ticks.includes(0), `${min},${max}: ${ticks}`);
-		assert.ok(ticks[0] <= min && ticks.at(-1) >= max, `${min},${max}: ${ticks}`);
-		assert.ok(ticks.length >= 2 && ticks.length <= 7, `${min},${max}: ${ticks}`);
-		const step = ticks[1] - ticks[0];
-		const mantissa = step / 10 ** Math.floor(Math.log10(step));
-		assert.ok(
-			[1, 2, 5].some((m) => Math.abs(mantissa - m) < 1e-9),
-			`step ${step}`,
-		);
-	}
-	assert.deepEqual(niceTicks(-40, 115), [-50, 0, 50, 100, 150]);
 });
 
 test("values never print in exponent notation", () => {
@@ -181,25 +136,11 @@ test("a shipped data file is real engine output, never synthetic", () => {
 
 // --- material-efficiency grid --------------------------------------------------
 
-import { gridScenarioId, lookupGrid, pickerState, runSummary, scenarioMenu } from "../explorer.js";
+import { gridScenarioId, lookupGrid, pickerState, runSummary } from "../explorer.js";
 
 test("grid ids are product-region-cut with the cut unsigned", () => {
 	assert.equal(gridScenarioId("steel", "europe", -10), "steel-europe-10");
 	assert.equal(gridScenarioId("cement", "asia-pacific", 50), "cement-asia-pacific-50");
-});
-
-test("the scenario menu lists the originals, then one entry per grid product that has a published cell", () => {
-	const menu = scenarioMenu(data);
-	assert.deepEqual(
-		menu.interventions.map((o) => o.value),
-		["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"],
-	);
-	assert.deepEqual(
-		menu.grid.map((o) => o.value),
-		["grid:steel", "grid:cement"],
-	); // no published plastics/aluminium/electrical cell in the fixture
-	assert.equal(menu.grid[0].label, "Basic iron and steel");
-	assert.deepEqual(scenarioMenu({ scenarios: data.scenarios.slice(0, 2) }).grid, []);
 });
 
 test("a grid scenario sets all three pickers; an original keeps the grid defaults", () => {

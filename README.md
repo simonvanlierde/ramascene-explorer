@@ -1,10 +1,12 @@
 # RaMa-Scene scenario explorer
 
-A static page over **precomputed** RaMa-Scene engine output: a baseline, three
-interventions and a 150-cell material-efficiency grid on the EXIOBASE 2011 base
-year, three indicators, broken down by the region where the impact occurs. Nothing here is a live calculation, and
-nothing is a forecast: the engine changes final demand or technical
-coefficients in the 2011 economy and has no projection step.
+A static, map-first page over **precomputed** RaMa-Scene engine output on the
+EXIOBASE 2011 base year: where a country's consumption causes greenhouse-gas
+emissions, jobs and metal-ore extraction, split by 15 industry sections, and
+what one intervention (three named ones and a 150-cell material-efficiency
+grid) would have changed. Nothing here is a live calculation, and nothing is a
+forecast: the engine changes final demand or technical coefficients in the
+2011 economy and has no projection step.
 
 `data/results.json`, `data/regions.json`, `data/flows.json` and
 `data/embodied.parquet` are the output of one precompute run (engine
@@ -150,38 +152,41 @@ marked `data_kind: exiobase-v3`. Beside the JSON the script writes
 `data/run-log.md`: engine, date, Octave reference count, per-scenario wall
 time, peak RSS and check outcome.
 
-## World map
+## The page
 
-Below the bar chart, a choropleth colours each country by the change in its
-EXIOBASE region, as a percentage of that region's own baseline (diverging
-blue/red around a grey "within ±E/20" class, E a round number at or above the
-largest change). `data/regions.json` carries the 49-region breakdown
-(`--out-regions`) of the baseline and the three original interventions,
-computed inside the same worker as their continental values. A grid cell has
-none (it would multiply the sidecars by 50) and falls back
-to the five continental aggregates of `results.json`, and the page says so.
-The five "Rest of …" regions are hatched: every country in one shares its
-value. Which countries each covers follows Natural Earth continents (see
+The page reads `data/results.json` (scenarios, continental totals, checks and
+provenance) and the embodied flows below. It shows one question at a time:
+
+- **Flows, 2011.** A sentence names the selected country's footprint (or what
+  it releases), with the country and the indicator as controls inside it. The
+  map draws the largest flows as tapered bands, thin where a flow leaves and
+  wide where it arrives, and fills each region by its flow with the selected
+  country. Flat (Equal Earth) or a globe.
+- **Industry rail.** One tab per section, its height the section's share of
+  the selection. A click isolates one section, further clicks add or remove.
+  Every number on the page follows the selection, in both modes.
+- **What if… .** The bands keep their 2011 width and take the run's % change
+  on a square-root scale fitted to the run (98% of flows inside). A scrubber
+  runs from the 2011 baseline to the run and replays on every switch; the
+  strip shows the change released in each of the five continents.
+- **Details.** A Sankey (released in → industry → consumed in), the same
+  flows as a sortable table, and the method with every check.
+
+The selection lives in the query string (`mode`, `scenario`, `indicator`,
+`region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
+links from the first version (`?scenario=&indicator=&region=`) still land.
+The five "Rest of …" regions merge their Natural Earth countries (see
 `REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
-`?region=<code>` highlights a region (click the map or use the picker).
 
-## Supply-chain Sankey
+## Detail sidecars
 
-`data/flows.json` (`--out-flows`) decomposes each original intervention's change by the
-sector whose production carries the impact and the region where it occurs:
-route three (Hotspot × Geographic, the same route as the map) run once per
-level-2 product aggregate (15 sectors, which partition the 200 products) over
-the 49 regions, intervention minus baseline. That gives 15 × 49 = 735 cells.
-The 12 cells with the largest |change| are named; every other cell is added
-to the flow between its sector (if named) or "Other sectors" and its region
-(if named) or "Other regions". Nothing is dropped, so the flows sum to the
-total change. precompute.py writes nothing unless the flows sum to the
-total (relative 1e-12), the sectors sum to each region's value, and each
-region matches B·L·ΣY (relative 1e-9). It is a production-side decomposition
-of where the change lands, not a structural path analysis through the tiers
-of the supply chain. "Animate from the baseline" animates the map and the
-bands from no change to the intervention (instant under
-`prefers-reduced-motion`).
+`data/regions.json` (`--out-regions`, the 49-region values of the baseline and
+the three original interventions) and `data/flows.json` (`--out-flows`, each
+original intervention's change by sector and region, 15 × 49 cells) are still
+written and checked by the precompute: the regions match B·L·ΣY (relative
+1e-9), the sectors sum to each region and the flows to the total (relative
+1e-12). The page no longer reads them: the embodied flows hold the same
+breakdowns for every run and are checked against them.
 
 ## Embodied flows
 
@@ -199,7 +204,7 @@ published scenario, the flows embodied in final demand: what each producer
 country releases, per section, for the final demand of each consumer country.
 A flow is `B_i ∘ (L · Y)` summed over the products of one section, with one
 column of `Y` per consumer country. Sections are the 15 level-2 product
-aggregates of the engine database, as in the Sankey. Each scenario's flows come
+aggregates of the engine database. Each scenario's flows come
 from its own `Y` and `L`, in the same worker as its other results.
 
 The file is long format, one row group per run: `run`, `indicator` (global
@@ -228,8 +233,8 @@ Cells that rise in a scenario are counted and recorded, not refused. In the
 shipped run none rose, the largest difference in the first two checks was
 9.2e-16, and the float32 error was 2.6e-8.
 
-`fonts/` holds Barlow and Barlow Semi Condensed (SIL Open Font License 1.1,
-`fonts/OFL.txt`), the latin subset as Google Fonts serves it, self-hosted so
+The fonts are Public Sans and Spectral (SIL Open Font License 1.1), latin
+subset, from the `@fontsource` packages. Vite bundles them into `dist/`, so
 the page loads nothing from a third party.
 
 `geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
@@ -257,9 +262,11 @@ node --test                                             # the page logic
 | `tests/test_solver.py` | `apply_model` passes no solver argument; each run records the class of its `L`, counted in the provenance and named in the run log with the pull request |
 | `tests/test_compare.py` | `compare_data.py`: tolerance, reported worst value, structure and label mismatches, CLI exit code |
 | `tests/test_engine_plumbing.py` | the real engine adapter (ids, labels, region leaves, route three against B·L·ΣY), only with `--engine` |
-| `tests/explorer.test.js` | URL state, `?data=` whitelist, banner, per-region comparison, axis ticks, number format, grid menu and pickers, run summary |
-| `tests/map.test.js` | the 49-region table over the five aggregates, country-to-region mapping, Equal Earth projection, aggregate fallback, colour classes, `?region=` round trip |
-| `tests/sankey.test.js` | links and nodes reconcile to the total change, node order and height, the replay tween, sector labels |
+| `tests/embodied.test.js` | reading the Parquet: one row group per run, dense decoding, one run fetches only its own bytes; with `data/embodied.parquet`, producer sums match `regions.json` |
+| `tests/flows.test.js` | a selection's sums in both directions and per section, the fitted change scale, bands that taper along the flow, the Sankey carrying the whole selection, run wording, units, the query string (old links included); with the real data, the five continents match `results.json` |
+| `tests/explorer.test.js` | `?data=` whitelist, banner, run matching, per-region comparison and number format for the live panel, grid pickers, run summary |
+| `tests/map.test.js` | the 49-region table over the five aggregates, country-to-region mapping |
+| `tests/e2e/page.spec.js` | the built page in a browser: map, sentence, rail, country box, What if…, Details, URL state, axe WCAG 2.2 AA (light, dark, phone) |
 | `tests/live.test.js` | `?api=` origin rules, the job request body, a live result against its own job's baseline, live provenance, polling, the page unchanged without `?api=` |
 
 Write `--engine=PATH` with the `=`: pytest otherwise takes the path as its root
@@ -275,10 +282,12 @@ pnpm build      # static site in dist/, with relative paths
 pnpm preview    # serves dist/ on http://127.0.0.1:4180/
 ```
 
-Open `?scenario=steel-in-vehicles-europe&indicator=5` or
-`?scenario=steel-europe-20&indicator=7`.
-Add `data=tests/fixture.json` to see the page on the synthetic fixture. The
-dev server and the preview serve it; the build leaves it out.
+Open `?mode=whatif&scenario=steel-in-vehicles-europe` or
+`?region=CN&dir=out&indicator=7&sections=2`.
+Add `data=tests/fixture.json` to see the page on the synthetic fixture (its
+flows are `tests/fixture-embodied.parquet`, written by
+`uv run python -m tests.make_fixture_embodied`). The dev server and the
+preview serve both; the build leaves them out.
 `dist/` works from any static server and under any subpath. The
 selection lives in the query string, so a view is shareable. GHG emissions
 and metal-ore extraction are shown in megatonnes (the data holds kg CO2 eq
@@ -294,8 +303,8 @@ result is compared with the baseline computed in the same job and labelled
 commit, dataset, the job's duration and peak memory.
 
 Without `?api=` nothing changes: the panel is not there, its code is not loaded
-and the page fetches only its own files (`data/*.json`, the map
-geometry and the fonts), so the static build stays static. The
+and the page fetches only its own files (`data/results.json`,
+`data/embodied.parquet`, the map geometry and the fonts), so the static build stays static. The
 parameter accepts a bare origin, `http://` only on loopback (a local run or an
 SSH tunnel) and `https://` otherwise; anything else is ignored and reported in
 the status line.
@@ -330,16 +339,17 @@ Font License 1.1; Natural Earth, public domain).
 
 `.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `node --test`,
 `pnpm build` and `pnpm exec playwright test` on every push and pull request. None needs the
-dataset: the engine checks skip without `--engine`, the page tests read
-`tests/fixture.json`, and the browser tests load the built page over the fixture and
-the committed results, in light, dark and phone layouts, with axe checking
-WCAG 2.2 AA. `hygiene.yml` runs the
+dataset: the engine checks skip without `--engine`, the page tests read the
+synthetic fixtures, and the browser tests load the built page over the fixtures and
+the shipped results (the browser job downloads `embodied.parquet` from the
+release and checks its SHA-256), in light, dark and phone layouts, with axe
+checking WCAG 2.2 AA. `hygiene.yml` runs the
 git hooks in `.pre-commit-config.yaml` and reviews new dependencies on pull
 requests.
 
 `pages.yml` publishes to GitHub Pages only when started by hand (Actions →
 pages → Run workflow). It runs `pnpm build` and ships `dist/`: the bundled
-page and fonts, the map geometry and the three data files, and nothing else. It stops if `data/results.json` is
+page and fonts, the map geometry, `results.json` and `embodied.parquet`, and nothing else. It stops if `data/results.json` is
 missing or isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can
 never go out. Commit the precompute output first, and set the repository's
 Pages source to GitHub Actions.

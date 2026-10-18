@@ -1,4 +1,5 @@
-// Pure logic for the page: data location, URL state, banner, comparison, axis.
+// Pure logic for the page: data location, banner, run matching, units and
+// number formats, the grid pickers, and the comparison the live panel uses.
 
 const DEFAULT_DATA = "data/results.json";
 // Relative path segments of word characters, dots and dashes, ending in .json.
@@ -13,24 +14,6 @@ export function dataUrl(search) {
 export function ignoredData(search) {
 	const path = new URLSearchParams(search).get("data");
 	return path !== null && dataUrl(search) !== path ? path : null;
-}
-
-export function parseState(search, data) {
-	const params = new URLSearchParams(search);
-	const interventions = data.scenarios.map((s) => s.id).filter((id) => id !== "baseline");
-	const indicators = data.indicators.map((i) => String(i.id));
-	const scenario = params.get("scenario");
-	const indicator = params.get("indicator");
-	return {
-		scenario: interventions.includes(scenario) ? scenario : interventions[0],
-		indicator: indicators.includes(indicator) ? indicator : indicators[0],
-	};
-}
-
-export function stateToSearch(state, search) {
-	const params = new URLSearchParams(search);
-	for (const [k, v] of Object.entries(state)) params.set(k, v);
-	return `?${params}`;
 }
 
 // Fail safe: only an explicit "exiobase-v3" escapes the synthetic banner.
@@ -71,21 +54,6 @@ export function compare(data, state, factor = 1) {
 			};
 		})
 		.sort((a, b) => a.delta - b.delta);
-}
-
-// Round ticks (1, 2 or 5 x 10^k) spanning [min, max] and always 0.
-export function niceTicks(min, max, target = 4) {
-	const lo = Math.min(0, min);
-	const hi = Math.max(0, max);
-	if (lo === hi) return [0, 1];
-	const raw = (hi - lo) / target;
-	const power = 10 ** Math.floor(Math.log10(raw));
-	const step = [1, 2, 5, 10].find((m) => m * power >= raw) * power;
-	const ticks = [];
-	for (let i = Math.floor(lo / step); i <= Math.ceil(hi / step); i++) {
-		ticks.push(Number((i * step).toPrecision(12)) || 0);
-	}
-	return ticks;
 }
 
 // Display units: EXIOBASE reports GHG in kg CO2 eq, metal ores in kt and
@@ -144,18 +112,6 @@ export function headline(indicator, deltaTotal, baseTotal) {
 // --- material-efficiency grid --------------------------------------------------
 
 export const gridScenarioId = (product, region, cut) => `${product}-${region}-${Math.abs(cut)}`;
-
-// The scenario picker: the non-grid interventions, then one entry per grid
-// product (value "grid:<slug>"); region and cut are chosen separately.
-export function scenarioMenu(data) {
-	const published = data.scenarios.filter((s) => s.id !== "baseline");
-	return {
-		interventions: published.filter((s) => !s.grid).map((s) => ({ value: s.id, label: s.label })),
-		grid: (data.grid?.products ?? [])
-			.filter((p) => published.some((s) => s.grid?.product === p.slug))
-			.map((p) => ({ value: `grid:${p.slug}`, label: p.short })),
-	};
-}
 
 // The picker values that show a scenario: a grid cell gives its product,
 // region and cut; anything else gives the scenario itself and the first grid
