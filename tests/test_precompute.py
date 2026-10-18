@@ -447,7 +447,8 @@ def test_page_fixture_is_synthetic_and_shaped_like_real_output():
     doc = assembled()
     assert fixture["data_kind"] == "synthetic"
     assert set(fixture) == set(doc)
-    assert set(fixture["provenance"]) == set(doc["provenance"])
+    # main() adds provenance.embodied once it has written the Parquet file
+    assert set(fixture["provenance"]) == set(doc["provenance"]) | {"embodied"}
     assert set(fixture["provenance"]["dataset"]) == set(PROVENANCE["dataset"])
     assert set(fixture["checks"]) == set(doc["checks"])
     ids = [s["id"] for s in fixture["scenarios"]]

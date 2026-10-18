@@ -22,6 +22,13 @@ It shows one question at a time:
 - **Details.** A Sankey (released in → industry → consumed in), the same
   flows as a sortable table, and the method with every check.
 
+On load the page fetches `data/results.json`, then reads the Parquet footer
+by range request, using the size recorded in `provenance.embodied.bytes`.
+Without that record (an older `results.json`), or when no footer is found at
+that size, it sends a HEAD request first to ask the server for the size. Then
+it reads the baseline row group and draws the map. The default What if… run
+loads when the browser is idle. Each run is fetched once, on demand.
+
 The selection lives in the query string (`mode`, `scenario`, `indicator`,
 `region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
 links from the first version (`?scenario=&indicator=&region=`) still open

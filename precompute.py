@@ -38,7 +38,8 @@ dropped silently. data_kind is "exiobase-v3" only for output that passed.
 section x consumer country) for the baseline and every published scenario,
 computed in the same worker from the same Y and L, and written to one Parquet
 file with one row group per run. Nothing is written unless they reconcile with
-the run's own totals (embodied_of).
+the run's own totals (embodied_of). results.json then records that file's name,
+size and SHA-256 under provenance.embodied.
 """
 
 import argparse
@@ -1035,12 +1036,22 @@ def engine_revision(engine_dir):
     }
 
 
+def sha256(path):
+    with Path(path).open("rb") as f:
+        return hashlib.file_digest(f, "sha256").hexdigest()
+
+
+def file_record(path):
+    """Name, size in bytes and SHA-256 of a written file.
+
+    results.json carries it for the embodied flows: the page passes the size to
+    its Parquet reader, which then needs no HEAD request to learn it.
+    """
+    return {"file": path.name, "bytes": path.stat().st_size, "sha256": sha256(path)}
+
+
 def collect_provenance(engine_dir, data_dir, argv):
     import django
-
-    def sha256(path):
-        with Path(path).open("rb") as f:
-            return hashlib.file_digest(f, "sha256").hexdigest()
 
     return {
         "engine": engine_revision(engine_dir),
@@ -1424,14 +1435,16 @@ def main(argv=None):
 
             names = qm.get_names_product(SECTORS)
             embodied_meta = assemble_embodied(computed, indicators, country_meta(), names, provenance, peak)
-    for path, doc in {args.out: output, **sidecars}.items():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
+    # the Parquet file first: results.json records its size and hash
     if args.out_embodied:
         args.out_embodied.parent.mkdir(parents=True, exist_ok=True)
         write_embodied(args.out_embodied, computed["embodied"]["flows"], INDICATORS, embodied_meta)
+        output["provenance"]["embodied"] = file_record(args.out_embodied)
         rises = computed["embodied"]["checks"]["rises"]["runs"]
         print(f"{args.out_embodied}: {len(embodied_meta['runs'])} runs, {rises} with a rising cell")
+    for path, doc in {args.out: output, **sidecars}.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n")
     for path in sidecars:
         print(f"{path}: data_kind={sidecars[path]['data_kind']}, {len(sidecars[path]['scenarios'])} runs with detail")
     (args.out.parent / "run-log.md").write_text(run_log(output))
