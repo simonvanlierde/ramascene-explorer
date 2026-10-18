@@ -67,6 +67,7 @@ jobs:
           echo "806ca8addc662ea608fb4e5c834b5f1432eb0fe51108435958061fa262fd027e  data/embodied.parquet" | sha256sum --check
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome ci .
       - run: node --test
 
   browser:

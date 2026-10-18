@@ -99,7 +99,11 @@ test("a failed range read can be retried", async () => {
 	let fail = false;
 	const file = {
 		byteLength: inner.byteLength,
-		slice: (a, b) => (fail ? ((fail = false), Promise.reject(new Error("dropped"))) : inner.slice(a, b)),
+		slice(a, b) {
+			if (!fail) return inner.slice(a, b);
+			fail = false;
+			return Promise.reject(new Error("dropped"));
+		},
 	};
 	const src = await openEmbodied(file);
 	fail = true;
