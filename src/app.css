@@ -1577,11 +1577,15 @@ details.more summary {
   }
 }
 
+/* Reduced motion: nothing moves (panels, the sheet and the rail jump into
+   place), but colour and opacity still fade, so a change stays legible. The
+   replay, the globe turn and the band reveal skip to their end in script. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    transition: none !important;
+    transition-property: opacity, color, background-color, border-color, fill !important;
+    transition-duration: 0.2s !important;
     animation: none !important;
   }
 }

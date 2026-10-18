@@ -146,6 +146,30 @@ const labels = $derived.by(() => {
 	return out;
 });
 
+// --- the bands arriving --------------------------------------------------------------
+// Each new question in Flows reveals the bands along the flow: from the map's
+// edge onto the country when it consumes, out from it when it releases. A soft
+// radial mask does it, so the bands never have to be redrawn.
+let reveal = $state(1); // 0 hidden, 1 shown
+let revealFrame = 0;
+$effect(() => {
+	[ui.who, ui.dir, ui.indicator, ui.on, ui.mode];
+	if (ui.mode !== "flows" || reducedMotion()) return;
+	cancelAnimationFrame(revealFrame);
+	const t0 = performance.now();
+	const step = (now) => {
+		const p = Math.min(1, (now - t0) / 800);
+		reveal = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2; // cubic in-out: the sweep crosses the bands evenly
+		if (p < 1) revealFrame = requestAnimationFrame(step);
+	};
+	reveal = 0;
+	revealFrame = requestAnimationFrame(step);
+	return () => cancelAnimationFrame(revealFrame);
+});
+const reach = $derived(Math.hypot(view.w, view.h));
+// in: a hole that closes from the edge onto the country; out: a disc that grows from it
+const revealR = $derived(ui.dir === "in" ? (1 - reveal) * reach * 1.15 : reveal * reach * 1.15 + 1);
+
 // --- interaction ------------------------------------------------------------------
 let tween = 0;
 function animate(ms, stepFn) {
@@ -299,7 +323,18 @@ const unitShort = $derived(wording(ui.indicator).unit);
 					/>
 				{/each}
 			</g>
-			<g class="bands">
+			{#if reveal < 1}
+				<defs>
+					<radialGradient id="reveal-g" gradientUnits="userSpaceOnUse" cx={geom.B[0]} cy={geom.B[1]} r={revealR}>
+						<stop offset="0.8" stop-color={ui.dir === "in" ? "#000" : "#fff"} />
+						<stop offset="1" stop-color={ui.dir === "in" ? "#fff" : "#000"} />
+					</radialGradient>
+					<mask id="reveal" maskUnits="userSpaceOnUse" x="0" y="0" width={view.w} height={view.h}>
+						<rect width={view.w} height={view.h} fill="url(#reveal-g)" />
+					</mask>
+				</defs>
+			{/if}
+			<g class="bands" mask={reveal < 1 ? "url(#reveal)" : undefined}>
 				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} />{/each}
 			</g>
 			{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
