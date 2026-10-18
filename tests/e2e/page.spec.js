@@ -206,3 +206,92 @@ test("the page fetches nothing but its own files", async ({ page, baseURL }) => 
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	expect(elsewhere).toEqual([]);
 });
+
+// The shipped data again: each run is its own range request, so A can be slow.
+test("a fast run switch ends on the second run, and the slow first one never replaces it", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	await page.getByRole("button", { name: "What if…" }).click();
+	await openSelection(page);
+	await expect(page.getByRole("radio", { name: /Europe bought 20% fewer/i })).toHaveAttribute("aria-checked", "true");
+	await expect(page.locator("#headline")).toContainText("would have");
+	// every request made between the two clicks is A's: hold them until B is shown
+	let hold = false;
+	let release;
+	const gate = new Promise((resolve) => {
+		release = resolve;
+	});
+	let held = 0;
+	let aStarted;
+	const started = new Promise((resolve) => {
+		aStarted = resolve;
+	});
+	await page.route("**/*.parquet", async (route) => {
+		if (!hold) return route.continue();
+		held++;
+		aStarted();
+		await gate;
+		await route.continue();
+	});
+	hold = true;
+	await page.getByRole("radio", { name: /European car makers/i }).click();
+	await started;
+	hold = false;
+	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	const headline = page.locator("#headline");
+	await expect(headline).toContainText("builders everywhere used 20% less cement");
+	expect(held).toBeGreaterThan(0);
+	// let A's request finish and the page settle: B must stay
+	release();
+	await page.waitForTimeout(800);
+	await expect(headline).toContainText("builders everywhere used 20% less cement");
+	await expect(headline).not.toContainText("European car makers");
+	await expect(page.getByRole("radio", { name: /builders everywhere/i })).toHaveAttribute("aria-checked", "true");
+});
+
+test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apart", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	const heights = async (selector) => {
+		const boxes = await page.locator(`${selector}:visible`).evaluateAll((els) =>
+			els.map((e) => {
+				const r = e.getBoundingClientRect();
+				return { name: (e.textContent ?? "").trim().slice(0, 30), h: r.height, cy: r.top + r.height / 2 };
+			}),
+		);
+		expect(boxes.length, selector).toBeGreaterThan(0);
+		return boxes;
+	};
+	const tall = async (selector) => {
+		for (const b of await heights(selector)) expect(b.h, `${selector}: ${b.name}`).toBeGreaterThanOrEqual(44);
+	};
+	for (const s of [".dock .seg button", ".dock .filters", ".sel-chip button", ".mtr .seg button"]) await tall(s);
+	await page.locator(".dock .filters").click();
+	await expect(page.locator("#side")).toBeVisible();
+	const rail = await heights("#side .rail .t");
+	for (const [i, b] of rail.entries()) {
+		expect(b.h, `rail tab ${b.name}`).toBeGreaterThanOrEqual(36);
+		if (i > 0) expect(b.cy - rail[i - 1].cy, `centres ${rail[i - 1].name} / ${b.name}`).toBeGreaterThanOrEqual(44);
+	}
+	for (const s of ["#side .rail .all", "#side .seg button", "#side .run"]) await tall(s);
+});
+
+test("axe: the country popover, the globe and the Sankey and Method tabs", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	await page.getByRole("button", { name: /^Country:/ }).click();
+	await expect(page.getByRole("group", { name: "Choose a country" })).toBeVisible();
+	await expectNoAxeViolations(page);
+	await page.keyboard.press("Escape");
+	await page.goto(`${FIXTURE}&map=globe`);
+	await ready(page);
+	await expect(page.getByRole("button", { name: "Globe" })).toHaveAttribute("aria-pressed", "true");
+	await expectNoAxeViolations(page);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.locator("#tab-sankey")).toHaveAttribute("aria-selected", "true");
+	await expectNoAxeViolations(page);
+	await page.locator("#tab-method").click();
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expectNoAxeViolations(page);
+});

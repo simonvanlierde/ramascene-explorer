@@ -30,10 +30,5 @@ docs/publishing.md.
   unit from `meta.indicators` instead.
 - Code: the interface colours `--self` and `--acc` repeat `SELF` and `BAND`
   in flows.js; keep one source.
-- Tests: a browser test for a fast run switch (A then B, A slow), phone touch
-  targets of 44 px, and axe on the popovers, the globe and the Sankey tab.
-- Tests: pin `fitExtent` with a hand-built selection.
-- CI: keep the release asset's SHA-256 in one file used by both workflows;
-  pin the exact pnpm version.
 - Precompute: decide whether `--out-regions` and `--out-flows` are still
   worth writing now that the page reads only the embodied flows.
