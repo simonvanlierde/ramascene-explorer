@@ -78,6 +78,9 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	await page.getByRole("button", { name: /^Details for/ }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog.locator(".sk .lk").first()).toBeVisible();
+	// the panel is modal: Tab cycles inside it, never onto what it covers
+	for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
+	expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")))).toBe(true);
 	await page.locator("#tab-table").click();
 	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
 	await expect(page).toHaveURL(/panel=table/);

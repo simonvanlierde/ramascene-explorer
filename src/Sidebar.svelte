@@ -5,7 +5,7 @@ import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-let { data, meta, sum, whatif, loadingRun, setMode, setRun, sheet = false, onclose } = $props();
+let { data, meta, sum, whatif, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
 
 let done = $state();
 // a phone opens the panel as a sheet: focus its Done button
@@ -72,6 +72,7 @@ const directionHint = $derived(
 	class="side"
 	class:open={sheet}
 	id="side"
+	{inert}
 	aria-label="Selection"
 	onkeydown={(e) => sheet && e.key === "Escape" && (e.stopPropagation(), onclose())}
 >

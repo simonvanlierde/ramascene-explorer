@@ -217,7 +217,14 @@ function move(e) {
 	if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
 	drag.x = e.clientX;
 	drag.y = e.clientY;
-	rot = [rot[0] + dx * 0.35, Math.max(-60, Math.min(60, rot[1] - dy * 0.35))];
+	drag.dx = (drag.dx ?? 0) + dx;
+	drag.dy = (drag.dy ?? 0) + dy;
+	// pointer events come faster than frames: re-project once per frame
+	drag.frame ||= requestAnimationFrame(() => {
+		if (!drag) return;
+		rot = [rot[0] + drag.dx * 0.35, Math.max(-60, Math.min(60, rot[1] - drag.dy * 0.35))];
+		drag.dx = drag.dy = drag.frame = 0;
+	});
 }
 const up = () => setTimeout(() => (drag = null));
 

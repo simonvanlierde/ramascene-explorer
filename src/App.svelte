@@ -190,14 +190,14 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} />
-		<main class="main" id="app" tabindex="-1">
+		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} inert={ui.panel !== null} />
+		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {run} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
 		</main>
 		<Details {data} {meta} {sum} {whatif} {run} />
-		<nav class="dock" aria-label="Mode and selection">
+		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
 			<div class="seg big" role="group" aria-label="Mode">
 				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>
 				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>

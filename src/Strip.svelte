@@ -49,9 +49,9 @@ const fill = $derived(divFill(extent));
 			{@const p = c.base ? (v / c.base) * 100 : 0}
 			{@const a = amount(v, ui.indicator)}
 			<div class="kpi">
-				<div class="kl"><span class="sw" style="background:{fill(p)}"></span>{ui.dir === "in" ? "Released in" : "Consumed in"} {c.name.replace("-", " ")}</div>
+				<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span class="pre">{ui.dir === "in" ? "Released in" : "Consumed in"}&nbsp;</span>{c.name.replace("-", " ")}</div>
 				<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<small>{a[1]}</small></div>
-				<div class="ks">{c.base ? `${pct(p)} of the 2011 flow` : "no 2011 flow"}</div>
+				<div class="ks">{c.base ? `${pct(p)} of 2011` : "no 2011 flow"}</div>
 			</div>
 		{/each}
 	</div>

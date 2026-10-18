@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // The tests run against the built site, served by vite preview (which also
-// serves the synthetic fixture the build leaves out). Both colour schemes run,
-// since the palette is redefined for dark mode and contrast is checked in each.
+// serves the synthetic fixtures the build leaves out). The page has one light
+// palette; the dark project checks that a dark-preferring browser still gets it
+// with full contrast.
 export default defineConfig({
 	testDir: "tests/e2e",
 	forbidOnly: !!process.env.CI,

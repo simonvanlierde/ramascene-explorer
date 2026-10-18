@@ -6,8 +6,8 @@
 import { asyncBufferFromUrl, cachedAsyncBuffer, parquetMetadataAsync, parquetRead } from "hyparquet";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
-// The footer is about 10 kB; 128 kB gets it in one request without pulling
-// in much of the last run.
+// The footer is about 90 kB (run names, countries, checks, provenance);
+// 128 kB gets it in one request without pulling in much of the last run.
 const INITIAL_FETCH = 128 * 1024;
 
 // The embodied-flows file next to a results document: results.json →

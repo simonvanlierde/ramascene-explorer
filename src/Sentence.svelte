@@ -31,8 +31,12 @@ const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "")
 const opts = { duration: 450, easing: cubicOut };
 const tTotal = new Tween(0, opts);
 const tShare = new Tween(0, opts);
+// a new indicator or direction is a new quantity: jump, never blend two units
+let quantity = "";
 $effect(() => {
-	const instant = whatif || reducedMotion();
+	const q = `${ui.indicator}|${ui.dir}`;
+	const instant = whatif || reducedMotion() || q !== quantity;
+	quantity = q;
 	tTotal.set(sum.total + dTot, instant ? { duration: 0 } : undefined);
 	tShare.set(abroad, instant ? { duration: 0 } : undefined);
 });
@@ -61,7 +65,9 @@ function openPop(kind, e) {
 	pop = pop === kind ? null : kind;
 	if (pop)
 		queueMicrotask(() =>
-			document.querySelector(`.pop.${kind} [aria-pressed="true"], .pop.${kind} button`)?.focus(),
+			(
+				document.querySelector(`.pop.${kind} [aria-pressed="true"]`) ?? document.querySelector(`.pop.${kind} button`)
+			)?.focus(),
 		);
 }
 function closePop(back = true) {
@@ -77,12 +83,19 @@ function onKey(e) {
 function onDocClick(e) {
 	if (pop && !e.target.closest(".pop")) closePop(false);
 }
+// Tab out of the popover closes it, so it never covers what has focus
+function onFocusOut(e) {
+	if (pop && !e.relatedTarget?.closest?.(".pop")) closePop(false);
+}
 </script>
 
 <svelte:window onkeydown={onKey} onclick={onDocClick} />
 
+<!-- Neither font has a subscript two, so CO₂ sets its 2 as <sub> in the sentence's own face -->
+{#snippet unit(u)}{#each u.split("\u2082") as part, i (i)}{#if i}<sub>2</sub>{/if}{part}{/each}{/snippet}
+
 {#snippet country()}
-	<button type="button" class="tok" aria-haspopup="true" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>
+	<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>
 {/snippet}
 
 <div class="hl">
@@ -91,10 +104,10 @@ function onDocClick(e) {
 			{@render country()}{out ? "" : possessive(name)}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
-				<button type="button" class="tok" aria-haspopup="true" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
+				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
 			{:else}
-				<span class="u"><span class="n">{shown[0]}</span> {shown[1]}</span> of
-				<button type="button" class="tok" aria-haspopup="true" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
+				<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span> of
+				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
 			{/if}
 			in {year}{scope}; <span class="n">{Math.round(tShare.current)}%</span>
 			{out ? w.out.abroad : w.in.abroad}, most in <b>{top}</b>.
@@ -103,8 +116,8 @@ function onDocClick(e) {
 		<p id="headline">
 			In the {year} economy, if <b>{runText(data, run)}</b>,
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country()}{possessive(name)}{w.in.would}{/if}
-			<span class="u"><span class="n">{shown[0]}</span> {shown[1]}</span>{ui.on.size === S ? "" : scope},
-			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {delta[1]}</span>
+			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
+			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
 			(<span class="n {tone}">{pct(dPct)}</span>), the largest change {out ? w.out.where : w.in.where}
 			<b>{changed}</b>.
 		</p>
@@ -112,7 +125,7 @@ function onDocClick(e) {
 	<p class="sr-only" aria-live="polite">{plain}</p>
 
 	{#if pop === "country"}
-		<div class="pop country" role="group" aria-label="Choose a country">
+		<div class="pop country" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label="Choose a country">
 			{#each byName as i (i)}
 				<button
 					type="button"
@@ -125,7 +138,7 @@ function onDocClick(e) {
 			{/each}
 		</div>
 	{:else if pop === "indicator"}
-		<div class="pop indicator" role="group" aria-label="Choose an indicator">
+		<div class="pop indicator" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label="Choose an indicator">
 			{#each meta.indicators as i (i.id)}
 				{@const iw = wording(i.id)}
 				<button

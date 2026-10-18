@@ -117,7 +117,7 @@ const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference
 	class:on={open}
 	bind:this={panel}
 	role="dialog"
-	aria-modal="false"
+	aria-modal="true"
 	aria-labelledby="pan-title"
 	aria-hidden={!open}
 	inert={!open}
@@ -149,7 +149,7 @@ const worst = $derived(meta.checks?.producer_by_country?.max_relative_difference
 		{/each}
 	</div>
 
-	<div class="pb" id="tp-sankey" role="tabpanel" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
+	<div class="pb" id="tp-sankey" role="tabpanel" tabindex="0" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
 		{#if lay}
 			<svg class="sk" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: released in, industry, consumed in. The Table tab lists the same flows.">
 				{#each heads as [x, a, t] (t)}<text class="h" {x} y="11" text-anchor={a}>{t}</text>{/each}
