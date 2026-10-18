@@ -6,6 +6,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The flat map and the globe draw the same bands for a selection: partners
+  within about 1,200 km of the selected country get no band on either, and on
+  the globe a band from a partner over the horizon starts at its edge.
+
 ## [0.1.0] - 2026-10-18
 
 First release.

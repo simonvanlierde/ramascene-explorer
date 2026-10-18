@@ -19,6 +19,7 @@ import {
 	arc,
 	BAND,
 	bandGeometry,
+	bandPartners,
 	changeArm,
 	divBand,
 	divFill,
@@ -50,7 +51,7 @@ fetch("geo/countries-110m.topo.json")
 	.then((topo) => {
 		const geoms = topo.objects.countries.geometries;
 		shapes = meta.country_codes.map((code, i) => {
-			const geometry = merge(topo, geoms.filter((g) => regionForIso(g.properties.iso) === code));
+			const geometry = merge(topo, geoms.filter((g) => regionForIso(g.properties.iso, meta.country_codes) === code));
 			const feature = { type: "Feature", geometry };
 			return { i, code, feature, at: ANCHOR[code] ?? geoPath().centroid(feature) };
 		});
@@ -109,6 +110,8 @@ const bandColour = (k) =>
 	whatif ? fb((flowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : BAND;
 
 // --- bands and labels -----------------------------------------------------------
+const STEPS = Array.from({ length: 31 }, (_, i) => i / 30);
+const anchors = $derived(shapes.map((s) => s.at));
 const widthK = $derived((13 * view.scale) / (sum.vals[sum.bands[0]] || 1));
 const geom = $derived.by(() => {
 	view;
@@ -116,13 +119,14 @@ const geom = $derived.by(() => {
 	const self = shapes[ui.who].at;
 	const B = proj(self);
 	const lines = [];
-	for (const k of sum.bands) {
+	for (const k of bandPartners(sum.bands, ui.who, anchors)) {
 		const A = shapes[k].at;
-		if (!visible(A)) continue;
 		let P;
 		if (alpha > 0.5) {
 			const ip = geoInterpolate(A, self);
-			P = Array.from({ length: 31 }, (_, i) => proj(ip(i / 30)));
+			// a partner over the horizon: its band starts where the great circle comes into view
+			const t0 = STEPS.find((t) => visible(ip(t))) ?? 1;
+			P = STEPS.map((t) => proj(ip(t0 + (1 - t0) * t)));
 		} else P = arc(proj(A), B);
 		if (P.some((p) => !p)) continue;
 		lines.push({ k, v: sum.vals[k], P });
@@ -134,7 +138,7 @@ const labels = $derived.by(() => {
 	const out = [];
 	for (const b of [...geom.bands].sort((x, y) => y.v - x.v)) {
 		const p = proj(shapes[b.k].at);
-		if (!p) continue;
+		if (!p || !visible(shapes[b.k].at)) continue;
 		const t = placeName(meta, b.k);
 		const w = t.length * 5.6 + 6;
 		const box = [p[0] - w / 2, p[1] - 13, p[0] + w / 2, p[1] + 8];
