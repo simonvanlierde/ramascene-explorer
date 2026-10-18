@@ -208,6 +208,18 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 	</div>
 
 	<div class="pb" id="tp-method" role="tabpanel" aria-labelledby="tab-method" hidden={ui.panel !== "method"}>
+		<section class="part" aria-labelledby="meaning-heading">
+			<h2 id="meaning-heading">What the numbers mean</h2>
+			<p>
+				Each flow is the {w.noun} that industries in one country {ui.indicator === 3 ? "provide" : ui.indicator === 7 ? "extract" : "release"} in {data.base_year}
+				to make goods and services finally bought in another: by households, governments and investment, not by other industries along the way.
+				A country's consumption sums the flows into it; its production sums the flows out of it.
+			</p>
+			<p>
+				The figures come from the RaMa-Scene engine's demand-pull model on {data.provenance.dataset.name}. What if… shows how one precomputed
+				change to 2011 demand, or to an industry's inputs, would have shifted them. None of it is a forecast.
+			</p>
+		</section>
 		<Provenance {data} {scenario} />
 	</div>
 

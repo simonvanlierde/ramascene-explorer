@@ -147,8 +147,8 @@ const directionHint = $derived(
 	<div class="grp">
 		<div class="lab">Direction</div>
 		<div class="seg" role="group" aria-label="Direction">
-			<button type="button" aria-pressed={ui.dir === "in"} onclick={() => (ui.dir = "in")}>Consumed in</button>
-			<button type="button" aria-pressed={ui.dir === "out"} onclick={() => (ui.dir = "out")}>Released in</button>
+			<button type="button" aria-pressed={ui.dir === "in"} onclick={() => (ui.dir = "in")}>Its consumption</button>
+			<button type="button" aria-pressed={ui.dir === "out"} onclick={() => (ui.dir = "out")}>Its production</button>
 		</div>
 		<p class="hint">{directionHint}</p>
 	</div>

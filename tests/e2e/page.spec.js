@@ -67,7 +67,7 @@ test("the industry rail, country box and direction drive the sentence and the UR
 	await box.press("Enter");
 	await expect(page).toHaveURL(/region=FR/);
 	await expect(page.locator("#headline")).toContainText("France");
-	await page.getByRole("button", { name: "Released in" }).click();
+	await page.getByRole("button", { name: "Its production" }).click();
 	await expect(page).toHaveURL(/dir=out/);
 	await expect(page.locator("#headline")).toContainText("France released");
 });

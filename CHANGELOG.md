@@ -17,7 +17,8 @@ First release.
   indicator as controls inside it. Tapered bands show the largest flows on a
   flat Equal Earth map or a globe.
 - An industry rail that filters every number by the 15 industry sections, and
-  "Consumed in / Released in" for both directions of a flow.
+  a switch between a country's consumption and its production, the two
+  directions of a flow.
 - What if…: all 153 precomputed runs (three named interventions and a
   material-efficiency grid of 10 products × 5 regions × 3 cuts). The map keeps
   the 2011 flows and colours them by the run's change; a scrubber replays the
