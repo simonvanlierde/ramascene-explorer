@@ -5,7 +5,13 @@ import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-let { data, meta, sum, whatif, loadingRun, setMode, setRun } = $props();
+let { data, meta, sum, whatif, loadingRun, setMode, setRun, sheet = false, onclose } = $props();
+
+let done = $state();
+// a phone opens the panel as a sheet: focus its Done button
+$effect(() => {
+	if (sheet) queueMicrotask(() => done?.focus());
+});
 
 // svelte-ignore state_referenced_locally
 const NAMED = ["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"].filter((id) =>
@@ -59,8 +65,21 @@ const directionHint = $derived(
 );
 </script>
 
-<aside class="side" aria-label="Selection">
-	<div class="grp">
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape and Done are the keyboard path -->
+<div class="sheet-scrim" class:on={sheet} onclick={onclose}></div>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions: Escape closes the sheet from anywhere inside it -->
+<aside
+	class="side"
+	class:open={sheet}
+	id="side"
+	aria-label="Selection"
+	onkeydown={(e) => sheet && e.key === "Escape" && (e.stopPropagation(), onclose())}
+>
+	<div class="sheet-head">
+		<h2>Choose what to show</h2>
+		<button type="button" bind:this={done} onclick={onclose}>Done</button>
+	</div>
+	<div class="grp mode" class:flows={ui.mode === "flows"}>
 		<div class="lab">Mode</div>
 		<div class="seg big" role="group" aria-label="Mode">
 			<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>

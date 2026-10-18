@@ -268,71 +268,84 @@ const fmtExtent = (m) => `${m}`.replace(/^0\./, "0.");
 const unitShort = $derived(wording(ui.indicator).unit);
 </script>
 
-<div class="mapc" bind:clientWidth={W} bind:clientHeight={H}>
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
-	<svg
-		class="map"
-		class:globe={alpha > 0.5}
-		class:live={!whatif}
-		viewBox="0 0 {view.w} {view.h}"
-		role="img"
-		aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}; the table in Details lists every flow"
-		onpointerdown={down}
-		onpointermove={move}
-		onpointerup={up}
-		onpointercancel={up}
-	>
-		<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "#dedfe1" : "none"} />
-		<g class="rgs">
-			{#each shapes as s (s.code)}
-				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
-				<path
-					class="rg"
-					class:sel={s.i === ui.who}
-					d={regionPaths[s.i]}
-					fill={fillOf(s.i)}
-					onmousemove={(e) => hover(e, s.i)}
-					onmouseleave={() => (tip = null)}
-					onclick={() => !drag?.moved && pick(s.i)}
-				/>
-			{/each}
-		</g>
-		<g class="bands">
-			{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} />{/each}
-		</g>
-		{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
-		<g class="lbls">
-			{#each labels as l (l.k)}
-				<text x={l.x} y={l.y} text-anchor="middle">{l.t}</text>
-				<text class="b" x={l.x} y={l.y + 10} text-anchor="middle">{l.sub}</text>
-			{/each}
-		</g>
-	</svg>
+<div class="mapc" class:globe={ui.globe}>
+	<!-- the map and what sits on it; the legend goes under it on a phone -->
+	<div class="mapv" bind:clientWidth={W} bind:clientHeight={H}>
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
+		<svg
+			class="map"
+			class:globe={alpha > 0.5}
+			class:live={!whatif}
+			viewBox="0 0 {view.w} {view.h}"
+			role="img"
+			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}; the table in Details lists every flow"
+			onpointerdown={down}
+			onpointermove={move}
+			onpointerup={up}
+			onpointercancel={up}
+		>
+			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "#dedfe1" : "none"} />
+			<g class="rgs">
+				{#each shapes as s (s.code)}
+					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
+					<path
+						class="rg"
+						class:sel={s.i === ui.who}
+						d={regionPaths[s.i]}
+						fill={fillOf(s.i)}
+						onmousemove={(e) => hover(e, s.i)}
+						onmouseleave={() => (tip = null)}
+						onclick={() => !drag?.moved && pick(s.i)}
+					/>
+				{/each}
+			</g>
+			<g class="bands">
+				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} />{/each}
+			</g>
+			{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
+			<g class="lbls">
+				{#each labels as l (l.k)}
+					<text x={l.x} y={l.y} text-anchor="middle">{l.t}</text>
+					<text class="b" x={l.x} y={l.y + 10} text-anchor="middle">{l.sub}</text>
+				{/each}
+			</g>
+		</svg>
 
-	<div class="mtl">
-		<div class="sel-chip">
-			<span class="sw"></span><span>{other}</span>
-			<button type="button" onclick={() => (ui.panel = "sankey")} aria-label="Details for {other}: Sankey, table and method">
-				Details
-				<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-			</button>
+		<div class="mtl">
+			<div class="sel-chip">
+				<span class="sw"></span><span>{other}</span>
+				<button type="button" onclick={() => (ui.panel = "sankey")} aria-label="Details for {other}: Sankey, table and method">
+					Details
+					<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</button>
+			</div>
 		</div>
-	</div>
-	<div class="mtr">
-		<div class="seg" role="group" aria-label="Map projection">
-			<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
-			<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
+		<div class="mtr">
+			<div class="seg" role="group" aria-label="Map projection">
+				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
+				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
+			</div>
 		</div>
-	</div>
 
-	<p class="mnote">
-		{#if whatif}
-			Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
-		{:else}
-			Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unitShort}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unitShort} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
+		<p class="mnote">
+			{#if whatif}
+				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
+			{:else}
+				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unitShort}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unitShort} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
+			{/if}
+		</p>
+
+		{#if tipText}
+			<div class="tip" style="left:{Math.min(tip.x + 14, view.w - 234)}px;top:{Math.max(8, Math.min(tip.y - 12, view.h - 150))}px" aria-hidden="true">
+				<b>{tipText.name}</b><span class="tv">{tipText.big}</span><br />{tipText.line}
+				{#if tipText.secs?.length}
+					<div class="sb">{#each tipText.secs as [q, x] (q)}<i style="width:{(x / tipText.v) * 100}%;background:{SECTION_COLOURS[q]}"></i>{/each}</div>
+					<span class="sw" style="background:{SECTION_COLOURS[tipText.secs[0][0]]}"></span>Largest: {SECTION_SHORT[tipText.secs[0][0]]}, {share(tipText.secs[0][1], tipText.v)}
+				{/if}
+				<br /><span class="hint">Click to select</span>
+			</div>
 		{/if}
-	</p>
-
+	</div>
 	<div class="lg">
 		{#if whatif}
 			<div class="lt">% change in each 2011 flow, this run</div>
@@ -393,14 +406,4 @@ const unitShort = $derived(wording(ui.indicator).unit);
 		{#if loadingRun && ui.mode === "whatif"}<p class="fn" role="status">Loading the run’s flows…</p>{/if}
 	</div>
 
-	{#if tipText}
-		<div class="tip" style="left:{Math.min(tip.x + 14, view.w - 234)}px;top:{Math.max(8, Math.min(tip.y - 12, view.h - 150))}px" aria-hidden="true">
-			<b>{tipText.name}</b><span class="tv">{tipText.big}</span><br />{tipText.line}
-			{#if tipText.secs?.length}
-				<div class="sb">{#each tipText.secs as [q, x] (q)}<i style="width:{(x / tipText.v) * 100}%;background:{SECTION_COLOURS[q]}"></i>{/each}</div>
-				<span class="sw" style="background:{SECTION_COLOURS[tipText.secs[0][0]]}"></span>Largest: {SECTION_SHORT[tipText.secs[0][0]]}, {share(tipText.secs[0][1], tipText.v)}
-			{/if}
-			<br /><span class="hint">Click to select</span>
-		</div>
-	{/if}
 </div>

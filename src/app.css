@@ -23,6 +23,8 @@
   --sh: 0 1px 2px rgb(31 42 51 / 6%);
   --pop: 0 10px 30px -10px rgb(31 42 51 / 28%);
   --side: 272px;
+  --rail-min: 20px; /* with the 4 px gap, 24 px between tab centres (WCAG 2.2 target size) */
+  --rail-share: 180px;
   --top: 48px;
   --sans: "Public Sans", system-ui, sans-serif;
   --serif: "Spectral", Georgia, serif;
@@ -469,6 +471,7 @@ button.pill:hover {
 }
 .rail .t {
   flex: none;
+  height: calc(var(--rail-min) + var(--f) * var(--rail-share));
   display: flex;
   align-items: center;
   gap: 6px;
@@ -696,6 +699,15 @@ button.pill:hover {
   border-radius: 8px;
   box-shadow: var(--sh);
   overflow: hidden;
+}
+.mapv {
+  position: absolute;
+  inset: 0;
+}
+.dock,
+.sheet-head,
+.sheet-scrim {
+  display: none;
 }
 svg.map {
   position: absolute;
@@ -1287,20 +1299,46 @@ details.more summary {
   border-radius: 8px;
 }
 
-/* --- narrow screens: stacked until the adapt pass designs a phone layout ----------- */
-@media (max-width: 860px) {
+/* --- tablets: the same layout, a narrower sidebar and denser numbers ------------- */
+@media (max-width: 1100px) {
+  :root {
+    --side: 240px;
+  }
+  .kpis.k5 .kv {
+    font-size: 16px;
+  }
+  .kpis.k5 .kpi {
+    padding: 8px 9px;
+  }
+  .mnote {
+    display: none;
+  }
+}
+
+/* --- phones: content first, the selection in a bottom sheet ---------------------
+   The sentence and the map lead; a dock at the bottom keeps the mode switch and
+   the selection within thumb reach, and every control is a 44 px target. */
+@media (max-width: 760px) {
+  :root {
+    --rail-min: 36px;
+    --rail-share: 120px;
+  }
   .shell {
     display: block;
     height: auto;
+    padding-bottom: 76px; /* the dock */
   }
-  /* keep "precomputed, not a forecast" on a phone; the dataset name goes */
   .top {
+    position: sticky;
+    top: 0;
+    z-index: 12;
     gap: 10px;
     padding: 0 12px;
   }
   .brand h1 {
     font-size: 13.5px;
   }
+  /* keep "precomputed, not a forecast"; the dataset name and Verified go */
   .top .basis .ds,
   .top .pill.ok {
     display: none;
@@ -1309,31 +1347,233 @@ details.more summary {
     padding: 0 8px;
     font-size: 11px;
   }
-  .side {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-  }
   .main {
-    padding: 14px 16px 18px;
+    padding: 14px 12px 18px;
+    gap: 12px;
+  }
+  .hl {
+    order: 1;
+    min-height: 0;
+    font-size: 19px;
   }
   .mapc {
+    order: 2;
     flex: none;
-    height: 560px;
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
   }
+  /* the flat map is about twice as wide as tall; the globe is round */
+  .mapv {
+    position: relative;
+    inset: auto;
+    aspect-ratio: 1.45;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+  }
+  .mapc.globe .mapv {
+    aspect-ratio: 0.92;
+  }
+  .lg {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    border-top: 1px solid var(--rule);
+    border-radius: 0 0 8px 8px;
+  }
+  .kpis {
+    order: 3;
+  }
+  /* two cards a row; an odd last card takes the whole row */
+  .kpis.k3,
   .kpis.k5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
-  .kpis.k3 {
-    grid-template-columns: 1fr;
+  .kpis .kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .sel-chip,
+  .mtr .seg {
+    height: 44px;
+  }
+  .sel-chip button,
+  .mtr .seg button {
+    min-height: 36px;
+  }
+  .mtl,
+  .mtr {
+    top: 8px;
+  }
+  .mtl {
+    left: 8px;
+  }
+  .mtr {
+    right: 8px;
+  }
+  .scrub .th {
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    top: -2px;
+  }
+  .scrub {
+    gap: 10px;
+  }
+  .scrub .play {
+    min-height: 44px;
+  }
+  .tip {
+    display: none;
+  }
+
+  /* the dock */
+  .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 14;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgb(255 255 255 / 96%);
+    border-top: 1px solid var(--rule);
+    box-shadow: 0 -8px 24px -16px rgb(31 42 51 / 30%);
+  }
+  .dock .seg button {
+    min-height: 44px;
+    padding: 0 6px;
+  }
+  .dock .filters {
+    min-height: 50px;
+    display: grid;
+    align-content: center;
+    text-align: left;
+    padding: 0 12px;
+    border: 1px solid #c9d1d7;
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .dock .fl {
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .dock .fs {
+    font-size: 11.5px;
+    color: var(--mut);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* the sheet */
+  .side {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 19;
+    max-height: 86dvh;
+    border: 0;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -18px 40px -20px rgb(31 42 51 / 40%);
+    padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(104%);
+    visibility: hidden;
+    transition:
+      transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1),
+      visibility 0s linear 0.32s;
+  }
+  .side.open {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1),
+      visibility 0s;
+  }
+  .sheet-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 10px;
+    margin-bottom: 4px;
+    background: var(--card);
+    border-bottom: 1px solid var(--rule);
+  }
+  .sheet-head h2 {
+    margin: 0;
+    font: 500 19px var(--serif);
+  }
+  .sheet-head button {
+    min-height: 44px;
+    padding: 0 16px;
+    background: var(--slate);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 8px;
+  }
+  .sheet-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 18;
+    background: rgb(31 42 51 / 22%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .sheet-scrim.on {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* the dock carries the mode switch; the sheet keeps only the run picker */
+  .grp.mode > .lab:first-child,
+  .grp.mode > .seg.big,
+  .grp.mode.flows {
+    display: none;
+  }
+  .grp.mode .lab.sub {
+    margin-top: 6px;
+  }
+  .seg button,
+  .run,
+  .gridpick select,
+  .cb input,
+  .rail .all {
+    min-height: 44px;
+  }
+  .rail {
+    gap: 8px;
+  }
+  .rail .t {
+    font-size: 13px;
+  }
+  .cb li {
+    min-height: 44px;
+    align-items: center;
   }
   .scrim {
     inset: var(--top) 0 0 0;
   }
+  .pan {
+    width: 100vw;
+  }
+  .tabs button {
+    min-height: 44px;
+  }
   .pop.country {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 50vh;
+    overflow: auto;
   }
-  .mnote {
-    display: none;
+  .pop button {
+    min-height: 40px;
   }
 }
 

@@ -9,10 +9,8 @@ import { ui } from "./view.svelte.js";
 let { sum, labelledby } = $props();
 
 const S = SECTION_SHORT.length;
-// Every tab is at least 20 px tall with 4 px between, so each meets the WCAG
-// 2.2 target-size spacing rule; the share of the selection adds up to 180 px.
-const MIN = 20;
-const SHARE = 180;
+// Tab heights come from app.css: a minimum plus the share of the selection
+// times --rail-share, so a phone can make every tab a larger touch target.
 const all = $derived(ui.on.size === S);
 const total = $derived([...ui.on].reduce((a, q) => a + sum.sec[q], 0) || 1);
 
@@ -51,7 +49,7 @@ function toggle(q) {
 			aria-pressed={on}
 			tabindex={current === q ? 0 : -1}
 			onfocus={() => (current = q)}
-			style="--c:{SECTION_COLOURS[q]};height:{MIN + (on ? (SHARE * sum.sec[q]) / total : 0)}px"
+			style="--c:{SECTION_COLOURS[q]};--f:{on ? sum.sec[q] / total : 0}"
 			title="{name}: {amountText(sum.sec[q], ui.indicator)}"
 			aria-label="{name}, {amountText(sum.sec[q], ui.indicator)}{on ? `, ${share(sum.sec[q], total)} of the selection` : ', off'}"
 			onclick={() => toggle(q)}

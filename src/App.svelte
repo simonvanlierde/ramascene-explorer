@@ -1,7 +1,7 @@
 <script>
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
-import { continents, fitExtent, parseView, summarise, viewSearch } from "../flows.js";
+import { continents, fitExtent, parseView, summarise, viewSearch, wording } from "../flows.js";
 import { apiUrl, ignoredApi } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
@@ -114,6 +114,19 @@ function play() {
 }
 const stop = () => cancelAnimationFrame(frame);
 
+// phone: the selection lives in a bottom sheet opened from the dock
+let sheet = $state(false);
+let sheetOpener = $state();
+function closeSheet() {
+	sheet = false;
+	sheetOpener?.focus();
+}
+const summary = $derived(
+	ready
+		? `${meta.countries[ui.who]} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
+		: "",
+);
+
 function setMode(mode) {
 	if (ui.mode === mode) return;
 	stop();
@@ -163,7 +176,7 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · </span>{data.base_year} · precomputed, not a forecast</span>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>precomputed, not a forecast</span>
 				{#if verified}
 					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -177,13 +190,22 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} />
+		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} />
 		<main class="main" id="app" tabindex="-1">
 			<Sentence {data} {meta} {sum} {whatif} {run} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
 		</main>
 		<Details {data} {meta} {sum} {whatif} {run} />
+		<nav class="dock" aria-label="Mode and selection">
+			<div class="seg big" role="group" aria-label="Mode">
+				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>
+				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
+			</div>
+			<button type="button" class="filters" bind:this={sheetOpener} aria-expanded={sheet} aria-controls="side" onclick={() => (sheet = true)}>
+				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{summary}</span>
+			</button>
+		</nav>
 	{:else if flowsError || empty}
 		<main class="main solo" id="empty">
 			{#if empty}
