@@ -334,7 +334,16 @@ test("only the close neighbours lose their band; Britain and Italy keep theirs w
 });
 
 test("an indicator without wording fails loudly instead of reading as GHG", () => {
-	for (const { id } of meta.indicators) assert.ok(wording(id).unit);
+	for (const { id } of meta.indicators) assert.ok(wording(id).unit && wording(id).made.col);
 	assert.throws(() => wording(99), /indicator id 99/);
 	assert.throws(() => amountText(1, 99), /indicator id 99/);
+});
+
+test("the producer side takes each indicator's own word, so jobs are never 'released'", () => {
+	assert.deepEqual(
+		[5, 3, 7].map((id) => wording(id).made.col),
+		["Released in", "Jobs in", "Extracted in"],
+	);
+	assert.equal(wording(3).made.own("Germany"), "Jobs in Germany");
+	for (const id of [3, 7]) assert.doesNotMatch(JSON.stringify(wording(id)), /releas/i);
 });

@@ -532,7 +532,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</button>
 			</div>
 		{:else}
-			<div class="lt">{ui.dir === "in" ? `Released here to make what ${other} consumes` : `Consumed here, made in ${other}`}</div>
+			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${other} consumes` : `Consumed here, made in ${other}`}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
 				<div class="tk num ticks">

@@ -148,6 +148,16 @@ test("the scroll wheel zooms the map about the pointer", async ({ page, isMobile
 	expect(Math.abs(Number(await ring.getAttribute("cx")) - cx)).toBeLessThan(5);
 });
 
+test("jobs are never 'released': the cards, legend and table take the indicator's word", async ({ page }) => {
+	await page.goto("?mode=whatif&indicator=3");
+	await ready(page);
+	await expect(page.locator(".kpis.k5")).toContainText("Jobs in Europe");
+	await expect(page.locator(".kpis.k5")).not.toContainText("Released");
+	await page.goto("?indicator=3");
+	await ready(page);
+	await expect(page.locator(".lg .lt")).toHaveText("Jobs here that make what Germany consumes");
+});
+
 test("a refused data path falls back to the default and says so", async ({ page }) => {
 	await page.goto("?data=../secret.json");
 	await expect(page.locator("#status .fail")).toHaveText("ignored data=../secret.json");

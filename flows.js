@@ -82,6 +82,8 @@ export const possessive = (name) => (name.endsWith("s") ? "’" : "’s");
 // --- indicators ------------------------------------------------------------------
 
 // Display unit and wording per indicator (global ids of the engine database).
+// made: the producer side's label, in the indicator's own word (released,
+// jobs, extracted); here: the legend's start; own(name): what a country does.
 // Values reach these functions already in the display unit (factor applied):
 // Mt for GHG and metal ores, persons for employment.
 const WORDING = {
@@ -89,6 +91,7 @@ const WORDING = {
 		label: "GHG",
 		noun: "greenhouse gases",
 		source: "emissions are released",
+		made: { col: "Released in", here: "Released here to make", own: (n) => `What ${n} releases`, is: "it is released" },
 		total: { in: "Consumption footprint", out: "Emissions released" },
 		factor: 1e-9,
 		unit: "Mt CO₂-eq",
@@ -110,6 +113,7 @@ const WORDING = {
 		label: "Employment",
 		noun: "jobs",
 		source: "people work",
+		made: { col: "Jobs in", here: "Jobs here that make", own: (n) => `Jobs in ${n}`, is: "the jobs are" },
 		total: { in: "Jobs behind consumption", out: "Jobs located here" },
 		factor: 1e3,
 		unit: "jobs",
@@ -131,6 +135,12 @@ const WORDING = {
 		label: "Metal ores",
 		noun: "metal ores",
 		source: "metal ores are mined",
+		made: {
+			col: "Extracted in",
+			here: "Extracted here to make",
+			own: (n) => `What ${n} extracts`,
+			is: "it is extracted",
+		},
 		total: { in: "Ores behind consumption", out: "Ores extracted here" },
 		factor: 1e-3,
 		unit: "Mt",
