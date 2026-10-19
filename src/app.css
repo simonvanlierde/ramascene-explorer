@@ -734,7 +734,7 @@ button.pill:hover {
   display: none;
 }
 svg.map {
-  touch-action: pan-y pinch-zoom; /* the flat map lets the page scroll */
+  touch-action: pan-y; /* one finger scrolls the page past the flat map; two zoom it */
   position: absolute;
   inset: 0;
   width: 100%;
@@ -742,8 +742,9 @@ svg.map {
   display: block;
   user-select: none;
 }
-svg.map.globe {
-  touch-action: none; /* a finger turns the globe */
+svg.map.globe,
+svg.map.zoomed {
+  touch-action: none; /* a finger turns the globe or pans the zoomed map */
   cursor: grab;
 }
 .rg {
@@ -831,6 +832,15 @@ svg.map.live .rg {
   position: absolute;
   right: 10px;
   top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.mtr .seg.zoom button {
+  width: 34px;
+  padding: 0;
+  font-size: 16px;
 }
 .mtr .seg {
   background: var(--card);
@@ -1495,6 +1505,9 @@ details.more summary {
   .sel-chip button,
   .mtr .seg button {
     min-height: 44px;
+  }
+  .mtr .seg.zoom button {
+    width: 44px;
   }
   /* the phone table keeps the columns that answer the question */
   #flows-table thead th:nth-child(4),

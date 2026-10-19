@@ -6,6 +6,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Zoom on the map, up to 8×: the scroll wheel, a trackpad or two-finger
+  pinch, or the + and − buttons, which zoom toward the selected country. The
+  zoomed flat map pans with a drag.
+
 ## [0.1.0] - 2026-10-19
 
 First release.

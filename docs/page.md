@@ -12,8 +12,12 @@ It shows one question at a time:
   - Partners within 5° of great circle (about 550 km) get no band on either
     map; the fill shows them.
   - Further partners get a band where it fits outside the collar, the circle
-    where the bands meet the selected country. So the globe shows Britain and
-    Italy for Germany, and the flat world map does not.
+    where the bands meet the selected country. Zooming in makes room for more:
+    for Germany, Italy's band appears once you zoom in on the flat map.
+  - The wheel, a trackpad pinch or a two-finger pinch zooms the map, up to
+    8×, and the + and − buttons zoom toward the selected country. On the
+    zoomed flat map a drag pans; on the globe it turns the globe. On a phone,
+    one finger still scrolls the page past the unzoomed flat map.
   - On the globe, a band from a partner over the horizon starts at the edge.
 - **Industry rail.** One tab per section, its height the section's share of
   the selection. A click isolates one section, and further clicks add or

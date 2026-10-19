@@ -112,6 +112,37 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+test("zooming the flat map in on Germany makes room for the band from Italy", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	const band = (code) => page.locator(`.bands path[data-region="${code}"]`);
+	await expect(band("IT")).toHaveCount(0);
+	for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Zoom in" }).click();
+	for (const code of ["GB", "IT"]) await expect(band(code)).toHaveCount(1);
+	// the buttons zoom toward the selection, so it stays on the map
+	const box = await page.locator("svg.map").boundingBox();
+	const cx = Number(await page.locator("circle.ring").getAttribute("cx"));
+	const cy = Number(await page.locator("circle.ring").getAttribute("cy"));
+	expect(cx > 0 && cx < box.width && cy > 0 && cy < box.height).toBe(true);
+	await expectNoAxeViolations(page);
+	for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Zoom out" }).click();
+	await expect(band("IT")).toHaveCount(0);
+});
+
+test("the scroll wheel zooms the map about the pointer", async ({ page, isMobile }) => {
+	test.skip(isMobile, "phones pinch; Playwright has no pinch gesture");
+	await page.goto("");
+	await ready(page);
+	const box = await page.locator("svg.map").boundingBox();
+	const ring = page.locator("circle.ring");
+	const [cx, cy] = [Number(await ring.getAttribute("cx")), Number(await ring.getAttribute("cy"))];
+	await page.mouse.move(box.x + cx, box.y + cy);
+	await page.mouse.wheel(0, -600);
+	await expect(page.locator('.bands path[data-region="IT"]')).toHaveCount(1);
+	// the point under the pointer stays put, to the pixel rounding of the mouse
+	expect(Math.abs(Number(await ring.getAttribute("cx")) - cx)).toBeLessThan(5);
+});
+
 test("a refused data path falls back to the default and says so", async ({ page }) => {
 	await page.goto("?data=../secret.json");
 	await expect(page.locator("#status .fail")).toHaveText("ignored data=../secret.json");

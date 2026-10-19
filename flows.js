@@ -308,9 +308,7 @@ export const taper = (t) => 0.16 + 0.84 * cubicOut(Math.min(1, t / 0.6));
 // Partners within 5° of great circle (about 550 km) of the selected country
 // get no band on either map: the fill shows them, and a band that short reads
 // as a smudge on the border. Partners further away get one wherever it fits
-// outside the collar (bandGeometry), so the globe, zoomed in on the country,
-// shows Britain and Italy for Germany, and the flat world map, where Europe is
-// a few pixels wide, does not.
+// outside the collar (bandGeometry), so zooming in makes room for more of them.
 export const NEAR = (5 * Math.PI) / 180;
 // The partners in ks that get a band. at: [lon, lat] of each region's anchor;
 // who: the selected region.

@@ -11,6 +11,7 @@ import {
 	geoPath,
 	geoProjectionMutator,
 } from "d3-geo";
+import { untrack } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { merge } from "topojson-client";
 import {
@@ -62,6 +63,10 @@ let W = $state(0);
 let H = $state(0);
 let alpha = $state(ui.globe ? 1 : 0);
 let rot = $state([0, 0]);
+// zoom on top of the fitted map, and the flat map's pan in px (the globe pans by turning)
+let zk = $state(1);
+let off = $state([0, 0]);
+const ZMAX = 8;
 const mutate = geoProjectionMutator((a) => (x, y) => {
 	const p = geoEqualEarthRaw(x, y);
 	const q = geoOrthographicRaw(x, y);
@@ -77,14 +82,15 @@ const view = $derived.by(() => {
 	const k1 = Math.min(w - 32, h - TOP - 12) / 2;
 	const t0 = flat.translate();
 	const t1 = [w / 2, TOP + (h - TOP - 12) / 2];
+	const t = [t0[0] + alpha * (t1[0] - t0[0]), t0[1] + alpha * (t1[1] - t0[1])];
 	mutate(alpha);
 	proj
-		.scale(flat.scale() + alpha * (k1 - flat.scale()))
-		.translate([t0[0] + alpha * (t1[0] - t0[0]), t0[1] + alpha * (t1[1] - t0[1])])
+		.scale((flat.scale() + alpha * (k1 - flat.scale())) * zk)
+		.translate([t[0] + off[0], t[1] + off[1]])
 		.rotate([rot[0] * alpha, rot[1] * alpha])
 		.clipAngle(alpha > 0.02 ? Math.max(90, 179.9 - alpha * 89.9) : null)
 		.precision(0.3);
-	return { w, h, scale: Math.min(1.4, Math.max(0.8, w / 700)) };
+	return { w, h, t, scale: Math.min(1.4, Math.max(0.8, w / 700)) };
 });
 const centre = () => [-rot[0] * alpha, -rot[1] * alpha];
 const visible = (ll) => alpha < 0.5 || geoDistance(ll, centre()) < Math.PI / 2 - 0.04;
@@ -192,6 +198,8 @@ function animate(ms, stepFn) {
 const facing = (ll) => [-ll[0], -Math.max(-40, Math.min(40, ll[1]))];
 function setGlobe(g) {
 	ui.globe = g;
+	zk = 1;
+	off = [0, 0];
 	if (g && shapes.length) rot = facing(shapes[ui.who].at);
 	const from = alpha;
 	animate(900, (t) => (alpha = from + t * ((g ? 1 : 0) - from)));
@@ -210,13 +218,77 @@ function pick(k) {
 	turnTo(shapes[k].at);
 }
 
+// --- zoom ----------------------------------------------------------------------
+// Keeps the flat map covering the view: at zoom k it may move (k - 1) half-views.
+function clampOff([x, y]) {
+	const mx = ((zk - 1) * view.w) / 2;
+	const my = ((zk - 1) * view.h) / 2;
+	return [Math.max(-mx, Math.min(mx, x)), Math.max(-my, Math.min(my, y))];
+}
+// Zoom by f about the point p (view px) on the flat map, or about the centre of the globe.
+function zoomAt(f, p = [view.w / 2, view.h / 2]) {
+	const k = Math.max(1, Math.min(ZMAX, zk * f));
+	const r = k / zk;
+	const [tx, ty] = [view.t[0] + off[0], view.t[1] + off[1]];
+	zk = k;
+	off = alpha < 0.5 ? clampOff([p[0] - (p[0] - tx) * r - view.t[0], p[1] - (p[1] - ty) * r - view.t[1]]) : [0, 0];
+}
+// the buttons zoom toward the selected country, so it stays where it is
+const towardSelection = () => (alpha < 0.5 && geom.B ? geom.B : undefined);
+let svgEl = $state();
+const local = (x, y) => {
+	const r = svgEl.getBoundingClientRect();
+	return [x - r.left, y - r.top];
+};
+// a wheel listener has to be non-passive to keep the page from scrolling
+$effect(() => {
+	const el = svgEl;
+	if (!el) return;
+	const wheel = (e) => {
+		e.preventDefault();
+		// deltaMode 1 counts lines (Firefox); a trackpad pinch arrives as a wheel with ctrlKey
+		const d = e.deltaY * (e.deltaMode ? 33 : 1) * (e.ctrlKey ? 5 : 1);
+		zoomAt(Math.exp(-d * 0.002), local(e.clientX, e.clientY));
+	};
+	el.addEventListener("wheel", wheel, { passive: false });
+	return () => el.removeEventListener("wheel", wheel);
+});
+// keep a newly selected country in view on the zoomed flat map
+$effect(() => {
+	const k = ui.who;
+	untrack(() => {
+		if (alpha > 0.5 || zk === 1 || !shapes.length) return;
+		view;
+		const p = proj(shapes[k].at);
+		if (p) off = clampOff([off[0] + view.w / 2 - p[0], off[1] + (TOP + view.h) / 2 - p[1]]);
+	});
+});
+
+// One finger turns the globe or pans the zoomed flat map; two fingers zoom.
+const pts = new Map();
+let pinch = 0;
 let drag = null;
 function down(e) {
-	if (alpha < 0.5) return;
-	drag = { x: e.clientX, y: e.clientY, moved: false };
+	pts.set(e.pointerId, [e.clientX, e.clientY]);
+	if (pts.size === 2) {
+		const [a, b] = [...pts.values()];
+		pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
+		if (drag) drag.moved = true;
+	}
+	if (alpha < 0.5 && zk === 1 && pts.size < 2) return;
+	drag ??= { x: e.clientX, y: e.clientY, moved: false };
 	e.currentTarget.setPointerCapture(e.pointerId);
 }
 function move(e) {
+	if (!pts.has(e.pointerId)) return;
+	pts.set(e.pointerId, [e.clientX, e.clientY]);
+	if (pinch && pts.size === 2) {
+		const [a, b] = [...pts.values()];
+		const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+		zoomAt(d / pinch, local((a[0] + b[0]) / 2, (a[1] + b[1]) / 2));
+		pinch = d;
+		return;
+	}
 	if (!drag) return;
 	const dx = e.clientX - drag.x;
 	const dy = e.clientY - drag.y;
@@ -229,11 +301,19 @@ function move(e) {
 	// keeps its own reference, so a release before it runs still applies the turn.
 	const d = drag;
 	d.frame ||= requestAnimationFrame(() => {
-		rot = [rot[0] + d.dx * 0.35, Math.max(-60, Math.min(60, rot[1] - d.dy * 0.35))];
+		if (alpha > 0.5) rot = [rot[0] + (d.dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (d.dy * 0.35) / zk))];
+		else off = clampOff([off[0] + d.dx, off[1] + d.dy]);
 		d.dx = d.dy = d.frame = 0;
 	});
 }
-const up = () => setTimeout(() => (drag = null));
+function up(e) {
+	pts.delete(e.pointerId);
+	if (pts.size < 2) pinch = 0;
+	// the finger left on the glass carries on from where it is
+	const [rest] = pts.values();
+	if (rest && drag) [drag.x, drag.y] = rest;
+	if (!pts.size) setTimeout(() => (drag = null));
+}
 
 // --- tooltip --------------------------------------------------------------------
 let tip = $state(null);
@@ -320,8 +400,10 @@ const unit = $derived(wording(ui.indicator).unit);
 	<div class="mapv" bind:clientWidth={W} bind:clientHeight={H}>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
 		<svg
+			bind:this={svgEl}
 			class="map"
 			class:globe={alpha > 0.5}
+			class:zoomed={zk > 1}
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
@@ -383,13 +465,17 @@ const unit = $derived(wording(ui.indicator).unit);
 				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
 				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
 			</div>
+			<div class="seg zoom" role="group" aria-label="Zoom">
+				<button type="button" aria-label="Zoom in" onclick={() => zoomAt(2, towardSelection())}>+</button>
+				<button type="button" aria-label="Zoom out" onclick={() => zoomAt(0.5, towardSelection())}>−</button>
+			</div>
 		</div>
 
 		<p class="mnote">
 			{#if whatif}
 				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
 			{:else}
-				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region.{alpha > 0.5 ? " Drag to turn the globe." : ""}
+				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}
 		</p>
 
