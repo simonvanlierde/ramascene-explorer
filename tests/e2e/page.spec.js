@@ -117,6 +117,18 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+test("the globe turns to a country picked in the country box", async ({ page }) => {
+	await page.goto("?map=globe");
+	await ready(page);
+	await openSelection(page);
+	const box = page.getByRole("combobox", { name: "Country" });
+	await box.fill("Japan");
+	await box.press("Enter");
+	await expect(page).toHaveURL(/region=JP/);
+	// Japan sits on the far side of a globe facing Germany; the ring shows once it has turned
+	await expect(page.locator("circle.ring")).toHaveAttribute("opacity", "1");
+});
+
 test("zooming the flat map in on Germany makes room for the band from Italy", async ({ page }) => {
 	await page.goto("");
 	await ready(page);

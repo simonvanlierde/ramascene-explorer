@@ -21,6 +21,9 @@ follow [Semantic Versioning](https://semver.org/).
   legend, the Sankey and table headers and the Details subtitle use each
   indicator's own word: "Jobs in" for employment, "Extracted in" for metal
   ores.
+- On the globe, picking a country in the country box now turns the globe to
+  it. Before, only a click on the map did, so a country on the far side
+  stayed hidden.
 
 ## [0.1.0] - 2026-10-19
 

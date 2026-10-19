@@ -213,10 +213,7 @@ function turnTo(ll) {
 $effect(() => {
 	if (shapes.length && ui.globe && rot[0] === 0 && rot[1] === 0) rot = facing(shapes[ui.who].at);
 });
-function pick(k) {
-	ui.who = k;
-	turnTo(shapes[k].at);
-}
+const pick = (k) => (ui.who = k);
 
 // --- zoom ----------------------------------------------------------------------
 // Keeps the flat map covering the view: at zoom k it may move (k - 1) half-views.
@@ -253,11 +250,14 @@ $effect(() => {
 	el.addEventListener("wheel", wheel, { passive: false });
 	return () => el.removeEventListener("wheel", wheel);
 });
-// keep a newly selected country in view on the zoomed flat map
+// keep a newly selected country in view, whether picked on the map or in the
+// country box: the globe turns to it, the zoomed flat map pans to it
 $effect(() => {
 	const k = ui.who;
 	untrack(() => {
-		if (alpha > 0.5 || zk === 1 || !shapes.length) return;
+		if (!shapes.length) return;
+		if (alpha > 0.5) return turnTo(shapes[k].at);
+		if (zk === 1) return;
 		view;
 		const p = proj(shapes[k].at);
 		if (p) off = clampOff([off[0] + view.w / 2 - p[0], off[1] + (TOP + view.h) / 2 - p[1]]);
