@@ -137,13 +137,13 @@ const WORDING = {
 		in: {
 			verb: " consumption required",
 			abroad: "was extracted abroad",
-			would: " consumption would have required metal ore extraction of",
+			would: " consumption would have required metal-ore extraction of",
 			where: "extracted in",
 		},
 		out: {
 			verb: " extracted",
 			abroad: "of it served consumption abroad",
-			would: "metal ore extraction in ",
+			would: "metal-ore extraction in ",
 			come: " would have come to",
 			where: "consumed in",
 		},
