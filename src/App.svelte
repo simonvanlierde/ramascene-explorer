@@ -23,7 +23,10 @@ let empty = $state(false);
 let src = $state.raw(null); // the opened Parquet file
 let flowsError = $state("");
 let base = $state.raw(null);
-let shown = $state.raw(null); // {run, delta}: the run on screen; the next one may still be loading
+// {run, base, delta}: the run on screen, as dense arrays in meta's layout; the next one may still
+// be loading. Every flow source hands the page this shape, so the map, Strip and Details never
+// know where a run came from. base is the baseline the run is a change against.
+let shown = $state.raw(null);
 let loadingRun = $state("");
 let ready = $state(false);
 const flag = $derived(data && banner(data));
@@ -85,14 +88,17 @@ function fetchRun(run) {
 		);
 	return cache.get(run);
 }
+const showRun = (run) => show(run, async () => ({ run, base, delta: await fetchRun(run) }));
+
+// load: () => Promise<{run, base, delta}>, from any flow source
 let wanted = "";
-async function showRun(run) {
+async function show(run, load) {
 	wanted = run;
 	loadingRun = run;
 	try {
-		const d = await fetchRun(run);
+		const next = await load();
 		if (wanted !== run) return;
-		shown = { run, delta: d };
+		shown = next;
 		loadingRun = "";
 		play();
 	} catch {
@@ -153,7 +159,7 @@ const sel = $derived({ ind, id: ui.indicator, who: ui.who, dir: ui.dir, on: ui.o
 const whatif = $derived(ui.mode === "whatif" && shown !== null);
 const delta = $derived(shown?.delta);
 const run = $derived(shown?.run);
-const sum = $derived(ready ? summarise(meta, base, whatif ? delta : null, sel) : null);
+const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
 // "Verified" only for engine output whose every published run passed every check
