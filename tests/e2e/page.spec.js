@@ -101,6 +101,11 @@ test("the shipped results render without the synthetic banner", async ({ page })
 	await expect(page.locator("#banner")).toBeHidden();
 	await expect(page.locator("#headline")).toContainText("Germany’s consumption caused");
 	await expect(page.locator(".pill.ok")).toHaveCount(1); // hidden, not removed, on a phone
+	await expect(page.getByRole("link", { name: "Source code on GitHub" })).toHaveAttribute(
+		"href",
+		"https://github.com/simonvanlierde/ramascene-explorer",
+	);
+	await expect(page.locator(".brand .by")).toHaveText("by Simon van Lierde");
 	await expectNoAxeViolations(page);
 });
 
