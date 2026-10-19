@@ -4,7 +4,12 @@
 
 - Open the published page on a real iPhone and an Android phone (the tests run
   WebKit and Chromium device emulation, not the real browsers), and share the
-  link once in Slack or LinkedIn to see the preview card.
+  link once in Slack or LinkedIn to see the preview card. On the phones, also
+  try the pinch zoom, which the tests cannot.
+- For jobs and metal ores, fixed labels still say "released": the continent
+  cards ("Released in Europe"), the Sankey and table headers, the map legend
+  and the Details subtitle. Take the word per indicator from `WORDING` in
+  `flows.js`, as the sentence already does, and keep one term per indicator.
 
 ## With the next data release
 
