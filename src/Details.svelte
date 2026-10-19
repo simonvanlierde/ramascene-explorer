@@ -212,7 +212,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 					{#if n.h >= 7}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
-			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the rail's colours. Hover or tap a band for its value.</p>
+			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover or tap a band for its value.</p>
 		{/if}
 	</div>
 

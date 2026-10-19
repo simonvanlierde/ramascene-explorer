@@ -101,7 +101,7 @@ export function runSummary(run) {
 		`${run.scenarios_run} scenarios run, ${run.passed} passed every check, ${run.failed} failed (excluded)`,
 	];
 	if (run.wall_s)
-		parts.push(`wall per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`);
+		parts.push(`wall time per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`);
 	if (run.peak_rss_bytes)
 		parts.push(
 			`peak RSS per worker median ${fmtGiB(run.peak_rss_bytes.median)}, max ${fmtGiB(run.peak_rss_bytes.max)}`,

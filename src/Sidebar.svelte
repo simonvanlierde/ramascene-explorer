@@ -146,7 +146,7 @@ const directionHint = $derived(
 					</div>
 					{#if gridMissing}
 						<p class="note" role="status">
-							{gridTarget.failed ? `This cell was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This cell was not part of the precomputed run."}
+							{gridTarget.failed ? `This combination was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This combination was not precomputed."}
 						</p>
 					{/if}
 				</div>

@@ -257,7 +257,7 @@ const tipText = $derived.by(() => {
 				: `in ${other}, for consumption here`;
 	if (whatif) {
 		const p = flowPct(sum, k);
-		if (p === null) return { name, big: "–", line: `No 2011 flow to speak of ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
+		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
 		return {
 			name,
 			big: pct(p),
@@ -462,7 +462,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			</div>
 		{/if}
 		{#if loadingRun && ui.mode === "whatif"}
-			<p class="fn" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Pick it again, or another." : "Loading the run’s flows…"}</p>
+			<p class="fn" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Try again, or pick another." : "Loading the run’s flows…"}</p>
 		{/if}
 	</div>
 

@@ -122,7 +122,7 @@ test("the run summary reads counts, wall and RSS from the provenance", () => {
 			wall_s: { median: 9.2, max: 10.94 },
 			peak_rss_bytes: { median: 1650000000, max: 1660000000 },
 		}),
-		"78 scenarios run, 77 passed every check, 1 failed (excluded) · wall per scenario job median 9.2 s, max 10.9 s · peak RSS per worker median 1.54 GiB, max 1.55 GiB",
+		"78 scenarios run, 77 passed every check, 1 failed (excluded) · wall time per scenario job median 9.2 s, max 10.9 s · peak RSS per worker median 1.54 GiB, max 1.55 GiB",
 	);
 	assert.equal(
 		runSummary({ scenarios_run: 3, passed: 3, failed: 0 }),
