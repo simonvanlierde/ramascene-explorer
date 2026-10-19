@@ -304,6 +304,13 @@ $effect(() => {
 
 // One finger turns the globe or pans the zoomed flat map; two fingers zoom.
 const pts = new Map();
+// keeps a drag going outside the map; a pointer the browser no longer tracks
+// throws (Firefox), and that must not stop the drag
+function capture(id) {
+	try {
+		svgEl.setPointerCapture(id);
+	} catch {}
+}
 let pinch = 0;
 let drag = null;
 function down(e) {
@@ -312,10 +319,10 @@ function down(e) {
 		const [a, b] = [...pts.values()];
 		pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
 		if (drag) drag.moved = true;
+		for (const id of pts.keys()) capture(id);
 	}
 	if (alpha < 0.5 && zk === 1 && pts.size < 2) return;
 	drag ??= { x: e.clientX, y: e.clientY, moved: false };
-	e.currentTarget.setPointerCapture(e.pointerId);
 }
 function move(e) {
 	if (!pts.has(e.pointerId)) return;
@@ -330,7 +337,12 @@ function move(e) {
 	if (!drag) return;
 	const dx = e.clientX - drag.x;
 	const dy = e.clientY - drag.y;
-	if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+	// capture only once it is a drag: a captured pointer's click lands on the svg,
+	// not on the region under it, and a plain click would select nothing
+	if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 2) {
+		drag.moved = true;
+		capture(e.pointerId);
+	}
 	drag.x = e.clientX;
 	drag.y = e.clientY;
 	drag.dx = (drag.dx ?? 0) + dx;
@@ -458,6 +470,7 @@ const unit = $derived(wording(ui.indicator).unit);
 					<path
 						class="rg"
 						class:sel={s.i === ui.who}
+						data-region={s.code}
 						d={regionPaths[s.i]}
 						fill={fillOf(s.i)}
 						onmousemove={(e) => hover(e, s.i)}

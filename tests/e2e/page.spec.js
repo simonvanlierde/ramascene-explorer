@@ -117,6 +117,20 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+test("a click on a country selects it on the flat map, the zoomed map and the globe", async ({ page }) => {
+	for (const [url, zoomIn] of [
+		["", 0],
+		["", 2],
+		["?map=globe", 0],
+	]) {
+		await page.goto(url);
+		await ready(page);
+		for (let i = 0; i < zoomIn; i++) await page.getByRole("button", { name: "Zoom in" }).click();
+		await page.locator('.rg[data-region="ES"]').click();
+		await expect(page).toHaveURL(/region=ES/);
+	}
+});
+
 test("the globe turns to a country picked in the country box", async ({ page }) => {
 	await page.goto("?map=globe");
 	await ready(page);
