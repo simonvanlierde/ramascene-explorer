@@ -6,14 +6,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-10-19
+## [0.3.0] - 2026-10-19
 
 ### Added
 
-- Zoom on the map, up to 8×: the scroll wheel, a trackpad or two-finger
-  pinch, or the + and − buttons, which zoom toward the selected country. The
-  zoomed flat map pans with a drag.
-- The author's name and a link to the source code on GitHub, in the header.
+- The zoom is kept in the link: `zoom=k,lon,lat` on the flat map (the view's
+  centre), `zoom=k` on the globe. A shared link opens on the same place at
+  any screen size.
 
 ### Fixed
 
@@ -24,6 +23,15 @@ follow [Semantic Versioning](https://semver.org/).
 - On the globe, picking a country in the country box now turns the globe to
   it. Before, only a click on the map did, so a country on the far side
   stayed hidden.
+
+## [0.2.0] - 2026-10-19
+
+### Added
+
+- Zoom on the map, up to 8×: the scroll wheel, a trackpad or two-finger
+  pinch, or the + and − buttons, which zoom toward the selected country. The
+  zoomed flat map pans with a drag.
+- The author's name and a link to the source code on GitHub, in the header.
 
 ## [0.1.0] - 2026-10-19
 
@@ -58,6 +66,7 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/ramascene-explorer/releases/tag/v0.1.0
