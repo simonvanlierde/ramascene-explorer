@@ -38,13 +38,13 @@ const fill = $derived(divFill(extent));
 		</div>
 	</div>
 {:else}
-	<div class="kpis k5" role="group" aria-label="The change in {name}{ui.dir === 'in' ? '’s consumption' : ''}, by the continent where it is {ui.dir === 'in' ? 'released' : 'consumed'}">
+	<div class="kpis k5" role="group" aria-label="The change in {name}{ui.dir === 'in' ? '’s consumption' : ''}, by the continent where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
 		{#each conts as c (c.name)}
 			{@const v = c.change}
 			{@const p = c.base ? (v / c.base) * 100 : 0}
 			{@const a = amount(v, ui.indicator)}
 			<div class="kpi">
-				<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? "Released in " : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
+				<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
 				<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<small>{a[1]}</small></div>
 				<div class="ks">{c.base ? `${pct(p)} of 2011` : "no 2011 flow"}</div>
 			</div>

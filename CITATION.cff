@@ -11,7 +11,7 @@ abstract: >-
   v3.3.sm (base year 2011): the baseline, three named interventions and 150
   material-efficiency scenarios. Every number comes from a verified engine run,
   with its provenance and checks on the same page. Nothing is a forecast.
-version: 0.1.0
+version: 0.2.0
 doi: 10.5281/zenodo.23461260
 url: "https://simonvanlierde.github.io/ramascene-explorer/"
 date-released: 2026-10-19

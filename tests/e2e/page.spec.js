@@ -117,6 +117,18 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+test("the globe turns to a country picked in the country box", async ({ page }) => {
+	await page.goto("?map=globe");
+	await ready(page);
+	await openSelection(page);
+	const box = page.getByRole("combobox", { name: "Country" });
+	await box.fill("Japan");
+	await box.press("Enter");
+	await expect(page).toHaveURL(/region=JP/);
+	// Japan sits on the far side of a globe facing Germany; the ring shows once it has turned
+	await expect(page.locator("circle.ring")).toHaveAttribute("opacity", "1");
+});
+
 test("zooming the flat map in on Germany makes room for the band from Italy", async ({ page }) => {
 	await page.goto("");
 	await ready(page);
@@ -146,6 +158,16 @@ test("the scroll wheel zooms the map about the pointer", async ({ page, isMobile
 	await expect(page.locator('.bands path[data-region="IT"]')).toHaveCount(1);
 	// the point under the pointer stays put, to the pixel rounding of the mouse
 	expect(Math.abs(Number(await ring.getAttribute("cx")) - cx)).toBeLessThan(5);
+});
+
+test("jobs are never 'released': the cards, legend and table take the indicator's word", async ({ page }) => {
+	await page.goto("?mode=whatif&indicator=3");
+	await ready(page);
+	await expect(page.locator(".kpis.k5")).toContainText("Jobs in Europe");
+	await expect(page.locator(".kpis.k5")).not.toContainText("Released");
+	await page.goto("?indicator=3");
+	await ready(page);
+	await expect(page.locator(".lg .lt")).toHaveText("Jobs here that make what Germany consumes");
 });
 
 test("a refused data path falls back to the default and says so", async ({ page }) => {

@@ -63,12 +63,12 @@ const lay = $derived(open && ui.panel === "sankey" ? sankeyLayout(meta, sum, ui)
 const heads = $derived(
 	ui.dir === "in"
 		? [
-				[lay?.x.L + lay?.nw, "end", "Released in"],
+				[lay?.x.L + lay?.nw, "end", w.made.col],
 				[lay?.x.M, "start", "Industry"],
 				[lay?.x.R + lay?.nw, "end", "Consumed in"],
 			]
 		: [
-				[lay?.x.L, "start", "Released in"],
+				[lay?.x.L, "start", w.made.col],
 				[lay?.x.M, "start", "Industry"],
 				[lay?.x.R, "start", "Consumed in"],
 			],
@@ -89,7 +89,7 @@ const rows = $derived.by(() => {
 });
 const maxV = $derived(Math.max(...rows.map((r) => r.v), 1e-12));
 const cols = $derived([
-	["n", ui.dir === "in" ? "Released in" : "Consumed in"],
+	["n", ui.dir === "in" ? w.made.col : "Consumed in"],
 	["v", unit],
 	["sh", "Share"],
 	["ind", "Largest industry"],
@@ -161,7 +161,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : `What ${name} releases`}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
+				{ui.dir === "in" ? `What ${name} consumes` : w.made.own(name)}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
 			<p class="copied" role="status">{copied}</p>
 			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
@@ -193,7 +193,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<div class="pb" id="tp-sankey" role="tabpanel" tabindex="0" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
 		{#if lay}
-			<svg class="sk" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: released in, industry, consumed in. The Table tab lists the same flows.">
+			<svg class="sk" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
 				{#each heads as [x, a, t] (t)}<text class="h" {x} y="11" text-anchor={a}>{t}</text>{/each}
 				{#each lay.links as l, i (i)}<path class="lk" d={l.d} fill={SECTION_COLOURS[l.q]}><title>{l.from} → {l.to}: {amountText(l.v, ui.indicator)}</title></path>{/each}
 				{#each lay.left as n (n.name)}<rect x={lay.x.L} y={n.y} width={lay.nw} height={n.h} fill="var(--slate)"><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
