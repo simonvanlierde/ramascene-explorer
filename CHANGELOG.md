@@ -6,6 +6,15 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-19
+
+### Fixed
+
+- A click on a country selects it again on the zoomed map and on the globe.
+  The map took hold of the pointer as soon as it was pressed, so the browser
+  sent the click to the map instead of the country. It now does that only
+  once the pointer moves, for a drag.
+
 ## [0.3.0] - 2026-10-19
 
 ### Added
@@ -66,7 +75,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/ramascene-explorer/releases/tag/v0.1.0

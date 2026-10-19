@@ -3,7 +3,7 @@
   "type": "SoftwareSourceCode",
   "name": "RaMa-Scene Explorer",
   "description": "A static, map-first explorer of the impacts embodied in each country's final demand, over precomputed RaMa-Scene engine runs on EXIOBASE v3.3.sm (2011).",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "dateCreated": "2026-09-26",
   "datePublished": "2026-10-19",
   "license": "https://spdx.org/licenses/MIT",
