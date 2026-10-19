@@ -115,15 +115,6 @@ its 638 values differ by more than 1e-12, and none by more than 1e-9.
 
 ## Embodied flows
 
-At 51.5 MB it stays out of git. It is the `embodied.parquet` asset of the
-[`data-2011`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011)
-release, and the Pages build downloads it from there and checks its SHA-256.
-To get it locally:
-
-```sh
-gh release download data-2011 --pattern embodied.parquet --dir data
-```
-
 `data/embodied.parquet` (`--out-embodied`) holds, for the baseline and every
 published scenario, the flows embodied in final demand: what each producer
 country releases, per section, for the final demand of each consumer country.
@@ -131,6 +122,15 @@ A flow is `B_i ∘ (L · Y)` summed over the products of one section, with one
 column of `Y` per consumer country. Sections are the 15 level-2 product
 aggregates of the engine database. Each scenario's flows come
 from its own `Y` and `L`, in the same worker as its other results.
+
+At 51.5 MB the file stays out of git. It is the `embodied.parquet` asset of the
+[`data-2011`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011)
+release, and the Pages build downloads it from there and checks its SHA-256.
+To get it locally:
+
+```sh
+gh release download data-2011 --pattern embodied.parquet --dir data
+```
 
 The file is long format, one row group per run: `run`, `indicator` (global
 id), `producer`, `section`, `consumer` (0-based, in engine order) and `value`.
@@ -167,12 +167,15 @@ Cells that rise in a scenario are counted and recorded, not refused. In the
 shipped run none rose, the largest difference in the first two checks was
 9.2e-16, and the float32 error was 2.6e-8.
 
-## Detail sidecars
+## Detail files (sidecars)
 
-`data/regions.json` (`--out-regions`, the 49-region values of the baseline and
-the three original interventions) and `data/flows.json` (`--out-flows`, each
-original intervention's change by sector and region, 15 × 49 cells) are still
-written and checked by the precompute: the regions match B·L·ΣY (relative
-1e-9), the sectors sum to each region and the flows to the total (relative
-1e-12). The page no longer reads them: the embodied flows hold the same
-breakdowns for every run and are checked against them.
+The precompute still writes and checks two detail files:
+
+- `data/regions.json` (`--out-regions`): the 49-region values of the baseline
+  and the three original interventions. They match B·L·ΣY (relative 1e-9).
+- `data/flows.json` (`--out-flows`): each original intervention's change by
+  sector and region, 15 × 49 cells. The sectors sum to each region and the
+  flows to the total (relative 1e-12).
+
+The page does not read them. The embodied flows hold the same breakdowns for
+every run, and the precompute checks them against these files.

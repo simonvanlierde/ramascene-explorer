@@ -5,27 +5,31 @@ provenance) and the embodied flows ([precompute.md](precompute.md#embodied-flows
 It shows one question at a time:
 
 - **Flows, 2011.** A sentence names the selected country's footprint (or what
-  it releases), with the country and the indicator as controls inside it. The
-  map draws the largest flows as tapered bands, thin where a flow leaves and
-  wide where it arrives, and fills each region by its flow with the selected
-  country. Flat (Equal Earth) or a globe. Partners within 5° of great
-  circle (about 550 km) get no band on either map; the fill shows them.
-  Further partners get a band where it fits outside the collar, so the
-  globe shows Britain and Italy for Germany and the flat world map does not.
-  On the globe, a band from a partner over the horizon starts at the edge.
+  it releases), and its country and indicator are controls you can change.
+  The map draws the largest flows as tapered bands, thin where a flow leaves
+  and wide where it arrives. It fills each region by the size of its flow
+  with the selected country. The map is flat (Equal Earth) or a globe.
+  - Partners within 5° of great circle (about 550 km) get no band on either
+    map; the fill shows them.
+  - Further partners get a band where it fits outside the collar, the circle
+    where the bands meet the selected country. So the globe shows Britain and
+    Italy for Germany, and the flat world map does not.
+  - On the globe, a band from a partner over the horizon starts at the edge.
 - **Industry rail.** One tab per section, its height the section's share of
-  the selection. A click isolates one section, further clicks add or remove.
-  Every number on the page follows the selection, in both modes.
-- **What if… .** The bands keep their 2011 width and take the run's % change
-  on a square-root scale fitted to the flows on screen (90% of the larger
-  flows fall inside; the rest take the end colour). A scrubber
-  runs from the 2011 baseline to the run and replays on every switch; the
-  strip shows the change released in each of the five continents.
+  the selection. A click isolates one section, and further clicks add or
+  remove sections. Every number on the page follows the selection, in both
+  modes.
+- **What if…** The bands keep their 2011 width and take the run's % change as
+  their colour. The colour scale is square-root and fitted to the flows on
+  screen: 90% of the larger flows fall inside it, and the rest take the end
+  colour. A scrubber runs from the 2011 baseline to the run and replays on
+  every switch. Five cards show the change released in each continent.
 - **Details.** A Sankey (released in → industry → consumed in), the same
-  flows as a sortable table, and the method with every check. Download CSV
-  saves the table's rows at full precision, in the table's unit, under a file
-  name that states the basis (year, region, indicator, direction, sections,
-  run, and "synthetic" for test data); Copy link copies the current view's URL.
+  flows as a sortable table, and the method with every check.
+  - Download CSV saves the table's rows at full precision, in the table's
+    unit. The file name states the basis: year, region, indicator,
+    direction, sections, run, and "synthetic" for test data.
+  - Copy link copies the current view's URL.
 
 On load the page fetches `data/results.json`, then reads the Parquet footer
 by range request, using the size recorded in `provenance.embodied.bytes`.
@@ -38,6 +42,7 @@ The selection lives in the query string (`mode`, `scenario`, `indicator`,
 `region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
 links from the first version (`?scenario=&indicator=&region=`) still open
 their run.
+
 The five "Rest of …" regions merge their Natural Earth countries (see
 `REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
 
@@ -65,11 +70,13 @@ result is compared with the baseline computed in the same job and labelled
 "computed live by the job API, not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
 
-Without `?api=` the panel stays hidden, its code is not loaded, and the page
-fetches only its own files (`data/results.json`, `data/embodied.parquet`, the map geometry and the fonts). The
-parameter accepts a bare origin: `http://` only on loopback (a local run or an
-SSH tunnel), and `https://` otherwise. The page ignores anything else and
-reports it in the status line.
+Without `?api=` the panel stays hidden and its code is not loaded. The page
+then fetches only its own files: `data/results.json`, `data/embodied.parquet`,
+the map geometry and the fonts.
+
+The parameter accepts a bare origin: `http://` only on loopback (a local run
+or an SSH tunnel), and `https://` otherwise. The page ignores anything else
+and reports it in the status line.
 
 ```sh
 # job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 5173

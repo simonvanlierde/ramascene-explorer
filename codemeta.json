@@ -7,6 +7,8 @@
   "dateCreated": "2026-09-26",
   "datePublished": "2026-10-19",
   "license": "https://spdx.org/licenses/MIT",
+  "identifier": "https://doi.org/10.5281/zenodo.23461260",
+  "url": "https://simonvanlierde.github.io/ramascene-explorer/",
   "codeRepository": "https://github.com/simonvanlierde/ramascene-explorer",
   "issueTracker": "https://github.com/simonvanlierde/ramascene-explorer/issues",
   "programmingLanguage": ["JavaScript", "Svelte", "Python"],

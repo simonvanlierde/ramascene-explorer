@@ -12,10 +12,10 @@ First release.
 
 ### Added
 
-- A map-first page: a live sentence answers where a country's consumption
-  causes emissions, jobs or metal-ore extraction, with the country and the
-  indicator as controls inside it. Tapered bands show the largest flows on a
-  flat Equal Earth map or a globe.
+- A map-first page. A sentence says where a country's consumption causes
+  emissions, jobs or metal-ore extraction, and its country and indicator are
+  controls you can change. Tapered bands show the largest flows on a flat
+  Equal Earth map or a globe.
 - An industry rail that filters every number by the 15 industry sections, and
   a switch between a country's consumption and its production, the two
   directions of a flow.
@@ -33,9 +33,9 @@ First release.
 - The embodied flows for every run as one Parquet file (the `data-2011`
   release asset), read in the browser by HTTP range request: under 1 MB of
   51.5 MB on first load, about 0.33 MB per further run.
-- `results.json` records the size and SHA-256 of `embodied.parquet`
-  (`provenance.embodied`), so the page reads its footer without first asking
-  the server for the file size.
+- A faster first map: `results.json` records the size and SHA-256 of
+  `embodied.parquet` (`provenance.embodied`), so the page skips the request
+  that would ask the server for the file size.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 

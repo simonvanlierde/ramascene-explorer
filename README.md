@@ -1,6 +1,7 @@
 # RaMa-Scene Explorer
 
 [![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23461260.svg)](https://doi.org/10.5281/zenodo.23461260)
 
 A static, map-first page over **precomputed** RaMa-Scene engine output on the
 EXIOBASE 2011 base year. It shows where a country's consumption causes
@@ -10,17 +11,20 @@ interventions and a grid of 150 material-efficiency scenarios. Nothing here is
 a live calculation, and nothing is a forecast. The engine changes final demand
 or technical coefficients in the 2011 economy and has no projection step.
 
+Open it at <https://simonvanlierde.github.io/ramascene-explorer/>.
+
 `data/results.json` and `data/embodied.parquet` come from one precompute run
 on 2026-10-14, with engine `split/3-performance @ d9113ca`, the head of
 [CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
-The same run wrote `data/regions.json` and `data/flows.json`, detail files the
-precompute checks against; the page does not read them.
-The Parquet file is too large for git and ships as a release asset (see
-[docs/precompute.md](docs/precompute.md#embodied-flows)). Nothing else in the
-repository is a result. `tests/fixture.json` and
-`tests/fixture-embodied.parquet` are synthetic data for testing the page, and
-the page shows a red "SYNTHETIC TEST DATA: NOT A RESULT" banner for any data
-whose `data_kind` is not `exiobase-v3`.
+The same run wrote `data/regions.json` and `data/flows.json`. The precompute
+checks the flows against these detail files, and the page does not read them.
+The Parquet file is too large for git, so it ships as a release asset (see
+[docs/precompute.md](docs/precompute.md#embodied-flows)).
+
+Nothing else in the repository is a result. `tests/fixture.json` and
+`tests/fixture-embodied.parquet` are synthetic data for testing the page. For
+any data whose `data_kind` is not `exiobase-v3`, the page shows a red
+"SYNTHETIC TEST DATA: NOT A RESULT" banner.
 
 ## View
 
@@ -51,7 +55,7 @@ string, so you can share a view by its URL.
 uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
 node --test                            # the page logic (after pnpm install)
-pnpm exec playwright test              # the built page in a browser, with axe (once: pnpm exec playwright install chromium)
+pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 ```
 
 Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its
@@ -63,6 +67,13 @@ root directory and loads the engine's own `conftest.py`.
 - [docs/precompute.md](docs/precompute.md): how to regenerate the data, the embodied flows, and the checks they must pass
 - [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
 - [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
+
+## Cite
+
+Cite the archived release: [doi:10.5281/zenodo.23461260](https://doi.org/10.5281/zenodo.23461260)
+always points to the latest version. GitHub's "Cite this repository" button
+reads [CITATION.cff](CITATION.cff). Cite EXIOBASE and the RaMa-Scene engine
+separately (see below and [docs/precompute.md](docs/precompute.md)).
 
 ## Licence
 
