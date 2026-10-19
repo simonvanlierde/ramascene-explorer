@@ -15,7 +15,8 @@ It shows one question at a time:
     where the bands meet the selected country. Zooming in makes room for more:
     for Germany, Italy's band appears once you zoom in on the flat map.
   - The wheel, a trackpad pinch or a two-finger pinch zooms the map, up to
-    8×, and the + and − buttons zoom toward the selected country. On the
+    8×, and the + and − buttons zoom toward the selected country. The zoom
+    goes into the link (`zoom`). On the
     zoomed flat map a drag pans; on the globe it turns the globe. On a phone,
     one finger still scrolls the page past the unzoomed flat map.
   - On the globe, a band from a partner over the horizon starts at the edge.
@@ -43,7 +44,7 @@ it reads the baseline row group and draws the map. The default What if… run
 loads when the browser is idle. Each run is fetched once, on demand.
 
 The selection lives in the query string (`mode`, `scenario`, `indicator`,
-`region`, `dir`, `sections`, `map`, `panel`), so every view can be shared;
+`region`, `dir`, `sections`, `map`, `zoom`, `panel`), so every view can be shared;
 links from the first version (`?scenario=&indicator=&region=`) still open
 their run.
 

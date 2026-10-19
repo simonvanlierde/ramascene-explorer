@@ -10,6 +10,7 @@ export const ui = $state({
 	dir: "in", // "in": consumed in who; "out": released in who
 	on: new Set(), // sections shown; replaced, never mutated, so it stays reactive
 	globe: false,
+	zoom: null, // null, or [k] on the globe, [k, lon, lat] (the view's centre) on the flat map
 	panel: null, // null | "sankey" | "table" | "method"
 	s: 1, // scrubber: 0 is the 2011 baseline, 1 the run
 });

@@ -250,6 +250,44 @@ $effect(() => {
 	el.addEventListener("wheel", wheel, { passive: false });
 	return () => el.removeEventListener("wheel", wheel);
 });
+// The zoom lives in the link as the view's centre in degrees, so it opens on the
+// same place at any screen size. It is written once the map stops moving.
+const mid = () => [view.w / 2, (TOP + view.h) / 2];
+const round = (x, d) => Number(x.toFixed(d));
+let saveT = 0;
+let restored = false;
+$effect(() => {
+	[zk, off, alpha];
+	clearTimeout(saveT);
+	saveT = setTimeout(() => {
+		if (!restored) return; // a link's zoom is not applied yet
+		if (zk === 1) return (ui.zoom = null);
+		if (alpha > 0.5) return (ui.zoom = [round(zk, 2)]);
+		view; // brings the projection up to date
+		// the flat map's raw Equal Earth point under the centre (d3 flips y)
+		const s = proj.scale();
+		const [tx, ty] = proj.translate();
+		const [lam, phi] = geoEqualEarthRaw.invert((mid()[0] - tx) / s, (ty - mid()[1]) / s);
+		ui.zoom = [round(zk, 2), round((lam * 180) / Math.PI, 1), round((phi * 180) / Math.PI, 1)];
+	}, 250);
+	return () => clearTimeout(saveT);
+});
+// a link's zoom is applied once, when the map first has its shapes and size
+$effect(() => {
+	if (restored || !shapes.length || !W) return;
+	restored = true;
+	untrack(() => {
+		const z = ui.zoom;
+		if (!z) return;
+		zk = z[0];
+		if (alpha > 0.5 || z.length < 3) return;
+		off = [0, 0];
+		view;
+		const p = proj([z[1], z[2]]);
+		if (p) off = clampOff([mid()[0] - p[0], mid()[1] - p[1]]);
+	});
+});
+
 // keep a newly selected country in view, whether picked on the map or in the
 // country box: the globe turns to it, the zoomed flat map pans to it
 $effect(() => {
@@ -260,7 +298,7 @@ $effect(() => {
 		if (zk === 1) return;
 		view;
 		const p = proj(shapes[k].at);
-		if (p) off = clampOff([off[0] + view.w / 2 - p[0], off[1] + (TOP + view.h) / 2 - p[1]]);
+		if (p) off = clampOff([off[0] + mid()[0] - p[0], off[1] + mid()[1] - p[1]]);
 	});
 });
 

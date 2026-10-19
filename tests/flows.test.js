@@ -347,3 +347,14 @@ test("the producer side takes each indicator's own word, so jobs are never 'rele
 	assert.equal(wording(3).made.own("Germany"), "Jobs in Germany");
 	for (const id of [3, 7]) assert.doesNotMatch(JSON.stringify(wording(id)), /releas/i);
 });
+
+test("the zoom goes into the link and back, and a bad one is dropped", () => {
+	const opts = { runs: meta.runs, indicators: [5, 3, 7], codes: meta.country_codes };
+	const flat = parseView("?zoom=4,10.5,51.2", opts);
+	assert.deepEqual(flat.zoom, [4, 10.5, 51.2]);
+	assert.match(viewSearch(flat, meta.country_codes), /zoom=4,10.5,51.2/);
+	assert.deepEqual(parseView("?map=globe&zoom=2.5", opts).zoom, [2.5]);
+	for (const bad of ["1", "9", "4,200,0", "4,10", "x", ""])
+		assert.equal(parseView(`?zoom=${bad}`, opts).zoom, null, bad);
+	assert.doesNotMatch(viewSearch(parseView("", opts), meta.country_codes), /zoom/);
+});
