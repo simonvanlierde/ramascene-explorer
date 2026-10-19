@@ -146,6 +146,22 @@ test("zooming the flat map in on Germany makes room for the band from Italy", as
 	await expect(band("IT")).toHaveCount(0);
 });
 
+test("a zoomed view is kept in the link and opens on the same place", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Zoom in" }).click();
+	await expect(page).toHaveURL(/zoom=8,-?[\d.]+,-?[\d.]+/);
+	const cx = Number(await page.locator("circle.ring").getAttribute("cx"));
+	await page.reload();
+	await ready(page);
+	await expect(page.locator('.bands path[data-region="IT"]')).toHaveCount(1);
+	await expect(async () => {
+		expect(Math.abs(Number(await page.locator("circle.ring").getAttribute("cx")) - cx)).toBeLessThan(8);
+	}).toPass();
+	await page.getByRole("button", { name: "Globe" }).click();
+	await expect(page).not.toHaveURL(/zoom=/);
+});
+
 test("the scroll wheel zooms the map about the pointer", async ({ page, isMobile }) => {
 	test.skip(isMobile, "phones pinch; Playwright has no pinch gesture");
 	await page.goto("");

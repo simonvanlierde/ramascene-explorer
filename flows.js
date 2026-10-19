@@ -502,6 +502,14 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {})
 // The view's own query parameters; scenario and indicator keep the names the
 // first version of the page used, so old links still land on their run.
 // opts: {runs: run ids with flows, indicators: global ids, codes: country codes}
+// ?zoom=k on the globe, ?zoom=k,lon,lat on the flat map; anything out of range is ignored.
+function parseZoom(s) {
+	const z = (s ?? "").split(",").map(Number);
+	const ok = z.every(Number.isFinite) && z[0] > 1 && z[0] <= 8;
+	if (ok && z.length === 1) return z;
+	if (ok && z.length === 3 && Math.abs(z[1]) <= 180 && Math.abs(z[2]) <= 90) return z;
+	return null;
+}
 export function parseView(search, { runs, indicators, codes }) {
 	const q = new URLSearchParams(search);
 	const scenario = q.get("scenario");
@@ -523,6 +531,7 @@ export function parseView(search, { runs, indicators, codes }) {
 		dir: q.get("dir") === "out" ? "out" : "in",
 		on: new Set(sections.length ? sections : SECTION_SHORT.keys()),
 		globe: q.get("map") === "globe",
+		zoom: parseZoom(q.get("zoom")),
 		panel: ["sankey", "table", "method"].includes(panel) ? panel : null,
 	};
 }
@@ -539,6 +548,7 @@ export function viewSearch(v, codes, search = "") {
 	set("dir", v.dir, "in");
 	set("sections", v.on.size === SECTION_SHORT.length ? null : [...v.on].sort((a, b) => a - b).join(","));
 	set("map", v.globe ? "globe" : null);
+	set("zoom", v.zoom?.join(","));
 	set("panel", v.panel);
 	const s = `${q}`.replace(/%2C/g, ",");
 	return s ? `?${s}` : "";
