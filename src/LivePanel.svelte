@@ -129,7 +129,7 @@ async function submit(event) {
 <section id="live" aria-labelledby="live-title">
 	<h2 id="live-title">Run a custom scenario</h2>
 	<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
-	<p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (about a minute; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
+	<p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
 	<form id="live-form" onsubmit={submit}>
 		<label for="live-product">Product <select id="live-product" required bind:value={pick.product}>{@render options(catalog?.products)}</select></label>
 		<label for="live-origin">Produced in <select id="live-origin" required bind:value={pick.origin}>{@render options(catalog?.regions)}</select></label>
