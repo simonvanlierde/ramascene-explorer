@@ -76,3 +76,71 @@ test("the live panel runs one intervention and labels the result live", async ({
 	await expect(page.locator("#live-provenance")).toContainText("computed live by the job API, not precomputed");
 	await expectNoAxeViolations(page);
 });
+
+// The same job with flows in the fixture's layout (3 indicators × 49 producers
+// × 15 sections × 49 consumers, row-major, absolute): every country buys only
+// from the United States (index 28), and the scenario cuts that by 20%. The
+// precomputed fixture draws bands from elsewhere, so one band from the US alone
+// shows the map is drawing the job's flows.
+function flowsJob() {
+	const N = 49;
+	const S = 15;
+	const cell = (i, c) => (i * N + 28) * S * N + c;
+	const baseline = new Array(3 * N * S * N).fill(0);
+	const scenario = new Array(3 * N * S * N).fill(0);
+	for (let i = 0; i < 3; i++)
+		for (let c = 0; c < N; c++) {
+			baseline[cell(i, c)] = 1e10;
+			scenario[cell(i, c)] = 8e9;
+		}
+	const indicators = [
+		{ id: 5, name: "GHG emissions: Total", unit: "kg CO2 eq" },
+		{ id: 3, name: "Employment: Total", unit: "1000 p" },
+		{ id: 7, name: "DEU - Metal Ores - Total", unit: "kt" },
+	];
+	return {
+		...job,
+		result: {
+			...job.result,
+			indicators,
+			flows: { shape: [3, N, S, N], axes: ["indicator", "producer", "section", "consumer"], baseline, scenario },
+		},
+	};
+}
+
+test("a live job's flows light the map, labelled live", async ({ page }) => {
+	const done = flowsJob();
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ json: { id: done.id, status: "queued" } }));
+	await page.route(`${API}/jobs/${done.id}`, (route) => route.fulfill({ json: done }));
+
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator(".bands path").first()).toBeVisible();
+	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await page.locator("#live-run").click();
+
+	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
+	await expect(page.locator(".bands path")).toHaveCount(1);
+	await expect(page.locator("#status .basis")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#headline")).toContainText(
+		"if Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe,",
+	);
+	await page.locator(".sel-chip button").first().click();
+	await page.locator("#tab-method").click();
+	await expect(page.locator("#tp-method")).toContainText(`${API} · job ${done.id}`);
+	await expectNoAxeViolations(page);
+});
+
+test("without flows in the job, the map keeps the precomputed run", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ json: { id: job.id, status: "queued" } }));
+	await page.route(`${API}/jobs/${job.id}`, (route) => route.fulfill({ json: job }));
+
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
+	await expect(page.locator("#status .basis")).toContainText("precomputed, not a forecast");
+	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
+});

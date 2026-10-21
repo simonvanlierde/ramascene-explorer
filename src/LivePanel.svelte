@@ -3,9 +3,18 @@
 // fetches from the job API. Everything from the API is rendered as text, never as markup.
 import { compare } from "../explorer.js";
 import { amountText, pct, wording } from "../flows.js";
-import { LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "../live.js";
+import {
+	LIVE_STATUS,
+	liveData,
+	liveProvenance,
+	liveText,
+	scenarioBody,
+	unreachableMessage,
+	waitForJob,
+} from "../live.js";
 
-let { api } = $props();
+// onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
+let { api, onflows } = $props();
 
 async function fetchJson(url, init) {
 	const response = await fetch(url, { cache: "no-store", ...init });
@@ -100,6 +109,11 @@ async function submit(event) {
 		job = done;
 		data = d;
 		message = `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
+		try {
+			if (onflows?.(done, liveText(done, catalog))) message += " The map shows its flows.";
+		} catch (e) {
+			message += ` Its flows are not on the map: ${e.message}`;
+		}
 	} catch (e) {
 		message = `Job failed: ${e.message}`;
 	} finally {
@@ -115,7 +129,7 @@ async function submit(event) {
 <section id="live" aria-labelledby="live-title">
 	<h2 id="live-title">Run a custom scenario</h2>
 	<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
-	<p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (about a minute; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
+	<p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
 	<form id="live-form" onsubmit={submit}>
 		<label for="live-product">Product <select id="live-product" required bind:value={pick.product}>{@render options(catalog?.products)}</select></label>
 		<label for="live-origin">Produced in <select id="live-origin" required bind:value={pick.origin}>{@render options(catalog?.regions)}</select></label>

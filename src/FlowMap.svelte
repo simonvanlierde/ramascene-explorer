@@ -524,7 +524,7 @@ const unit = $derived(wording(ui.indicator).unit);
 
 		<p class="mnote">
 			{#if whatif}
-				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. A precomputed engine run on 2011 data, not a forecast.
+				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
 			{:else}
 				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}

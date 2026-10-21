@@ -4,10 +4,11 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, pct, possessive, runText, SECTION_SHORT, wording } from "../flows.js";
+import { amount, amountText, capitalise, pct, possessive, SECTION_SHORT, wording } from "../flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
-let { data, meta, sum, whatif, run } = $props();
+// text: the shown run's "if …" clause
+let { data, meta, sum, whatif, text } = $props();
 
 const S = SECTION_SHORT.length;
 const name = $derived(meta.countries[ui.who]);
@@ -56,7 +57,7 @@ const plain = $derived.by(() => {
 	if (!whatif)
 		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
 	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${runText(data, run)}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
+	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -119,7 +120,7 @@ function onFocusOut(e) {
 		</p>
 	{:else}
 		<p id="headline">
-			In the {year} economy, if <b>{runText(data, run)}</b>,
+			In the {year} economy, if <b>{text}</b>,
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
