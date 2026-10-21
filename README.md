@@ -65,7 +65,7 @@ uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
 node --test                            # the page logic (after pnpm install)
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
-pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 60%
+pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
 ```
 
 Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its
