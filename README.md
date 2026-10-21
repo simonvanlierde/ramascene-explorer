@@ -1,6 +1,7 @@
 # RaMa-Scene Explorer
 
 [![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/simonvanlierde/ramascene-explorer?utm_source=badge)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23461260.svg)](https://doi.org/10.5281/zenodo.23461260)
 
 A static, map-first page over **precomputed** RaMa-Scene engine output on the
@@ -61,6 +62,16 @@ pnpm exec playwright test              # the built page in six browser setups, w
 
 Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its
 root directory and loads the engine's own `conftest.py`.
+
+## Benchmark
+
+```sh
+pnpm bench   # the page's per-selection work, with Vitest
+```
+
+`.github/workflows/codspeed.yml` runs it on every pull request and push to
+main under [CodSpeed](https://codspeed.io)'s CPU simulation, which reports the
+change against main on the pull request.
 
 ## Docs
 
