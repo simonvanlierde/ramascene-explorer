@@ -1,0 +1,24 @@
+[project]
+name = "brightway-check"
+version = "0.1.0"
+description = "EXIOBASE v3.3.sm (RaMa-Scene arrays) as a Brightway IO database, checked against the RaMa-Scene engine"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Simon van Lierde", email = "90462640+simonvanlierde@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "bw2calc==2.5.0",
+    "bw2data==4.7",
+    "bw2io==0.9.17",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

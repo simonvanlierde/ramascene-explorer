@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+
+# Brightway project directory (about 880 MB, rebuilt by build_db.py)
+bwdir/
+
+# Raw EXIOBASE / RaMa-Scene arrays and database copies: never commit
+*.npy
+*.npz
+*.sqlite3
+*.zip
+data/

@@ -1,0 +1,62 @@
+{
+ "functional_unit": "1 M EUR final demand, Cement, lime and plaster (p26.d), NL, 2011",
+ "unit": "kg CO2 eq",
+ "timings_s": {
+  "brightway_lci_lcia": 129.14386686700163,
+  "brightway_lci": 129.14276894700015,
+  "numpy_solve_full_A": 15.187641566997627
+ },
+ "peak_rss_gib_after": {
+  "brightway": 5.219268798828125,
+  "numpy_solve": 5.219268798828125
+ },
+ "activity": {
+  "name": "Cement, lime and plaster",
+  "location": "NL",
+  "matrix_index": 4100
+ },
+ "brightway": 1642630.5555948804,
+ "brightway_matrix": {
+  "technosphere_nnz": 36088625,
+  "shape": [
+   9800,
+   9800
+  ],
+  "solver": "scipy.sparse.linalg.spsolve (SuperLU)"
+ },
+ "numpy_solve_full_A": 1642630.5555952443,
+ "numpy_solve_cutoff_A": 1642630.5555948887,
+ "residual_full_A": 3.9968028886505635e-15,
+ "numpy_L_file": 1642630.55559524,
+ "relative_differences": {
+  "brightway_vs_numpy_full_A": 2.2154360564608252e-13,
+  "brightway_vs_numpy_cutoff_A": 5.102731799910875e-15,
+  "numpy_full_A_vs_L_file": 2.5513658999548916e-15,
+  "brightway_vs_L_file": 2.1899223974612819e-13,
+  "supply_vector_max_abs_bw_vs_full_A": 4.6629367034256575e-15,
+  "supply_vector_max_abs_full_A_vs_L_file": 2.220446049250313e-15
+ },
+ "top5_contributions_full_A": [
+  {
+   "matrix_index": 4100,
+   "kg_co2_eq": 1217285.4460630675
+  },
+  {
+   "matrix_index": 4101,
+   "kg_co2_eq": 29070.0992059168
+  },
+  {
+   "matrix_index": 4128,
+   "kg_co2_eq": 23559.806025178117
+  },
+  {
+   "matrix_index": 4127,
+   "kg_co2_eq": 22185.728120365005
+  },
+  {
+   "matrix_index": 4040,
+   "kg_co2_eq": 15370.175110498683
+  }
+ ],
+ "peak_rss_gib": 5.219268798828125
+}

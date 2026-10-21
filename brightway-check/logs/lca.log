@@ -1,0 +1,95 @@
+.venv/lib/python3.12/site-packages/bw2calc/__init__.py:57: UserWarning:
+It seems like you have an AMD/INTEL x64 architecture, but haven't installed pypardiso:
+
+    https://pypi.org/project/pypardiso/
+
+Installing it could give you much faster calculations.
+
+  warnings.warn(PYPARDISO_WARNING)
+01:37:48+0200 [info     ] Using environment variable BRIGHTWAY2_DIR for data directory:
+$PWD/bwdir
+{
+ "functional_unit": "1 M EUR final demand, Cement, lime and plaster (p26.d), NL, 2011",
+ "unit": "kg CO2 eq",
+ "timings_s": {
+  "brightway_lci_lcia": 129.14386686700163,
+  "brightway_lci": 129.14276894700015,
+  "numpy_solve_full_A": 15.187641566997627
+ },
+ "peak_rss_gib_after": {
+  "brightway": 5.219268798828125,
+  "numpy_solve": 5.219268798828125
+ },
+ "activity": {
+  "name": "Cement, lime and plaster",
+  "location": "NL",
+  "matrix_index": 4100
+ },
+ "brightway": 1642630.5555948804,
+ "brightway_matrix": {
+  "technosphere_nnz": 36088625,
+  "shape": [
+   9800,
+   9800
+  ],
+  "solver": "scipy.sparse.linalg.spsolve (SuperLU)"
+ },
+ "numpy_solve_full_A": 1642630.5555952443,
+ "numpy_solve_cutoff_A": 1642630.5555948887,
+ "residual_full_A": 3.9968028886505635e-15,
+ "numpy_L_file": 1642630.55559524,
+ "relative_differences": {
+  "brightway_vs_numpy_full_A": 2.2154360564608252e-13,
+  "brightway_vs_numpy_cutoff_A": 5.102731799910875e-15,
+  "numpy_full_A_vs_L_file": 2.5513658999548916e-15,
+  "brightway_vs_L_file": 2.1899223974612819e-13,
+  "supply_vector_max_abs_bw_vs_full_A": 4.6629367034256575e-15,
+  "supply_vector_max_abs_full_A_vs_L_file": 2.220446049250313e-15
+ },
+ "top5_contributions_full_A": [
+  {
+   "matrix_index": 4100,
+   "kg_co2_eq": 1217285.4460630675
+  },
+  {
+   "matrix_index": 4101,
+   "kg_co2_eq": 29070.0992059168
+  },
+  {
+   "matrix_index": 4128,
+   "kg_co2_eq": 23559.806025178117
+  },
+  {
+   "matrix_index": 4127,
+   "kg_co2_eq": 22185.728120365005
+  },
+  {
+   "matrix_index": 4040,
+   "kg_co2_eq": 15370.175110498683
+  }
+ ],
+ "peak_rss_gib": 5.219268798828125
+}
+	Command being timed: "timeout 1500 uv run python lca.py --data $DATASETS_DIR --out results/lca.json"
+	User time (seconds): 1651.92
+	System time (seconds): 2.79
+	Percent of CPU this job got: 1008%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:44.15
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5472800
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 718546
+	Voluntary context switches: 8639
+	Involuntary context switches: 485687
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 24
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
