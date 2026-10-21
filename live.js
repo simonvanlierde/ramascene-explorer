@@ -107,13 +107,15 @@ export function liveProvenance(job, apiOrigin) {
 
 // The "if …" clause for a job's first step, in the words of the precomputed runs:
 // "Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe".
-// Names come from GET /catalog; an id it does not list is shown as the id.
+// Names come from GET /catalog, without the engine's "S: " sector prefix; the
+// region "Total" (everywhere) is left out; an id it does not list is shown as the id.
 export function liveText(job, catalog) {
 	const step = job.scenario.model_details[0];
-	const name = (list, [id]) => catalog?.[list]?.find((x) => x.id === id)?.name ?? `#${id}`;
+	const name = (list, [id]) => (catalog?.[list]?.find((x) => x.id === id)?.name ?? `#${id}`).replace(/^[A-Z]: /, "");
+	const where = (prefix, ids) => (name("regions", ids) === "Total" ? "" : `${prefix}${name("regions", ids)}`);
 	const change = step.techChange[0];
 	const product = name("products", step.product).toLowerCase();
-	return `${name("consumers", step.consumedBy)} in ${name("regions", step.consumedReg)} used ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product} from ${name("regions", step.originReg)}`;
+	return `${name("consumers", step.consumedBy)}${where(" in ", step.consumedReg)} used ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${where(" from ", step.originReg)}`;
 }
 
 // A job's flows as the page's {base, delta}: dense arrays in meta's layout, the

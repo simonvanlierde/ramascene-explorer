@@ -153,6 +153,13 @@ test("liveText words a job like a precomputed run, with catalog names", () => {
 	);
 	const rise = { scenario: { model_details: [{ ...job.scenario.model_details[0], techChange: [5] }] } };
 	assert.equal(liveText(rise, null), "#198 in #2 used 5% more #180 from #1");
+	// the engine's own names: a sector prefix, and Total for everywhere
+	const engine = {
+		...catalog,
+		regions: [{ id: 1, name: "Total" }, ...catalog.regions.slice(1)],
+		consumers: [{ id: 198, name: "S: Motor vehicles" }],
+	};
+	assert.equal(liveText(job, engine), "Motor vehicles in Africa used 20% less motor vehicles");
 });
 
 test("liveFlows: the job's own baseline, and the change against it, in the page's layout", () => {
