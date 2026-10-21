@@ -6,3 +6,5 @@ test-results/
 playwright-report/
 dist/
 data/embodied.parquet
+.stryker-tmp/
+reports/

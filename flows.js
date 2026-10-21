@@ -513,7 +513,9 @@ function parseZoom(s) {
 export function parseView(search, { runs, indicators, codes }) {
 	const q = new URLSearchParams(search);
 	const scenario = q.get("scenario");
-	const indicator = Number(q.get("indicator"));
+	// a missing or empty ?indicator= must fall back, not read as indicator 0
+	const indicatorParam = q.get("indicator");
+	const indicator = indicatorParam ? Number(indicatorParam) : Number.NaN;
 	const region = q.get("region");
 	const sections = (q.get("sections") ?? "")
 		.split(",")
