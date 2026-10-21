@@ -19,6 +19,9 @@ precompute = [
 
 [tool.uv]
 package = false
+# Resolve no release younger than 7 days, as Renovate already waits, so a lock refresh or a
+# manual `uv add` cannot pull a release published hours ago.
+exclude-newer = "7 days"
 # pyarrow writes data/embodied.parquet; the tests read it back
 default-groups = ["dev", "precompute"]
 
