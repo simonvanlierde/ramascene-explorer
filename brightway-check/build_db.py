@@ -19,6 +19,8 @@ that row is already characterised in the dataset.
 """
 
 import argparse
+import json
+import resource
 import sqlite3
 import time
 from pathlib import Path
@@ -53,6 +55,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", type=Path, required=True, help="DATASETS_DIR with 2011/{A,B}_v4.npy")
     ap.add_argument("--db", type=Path, required=True, help="a COPY of RaMa-Scene's db.sqlite3")
+    ap.add_argument("--out", type=Path, default=Path("results/build.json"))
     args = ap.parse_args()
 
     import bw2data as bd
@@ -165,6 +168,22 @@ def main():
     )
     print(f"technosphere entries written {tech_idx.size}, biosphere entries {bio_idx.size}")
     print(f"metadata {t_meta:.1f} s, datapackage write {t_write:.1f} s, project dir {size / 2**20:.1f} MiB")
+    out = {
+        "activities": len(db),
+        "biosphere_flows": len(bio),
+        "threshold": THRESHOLD,
+        "A_nonzeros": nnz_total,
+        "A_density": nnz_total / 9800**2,
+        "A_dropped": dropped,
+        "A_abs_share_dropped": mass_dropped / mass_total,
+        "technosphere_entries": int(tech_idx.size),
+        "biosphere_entries": int(bio_idx.size),
+        "project_dir_mib": size / 2**20,
+        "timings_s": {"metadata": t_meta, "datapackage_write": t_write, "total": time.perf_counter() - t0},
+        "peak_rss_gib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20,
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(out, indent=1) + "\n")
 
 
 if __name__ == "__main__":

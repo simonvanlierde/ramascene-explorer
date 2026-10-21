@@ -33,19 +33,18 @@ About 74 % of the footprint (1,217,285 kg) is emitted by Dutch cement production
 itself, including the cement it uses as its own input. The 1 M EUR delivered
 alone emits 1,122,235 kg (68 %).
 
-Build and run figures (from `logs/` and `results/lca.json`, the first run):
+Build and run figures (from `results/`):
 
 - Database: 9,800 activities (49 regions x 200 products) and 60 extension flows.
 - A has 38,963,403 non-zero entries (density 0.41). The build drops 2,876,890
   of them below 1e-15, a share of 1.05e-13 of the absolute sum, and writes
   36,088,625 technosphere and 357,707 biosphere entries.
-- The build takes 16 s wall time and 2.9 GiB RAM. The project directory is
-  876 MiB.
+- The build takes 6 s and 2.9 GiB RAM. The project directory is 876 MiB.
 - The Brightway LCI takes 129 s with SuperLU (pypardiso not installed) and
   5.2 GiB RAM. The dense numpy solve takes 15 s. The engine route takes 0.02 s,
   because it reads the precomputed L.
 
-Full output: `results/lca.json` and `results/engine.json`.
+Full output: `results/build.json`, `results/lca.json` and `results/engine.json`.
 
 ## Run
 
@@ -77,9 +76,8 @@ uv run --project .. python engine.py --engine "$RAMASCENE_DIR" --data "$DATASETS
 [simonvanlierde/ramascene@d9113ca](https://github.com/simonvanlierde/ramascene/commit/d9113ca9ad38bc29d2a96392dabf74d70abf830e),
 the engine behind the explorer's results. A rerun of all three steps from the
 locked environment (2026-10-21) gave the same scores to the last digit; only
-the timings differ by machine. The committed `lca.json` and the build and LCA
-logs are from the first run, `engine.json` and its log from the rerun. A rerun
-overwrites them; `lca.py` stops if two routes that should agree differ by more
+the timings differ by machine. The committed `lca.json` is from the first run,
+`build.json` and `engine.json` from the rerun. A rerun overwrites them; `lca.py` stops if two routes that should agree differ by more
 than 1e-10.
 
 ## Data
@@ -93,7 +91,7 @@ products. The `_v4` in the file names is RaMa-Scene's file suffix, not a
 dataset version.
 
 This folder does not contain the EXIOBASE arrays or the Brightway project.
-The files in `results/` and `logs/` are small numbers derived from EXIOBASE
+The files in `results/` are small numbers derived from EXIOBASE
 v3.3.sm and fall under the same CC BY 4.0 attribution.
 
 ## Licence
