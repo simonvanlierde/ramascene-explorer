@@ -34,7 +34,7 @@ const view = fc.record({
 	mode: fc.constantFrom("flows", "whatif"),
 	run: fc.constantFrom(...named),
 	// the indicator ids are the data's, so any positive ints, with the default 5 among them
-	indicator: fc.oneof(fc.constant(5), fc.integer({ min: 1, max: 40 })),
+	indicator: fc.oneof(fc.constant(5), fc.integer({ min: 0, max: 40 })),
 	who: fc.integer({ min: 0, max: codes.length - 1 }),
 	dir: fc.constantFrom("in", "out"),
 	on: sections,
@@ -46,7 +46,7 @@ const view = fc.record({
 // first listed indicator, so the page needs 5 first, as the data lists it.
 const indicatorsFor = (v) =>
 	fc
-		.uniqueArray(fc.integer({ min: 1, max: 40 }), { maxLength: 8 })
+		.uniqueArray(fc.integer({ min: 0, max: 40 }), { maxLength: 8 })
 		.map((l) =>
 			[5, ...l.filter((x) => x !== 5 && x !== v.indicator), v.indicator].filter((x, i, a) => a.indexOf(x) === i),
 		);
