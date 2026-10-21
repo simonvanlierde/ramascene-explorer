@@ -12,6 +12,7 @@ dependencies = [
     "bw2calc==2.5.0",
     "bw2data==4.8",
     "bw2io==0.9.17",
+    "pymrio==0.7.0",
 ]
 
 [tool.uv]
