@@ -18,8 +18,8 @@
 	},
 	"cleanTempDir": true,
 	"thresholds": {
-		"high": 80,
-		"low": 60,
-		"break": 60
+		"high": 85,
+		"low": 75,
+		"break": 75
 	}
 }
