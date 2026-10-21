@@ -33,6 +33,10 @@ testpaths = ["tests"]
 # RaMa-Scene is a checkout passed with --engine, not an installed dependency.
 allowed-unresolved-imports = ["ramascene", "ramascene.**"]
 
+[tool.ty.src]
+# Its own uv project, with the Brightway packages this environment lacks.
+exclude = ["brightway-check"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"

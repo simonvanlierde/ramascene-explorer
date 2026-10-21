@@ -1,0 +1,18 @@
+{
+ "activities": 9800,
+ "biosphere_flows": 60,
+ "threshold": 1e-15,
+ "A_nonzeros": 38963403,
+ "A_density": 0.40569973969179507,
+ "A_dropped": 2876890,
+ "A_abs_share_dropped": 1.0540563169128564e-13,
+ "technosphere_entries": 36088625,
+ "biosphere_entries": 357707,
+ "project_dir_mib": 875.6144247055054,
+ "timings_s": {
+  "metadata": 1.9338629660014703,
+  "datapackage_write": 1.5081292330014548,
+  "total": 6.346074070001123
+ },
+ "peak_rss_gib": 2.9368934631347656
+}

@@ -22,6 +22,12 @@
   platformAutomerge: false,
 
   packageRules: [
+    // brightway-check/ records results from its exact Brightway pins. A rule,
+    // not ignorePaths, which would replace the preset's default ignore list.
+    {
+      matchFileNames: ["brightway-check/**"],
+      enabled: false,
+    },
     // Majors stay manual.
     {
       matchUpdateTypes: ["minor", "patch", "pin", "digest"],

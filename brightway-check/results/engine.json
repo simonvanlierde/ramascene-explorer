@@ -1,0 +1,51 @@
+{
+ "engine": {
+  "repository": "https://github.com/simonvanlierde/ramascene.git",
+  "branch": "",
+  "commit": "d9113ca9ad38bc29d2a96392dabf74d70abf830e",
+  "label": "(detached) @ d9113ca",
+  "dirty": false
+ },
+ "selection": {
+  "dimType": "Contribution",
+  "vizType": "Sectoral",
+  "nodesSec": [
+   177
+  ],
+  "nodesReg": [
+   27
+  ],
+  "extn": [
+   5
+  ],
+  "year": 2011
+ },
+ "engine_result": {
+  "Cement, lime and plaster": 1642630.5555952408
+ },
+ "unit": "kg CO2 eq",
+ "route_one_seconds": 0.021037606999016134,
+ "octave_reference_validation": {
+  "passed": true,
+  "tolerance": "relative 1e-6",
+  "files": {
+   "validation_analytical_1_v3.csv": {
+    "values": 50,
+    "mismatches": 0
+   },
+   "validation_analytical_2_v3.csv": {
+    "values": 50,
+    "mismatches": 0
+   },
+   "validation_analytical_3_v3.csv": {
+    "values": 3,
+    "mismatches": 0
+   },
+   "validation_analytical_4_v3.csv": {
+    "values": 19,
+    "mismatches": 0
+   }
+  }
+ },
+ "peak_rss_gib": 0.8243446350097656
+}
