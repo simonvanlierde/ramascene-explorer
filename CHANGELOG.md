@@ -6,6 +6,16 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Live mode lights the map. With `?api=`, a finished job that carries its
+  embodied flows replaces the shown run in What if…: the map, the continent
+  strip, the sentence and Details show the job's flows against the baseline
+  from the same job, labelled "computed live by the job API, not precomputed",
+  with the job's provenance in Details → Method. This needs a job API that
+  returns flows; an older one keeps the result in the panel. Without `?api=`
+  nothing new loads or fetches.
+
 ## [0.3.1] - 2026-10-19
 
 ### Fixed

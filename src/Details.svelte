@@ -9,7 +9,6 @@ import {
 	amountText,
 	flowsCsv,
 	pct,
-	runText,
 	SECTION_COLOURS,
 	SECTION_SHORT,
 	sankeyLayout,
@@ -20,7 +19,8 @@ import {
 import Provenance from "./Provenance.svelte";
 import { ui } from "./view.svelte.js";
 
-let { data, meta, sum, whatif, run } = $props();
+// text: the shown run's "if …" clause; live: {text, rows} for a job from the job API, else null
+let { data, meta, sum, whatif, run, text, live } = $props();
 
 const TABS = [
 	["sankey", "Sankey"],
@@ -32,7 +32,8 @@ const name = $derived(meta.countries[ui.who]);
 const w = $derived(wording(ui.indicator));
 const unit = $derived(amount(sum.total, ui.indicator)[1]);
 const all = $derived(ui.on.size === SECTION_SHORT.length);
-const scenario = $derived(data.scenarios.find((s) => s.id === (whatif ? run : "baseline")));
+// a live job's parameters are in its own provenance rows
+const scenario = $derived(data.scenarios.find((s) => s.id === (whatif && !live ? run : "baseline")));
 
 let panel = $state();
 let lastFocus = null;
@@ -161,7 +162,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : w.made.own(name)}{whatif ? ` · if ${runText(data, run)}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
+				{ui.dir === "in" ? `What ${name} consumes` : w.made.own(name)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
 			<p class="copied" role="status">{copied}</p>
 			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
@@ -263,6 +264,18 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 				change to 2011 demand, or to an industry's inputs, would have shifted them. None of it is a forecast.
 			</p>
 		</section>
+		{#if live}
+			<section class="part" aria-labelledby="live-provenance-heading">
+				<h2 id="live-provenance-heading">This run: computed live</h2>
+				<p>The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.</p>
+				<dl id="live-run-provenance">
+					{#each live.rows as [term, desc]}
+						<dt>{term}</dt>
+						<dd>{#if term === "Scenario parameters"}<pre>{desc}</pre>{:else}{desc}{/if}</dd>
+					{/each}
+				</dl>
+			</section>
+		{/if}
 		<Provenance {data} {scenario} />
 	</div>
 

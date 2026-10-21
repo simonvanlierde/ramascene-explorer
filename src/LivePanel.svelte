@@ -3,9 +3,18 @@
 // fetches from the job API. Everything from the API is rendered as text, never as markup.
 import { compare } from "../explorer.js";
 import { amountText, pct, wording } from "../flows.js";
-import { LIVE_STATUS, liveData, liveProvenance, scenarioBody, unreachableMessage, waitForJob } from "../live.js";
+import {
+	LIVE_STATUS,
+	liveData,
+	liveProvenance,
+	liveText,
+	scenarioBody,
+	unreachableMessage,
+	waitForJob,
+} from "../live.js";
 
-let { api } = $props();
+// onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
+let { api, onflows } = $props();
 
 async function fetchJson(url, init) {
 	const response = await fetch(url, { cache: "no-store", ...init });
@@ -100,6 +109,11 @@ async function submit(event) {
 		job = done;
 		data = d;
 		message = `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
+		try {
+			if (onflows?.(done, liveText(done, catalog))) message += " The map shows its flows.";
+		} catch (e) {
+			message += ` Its flows are not on the map: ${e.message}`;
+		}
 	} catch (e) {
 		message = `Job failed: ${e.message}`;
 	} finally {

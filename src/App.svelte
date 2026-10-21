@@ -3,7 +3,7 @@ import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
 import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
-import { apiUrl, ignoredApi } from "../live.js";
+import { apiUrl, ignoredApi, LIVE_STATUS, liveFlows, liveProvenance } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";
@@ -23,9 +23,10 @@ let empty = $state(false);
 let src = $state.raw(null); // the opened Parquet file
 let flowsError = $state("");
 let base = $state.raw(null);
-// {run, base, delta}: the run on screen, as dense arrays in meta's layout; the next one may still
-// be loading. Every flow source hands the page this shape, so the map, Strip and Details never
-// know where a run came from. base is the baseline the run is a change against.
+// {run, base, delta, live?}: the run on screen, as dense arrays in meta's layout; the next one may
+// still be loading. Every flow source hands the page this shape, so the map, Strip and Details never
+// know where a run came from. base is the baseline the run is a change against. A job from the job
+// API adds live: {text, rows}, its "if …" clause and provenance rows.
 let shown = $state.raw(null);
 let loadingRun = $state("");
 let ready = $state(false);
@@ -90,6 +91,19 @@ function fetchRun(run) {
 }
 const showRun = (run) => show(run, async () => ({ run, base, delta: await fetchRun(run) }));
 
+// A finished job with flows, shown as the run in What if…. ui.run stays the last
+// precomputed run, so the page's link never points at a job its reader cannot reach.
+function showLive(job, text) {
+	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
+	const flows = liveFlows(job, meta);
+	if (!flows) return false;
+	stop();
+	ui.mode = "whatif";
+	const run = `live-${job.id}`;
+	show(run, async () => ({ run, ...flows, live: { text, rows: liveProvenance(job, api) } }));
+	return true;
+}
+
 // load: () => Promise<{run, base, delta}>, from any flow source
 let wanted = "";
 async function show(run, load) {
@@ -144,7 +158,7 @@ function setMode(mode) {
 	stop();
 	ui.mode = mode;
 	ui.s = 1;
-	if (mode === "whatif") showRun(ui.run);
+	if (mode === "whatif") shown?.live ? play() : showRun(ui.run);
 }
 function setRun(run) {
 	stop();
@@ -159,6 +173,8 @@ const sel = $derived({ ind, id: ui.indicator, who: ui.who, dir: ui.dir, on: ui.o
 const whatif = $derived(ui.mode === "whatif" && shown !== null);
 const delta = $derived(shown?.delta);
 const run = $derived(shown?.run);
+const live = $derived(whatif ? shown.live : null);
+const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
@@ -189,7 +205,7 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>precomputed, not a forecast</span>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? LIVE_STATUS : "precomputed, not a forecast"}</span>
 				{#if verified}
 					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -206,20 +222,20 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} inert={ui.panel !== null} />
+		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} inert={ui.panel !== null} />
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
-			<Sentence {data} {meta} {sum} {whatif} {run} />
+			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
 		</main>
-		<Details {data} {meta} {sum} {whatif} {run} />
+		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />
 		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
 			<div class="seg big" role="group" aria-label="Mode">
 				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>
 				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 			</div>
 			<button type="button" class="filters" bind:this={sheetOpener} aria-expanded={sheet} aria-controls="side" onclick={() => (sheet = true)}>
-				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{ui.mode === "whatif" && run ? `If ${runText(data, run)} · ` : ""}{summary}</span>
+				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{ui.mode === "whatif" && run ? `If ${text} · ` : ""}{summary}</span>
 			</button>
 		</nav>
 	{:else if flowsError || empty}
@@ -243,4 +259,4 @@ $effect(() => {
 	{/if}
 </div>
 
-{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} />{/await}{/if}
+{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} />{/await}{/if}

@@ -75,6 +75,20 @@ result is compared with the baseline computed in the same job and labelled
 "computed live by the job API, not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
 
+When the job API returns the job's embodied flows (`ramascene-jobs` does from
+its flows release on), the page also shows them as the run in What if…: the
+map, the continent strip, the sentence and Details draw the job's flows against
+the job's own baseline, the same way they draw a precomputed run. The status
+line then reads "computed live by the job API, not precomputed", and Details
+→ Method lists the job's provenance above the precomputed checks, which do not
+cover it. The flows must have the precomputed file's layout (the same 49
+countries, 15 sections and three indicators); a job without them, or with
+another layout, stays in the panel only.
+
+A live run never enters the page's link: the link keeps the last precomputed
+run, so a shared view never points at a job its reader cannot reach. Picking a
+precomputed run in the sidebar replaces the live one.
+
 Without `?api=` the panel stays hidden and its code is not loaded. The page
 then fetches only its own files: `data/results.json`, `data/embodied.parquet`,
 the map geometry and the fonts.

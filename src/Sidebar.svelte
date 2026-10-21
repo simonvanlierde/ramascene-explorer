@@ -1,11 +1,13 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
 import { amountShort, capitalise, runText, wording } from "../flows.js";
+import { LIVE_STATUS } from "../live.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-let { data, meta, sum, whatif, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
+// live: {text, rows} while a job from the job API is shown, else null
+let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
 
 let done = $state();
 // a phone opens the panel as a sheet: focus its Done button
@@ -63,8 +65,14 @@ function pickRun(v) {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
-const chosenText = $derived(capitalise(runText(data, ui.run)));
-const chosenSub = $derived(onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`);
+// a job arriving folds the list to show it
+$effect(() => {
+	if (live) showRuns = false;
+});
+const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
+const chosenSub = $derived(
+	live ? capitalise(LIVE_STATUS) : onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+);
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 
 const directionHint = $derived(

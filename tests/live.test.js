@@ -7,7 +7,9 @@ import {
 	ignoredApi,
 	LIVE_STATUS,
 	liveData,
+	liveFlows,
 	liveProvenance,
+	liveText,
 	scenarioBody,
 	unreachableMessage,
 	waitForJob,
@@ -134,4 +136,37 @@ test("unreachableMessage: a network failure reads as offline, an HTTP error keep
 	assert.doesNotMatch(offline, /Failed to fetch/);
 	const http = unreachableMessage("http://127.0.0.1:8020", new Error("503: Service Unavailable"));
 	assert.match(http, /^Job API at http:\/\/127\.0\.0\.1:8020 answered with an error: 503/);
+});
+
+test("liveText words a job like a precomputed run, with catalog names", () => {
+	const catalog = {
+		products: [{ id: 180, name: "Motor vehicles" }],
+		regions: [
+			{ id: 1, name: "Europe" },
+			{ id: 2, name: "Africa" },
+		],
+		consumers: [{ id: 198, name: "Manufacture of motor vehicles" }],
+	};
+	assert.equal(
+		liveText(job, catalog),
+		"Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe",
+	);
+	const rise = { scenario: { model_details: [{ ...job.scenario.model_details[0], techChange: [5] }] } };
+	assert.equal(liveText(rise, null), "#198 in #2 used 5% more #180 from #1");
+});
+
+test("liveFlows: the job's own baseline, and the change against it, in the page's layout", () => {
+	// 2 countries, 1 section; the job lists indicators 3 then 5, the page 5 then 3
+	const meta = { countries: ["A", "B"], sections: ["s"], indicators: [{ id: 5 }, { id: 3 }] };
+	const flows = { shape: [2, 2, 1, 2], baseline: [1, 2, 3, 4, 10, 20, 30, 40], scenario: [1, 2, 3, 3, 10, 20, 30, 36] };
+	const live = { result: { indicators: [{ id: 3 }, { id: 5 }], flows } };
+	const { base, delta } = liveFlows(live, meta);
+	assert.deepEqual([...base], [10, 20, 30, 40, 1, 2, 3, 4]);
+	assert.deepEqual([...delta], [0, 0, 0, -4, 0, 0, 0, -1]);
+	assert.equal(liveFlows(job, meta), null);
+	assert.throws(
+		() => liveFlows({ result: { ...live.result, flows: { ...flows, shape: [2, 3, 1, 3] } } }, meta),
+		/2 × 3 × 1 × 3/,
+	);
+	assert.throws(() => liveFlows({ result: { indicators: [{ id: 3 }, { id: 7 }], flows } }, meta), /indicator 5/);
 });

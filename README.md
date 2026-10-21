@@ -7,8 +7,9 @@ A static, map-first page over **precomputed** RaMa-Scene engine output on the
 EXIOBASE 2011 base year. It shows where a country's consumption causes
 greenhouse-gas emissions, jobs and metal-ore extraction, split by 15 industry
 sections, and what one intervention would have changed: three named
-interventions and a grid of 150 material-efficiency scenarios. Nothing here is
-a live calculation, and nothing is a forecast. The engine changes final demand
+interventions and a grid of 150 material-efficiency scenarios. Nothing on the
+published page is a live calculation (an optional live mode needs a job API; see
+[docs/page.md](docs/page.md)), and nothing is a forecast. The engine changes final demand
 or technical coefficients in the 2011 economy and has no projection step.
 
 Open it at <https://simonvanlierde.github.io/ramascene-explorer/>.

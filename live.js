@@ -105,6 +105,52 @@ export function liveProvenance(job, apiOrigin) {
 	];
 }
 
+// The "if …" clause for a job's first step, in the words of the precomputed runs:
+// "Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe".
+// Names come from GET /catalog; an id it does not list is shown as the id.
+export function liveText(job, catalog) {
+	const step = job.scenario.model_details[0];
+	const name = (list, [id]) => catalog?.[list]?.find((x) => x.id === id)?.name ?? `#${id}`;
+	const change = step.techChange[0];
+	const product = name("products", step.product).toLowerCase();
+	return `${name("consumers", step.consumedBy)} in ${name("regions", step.consumedReg)} used ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product} from ${name("regions", step.originReg)}`;
+}
+
+// A job's flows as the page's {base, delta}: dense arrays in meta's layout, the
+// job's own baseline and its scenario minus that baseline. The job sends both
+// absolute, row-major (indicator, producer, section, consumer), indicators in
+// result.indicators order. null when the job has no flows (an older job API);
+// throws when they do not fit meta's countries, sections or indicators.
+export function liveFlows(job, meta) {
+	const f = job.result.flows;
+	if (!f) return null;
+	const N = meta.countries.length;
+	const S = meta.sections.length;
+	const ids = job.result.indicators.map((i) => i.id);
+	const block = N * S * N;
+	const [I, P, Q, C] = f.shape;
+	if (
+		P !== N ||
+		Q !== S ||
+		C !== N ||
+		I !== ids.length ||
+		f.baseline.length !== I * block ||
+		f.scenario.length !== I * block
+	)
+		throw new Error(`the job's flows are ${f.shape.join(" × ")}, the page's ${ids.length} × ${N} × ${S} × ${N}`);
+	const base = new Float64Array(meta.indicators.length * block);
+	const delta = new Float64Array(base.length);
+	meta.indicators.forEach((ind, k) => {
+		const j = ids.indexOf(ind.id);
+		if (j < 0) throw new Error(`the job has no flows for indicator ${ind.id}`);
+		for (let x = 0; x < block; x++) {
+			base[k * block + x] = f.baseline[j * block + x];
+			delta[k * block + x] = f.scenario[j * block + x] - f.baseline[j * block + x];
+		}
+	});
+	return { base, delta };
+}
+
 // Poll GET /jobs/{id} until it leaves queued/running. fetchJson is injected for tests.
 export async function waitForJob(fetchJson, url, { interval = 2000, timeout = 30 * 60 * 1000, onUpdate } = {}) {
 	const deadline = Date.now() + timeout;
