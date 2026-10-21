@@ -1,0 +1,10 @@
+{
+ "pymrio": "0.7.0",
+ "score_D_cba": 1642630.5555952433,
+ "unit": "kg CO2 eq",
+ "numpy_L_file": 1642630.55559524,
+ "relative_difference_vs_L_file": 1.984395699964916e-15,
+ "L_column_max_abs_vs_L_file": 4.163336342344337e-17,
+ "calc_all_s": 28.198462674999973,
+ "peak_rss_gib": 4.524936676025391
+}
