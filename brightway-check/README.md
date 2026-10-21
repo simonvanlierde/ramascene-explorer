@@ -77,7 +77,8 @@ uv run --project .. python engine.py --engine "$RAMASCENE_DIR" --data "$DATASETS
 the engine behind the explorer's results. A rerun of all three steps from the
 locked environment (2026-10-21) gave the same scores to the last digit; only
 the timings differ by machine. The committed `lca.json` is from the first run,
-`build.json` and `engine.json` from the rerun. A rerun overwrites them; `lca.py` stops if two routes that should agree differ by more
+`build.json` and `engine.json` from the rerun. Moving from bw2data 4.7 to 4.8 (for a
+patched deepdiff) left every count and score unchanged. A rerun overwrites them; `lca.py` stops if two routes that should agree differ by more
 than 1e-10.
 
 ## Data
