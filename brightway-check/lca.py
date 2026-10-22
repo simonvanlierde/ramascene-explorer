@@ -14,7 +14,8 @@ from pathlib import Path
 
 import numpy as np
 
-from build_db import DB, GHG_ROW, METHOD, PROJECT, THRESHOLD
+from build_db import DB, METHOD, PROJECT, THRESHOLD
+from case import GHG_ROW, K, array
 
 CODE = "NL|p26.d"
 
@@ -45,6 +46,7 @@ def main():
     bd.projects.set_current(PROJECT)
     act = bd.get_node(database=DB, code=CODE)
     k = act["matrix_index"]
+    assert k == K, f"{CODE} is at matrix index {k}, not {K}"
     out["activity"] = {"name": act["name"], "location": act["location"], "matrix_index": k}
 
     t = time.perf_counter()
@@ -69,9 +71,9 @@ def main():
     out["peak_rss_gib_after"]["brightway"] = rss_gib()
     del lca, data_objs
 
-    B = np.load(args.data / "2011" / "B_v4.npy")
+    B = array(args.data, "B")
     b = B[GHG_ROW]
-    A = np.load(args.data / "2011" / "A_v4.npy")
+    A = array(args.data, "A")
     y = np.zeros(9800)
     y[k] = 1.0
 
@@ -94,7 +96,7 @@ def main():
     del IA, A
     out["peak_rss_gib_after"]["numpy_solve"] = rss_gib()
 
-    L = np.load(args.data / "2011" / "L_v4.npy", mmap_mode="r")
+    L = array(args.data, "L", mmap_mode="r")
     x_L = np.asarray(L[:, k])
     out["numpy_L_file"] = float(b @ x_L)
     del L
