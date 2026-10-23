@@ -14,7 +14,8 @@
   --soft: #eef1f3;
   --tint: #e3e9ee;
   --tint-hover: #d5dee5;
-  --control-border: #c9d1d7; /* inputs, selects, hovered cards, tracks */
+  --control-border: #c9d1d7; /* hovered cards, the off rail swatch, scrollbars */
+  --input-border: #808c96; /* inputs, selects and the scrub track: 3:1 on white and on --soft */
   --selected-border: #b9c6d0; /* the chosen run */
   --selected-fill: #f2f5f7;
   --rust-tint: #f1d9cc; /* text selection */
@@ -351,7 +352,7 @@ button.pill:hover {
 .cb input {
   width: 100%;
   height: 34px;
-  border: 1px solid var(--control-border);
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 0 10px 0 31px;
   font: 700 13.5px var(--sans);
@@ -497,7 +498,7 @@ button.pill:hover {
   width: 100%;
   min-width: 0;
   height: 32px;
-  border: 1px solid var(--control-border);
+  border: 1px solid var(--input-border);
   border-radius: 8px;
   background: var(--card);
   font: 600 12.5px var(--sans);
@@ -1015,7 +1016,7 @@ svg.map.live .rg {
   right: 0;
   top: 9px;
   height: 2px;
-  background: linear-gradient(90deg, var(--control-border), var(--neg));
+  background: linear-gradient(90deg, var(--input-border), var(--neg));
   border-radius: 999px;
 }
 .scrub .th {
@@ -1213,7 +1214,7 @@ svg.map.live .rg {
   padding: 0 8px;
   font: 12px var(--sans);
   color: var(--ink);
-  border: 1px solid var(--control-border);
+  border: 1px solid var(--input-border);
   border-radius: 8px;
 }
 .tbar {
