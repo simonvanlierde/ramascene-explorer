@@ -5,7 +5,8 @@ const API = "http://127.0.0.1:8020";
 
 async function expectNoAxeViolations(page) {
 	// a colour still mid-transition (the mode switch) is not the page's contrast
-	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+	// a transition cancelled on the way rejects its promise; it is still over
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
 	const { violations } = await new AxeBuilder({ page })
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
 		.analyze();
@@ -174,20 +175,29 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
 });
 
-test("Details stays modal while the live panel is on the page", async ({ page }) => {
+test("Details stays modal while the live panel is on the page", async ({ page, isMobile }) => {
 	await routeJob(page, job);
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	// the panel open in What if…, where its controls are in the tab order
+	await openLive(page);
+	if (isMobile) await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: /^Details for/ }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
-	for (let i = 0; i < 25; i++) {
+	let fromBody = false;
+	for (let i = 0; i < 40; i++) {
 		await page.keyboard.press("Tab");
 		const where = await page.evaluate(() => ({
-			// past the dialog's last control the browser takes focus to the page itself, then back
-			inDialog: Boolean(document.activeElement?.closest("[role=dialog]")) || document.activeElement === document.body,
+			inDialog: Boolean(document.activeElement?.closest("[role=dialog]")),
+			body: document.activeElement === document.body,
 			id: document.activeElement?.id,
 		}));
+		// past the dialog's last control the browser takes focus to the page itself; the next Tab must come back
+		if (where.body && !fromBody) {
+			fromBody = true;
+			continue;
+		}
 		expect(where.inDialog, `Tab ${i + 1} reached #${where.id}`).toBe(true);
+		fromBody = false;
 	}
 });
 
@@ -216,13 +226,19 @@ test("the change field holds to the job API's range", async ({ page }) => {
 	await routeJob(page, job, (body) => {
 		posted = body;
 	});
+	// a range other than the page's own default, so the field must have read it from the catalog
+	// (the route registered last answers first)
+	await page.route(`${API}/catalog`, (route) =>
+		route.fulfill({ json: { ...catalog, tech_change_percent: { min: -50, max: 50 } } }),
+	);
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
 	const change = page.locator("#live-change");
-	await expect(change).toHaveAttribute("min", "-100");
-	await expect(change).toHaveAttribute("max", "1000");
-	await change.fill("-500");
+	await expect(change).toHaveAttribute("min", "-50");
+	await expect(change).toHaveAttribute("max", "50");
+	await expect(page.locator("#live-change-h")).toHaveText("From −50 to +50");
+	await change.fill("-60");
 	await page.locator("#live-run").click();
 	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);
 	await page.waitForTimeout(300);
