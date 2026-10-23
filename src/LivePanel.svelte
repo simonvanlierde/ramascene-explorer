@@ -70,6 +70,11 @@ function connect() {
 	);
 }
 connect();
+// Try again goes as soon as it is pressed: focus the card's own button instead
+function retryConnect() {
+	connect();
+	document.getElementById("live-open")?.focus();
+}
 
 // Signed amount and percentage in the page's units; a zero baseline has no percentage.
 const signedText = (v, id) => (v > 0 ? "+" : "") + amountText(v, id);
@@ -147,7 +152,7 @@ async function submit(event) {
 <!-- the visible status line; App reads the same messages out -->
 {#snippet state()}
 	<p id="live-state" class="hint" class:bad={failed}>{message}</p>
-	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={connect}>Try again</button>{/if}
+	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={retryConnect}>Try again</button>{/if}
 {/snippet}
 
 {#snippet options(items)}

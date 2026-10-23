@@ -67,6 +67,11 @@ function pickRun(v) {
 	if (v === "grid") return;
 	foldRuns();
 }
+// the Try again button goes while the run loads: focus the chosen run instead
+function retryHere() {
+	retry();
+	queueMicrotask(() => (changeButton ?? document.querySelector('#run-list [aria-checked="true"]'))?.focus());
+}
 function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
@@ -166,10 +171,11 @@ const directionHint = $derived(
 					<button type="button" class="chipb done" onclick={foldRuns}>Done</button>
 				</div>
 			{/if}
+			<!-- the map's legend has the same note as a status region, read out also while this sheet is closed -->
 			{#if loadingRun.startsWith("failed:")}
-				<p class="hint" role="status">That run could not be loaded. <button type="button" class="chipb" onclick={retry}>Try again</button> or pick another.</p>
+				<p class="hint">That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.</p>
 			{:else if loadingRun}
-				<p class="hint" role="status">Loading the run’s flows…</p>
+				<p class="hint">Loading the run’s flows…</p>
 			{/if}
 		{/if}
 		<!-- mounted in both modes, so a job keeps running while Flows is shown -->
