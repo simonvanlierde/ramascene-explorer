@@ -85,7 +85,8 @@ commit, dataset, the job's duration and peak memory.
 When the job API returns the job's embodied flows (`ramascene-jobs` does from
 its flows release on), the page also shows them as the run in What if…: the
 map, the continent strip, the sentence and Details draw the job's flows against
-the job's own baseline, the same way they draw a precomputed run. The status
+the job's own baseline, the same way they draw a precomputed run. A job that
+finishes while Flows is shown waits in What if… until the reader goes back. The status
 line then reads "computed live by the job API, not precomputed", the trust pill
 reads "Live job: not checked" instead of Verified, and Details → Method lists
 the job's provenance above the precomputed checks, which do not cover it. The flows must have the precomputed file's layout (the same 49

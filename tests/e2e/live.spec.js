@@ -249,3 +249,57 @@ test("an unreachable job API says so, and Try again reconnects", async ({ page }
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await expect(page.locator("#live-run")).toBeEnabled();
 });
+
+test("a finished job is announced outside the selection, and a phone shows the result", async ({ page, isMobile }) => {
+	await routeJob(page, flowsJob());
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	if (isMobile) {
+		await expect(page.locator("#side")).toBeHidden();
+		await expect(page.locator("#headline")).toBeFocused();
+	}
+	// in the accessibility tree, which the closed sheet's status line has left
+	await expect(page.getByRole("status").filter({ hasText: "finished in" })).toHaveCount(1);
+});
+
+test("a failed job says why next to Run, as an alert", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ status: 503, json: { detail: "the engine is busy" } }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.getByRole("alert").filter({ hasText: "Job failed: 503: the engine is busy" })).toHaveCount(1);
+	const run = await page.locator("#live-run").boundingBox();
+	const state = await page.locator("#live-state").boundingBox();
+	expect(state.y).toBeGreaterThan(run.y + run.height);
+	expect(state.y - (run.y + run.height)).toBeLessThan(40);
+	// Run stays focusable while the job runs, so focus is still on it
+	await expect(page.locator("#live-run")).toBeFocused();
+});
+
+test("a job that finishes while Flows is shown leaves the reader in Flows", async ({ page, isMobile }) => {
+	const done = flowsJob();
+	let release;
+	const gate = new Promise((resolve) => {
+		release = resolve;
+	});
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ json: { id: done.id, status: "queued" } }));
+	await page.route(`${API}/jobs/${done.id}`, async (route) => {
+		await gate;
+		await route.fulfill({ json: done });
+	});
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	// a phone switches mode from the dock, under the sheet
+	if (isMobile) await page.keyboard.press("Escape");
+	const flows = page.getByRole("button", { name: "Flows, 2011" }).filter({ visible: true });
+	await flows.click();
+	release();
+	await expect(page.locator("#live-state")).toContainText("What if… shows its flows");
+	await expect(flows).toHaveAttribute("aria-pressed", "true");
+	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
+	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
+});
