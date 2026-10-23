@@ -15,6 +15,41 @@ follow [Semantic Versioning](https://semver.org/).
   with the job's provenance in Details → Method. This needs a job API that
   returns flows; an older one keeps the result in the panel. Without `?api=`
   nothing new loads or fetches.
+- A reset button next to + and − once the map is zoomed in.
+- Try again buttons: on a run that could not be loaded, and on the live
+  panel when the job API does not answer.
+
+### Changed
+
+- The live panel (`?api=`) is now a Custom scenario card at the end of the
+  What if… run list, or in the selection sheet on a phone, instead of a form
+  below the page. Its fields are stacked and labelled, the options show names
+  without engine ids, and the change is held to the range the job API
+  accepts (−100 to +1000%).
+- While a live job is on the map, the trust pill reads "Live job: not
+  checked" instead of Verified, and Details no longer shows the green check,
+  which covers the precomputed runs only.
+- Each region has one name everywhere: the sentence now says "Rest of
+  Asia–Pacific", as the map and the cards do. "The" is added for the United
+  States, the United Kingdom, the Netherlands and the Czech Republic.
+- The What if… legend reads "Change in each 2011 flow, %", every tick has
+  its %, and the note is two lines.
+- On phones the zoom buttons sit at the map's bottom left, the Sankey's
+  labels stay at their full size, and the pills and the sentence's controls
+  are easier to tap.
+- The grid's pickers fold away with the run list, so the industry sections
+  stay in view in What if….
+- The desktop scrubber is wider, with Replay on its own row.
+
+### Fixed
+
+- Labels on the map no longer hide under the map's buttons, legend or note.
+- With Details open, the keyboard can no longer reach the live panel
+  behind it.
+- In a narrow window the scroll wheel scrolls the page instead of being
+  caught by the map.
+- The Sankey's caption no longer says to tap a band, which did nothing on
+  a touch screen.
 
 ## [0.3.1] - 2026-10-19
 

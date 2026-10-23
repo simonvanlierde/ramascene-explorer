@@ -14,6 +14,13 @@
   --soft: #eef1f3;
   --tint: #e3e9ee;
   --tint-hover: #d5dee5;
+  --control-border: #c9d1d7; /* inputs, selects, hovered cards, tracks */
+  --selected-border: #b9c6d0; /* the chosen run */
+  --selected-fill: #f2f5f7;
+  --rust-tint: #f1d9cc; /* text selection */
+  --rust-wash: #f6ebe4; /* a sentence control under the pointer */
+  --notice-fill: #fbf6ef; /* a note, set apart from the soft grid ground */
+  --notice-border: #e6d9c8;
   /* --self (the selected country) and --acc (the bands' colour) are set from
      SELF and BAND in flows.js by main.js */
   --slate: #3d4f5c;
@@ -42,10 +49,10 @@ body {
   color: var(--ink);
   font: 400 13px / 1.4 var(--sans);
   font-variant-numeric: tabular-nums;
-  scrollbar-color: #cdd4d9 transparent;
+  scrollbar-color: var(--control-border) transparent;
 }
 ::selection {
-  background: #f1d9cc;
+  background: var(--rust-tint);
   color: var(--ink);
 }
 :focus-visible {
@@ -216,7 +223,7 @@ a.pill.gh:hover {
 .pill.ok {
   color: var(--ink);
   background: var(--tint);
-  border-color: #cfd8df;
+  border-color: var(--control-border);
   font-weight: 700;
   flex: none;
 }
@@ -329,9 +336,9 @@ button.pill:hover {
 .note {
   margin: 8px 0 0;
   padding: 7px 9px;
-  border: 1px solid #e6d9c8;
+  border: 1px solid var(--notice-border);
   border-radius: 8px;
-  background: #fbf6ef;
+  background: var(--notice-fill);
   font-size: 12px;
   line-height: 1.38;
 }
@@ -343,7 +350,7 @@ button.pill:hover {
 .cb input {
   width: 100%;
   height: 34px;
-  border: 1px solid #c9d1d7;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 0 10px 0 31px;
   font: 700 13.5px var(--sans);
@@ -382,7 +389,7 @@ button.pill:hover {
 }
 .cb li {
   padding: 6px 8px;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -418,20 +425,20 @@ button.pill:hover {
   line-height: 1.3;
 }
 .run:hover {
-  border-color: #c3ccd3;
+  border-color: var(--control-border);
 }
 .run .dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1.5px solid #8d979f;
+  border: 1.5px solid var(--mut);
   margin-top: 2px;
   display: grid;
   place-items: center;
 }
 .run[aria-checked="true"] {
-  border-color: #b9c6d0;
-  background: #f2f5f7;
+  border-color: var(--selected-border);
+  background: var(--selected-fill);
 }
 .run[aria-checked="true"] .dot {
   border-color: var(--slate);
@@ -455,8 +462,8 @@ button.pill:hover {
 .run.chosen {
   grid-template-columns: 1fr auto;
   align-items: center;
-  border-color: #b9c6d0;
-  background: #f2f5f7;
+  border-color: var(--selected-border);
+  background: var(--selected-fill);
   cursor: default;
 }
 .run.chosen .change {
@@ -484,8 +491,8 @@ button.pill:hover {
 .gridpick select {
   width: 100%;
   height: 32px;
-  border: 1px solid #c9d1d7;
-  border-radius: 7px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
   background: var(--card);
   font: 600 12.5px var(--sans);
   color: var(--ink);
@@ -495,7 +502,7 @@ button.pill:hover {
   margin: 10px 0 0 auto;
 }
 .gridpick .seg {
-  background: #e2e7eb;
+  background: var(--tint);
 }
 
 /* industry rail: tab height ∝ share of the selected flows */
@@ -531,7 +538,7 @@ button.pill:hover {
   line-height: 1;
   overflow: hidden;
   text-align: left;
-  background: #f2f4f5;
+  background: var(--soft);
   border-radius: 3px;
   transition:
     height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -565,7 +572,7 @@ button.pill:hover {
   color: var(--mut);
 }
 .rail .t[aria-pressed="false"] i {
-  background: #c5cdd3;
+  background: var(--control-border);
 }
 .rail .t[aria-pressed="false"]:hover {
   background: var(--tint);
@@ -600,7 +607,7 @@ button.pill:hover {
 .hl {
   position: relative;
   min-height: 3.9em;
-  font: 400 clamp(18px, 1.15rem + 0.4vw, 22px) / 1.3 var(--serif);
+  font: 400 clamp(18px, 1.05rem + 0.6vw, 22px) / 1.3 var(--serif);
 }
 .hl sub {
   font-size: 0.66em;
@@ -634,7 +641,7 @@ button.pill:hover {
 }
 .hl .tok:hover,
 .hl .tok[aria-expanded="true"] {
-  background: #f6ebe4;
+  background: var(--rust-wash);
 }
 .hl .neg {
   color: var(--neg);
@@ -936,7 +943,7 @@ svg.map.live .rg {
 }
 .lg .gb {
   height: 8px;
-  border-radius: 4px;
+  border-radius: 999px;
 }
 .lg .tk {
   display: flex;
@@ -998,8 +1005,8 @@ svg.map.live .rg {
   right: 0;
   top: 9px;
   height: 2px;
-  background: linear-gradient(90deg, #c9d0d5, var(--neg));
-  border-radius: 1px;
+  background: linear-gradient(90deg, var(--control-border), var(--neg));
+  border-radius: 999px;
 }
 .scrub .th {
   position: absolute;
@@ -1023,6 +1030,32 @@ svg.map.live .rg {
 }
 .scrub .play:hover {
   background: var(--tint-hover);
+}
+/* desktop: Replay on its own row, so the track gets the legend's width and one
+   5% key step moves the thumb a visible distance */
+@media (min-width: 761px) {
+  .scrub {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    row-gap: 6px;
+  }
+  .scrub .tr {
+    height: 24px;
+  }
+  .scrub .tr::before {
+    top: 11px;
+  }
+  .scrub .th {
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+  }
+  .scrub .play {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-height: 26px;
+  }
 }
 .tip {
   position: absolute;
@@ -1049,7 +1082,7 @@ svg.map.live .rg {
   display: flex;
   height: 8px;
   margin: 6px 0 3px;
-  border-radius: 4px;
+  border-radius: 999px;
   overflow: hidden;
 }
 .tip .sb i {
@@ -1170,7 +1203,7 @@ svg.map.live .rg {
   padding: 0 8px;
   font: 12px var(--sans);
   color: var(--ink);
-  border: 1px solid #c9d1d7;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
 }
 .tbar {
@@ -1251,7 +1284,7 @@ thead th {
   background: var(--card);
   text-align: right;
   padding: 0;
-  border-bottom: 1px solid #cfd6db;
+  border-bottom: 1px solid var(--control-border);
   z-index: 1;
 }
 thead th:first-child,
@@ -1284,7 +1317,7 @@ th .ar {
 tbody th,
 td {
   padding: 5px 6px;
-  border-bottom: 1px solid #edf0f2;
+  border-bottom: 1px solid var(--soft);
   text-align: right;
   white-space: nowrap;
   font-weight: 400;
@@ -1326,7 +1359,7 @@ td.pos {
 }
 .pf {
   border-top: 1px solid var(--rule);
-  background: #f8f9f9;
+  background: var(--ground);
   padding: 10px 20px 12px;
   font-size: 12px;
   color: var(--mut);
@@ -1469,7 +1502,7 @@ details.more summary {
   width: 100%;
   min-width: 0;
   height: 32px;
-  border: 1px solid #c9d1d7;
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: var(--card);
   font: 600 12.5px var(--sans);
@@ -1560,7 +1593,7 @@ details.more summary {
     --side: 240px;
   }
   .kpis.k5 .kv {
-    font-size: 16px;
+    font-size: 17px;
   }
   .kpis.k5 .kpi {
     padding: 8px 9px;
@@ -1582,7 +1615,7 @@ details.more summary {
   .shell {
     display: block;
     height: auto;
-    padding-bottom: 76px; /* the dock */
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)); /* the dock, and room to see past it */
   }
   .top {
     position: sticky;
@@ -1663,7 +1696,6 @@ details.more summary {
   .hl {
     order: 1;
     min-height: 0;
-    font-size: 19px;
     line-height: 1.45;
   }
   .mapc {
@@ -1781,7 +1813,7 @@ details.more summary {
     align-content: center;
     text-align: left;
     padding: 0 12px;
-    border: 1px solid #c9d1d7;
+    border: 1px solid var(--control-border);
     border-radius: 8px;
     background: var(--card);
   }

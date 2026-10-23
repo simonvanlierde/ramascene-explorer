@@ -4,6 +4,8 @@ import { expect, test } from "@playwright/test";
 const API = "http://127.0.0.1:8020";
 
 async function expectNoAxeViolations(page) {
+	// a colour still mid-transition (the mode switch) is not the page's contrast
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
 	const { violations } = await new AxeBuilder({ page })
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
 		.analyze();

@@ -496,7 +496,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			onpointerup={up}
 			onpointercancel={up}
 		>
-			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "#dedfe1" : "none"} />
+			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "var(--rule)" : "none"} />
 			<g class="rgs">
 				{#each shapes as s (s.code)}
 					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
