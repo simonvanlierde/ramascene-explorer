@@ -498,3 +498,21 @@ test("the form controls' borders have 3:1 contrast on white and on the soft grou
 	expect(ratios.white).toBeGreaterThanOrEqual(3);
 	expect(ratios.soft).toBeGreaterThanOrEqual(3);
 });
+
+test("on a phone a control's hit area never covers its neighbour", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	// the country and the indicator on neighbouring lines of the sentence
+	await page.goto(`${FIXTURE}&region=US&dir=out`);
+	await ready(page);
+	const stolen = await page.locator(".top button.pill, .top a.pill, .hl .tok").evaluateAll((els) =>
+		els.flatMap((e) => {
+			const r = e.getBoundingClientRect();
+			const points = [0.1, 0.5, 0.9].flatMap((fx) => [r.top + 1, r.bottom - 1].map((y) => [r.left + r.width * fx, y]));
+			return points
+				.map(([x, y]) => document.elementFromPoint(x, y))
+				.filter((hit) => !e.contains(hit))
+				.map((hit) => `${e.textContent.trim()} → ${hit?.textContent.trim().slice(0, 30)}`);
+		}),
+	);
+	expect(stolen).toEqual([]);
+});
