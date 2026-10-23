@@ -2,6 +2,8 @@
 // only when the page is opened with ?api=<job API origin>; without it the page
 // never contacts anything but its own data file, so the static build stays static.
 
+import { at, cells } from "./embodied.js";
+
 export const LIVE_STATUS = "computed live by the job API, not precomputed";
 
 // Loopback (a local run, or an SSH tunnel) over http, anything else over https.
@@ -129,26 +131,30 @@ export function liveFlows(job, meta) {
 	const N = meta.countries.length;
 	const S = meta.sections.length;
 	const ids = job.result.indicators.map((i) => i.id);
-	const block = N * S * N;
 	const [I, P, Q, C] = f.shape;
 	if (
 		P !== N ||
 		Q !== S ||
 		C !== N ||
 		I !== ids.length ||
-		f.baseline.length !== I * block ||
-		f.scenario.length !== I * block
+		f.baseline.length !== I * P * Q * C ||
+		f.scenario.length !== I * P * Q * C
 	)
 		throw new Error(`the job's flows are ${f.shape.join(" × ")}, the page's ${ids.length} × ${N} × ${S} × ${N}`);
-	const base = new Float64Array(meta.indicators.length * block);
+	const base = new Float64Array(cells(meta, meta.indicators.length));
 	const delta = new Float64Array(base.length);
 	meta.indicators.forEach((ind, k) => {
 		const j = ids.indexOf(ind.id);
 		if (j < 0) throw new Error(`the job has no flows for indicator ${ind.id}`);
-		for (let x = 0; x < block; x++) {
-			base[k * block + x] = f.baseline[j * block + x];
-			delta[k * block + x] = f.scenario[j * block + x] - f.baseline[j * block + x];
-		}
+		for (let p = 0; p < P; p++)
+			for (let s = 0; s < Q; s++)
+				for (let c = 0; c < C; c++) {
+					// the job API's wire layout, read from its own shape; the page's through at()
+					const from = ((j * P + p) * Q + s) * C + c;
+					const to = at(meta, k, p, s, c);
+					base[to] = f.baseline[from];
+					delta[to] = f.scenario[from] - f.baseline[from];
+				}
 	});
 	return { base, delta };
 }
