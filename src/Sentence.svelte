@@ -4,14 +4,15 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, pct, possessive, SECTION_SHORT, wording } from "../flows.js";
+import { amount, amountText, capitalise, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "../flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
 let { data, meta, sum, whatif, text } = $props();
 
 const S = SECTION_SHORT.length;
-const name = $derived(meta.countries[ui.who]);
+// one name per region, as the strip and the map write it
+const name = $derived(placeName(meta, ui.who));
 const w = $derived(wording(ui.indicator));
 const out = $derived(ui.dir === "out");
 const scope = $derived(
@@ -22,14 +23,14 @@ const scope = $derived(
 			: ` through ${ui.on.size} of 15 industry sections`,
 );
 const year = $derived(data.base_year);
-const top = $derived(meta.countries[sum.others[0]] ?? name);
+const top = $derived(sum.others.length ? theName(meta, sum.others[0]) : name);
 const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 : 0);
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? sum.dTotal : 0);
-const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "");
+const changed = $derived(sum.changed != null ? theName(meta, sum.changed) : "");
 const noneAbroad = $derived(sum.others.length === 0);
 const abroadToo = $derived(
-	sum.changed === ui.who && sum.changedAbroad != null ? meta.countries[sum.changedAbroad] : "",
+	sum.changed === ui.who && sum.changedAbroad != null ? theName(meta, sum.changedAbroad) : "",
 );
 
 // eased numbers; the scrubber drives the What if… ones directly
@@ -63,7 +64,7 @@ const plain = $derived.by(() => {
 // --- the two popovers -----------------------------------------------------------
 let pop = $state(null); // null | "country" | "indicator"
 let opener = null;
-const byName = $derived([...meta.countries.keys()].sort((a, b) => meta.countries[a].localeCompare(meta.countries[b])));
+const byName = $derived([...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b))));
 function openPop(kind, e) {
 	e.stopPropagation();
 	opener = e.currentTarget;
@@ -140,7 +141,7 @@ function onFocusOut(e) {
 					onclick={() => {
 						ui.who = i;
 						closePop();
-					}}>{meta.countries[i]}</button
+					}}>{placeName(meta, i)}</button
 				>
 			{/each}
 		</div>

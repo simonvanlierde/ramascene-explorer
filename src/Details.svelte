@@ -9,6 +9,7 @@ import {
 	amountText,
 	flowsCsv,
 	pct,
+	placeName,
 	SECTION_COLOURS,
 	SECTION_SHORT,
 	sankeyLayout,
@@ -28,7 +29,7 @@ const TABS = [
 	["method", "Method"],
 ];
 const open = $derived(ui.panel !== null);
-const name = $derived(meta.countries[ui.who]);
+const name = $derived(placeName(meta, ui.who));
 const w = $derived(wording(ui.indicator));
 const unit = $derived(amount(sum.total, ui.indicator)[1]);
 const all = $derived(ui.on.size === SECTION_SHORT.length);
@@ -213,7 +214,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 					{#if n.h >= 7}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
-			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover or tap a band for its value.</p>
+			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover a band for its value; the Table tab lists every flow.</p>
 		{/if}
 	</div>
 
@@ -239,7 +240,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 				<tbody>
 					{#each rows as r (r.k)}
 						<tr class:me={r.k === ui.who}>
-							<th scope="row">{r.n}{r.k === ui.who ? " (home)" : ""}</th>
+							<th scope="row">{placeName(meta, r.k)}{r.k === ui.who ? " (home)" : ""}</th>
 							<td class="num"><span class="mb" style="width:{(r.v / maxV) * 42}px"></span>{fmtV(r.v)}</td>
 							<td class="num">{share(r.v, sum.total)}</td>
 							<td class="ind2"><i style="background:{SECTION_COLOURS[r.ts]}"></i>{r.ind}</td>

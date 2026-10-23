@@ -2,7 +2,7 @@
 import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
-import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
+import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "../flows.js";
 import { apiUrl, ignoredApi, jobRun } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
@@ -153,7 +153,7 @@ function closeSheet() {
 }
 const summary = $derived(
 	ready
-		? `${meta.countries[ui.who]} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
+		? `${placeName(meta, ui.who)} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
 		: "",
 );
 

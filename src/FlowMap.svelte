@@ -36,6 +36,7 @@ import {
 	seqScale,
 	share,
 	taperGlyph,
+	theName,
 	wording,
 } from "../flows.js";
 import { regionForIso } from "../map.js";
@@ -371,23 +372,25 @@ function hover(e, k) {
 	const r = e.currentTarget.ownerSVGElement.getBoundingClientRect();
 	tip = { k, x: e.clientX - r.left, y: e.clientY - r.top };
 }
-const other = $derived(meta.countries[ui.who]);
+const other = $derived(placeName(meta, ui.who));
+// after "in" or "for": "the United States"
+const otherIn = $derived(theName(meta, ui.who));
 const tipText = $derived.by(() => {
 	if (!tip) return null;
 	const k = tip.k;
 	const v = sum.vals[k];
-	const name = meta.countries[k];
+	const name = placeName(meta, k);
 	const where =
 		k === ui.who
 			? ui.dir === "in"
 				? "at home, for its own consumption"
 				: "at home and consumed at home"
 			: ui.dir === "in"
-				? `here, for consumption in ${other}`
-				: `in ${other}, for consumption here`;
+				? `here, for consumption in ${otherIn}`
+				: `in ${otherIn}, for consumption here`;
 	if (whatif) {
 		const p = flowPct(sum, k);
-		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
+		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
 		return {
 			name,
 			big: pct(p),
@@ -429,11 +432,11 @@ const divStops = $derived(
 	}).join(","),
 );
 const divTicks = $derived.by(() => {
-	const m = fmtExtent(extent);
+	const m = extent;
 	const q = +(extent / 4).toPrecision(2);
-	if (arm < 0) return [`−${m}%`, `−${q}`, "0"];
-	if (arm > 0) return ["0", `+${q}`, `+${m}%`];
-	return [`−${m}%`, `−${q}`, "0", `+${q}`, `+${m}%`];
+	if (arm < 0) return [`−${m}%`, `−${q}%`, "0%"];
+	if (arm > 0) return ["0%", `+${q}%`, `+${m}%`];
+	return [`−${m}%`, `−${q}%`, "0%", `+${q}%`, `+${m}%`];
 });
 const glyphs = $derived.by(() => {
 	const a0 = sum.vals[sum.bands[0]] ?? 0;
@@ -441,7 +444,6 @@ const glyphs = $derived.by(() => {
 	return [a1, a0].filter((v) => v > 0);
 });
 const tickText = (t) => (t >= 1e6 ? `${t / 1e6}M` : t >= 1000 ? `${t / 1000}k` : String(t));
-const fmtExtent = (m) => `${m}`.replace(/^0\./, "0.");
 const unit = $derived(wording(ui.indicator).unit);
 </script>
 
@@ -543,12 +545,12 @@ const unit = $derived(wording(ui.indicator).unit);
 	</div>
 	<div class="lg">
 		{#if whatif}
-			<div class="lt">% change in each 2011 flow, this run{arm < 0 ? ": all down" : arm > 0 ? ": all up" : ""}</div>
+			<div class="lt">Change in each 2011 flow, %{arm < 0 ? " (all decreases)" : arm > 0 ? " (all increases)" : ""}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unit}.</p>
+			<p class="fn">Square-root scale; 90% of flows within ±{extent}%, larger ones in the end colour. Band width: 2011 {unit}.</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
