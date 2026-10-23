@@ -15,6 +15,7 @@ import {
 	sankeyLayout,
 	share,
 	tableRows,
+	theName,
 	wording,
 } from "../flows.js";
 import Provenance from "./Provenance.svelte";
@@ -30,6 +31,8 @@ const TABS = [
 ];
 const open = $derived(ui.panel !== null);
 const name = $derived(placeName(meta, ui.who));
+// inside a phrase: "the United States"
+const nameIn = $derived(theName(meta, ui.who));
 const w = $derived(wording(ui.indicator));
 const unit = $derived(amount(sum.total, ui.indicator)[1]);
 const all = $derived(ui.on.size === SECTION_SHORT.length);
@@ -168,7 +171,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : w.made.own(name)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
+				{ui.dir === "in" ? `What ${nameIn} consumes` : w.made.own(nameIn)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
 			<p class="copied" role="status">{copied}</p>
 			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}

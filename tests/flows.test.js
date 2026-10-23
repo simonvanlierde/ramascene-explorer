@@ -50,6 +50,14 @@ test("a region has one name on the page, with 'the' where English needs it", () 
 	assert.equal(theName(meta, 0), "Rest of Asia–Pacific");
 	assert.equal(theName(meta, 1), "the United States");
 	assert.equal(theName(meta, 2), "Germany");
+	const the = {
+		country_codes: ["US", "GB", "NL", "CZ"],
+		countries: ["United States", "United Kingdom", "Netherlands", "Czech Republic"],
+	};
+	assert.deepEqual(
+		the.country_codes.map((_, k) => theName(the, k)),
+		["the United States", "the United Kingdom", "the Netherlands", "the Czech Republic"],
+	);
 });
 
 test("numbers keep three figures, a true minus and no exponent", () => {
