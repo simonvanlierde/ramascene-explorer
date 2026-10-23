@@ -19,7 +19,7 @@ import {
 import Provenance from "./Provenance.svelte";
 import { ui } from "./view.svelte.js";
 
-// text: the shown run's "if …" clause; live: {text, rows} for a job from the job API, else null
+// text: the shown run's "if …" clause; live: {source, text, rows} for a run that is not precomputed, else null
 let { data, meta, sum, whatif, run, text, live } = $props();
 
 const TABS = [
@@ -32,7 +32,7 @@ const name = $derived(meta.countries[ui.who]);
 const w = $derived(wording(ui.indicator));
 const unit = $derived(amount(sum.total, ui.indicator)[1]);
 const all = $derived(ui.on.size === SECTION_SHORT.length);
-// a live job's parameters are in its own provenance rows
+// a live run's parameters are in its own provenance rows
 const scenario = $derived(data.scenarios.find((s) => s.id === (whatif && !live ? run : "baseline")));
 
 let panel = $state();
@@ -266,8 +266,8 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		</section>
 		{#if live}
 			<section class="part" aria-labelledby="live-provenance-heading">
-				<h2 id="live-provenance-heading">This run: computed live</h2>
-				<p>The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.</p>
+				<h2 id="live-provenance-heading">{live.source.heading}</h2>
+				<p>{live.source.note}</p>
 				<dl id="live-run-provenance">
 					{#each live.rows as [term, desc]}
 						<dt>{term}</dt>
