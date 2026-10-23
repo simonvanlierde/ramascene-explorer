@@ -18,11 +18,13 @@ import {
 	niceUp,
 	parseView,
 	pct,
+	placeName,
 	runText,
 	SECTION_SHORT,
 	sankeyLayout,
 	share,
 	summarise,
+	theName,
 	viewSearch,
 	wording,
 } from "../flows.js";
@@ -38,6 +40,17 @@ const ALL = new Set(SECTION_SHORT.keys());
 const DE = meta.country_codes.indexOf("DE");
 const sel = (over) => ({ ind: 0, id: 5, who: DE, dir: "in", on: ALL, ...over });
 const close = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+
+test("a region has one name on the page, with 'the' where English needs it", () => {
+	const meta = {
+		country_codes: ["WA", "US", "DE"],
+		countries: ["Rest of Asia and Pacific", "United States", "Germany"],
+	};
+	assert.equal(placeName(meta, 0), "Rest of Asia–Pacific");
+	assert.equal(theName(meta, 0), "Rest of Asia–Pacific");
+	assert.equal(theName(meta, 1), "the United States");
+	assert.equal(theName(meta, 2), "Germany");
+});
 
 test("numbers keep three figures, a true minus and no exponent", () => {
 	assert.equal(fmt(1001.4), "1,001");

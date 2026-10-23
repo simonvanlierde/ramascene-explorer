@@ -54,6 +54,9 @@ const ROW_NAME = {
 	WE: "Rest of Europe",
 };
 export const placeName = (meta, k) => ROW_NAME[meta.country_codes[k]] ?? meta.countries[k];
+// The same name after "in" or "from", where these four take "the".
+const THE = new Set(["US", "GB", "NL", "CZ"]);
+export const theName = (meta, k) => (THE.has(meta.country_codes[k]) ? "the " : "") + placeName(meta, k);
 
 // --- numbers ------------------------------------------------------------------
 
@@ -438,7 +441,7 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {})
 		v: vals[k],
 	}));
 	if (rest.length) P.push({ ks: rest, name: `${rest.length} other regions`, v: rest.reduce((s, k) => s + vals[k], 0) });
-	const me = { ks: partners, name: meta.countries[sel.who], v: sum.total, me: true };
+	const me = { ks: partners, name: placeName(meta, sel.who), v: sum.total, me: true };
 	const inDir = sel.dir === "in";
 	const left = inDir ? P : [me];
 	const right = inDir ? [me] : P;

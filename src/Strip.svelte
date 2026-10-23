@@ -6,7 +6,7 @@ import { ui } from "./view.svelte.js";
 
 let { meta, sum, conts, whatif, extent } = $props();
 
-const name = $derived(meta.countries[ui.who]);
+const name = $derived(placeName(meta, ui.who));
 const sections = $derived(
 	ui.on.size === SECTION_SHORT.length ? "All 15 industry sections" : `${ui.on.size} of 15 industry sections`,
 );
