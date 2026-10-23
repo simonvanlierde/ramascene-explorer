@@ -10,6 +10,29 @@ async function expectNoAxeViolations(page) {
 	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
+// The custom-scenario form lives in What if…, folded under the run list, and on a
+// phone in the selection sheet.
+async function openLive(page) {
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	if (await page.locator("#live-run").isVisible()) return;
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	const dock = page.locator(".dock .filters");
+	if (await dock.isVisible()) await dock.click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeVisible();
+}
+
+function routeJob(page, done, onPost) {
+	return Promise.all([
+		page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog })),
+		page.route(`${API}/jobs`, (route) => {
+			onPost?.(route.request().postDataJSON());
+			return route.fulfill({ json: { id: done.id, status: "queued" } });
+		}),
+		page.route(`${API}/jobs/${done.id}`, (route) => route.fulfill({ json: done })),
+	]);
+}
+
 const catalog = {
 	products: [{ id: 180, name: "Motor vehicles" }],
 	regions: [
@@ -17,6 +40,7 @@ const catalog = {
 		{ id: 2, name: "Africa" },
 	],
 	consumers: [{ id: 198, name: "Manufacture of motor vehicles" }],
+	tech_change_percent: { min: -100, max: 1000 },
 };
 
 // A succeeded job, shaped as GET /jobs/{id} returns it. GHG in kg CO2 eq:
@@ -62,6 +86,7 @@ test("the live panel runs one intervention and labels the result live", async ({
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	expect(posted).toEqual({ label: "custom scenario", model_details: job.scenario.model_details });
@@ -118,6 +143,7 @@ test("a live job's flows light the map, labelled live", async ({ page }) => {
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
@@ -139,8 +165,81 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	await expect(page.locator("#status .basis")).toContainText("precomputed, not a forecast");
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
+});
+
+test("Details stays modal while the live panel is on the page", async ({ page }) => {
+	await routeJob(page, job);
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.getByRole("dialog")).toBeVisible();
+	for (let i = 0; i < 25; i++) {
+		await page.keyboard.press("Tab");
+		const where = await page.evaluate(() => ({
+			// past the dialog's last control the browser takes focus to the page itself, then back
+			inDialog: Boolean(document.activeElement?.closest("[role=dialog]")) || document.activeElement === document.body,
+			id: document.activeElement?.id,
+		}));
+		expect(where.inDialog, `Tab ${i + 1} reached #${where.id}`).toBe(true);
+	}
+});
+
+test("a live run is never shown as Verified", async ({ page }) => {
+	await routeJob(page, flowsJob());
+	// the shipped data passes every check, so the page starts Verified
+	await page.goto(`?api=${API}`);
+	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#status .basis")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#status .pill.ok")).toHaveCount(0);
+	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
+	await page.locator("#status .pill.live").click();
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expect(page.locator(".pf .vf")).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	// back to a precomputed run: Verified again
+	await page.getByRole("button", { name: "Flows, 2011" }).first().click();
+	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
+});
+
+test("the change field holds to the job API's range", async ({ page }) => {
+	let posted = null;
+	await routeJob(page, job, (body) => {
+		posted = body;
+	});
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
+	const change = page.locator("#live-change");
+	await expect(change).toHaveAttribute("min", "-100");
+	await expect(change).toHaveAttribute("max", "1000");
+	await change.fill("-500");
+	await page.locator("#live-run").click();
+	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);
+	await page.waitForTimeout(300);
+	expect(posted).toBe(null);
+	await change.fill("-20");
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("finished in");
+	expect(posted?.model_details[0].techChange).toEqual([-20]);
+});
+
+test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.abort());
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page).catch(() => {});
+	await expect(page.locator("#live-state")).toContainText("not reachable");
+	await expect(page.locator("#live-run")).toBeDisabled();
+	await page.unroute(`${API}/catalog`);
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.locator("#live-retry").click();
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await expect(page.locator("#live-run")).toBeEnabled();
 });

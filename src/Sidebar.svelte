@@ -6,7 +6,8 @@ import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
 // live: {source, text, rows} while a run that is not precomputed is shown, else null
-let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
+// custom: a snippet for the run list's last card (the live panel with ?api=); retry reloads a run that failed
+let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom } = $props();
 
 let done = $state();
 // a phone opens the panel as a sheet: focus its Done button
@@ -158,10 +159,14 @@ const directionHint = $derived(
 					{/if}
 				</div>
 			{/if}
-			{#if loadingRun}
-				<p class="hint" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Try again, or pick another." : "Loading the run’s flows…"}</p>
+			{#if loadingRun.startsWith("failed:")}
+				<p class="hint" role="status">That run could not be loaded. <button type="button" class="chipb" onclick={retry}>Try again</button> or pick another.</p>
+			{:else if loadingRun}
+				<p class="hint" role="status">Loading the run’s flows…</p>
 			{/if}
 		{/if}
+		<!-- mounted in both modes, so a job keeps running while Flows is shown -->
+		{#if custom}<div class="custom" hidden={ui.mode !== "whatif"}>{@render custom()}</div>{/if}
 	</div>
 
 	<div class="grp">

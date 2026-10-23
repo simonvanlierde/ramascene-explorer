@@ -41,7 +41,7 @@ import {
 import { regionForIso } from "../map.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
-let { meta, sum, whatif, extent, play, stop, loadingRun } = $props();
+let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
 
 // --- geometry: the 49 regions merged from Natural Earth countries -----------------
 let shapes = $state.raw([]);
@@ -598,8 +598,10 @@ const unit = $derived(wording(ui.indicator).unit);
 				{/each}
 			</div>
 		{/if}
-		{#if loadingRun && ui.mode === "whatif"}
-			<p class="fn" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Try again, or pick another." : "Loading the run’s flows…"}</p>
+		{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}
+			<p class="fn" role="status">That run could not be loaded. <button type="button" class="chipb" onclick={retry}>Try again</button> or pick another.</p>
+		{:else if loadingRun && ui.mode === "whatif"}
+			<p class="fn" role="status">Loading the run’s flows…</p>
 		{/if}
 	</div>
 

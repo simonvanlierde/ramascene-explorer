@@ -14,7 +14,8 @@ import { reducedMotion, ui } from "./view.svelte.js";
 const search = location.search;
 const dataPath = dataUrl(search);
 const ignored = ignoredData(search);
-// Optional live panel: nothing is imported, and nothing is fetched, without ?api=.
+// Optional live panel, in What if… under the run list: nothing is imported, and
+// nothing is fetched, without ?api=.
 const api = apiUrl(search);
 const refusedApi = ignoredApi(search);
 
@@ -102,6 +103,8 @@ function showLive(job, text) {
 	stop();
 	ui.mode = "whatif";
 	show(next.run, async () => next);
+	// a phone shows the result, not the sheet the form sits in
+	if (sheet) closeSheet();
 	return true;
 }
 
@@ -179,8 +182,12 @@ const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
-// "Verified" only for engine output whose every published run passed every check
-const verified = $derived(data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true);
+// "Verified" only for engine output whose every published run passed every check,
+// and never while a run those checks did not cover is on screen
+const verified = $derived(
+	!live && data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true,
+);
+const retry = () => showRun(ui.run);
 
 // the selection lives in the query string, so every view can be shared
 $effect(() => {
@@ -207,7 +214,9 @@ $effect(() => {
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
 				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "precomputed, not a forecast"}</span>
-				{#if verified}
+				{#if live}
+					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
+				{:else if verified}
 					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
 						Verified
@@ -223,11 +232,15 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} inert={ui.panel !== null} />
+		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null}>
+			{#snippet custom()}
+				{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} />{/await}{/if}
+			{/snippet}
+		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
-			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
+			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />
 		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
@@ -259,5 +272,3 @@ $effect(() => {
 		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
 	{/if}
 </div>
-
-{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} />{/await}{/if}
