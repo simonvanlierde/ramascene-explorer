@@ -303,3 +303,15 @@ test("a job that finishes while Flows is shown leaves the reader in Flows", asyn
 	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
 });
+
+test("without the 2011 flows the live panel still runs a job", async ({ page }) => {
+	await routeJob(page, flowsJob());
+	await page.route("**/*.parquet", (route) => route.fulfill({ status: 404 }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#empty")).toContainText("The embodied flows are not here.");
+	await page.locator("#live-open").click();
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Its flows are not on the map");
+	await expect(page.locator("#live-table tbody tr").first()).toContainText("Europe");
+	await expectNoAxeViolations(page);
+});

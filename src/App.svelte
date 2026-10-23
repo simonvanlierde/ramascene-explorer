@@ -216,6 +216,11 @@ $effect(() => {
 	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
 {/if}
 
+<!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
+{#snippet livePanel()}
+	{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
+{/snippet}
+
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
 <div class="shell">
 	<header class="top" inert={ui.panel !== null}>
@@ -248,9 +253,7 @@ $effect(() => {
 
 	{#if ready}
 		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null}>
-			{#snippet custom()}
-				{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
-			{/snippet}
+			{#snippet custom()}{@render livePanel()}{/snippet}
 		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
@@ -282,6 +285,7 @@ $effect(() => {
 			{:else}
 				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
 			{/if}
+			{@render livePanel()}
 		</main>
 	{:else}
 		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
