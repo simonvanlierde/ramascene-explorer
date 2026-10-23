@@ -13,9 +13,11 @@ import {
 	unreachableMessage,
 	waitForJob,
 } from "../live.js";
+import { ui } from "./view.svelte.js";
 
 // onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
-let { api, onflows } = $props();
+// onnews(text, alert): every status message, for a live region outside the selection sheet
+let { api, onflows, onnews } = $props();
 
 async function fetchJson(url, init) {
 	const response = await fetch(url, { cache: "no-store", ...init });
@@ -34,6 +36,7 @@ let pick = $state({ product: "180", origin: "1", consumer: "198", consumedReg: "
 let changeInput;
 let catalog = $state.raw(null);
 let message = $state("");
+let failed = $state(false);
 let unreachable = $state(false);
 let running = $state(false);
 let data = $state.raw(null);
@@ -46,17 +49,23 @@ const range = $derived(catalog?.tech_change_percent ?? CHANGE_RANGE);
 // the form folds into one card under the run list until it is opened
 let open = $state(false);
 
+function say(text, bad = false) {
+	message = text;
+	failed = bad;
+	onnews?.(text, bad);
+}
+
 function connect() {
 	unreachable = false;
-	message = `Connecting to ${api}…`;
+	say(`Connecting to ${api}…`);
 	fetchJson(`${api}/catalog`).then(
 		(c) => {
 			catalog = c;
-			message = `Connected to ${api}.`;
+			say(`Connected to ${api}.`);
 		},
 		(e) => {
-			message = unreachableMessage(api, e);
 			unreachable = true;
+			say(unreachableMessage(api, e), true);
 		},
 	);
 }
@@ -84,6 +93,8 @@ const view = $derived.by(() => {
 
 async function submit(event) {
 	event.preventDefault();
+	// Run stays focusable while a job runs (aria-disabled), so a second press lands here
+	if (running) return;
 	let body;
 	try {
 		body = scenarioBody({
@@ -94,11 +105,11 @@ async function submit(event) {
 			techChange: changeInput.value,
 		}, range);
 	} catch (e) {
-		message = e.message;
+		say(e.message, true);
 		return;
 	}
 	running = true;
-	message = "Sending the scenario…";
+	say("Sending the scenario…");
 	try {
 		const submitted = await fetchJson(`${api}/jobs`, {
 			method: "POST",
@@ -106,9 +117,7 @@ async function submit(event) {
 			body: JSON.stringify(body),
 		});
 		const done = await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
-			onUpdate: (j) => {
-				message = `Job ${j.id}: ${j.status}…`;
-			},
+			onUpdate: (j) => say(`Job ${j.id}: ${j.status}…`),
 		});
 		if (done.status === "failed") throw new Error(done.error);
 		const d = liveData(done);
@@ -119,19 +128,27 @@ async function submit(event) {
 		}
 		job = done;
 		data = d;
-		message = `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
+		let text = `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
 		try {
-			if (onflows?.(done, liveText(done, catalog))) message += " The map shows its flows.";
+			if (onflows?.(done, liveText(done, catalog)))
+				text += ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map.";
 		} catch (e) {
-			message += ` Its flows are not on the map: ${e.message}`;
+			text += ` Its flows are not on the map: ${e.message}`;
 		}
+		say(text);
 	} catch (e) {
-		message = `Job failed: ${e.message}`;
+		say(`Job failed: ${e.message}`, true);
 	} finally {
 		running = false;
 	}
 }
 </script>
+
+<!-- the visible status line; App reads the same messages out -->
+{#snippet state()}
+	<p id="live-state" class="hint" class:bad={failed}>{message}</p>
+	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={connect}>Try again</button>{/if}
+{/snippet}
 
 {#snippet options(items)}
 	{#each items ?? [] as item (item.id)}<option value={String(item.id)}>{item.name}</option>{/each}
@@ -142,8 +159,7 @@ async function submit(event) {
 		<span><b id="live-title">Custom scenario</b><small>Computed live by the job API</small></span>
 		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={() => (open = !open)}>{open ? "Close" : "Set up"}</button>
 	</div>
-	<p id="live-state" class="hint" class:bad={unreachable} role="status" aria-live="polite">{message}</p>
-	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={connect}>Try again</button>{/if}
+	{#if !open}{@render state()}{/if}
 	<div id="live-body" class="live-body" hidden={!open}>
 		<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
 		<p class="hint">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
@@ -160,8 +176,10 @@ async function submit(event) {
 			<label for="live-change">Change, %</label>
 			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
 			<small class="fh" id="live-change-h">From {String(range.min).replace("-", "−")} to +{range.max}</small>
-			<button type="submit" class="go" id="live-run" disabled={unreachable || running || !catalog}>{running ? "Running…" : "Run scenario"}</button>
+			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
+		<!-- under Run while the form is open, so its answer is where the reader is -->
+		{#if open}{@render state()}{/if}
 		<div id="live-result" hidden={!view}>
 			{#if view}
 				<p class="headline" id="live-headline">{view.headline}</p>

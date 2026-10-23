@@ -136,7 +136,8 @@ pre {
 .skip:focus {
   top: 8px;
 }
-.main:focus {
+.main:focus,
+#headline:focus {
   outline: none;
 }
 
@@ -1530,7 +1531,8 @@ details.more summary {
     background: var(--ink);
   }
 }
-#live .go:disabled {
+#live .go:disabled,
+#live .go[aria-disabled="true"] {
   background: var(--tint);
   color: var(--mut);
   cursor: not-allowed;

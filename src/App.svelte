@@ -1,4 +1,5 @@
 <script>
+import { tick } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
@@ -96,17 +97,26 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
+// A reader who went back to Flows stays there; What if… has the job when they return.
 function showLive(job, text) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
 	const next = jobRun(job, meta, api, text);
 	if (!next) return false;
+	if (ui.mode !== "whatif") {
+		show(next.run, async () => next);
+		return true;
+	}
 	stop();
-	ui.mode = "whatif";
-	show(next.run, async () => next);
+	const loaded = show(next.run, async () => next);
 	// a phone shows the result, not the sheet the form sits in
-	if (sheet) closeSheet();
+	if (sheet) {
+		sheet = false;
+		loaded.then(tick).then(() => document.getElementById("headline")?.focus());
+	}
 	return true;
 }
+// The live panel's news, read out from here: its own status line may sit in a closed sheet.
+let news = $state.raw({ text: "", alert: false });
 
 // load: () => Promise<the shape of shown>, from any flow source
 let wanted = "";
@@ -201,6 +211,11 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert">{flag.text}</div>
 {/if}
 
+{#if api}
+	<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
+	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
+{/if}
+
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
 <div class="shell">
 	<header class="top" inert={ui.panel !== null}>
@@ -234,7 +249,7 @@ $effect(() => {
 	{#if ready}
 		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null}>
 			{#snippet custom()}
-				{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} />{/await}{/if}
+				{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
 			{/snippet}
 		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
