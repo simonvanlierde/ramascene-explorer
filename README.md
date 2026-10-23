@@ -52,6 +52,16 @@ Open `?mode=whatif&scenario=steel-in-vehicles-europe` or
 see the page on the synthetic fixture. The selection lives in the query
 string, so you can share a view by its URL.
 
+## Build
+
+`pnpm build` runs `vite build` and writes the static site to `dist/`, with
+relative paths, so any static host can serve it. The build copies
+`data/results.json`, `data/embodied.parquet` and `geo/` into `dist/`, and
+skips any that is missing. The host must answer HTTP range requests, because
+the page reads the Parquet file in pieces ([docs/page.md](docs/page.md)).
+`pnpm preview` serves `dist/`. The GitHub Pages workflow that publishes the
+site is in [docs/publishing.md](docs/publishing.md).
+
 ## Brightway check
 
 [`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
@@ -86,6 +96,10 @@ change against main on the pull request.
 
 - [docs/scenarios.md](docs/scenarios.md): what each scenario changes
 - [docs/precompute.md](docs/precompute.md): how to regenerate the data, the embodied flows, and the checks they must pass
+- [docs/architecture.md](docs/architecture.md): how the parts fit together, and the page's modules
+- [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
+- [docs/security.md](docs/security.md): what the page accepts from `?api=` and `?data=`
+- [GOVERNANCE.md](GOVERNANCE.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
 - [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
 
