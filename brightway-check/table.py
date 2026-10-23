@@ -23,6 +23,7 @@ ROUTES = [
     ("column of the shipped L matrix", "lca.json", ["numpy_L_file"]),
     ("RaMa-Scene engine, `route_one`", "engine.json", ["engine_result", "Cement, lime and plaster"]),
     ("pymrio {pymrio}, `calc_all` with its own inverse", "pymrio.json", ["score_D_cba"]),
+    ("pycirk, v3.3 SUTs rebuilt with make_secondary and method 0", "pycirk.json", ["score"]),
 ]
 
 

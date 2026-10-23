@@ -45,8 +45,9 @@ def main():
 
     t = time.perf_counter()
     sut = make_secondary(pd.read_pickle(args.sut))
-    regions = sut["V"].index.get_level_values(0)
-    products = sut["V"].index.get_level_values(1)
+    # pycirk's product index has 9 levels (region group EU/ROW, country_code, ..., code, name, synonym, unit)
+    label = sut["V"].index.to_frame(index=False).iloc[K]
+    assert (label["country_code"], label["code"]) == ("NL", "p26.d"), f"row {K} is {label.tolist()}"
     iot = Transform(sut).IOTpxpSTA_TCm()
     del sut
     elapsed = time.perf_counter() - t
@@ -57,24 +58,22 @@ def main():
     if A.shape != shipped_A.shape:
         raise SystemExit(f"pycirk's A is {A.shape}, RaMa-Scene's {shipped_A.shape}")
     diff = np.abs(A - shipped_A)
+    i, j = np.unravel_index(diff.argmax(), diff.shape)
+    A_max = {"row": int(i), "col": int(j), "pycirk": float(A[i, j]), "A_file": float(shipped_A[i, j])}
     del shipped_A
     b = array(args.data, "B")[GHG_ROW]
     shipped_L = np.asarray(array(args.data, "L", mmap_mode="r")[:, K])
-    score, reference = float(b @ L[:, K]), float(b @ shipped_L)
+    score = float(b @ L[:, K])
     commit = subprocess.run(
         ["git", "-C", str(args.pycirk), "rev-parse", "HEAD"], capture_output=True, text=True, check=False
     ).stdout.strip()
     out = {
         "pycirk_commit": commit,
-        "method": "product by product, industry-technology assumption, technical coefficients (method 0)",
-        "make_secondary": True,
-        "row": {"region": regions[K], "product": products[K]},
         "score": score,
         "unit": "kg CO2 eq",
-        "numpy_L_file": reference,
-        "relative_difference_vs_L_file": abs(score - reference) / abs(reference),
         "L_column_max_abs_vs_L_file": float(np.abs(L[:, K] - shipped_L).max()),
-        "A_max_abs_vs_A_file": float(diff.max()),
+        "A_max_abs_vs_A_file": float(diff[i, j]),
+        "A_max_abs_at": A_max,
         "A_entries_differing_above_1e-12": int((diff > 1e-12).sum()),
         "build_s": elapsed,
         "peak_rss_gib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20,

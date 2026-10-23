@@ -1,0 +1,10 @@
+{
+ "pycirk_commit": "13285f6635ff6e195228cb85289c06eba1af1c7b",
+ "score": 1642630.5538405646,
+ "unit": "kg CO2 eq",
+ "L_column_max_abs_vs_L_file": 2.5691769545144183e-10,
+ "A_max_abs_vs_A_file": 28.08953291515503,
+ "A_entries_differing_above_1e-12": 2586408,
+ "build_s": 39.164383369999996,
+ "peak_rss_gib": 6.890094757080078
+}
