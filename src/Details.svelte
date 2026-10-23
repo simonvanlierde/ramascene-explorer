@@ -76,6 +76,11 @@ const heads = $derived(
 			],
 );
 const fmtV = (v) => amount(v, ui.indicator)[0];
+// A Sankey drawn narrower than its layout scales its text down with it; k sets
+// the text back to its own size (in layout units), and labels need that much room.
+let skW = $state(0);
+const k = $derived(lay && skW ? Math.max(1, lay.width / skW) : 1);
+const room = $derived(7 * k);
 
 // --- table --------------------------------------------------------------------
 let sortK = $state("v");
@@ -195,7 +200,8 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<div class="pb" id="tp-sankey" role="tabpanel" tabindex="0" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
 		{#if lay}
-			<svg class="sk" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
+			<div class="skw" bind:clientWidth={skW}>
+			<svg class="sk" style="--k:{k}" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
 				{#each heads as [x, a, t] (t)}<text class="h" {x} y="11" text-anchor={a}>{t}</text>{/each}
 				{#each lay.links as l, i (i)}<path class="lk" d={l.d} fill={SECTION_COLOURS[l.q]}><title>{l.from} → {l.to}: {amountText(l.v, ui.indicator)}</title></path>{/each}
 				{#each lay.left as n (n.name)}<rect x={lay.x.L} y={n.y} width={lay.nw} height={n.h} fill="var(--slate)"><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
@@ -205,15 +211,16 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 					{#each col as n (n.name)}
 						{#if n.me}
 							<text class="me" x={side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4} y={lay.top0 - 6} text-anchor={side === "L" ? "start" : "end"}>{n.name} {amountText(n.v, ui.indicator)}</text>
-						{:else if n.h >= 7}
+						{:else if n.h >= room}
 							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5} text-anchor={side === "L" ? "end" : "start"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}
 					{/each}
 				{/each}
 				{#each lay.mid as n (n.q)}
-					{#if n.h >= 7}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
+					{#if n.h >= room}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
+			</div>
 			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover a band for its value; the Table tab lists every flow.</p>
 		{/if}
 	</div>

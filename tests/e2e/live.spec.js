@@ -234,9 +234,13 @@ test("the change field holds to the job API's range", async ({ page }) => {
 test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {
 	await page.route(`${API}/catalog`, (route) => route.abort());
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
-	await openLive(page).catch(() => {});
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	const dock = page.locator(".dock .filters");
+	if (await dock.isVisible()) await dock.click();
+	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toContainText("not reachable");
-	await expect(page.locator("#live-run")).toBeDisabled();
+	await expect(page.locator("#live-form")).toBeHidden();
 	await page.unroute(`${API}/catalog`);
 	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
 	await page.locator("#live-retry").click();

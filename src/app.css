@@ -491,6 +491,9 @@ button.pill:hover {
   color: var(--ink);
   padding: 0 8px;
 }
+.gridpick .done {
+  margin: 10px 0 0 auto;
+}
 .gridpick .seg {
   background: #e2e7eb;
 }
@@ -866,12 +869,26 @@ svg.map.live .rg {
   align-items: flex-end;
   gap: 6px;
 }
-.mtr .seg.zoom button {
+/* zoom: under the projection switch; bottom left on a phone */
+.mzm {
+  position: absolute;
+  right: 10px;
+  top: 52px;
+}
+.mzm button {
+  display: grid;
+  place-items: center;
   width: 34px;
   padding: 0;
-  font-size: 16px;
+  color: var(--ink);
 }
-.mtr .seg {
+.mzm button[aria-disabled="true"] {
+  color: var(--mut);
+  opacity: 0.55;
+  cursor: default;
+}
+.mtr .seg,
+.mzm {
   background: var(--card);
   border: 1px solid var(--rule);
   box-shadow: 0 1px 3px rgb(31 42 51 / 8%);
@@ -1185,7 +1202,7 @@ svg.map.live .rg {
   scrollbar-width: thin;
 }
 .sk text {
-  font: 600 10.5px var(--sans);
+  font: 600 calc(10.5px * var(--k, 1)) var(--sans);
   fill: var(--ink);
 }
 .sk text .v {
@@ -1475,8 +1492,10 @@ details.more summary {
   font-weight: 700;
   border-radius: 8px;
 }
-#live .go:hover {
-  background: var(--ink);
+@media (hover: hover) {
+  #live .go:hover {
+    background: var(--ink);
+  }
 }
 #live .go:disabled {
   background: var(--tint);
@@ -1486,6 +1505,10 @@ details.more summary {
 #live .headline {
   margin: 12px 0 0;
   font-size: 12.5px;
+}
+#live-result label {
+  display: block;
+  margin-top: 10px;
 }
 #live .table-wrap {
   overflow-x: auto;
@@ -1581,7 +1604,13 @@ details.more summary {
   .top .rt {
     margin-left: 0;
     flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: 6px;
     justify-content: space-between;
+  }
+  /* a long basis (a live job's) takes its own row rather than lose its end */
+  .top .basis {
+    max-width: 100%;
   }
   .top .basis .ds {
     display: none;
@@ -1594,6 +1623,31 @@ details.more summary {
   .top .pill.gh {
     width: 44px;
     padding: 0;
+  }
+  /* 44 px tall targets that still look 32 px: a hit area above and below */
+  .top button.pill,
+  .top a.pill {
+    position: relative;
+    overflow: visible;
+  }
+  .top button.pill::after,
+  .top a.pill::after,
+  .hl .tok::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0; /* from inside the 1 px border */
+  }
+  .hl .tok {
+    position: relative;
+  }
+  /* the sentence's controls: 24 px of text, 44 px to a thumb; the looser
+     line height keeps two controls on neighbouring lines mostly apart */
+  .hl .tok::after {
+    inset: -11px -2px -13px; /* the inset starts inside the 2 px underline */
+    z-index: 1;
+  }
+  .skip {
+    padding: 13px 14px;
   }
   .ph .x,
   .chipb,
@@ -1610,6 +1664,7 @@ details.more summary {
     order: 1;
     min-height: 0;
     font-size: 19px;
+    line-height: 1.45;
   }
   .mapc {
     order: 2;
@@ -1650,15 +1705,25 @@ details.more summary {
     grid-column: 1 / -1;
   }
   .sel-chip,
-  .mtr .seg {
+  .mtr .seg,
+  .mzm {
     height: 52px;
   }
   .sel-chip button,
-  .mtr .seg button {
+  .mtr .seg button,
+  .mzm button {
     min-height: 44px;
   }
-  .mtr .seg.zoom button {
+  .mzm button {
     width: 44px;
+  }
+  /* zoom at the bottom left, where the map is mostly ocean, not at the top
+     right over Asia */
+  .mzm {
+    top: auto;
+    right: auto;
+    left: 8px;
+    bottom: 8px;
   }
   /* the phone table keeps the columns that answer the question */
   #flows-table thead th:nth-child(4),
@@ -1833,6 +1898,10 @@ details.more summary {
   }
   .pan {
     width: 100vw;
+  }
+  /* the Sankey takes the panel's side padding, so its labels need less scaling */
+  .skw {
+    margin: 0 -18px;
   }
   .tabs button {
     min-height: 44px;

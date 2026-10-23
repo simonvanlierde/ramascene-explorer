@@ -15,10 +15,14 @@ It shows one question at a time:
     where the bands meet the selected country. Zooming in makes room for more:
     for Germany, Italy's band appears once you zoom in on the flat map.
   - The wheel, a trackpad pinch or a two-finger pinch zooms the map, up to
-    8×, and the + and − buttons zoom toward the selected country. The zoom
-    goes into the link (`zoom`). On the
-    zoomed flat map a drag pans; on the globe it turns the globe. On a phone,
-    one finger still scrolls the page past the unzoomed flat map.
+    8×, and the + and − buttons zoom toward the selected country; once zoomed,
+    a reset button returns to the whole map. The zoom goes into the link
+    (`zoom`). On the zoomed flat map a drag pans; on the globe it turns the
+    globe. In the phone layout (760 px wide and less), where the page scrolls,
+    the wheel scrolls the page and zooms only with Ctrl or ⌘ held; one finger
+    still scrolls the page past the unzoomed flat map, and the zoom buttons sit
+    at the map's bottom left. Flow labels never go under the map's controls or
+    legend.
   - On the globe, a band from a partner over the horizon starts at the edge.
 - **Industry rail.** One tab per section, its height the section's share of
   the selection. A click isolates one section, and further clicks add or

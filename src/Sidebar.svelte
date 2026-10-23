@@ -58,10 +58,16 @@ function radioKeys(e, list, current, choose) {
 const runOptions = [...NAMED, "grid"];
 // The run list folds to the chosen run once one is picked, so country,
 // direction, indicator and rail stay in view; a link to a run opens folded.
+// The grid's pickers show only while the list is open: picking the grid keeps
+// it open for them, and their Done folds it.
 let showRuns = $state(!new URLSearchParams(location.search).has("scenario"));
 let changeButton = $state();
 function pickRun(v) {
 	chooseRun(v);
+	if (v === "grid") return;
+	foldRuns();
+}
+function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
@@ -71,7 +77,7 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(live.source.status) : onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 
@@ -134,7 +140,7 @@ const directionHint = $derived(
 				{/each}
 			</div>
 			{/if}
-			{#if onGrid && grid}
+			{#if onGrid && grid && showRuns}
 				<div class="gridpick">
 					<label for="g-product">Product used less</label>
 					<select id="g-product" value={gridPick.scenario} onchange={(e) => pickGrid("scenario", e.currentTarget.value)}>
@@ -157,6 +163,7 @@ const directionHint = $derived(
 							{gridTarget.failed ? `This combination was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This combination was not precomputed."}
 						</p>
 					{/if}
+					<button type="button" class="chipb done" onclick={foldRuns}>Done</button>
 				</div>
 			{/if}
 			{#if loadingRun.startsWith("failed:")}

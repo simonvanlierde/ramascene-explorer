@@ -140,8 +140,29 @@ const geom = $derived.by(() => {
 	}
 	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown: visible(self) };
 });
+// The boxes of what floats on the map (the chips, the zoom, the legend and the
+// note), in view px, so no label goes under them.
+let mapv = $state();
+let blocks = $state.raw([]);
+$effect(() => {
+	const host = mapv;
+	if (!host) return;
+	const els = host.parentElement.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote");
+	const measure = () => {
+		const r = host.getBoundingClientRect();
+		blocks = [...els]
+			.map((e) => e.getBoundingClientRect())
+			.filter((b) => b.width && b.bottom > r.top && b.top < r.bottom)
+			.map((b) => [b.left - r.left, b.top - r.top, b.right - r.left, b.bottom - r.top]);
+	};
+	const ro = new ResizeObserver(measure);
+	ro.observe(host);
+	for (const e of els) ro.observe(e);
+	return () => ro.disconnect();
+});
+const hits = (a, b) => !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
 const labels = $derived.by(() => {
-	const placed = [];
+	const placed = [...blocks];
 	const out = [];
 	for (const b of [...geom.bands].sort((x, y) => y.v - x.v)) {
 		const p = proj(shapes[b.k].at);
@@ -149,8 +170,8 @@ const labels = $derived.by(() => {
 		const t = placeName(meta, b.k);
 		const w = t.length * 5.6 + 6;
 		const box = [p[0] - w / 2, p[1] - 13, p[0] + w / 2, p[1] + 8];
-		if (box[0] < 4 || box[2] > view.w - 4) continue;
-		if (placed.some((q) => !(box[2] < q[0] || box[0] > q[2] || box[3] < q[1] || box[1] > q[3]))) continue;
+		if (box[0] < 4 || box[2] > view.w - 4 || box[1] < 4 || box[3] > view.h - 4) continue;
+		if (placed.some((q) => hits(box, q))) continue;
 		placed.push(box);
 		const fp = flowPct(sum, b.k);
 		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator) });
@@ -231,6 +252,10 @@ function zoomAt(f, p = [view.w / 2, view.h / 2]) {
 	zk = k;
 	off = alpha < 0.5 ? clampOff([p[0] - (p[0] - tx) * r - view.t[0], p[1] - (p[1] - ty) * r - view.t[1]]) : [0, 0];
 }
+const resetZoom = () => {
+	zk = 1;
+	off = [0, 0];
+};
 // the buttons zoom toward the selected country, so it stays where it is
 const towardSelection = () => (alpha < 0.5 && geom.B ? geom.B : undefined);
 let svgEl = $state();
@@ -238,11 +263,17 @@ const local = (x, y) => {
 	const r = svgEl.getBoundingClientRect();
 	return [x - r.left, y - r.top];
 };
+// the phone layout, where the page scrolls past the map
+const narrow = matchMedia("(max-width: 760px)");
 // a wheel listener has to be non-passive to keep the page from scrolling
 $effect(() => {
 	const el = svgEl;
 	if (!el) return;
 	const wheel = (e) => {
+		// A trackpad pinch arrives with ctrlKey. Without it the page keeps the wheel
+		// where it scrolls (the phone layout), and when zooming out at the floor.
+		const zoomKey = e.ctrlKey || e.metaKey;
+		if (!zoomKey && (narrow.matches || (zk <= 1 && e.deltaY > 0))) return;
 		e.preventDefault();
 		// deltaMode 1 counts lines (Firefox); a trackpad pinch arrives as a wheel with ctrlKey
 		const d = e.deltaY * (e.deltaMode ? 33 : 1) * (e.ctrlKey ? 5 : 1);
@@ -449,7 +480,7 @@ const unit = $derived(wording(ui.indicator).unit);
 
 <div class="mapc" class:globe={ui.globe}>
 	<!-- the map and what sits on it; the legend goes under it on a phone -->
-	<div class="mapv" bind:clientWidth={W} bind:clientHeight={H}>
+	<div class="mapv" bind:this={mapv} bind:clientWidth={W} bind:clientHeight={H}>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
 		<svg
 			bind:this={svgEl}
@@ -518,10 +549,19 @@ const unit = $derived(wording(ui.indicator).unit);
 				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
 				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
 			</div>
-			<div class="seg zoom" role="group" aria-label="Zoom">
-				<button type="button" aria-label="Zoom in" onclick={() => zoomAt(2, towardSelection())}>+</button>
-				<button type="button" aria-label="Zoom out" onclick={() => zoomAt(0.5, towardSelection())}>−</button>
-			</div>
+		</div>
+		<div class="seg mzm" role="group" aria-label="Zoom">
+			<button type="button" aria-label="Zoom in" aria-disabled={zk >= ZMAX} onclick={() => zoomAt(2, towardSelection())}>
+				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+			</button>
+			<button type="button" aria-label="Zoom out" aria-disabled={zk <= 1} onclick={() => zoomAt(0.5, towardSelection())}>
+				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+			</button>
+			{#if zk > 1}
+				<button type="button" aria-label="Reset zoom" onclick={resetZoom}>
+					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</button>
+			{/if}
 		</div>
 
 		<p class="mnote">
