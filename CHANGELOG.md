@@ -18,6 +18,7 @@ follow [Semantic Versioning](https://semver.org/).
 - Docs on how the parts fit together (`docs/architecture.md`), the URL
   parameters and the job API calls (`docs/interface.md`), and what the page
   accepts from `?api=` and `?data=` (`docs/security.md`).
+- `GOVERNANCE.md` (who decides and merges) and a code of conduct.
 
 ## [0.3.1] - 2026-10-19
 
