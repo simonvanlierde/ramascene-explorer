@@ -168,7 +168,7 @@ const directionHint = $derived(
 							{gridTarget.failed ? `This combination was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This combination was not precomputed."}
 						</p>
 					{/if}
-					<button type="button" class="chipb done" onclick={foldRuns}>Done</button>
+					<button type="button" class="chipb done" aria-label="Done picking the product, region and cut" onclick={foldRuns}>Done</button>
 				</div>
 			{/if}
 			<!-- the map's legend has the same note as a status region, read out also while this sheet is closed -->

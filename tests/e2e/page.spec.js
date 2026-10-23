@@ -516,3 +516,16 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 	);
 	expect(stolen).toEqual([]);
 });
+
+test("the grid's pickers fold with their own Done, named apart from the sheet's", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("radio", { name: /one product/i }).click();
+	await expect(page.locator(".gridpick")).toBeVisible();
+	// at most the sheet's own Done answers to the bare name
+	expect(await page.getByRole("button", { name: "Done", exact: true }).count()).toBeLessThanOrEqual(1);
+	await page.getByRole("button", { name: "Done picking the product, region and cut" }).click();
+	await expect(page.locator(".gridpick")).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Change the intervention" })).toBeFocused();
+});
