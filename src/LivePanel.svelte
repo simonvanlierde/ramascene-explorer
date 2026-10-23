@@ -9,6 +9,7 @@ import {
 	liveData,
 	liveProvenance,
 	liveText,
+	minus,
 	scenarioBody,
 	unreachableMessage,
 	waitForJob,
@@ -180,7 +181,7 @@ async function submit(event) {
 			<select id="live-consumed-reg" required disabled={!catalog} bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select>
 			<label for="live-change">Change, %</label>
 			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
-			<small class="fh" id="live-change-h">From {String(range.min).replace("-", "−")} to +{range.max}</small>
+			<small class="fh" id="live-change-h">From {minus(range.min)} to +{range.max}</small>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->

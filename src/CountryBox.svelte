@@ -5,7 +5,6 @@ import { placeName } from "../flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, labelledby } = $props();
-// svelte-ignore state_referenced_locally
 const nm = (i) => placeName(meta, i);
 
 // meta never changes: the page mounts once per load

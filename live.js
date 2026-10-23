@@ -8,7 +8,7 @@ export const LIVE_STATUS = "computed live by the job API, not precomputed";
 // The change the job API accepts, in percent. GET /catalog states it as
 // tech_change_percent; these are its values, for a job API that does not.
 export const CHANGE_RANGE = { min: -100, max: 1000 };
-const minus = (n) => String(n).replace("-", "−");
+export const minus = (n) => String(n).replace("-", "−");
 
 // Loopback (a local run, or an SSH tunnel) over http, anything else over https.
 // Not [::1]: the job API only allows the 127.0.0.1 and localhost hosts.
