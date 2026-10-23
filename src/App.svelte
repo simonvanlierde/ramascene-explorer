@@ -3,7 +3,7 @@ import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
 import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
-import { apiUrl, ignoredApi, LIVE_STATUS, liveFlows, liveProvenance } from "../live.js";
+import { apiUrl, ignoredApi, jobRun } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";
@@ -25,8 +25,9 @@ let flowsError = $state("");
 let base = $state.raw(null);
 // {run, base, delta, live?}: the run on screen, as dense arrays in meta's layout; the next one may
 // still be loading. Every flow source hands the page this shape, so the map, Strip and Details never
-// know where a run came from. base is the baseline the run is a change against. A job from the job
-// API adds live: {text, rows}, its "if …" clause and provenance rows.
+// know where a run came from. base is the baseline the run is a change against. A run that is not
+// precomputed adds live: {source, text, rows}: its source's wording ({status, heading, note}), its
+// "if …" clause and its provenance rows.
 let shown = $state.raw(null);
 let loadingRun = $state("");
 let ready = $state(false);
@@ -89,22 +90,22 @@ function fetchRun(run) {
 		);
 	return cache.get(run);
 }
-const showRun = (run) => show(run, async () => ({ run, base, delta: await fetchRun(run) }));
+const precomputedRun = async (run) => ({ run, base, delta: await fetchRun(run) });
+const showRun = (run) => show(run, () => precomputedRun(run));
 
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
 function showLive(job, text) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
-	const flows = liveFlows(job, meta);
-	if (!flows) return false;
+	const next = jobRun(job, meta, api, text);
+	if (!next) return false;
 	stop();
 	ui.mode = "whatif";
-	const run = `live-${job.id}`;
-	show(run, async () => ({ run, ...flows, live: { text, rows: liveProvenance(job, api) } }));
+	show(next.run, async () => next);
 	return true;
 }
 
-// load: () => Promise<{run, base, delta}>, from any flow source
+// load: () => Promise<the shape of shown>, from any flow source
 let wanted = "";
 async function show(run, load) {
 	wanted = run;
@@ -205,7 +206,7 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? LIVE_STATUS : "precomputed, not a forecast"}</span>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "precomputed, not a forecast"}</span>
 				{#if verified}
 					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>

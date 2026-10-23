@@ -5,6 +5,7 @@ import { compare } from "../explorer.js";
 import {
 	apiUrl,
 	ignoredApi,
+	jobRun,
 	LIVE_STATUS,
 	liveData,
 	liveFlows,
@@ -176,4 +177,18 @@ test("liveFlows: the job's own baseline, and the change against it, in the page'
 		/2 × 3 × 1 × 3/,
 	);
 	assert.throws(() => liveFlows({ result: { indicators: [{ id: 3 }, { id: 7 }], flows } }, meta), /indicator 5/);
+});
+
+test("jobRun: a job's flows and provenance as the page's run shape, with the job API's wording", () => {
+	const meta = { countries: ["A", "B"], sections: ["s"], indicators: [{ id: 5 }] };
+	const flows = { shape: [1, 2, 1, 2], baseline: [1, 2, 3, 4], scenario: [1, 2, 3, 3] };
+	const withFlows = { ...job, result: { ...job.result, flows } };
+	const run = jobRun(withFlows, meta, "http://127.0.0.1:8020", "the clause");
+	assert.equal(run.run, "live-abc123");
+	assert.deepEqual([...run.base], [1, 2, 3, 4]);
+	assert.deepEqual([...run.delta], [0, 0, 0, -1]);
+	assert.equal(run.live.text, "the clause");
+	assert.equal(Object.fromEntries(run.live.rows)["Job API"], "http://127.0.0.1:8020 · job abc123");
+	assert.equal(run.live.source.status, LIVE_STATUS);
+	assert.equal(jobRun(job, meta, "http://127.0.0.1:8020", "the clause"), null);
 });

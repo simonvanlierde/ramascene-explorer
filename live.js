@@ -153,6 +153,23 @@ export function liveFlows(job, meta) {
 	return { base, delta };
 }
 
+// The page's words for a run from the job API: the status line, and the heading
+// and note above its provenance rows.
+const JOB_SOURCE = {
+	status: LIVE_STATUS,
+	heading: "This run: computed live",
+	note: "The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.",
+};
+
+// A finished job as a run the page shows: {run, base, delta, live: {source, text,
+// rows}}, text being its "if …" clause. null when the job has no flows; throws
+// as liveFlows does.
+export function jobRun(job, meta, apiOrigin, text) {
+	const flows = liveFlows(job, meta);
+	if (!flows) return null;
+	return { run: `live-${job.id}`, ...flows, live: { source: JOB_SOURCE, text, rows: liveProvenance(job, apiOrigin) } };
+}
+
 // Poll GET /jobs/{id} until it leaves queued/running. fetchJson is injected for tests.
 export async function waitForJob(fetchJson, url, { interval = 2000, timeout = 30 * 60 * 1000, onUpdate } = {}) {
 	const deadline = Date.now() + timeout;
