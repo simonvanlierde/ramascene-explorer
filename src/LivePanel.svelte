@@ -4,6 +4,7 @@
 import { compare } from "../explorer.js";
 import { amountText, pct, wording } from "../flows.js";
 import {
+	CHANGE_RANGE,
 	LIVE_STATUS,
 	liveData,
 	liveProvenance,
@@ -40,17 +41,26 @@ let job = $state.raw(null);
 let indicators = $state.raw([]);
 let indicatorId = $state("");
 
-// svelte-ignore state_referenced_locally
-fetchJson(`${api}/catalog`).then(
-	(c) => {
-		catalog = c;
-		message = `Connected to ${api}.`;
-	},
-	(e) => {
-		message = unreachableMessage(api, e);
-		unreachable = true;
-	},
-);
+// the change the job API accepts: GET /catalog says, or its known range
+const range = $derived(catalog?.tech_change_percent ?? CHANGE_RANGE);
+// the form folds into one card under the run list until it is opened
+let open = $state(false);
+
+function connect() {
+	unreachable = false;
+	message = `Connecting to ${api}…`;
+	fetchJson(`${api}/catalog`).then(
+		(c) => {
+			catalog = c;
+			message = `Connected to ${api}.`;
+		},
+		(e) => {
+			message = unreachableMessage(api, e);
+			unreachable = true;
+		},
+	);
+}
+connect();
 
 // Signed amount and percentage in the page's units; a zero baseline has no percentage.
 const signedText = (v, id) => (v > 0 ? "+" : "") + amountText(v, id);
@@ -82,12 +92,13 @@ async function submit(event) {
 			consumedBy: pick.consumer,
 			consumedReg: pick.consumedReg,
 			techChange: changeInput.value,
-		});
+		}, range);
 	} catch (e) {
 		message = e.message;
 		return;
 	}
 	running = true;
+	message = "Sending the scenario…";
 	try {
 		const submitted = await fetchJson(`${api}/jobs`, {
 			method: "POST",
@@ -123,68 +134,70 @@ async function submit(event) {
 </script>
 
 {#snippet options(items)}
-	{#each items ?? [] as item (item.id)}<option value={String(item.id)}>{`${item.name} (${item.id})`}</option>{/each}
+	{#each items ?? [] as item (item.id)}<option value={String(item.id)}>{item.name}</option>{/each}
 {/snippet}
 
 <section id="live" aria-labelledby="live-title">
-	<h2 id="live-title">Run a custom scenario</h2>
-	<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
-	<p class="scope">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
-	<form id="live-form" onsubmit={submit}>
-		<label for="live-product">Product <select id="live-product" required bind:value={pick.product}>{@render options(catalog?.products)}</select></label>
-		<label for="live-origin">Produced in <select id="live-origin" required bind:value={pick.origin}>{@render options(catalog?.regions)}</select></label>
-		<label for="live-consumer">Consumed by <select id="live-consumer" required bind:value={pick.consumer}>{@render options(catalog?.consumers)}</select></label>
-		<label for="live-consumed-reg">Consumed in <select id="live-consumed-reg" required bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select></label>
-		<label for="live-change">Change (%) <input id="live-change" type="number" step="any" value="-20" required bind:this={changeInput} /></label>
-		<label for="live-indicator">Indicator
-			<select id="live-indicator" bind:value={indicatorId}>
-				{#each indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
-			</select>
-		</label>
-		<button type="submit" id="live-run" disabled={unreachable || running}>Run</button>
-	</form>
-	<p id="live-state" role="status" aria-live="polite">{message}</p>
-	<div id="live-result" hidden={!view}>
-		{#if view}
-			<p class="headline" id="live-headline">{view.headline}</p>
-			<div class="table-wrap">
-				<table id="live-table">
-					<thead><tr>
-						{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
-					</tr></thead>
-					<tbody>
-						{#each view.rows as r (r.region)}
-							<tr>
-								<th scope="row">{r.region}</th>
-								<td>{amountText(r.baseline, view.id)}</td>
-								<td>{amountText(r.scenario, view.id)}</td>
-								<td>{signedText(r.delta, view.id)}</td>
-								<td>{pctText(r.percent)}</td>
-							</tr>
+	<div class="run chosen live-card">
+		<span><b id="live-title">Custom scenario</b><small>Computed live by the job API</small></span>
+		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={() => (open = !open)}>{open ? "Close" : "Set up"}</button>
+	</div>
+	<p id="live-state" class="hint" class:bad={unreachable} role="status" aria-live="polite">{message}</p>
+	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={connect}>Try again</button>{/if}
+	<div id="live-body" class="live-body" hidden={!open}>
+		<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
+		<p class="hint">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
+		<form id="live-form" onsubmit={submit} aria-busy={running}>
+			<label for="live-product">Product</label>
+			<select id="live-product" required disabled={!catalog} bind:value={pick.product}>{@render options(catalog?.products)}</select>
+			<label for="live-origin">Produced in</label>
+			<select id="live-origin" required disabled={!catalog} bind:value={pick.origin}>{@render options(catalog?.regions)}</select>
+			<label for="live-consumer">Consumed by</label>
+			<select id="live-consumer" required disabled={!catalog} bind:value={pick.consumer}>{@render options(catalog?.consumers)}</select>
+			<label for="live-consumed-reg">Consumed in</label>
+			<select id="live-consumed-reg" required disabled={!catalog} bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select>
+			<label for="live-change">Change, %</label>
+			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
+			<small class="fh" id="live-change-h">From {String(range.min).replace("-", "−")} to +{range.max}</small>
+			<button type="submit" class="go" id="live-run" disabled={unreachable || running || !catalog}>{running ? "Running…" : "Run scenario"}</button>
+		</form>
+		<div id="live-result" hidden={!view}>
+			{#if view}
+				<p class="headline" id="live-headline">{view.headline}</p>
+				{#if indicators.length > 1}
+					<label for="live-indicator">Indicator</label>
+					<select id="live-indicator" bind:value={indicatorId}>
+						{#each indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
+					</select>
+				{/if}
+				<div class="table-wrap" tabindex="0" role="region" aria-label="The job’s totals by region">
+					<table id="live-table">
+						<thead><tr>
+							{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
+						</tr></thead>
+						<tbody>
+							{#each view.rows as r (r.region)}
+								<tr>
+									<th scope="row">{r.region}</th>
+									<td>{amountText(r.baseline, view.id)}</td>
+									<td>{amountText(r.scenario, view.id)}</td>
+									<td>{signedText(r.delta, view.id)}</td>
+									<td>{pctText(r.percent)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<details>
+					<summary>Provenance (live job)</summary>
+					<dl id="live-provenance">
+						{#each view.provenance as [k, v]}
+							<dt>{k}</dt>
+							<dd>{#if k === "Scenario parameters"}<pre>{v}</pre>{:else}{v}{/if}</dd>
 						{/each}
-					</tbody>
-				</table>
-			</div>
-			<details open>
-				<summary>Provenance (live job)</summary>
-				<dl id="live-provenance">
-					{#each view.provenance as [k, v]}
-						<dt>{k}</dt>
-						<dd>{#if k === "Scenario parameters"}<pre>{v}</pre>{:else}{v}{/if}</dd>
-					{/each}
-				</dl>
-			</details>
-		{/if}
+					</dl>
+				</details>
+			{/if}
+		</div>
 	</div>
 </section>
-
-<style>
-	#live {
-		border: 2px dashed var(--axis);
-		padding: 16px;
-		margin-top: 48px;
-	}
-	.live-label {
-		font-weight: 700;
-	}
-</style>

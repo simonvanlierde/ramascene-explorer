@@ -68,9 +68,12 @@ Malta is below the 1:110m threshold and appears only in the table.
 
 ## Live scenarios (optional)
 
-With `?api=<origin>` the page adds a "Run a custom scenario" panel that sends one
-intervention (product, origin region, consuming sector, consuming region, change
-in %) to the RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The
+With `?api=<origin>` What if… adds a "Custom scenario" card under the run list
+(in the selection sheet on a phone). Its form sends one intervention (product,
+origin region, consuming sector, consuming region, change in %) to the
+RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The change is
+held to the range the job API states in `GET /catalog` (`tech_change_percent`,
+−100 to +1000). When nothing answers, the card says so and offers Try again. The
 result is compared with the baseline computed in the same job and labelled
 "computed live by the job API, not precomputed", with its own provenance: engine
 commit, dataset, the job's duration and peak memory.
@@ -79,9 +82,9 @@ When the job API returns the job's embodied flows (`ramascene-jobs` does from
 its flows release on), the page also shows them as the run in What if…: the
 map, the continent strip, the sentence and Details draw the job's flows against
 the job's own baseline, the same way they draw a precomputed run. The status
-line then reads "computed live by the job API, not precomputed", and Details
-→ Method lists the job's provenance above the precomputed checks, which do not
-cover it. The flows must have the precomputed file's layout (the same 49
+line then reads "computed live by the job API, not precomputed", the trust pill
+reads "Live job: not checked" instead of Verified, and Details → Method lists
+the job's provenance above the precomputed checks, which do not cover it. The flows must have the precomputed file's layout (the same 49
 countries, 15 sections and three indicators); a job without them, or with
 another layout, stays in the panel only.
 

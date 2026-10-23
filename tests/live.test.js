@@ -5,6 +5,7 @@ import { at } from "../embodied.js";
 import { compare } from "../explorer.js";
 import {
 	apiUrl,
+	CHANGE_RANGE,
 	ignoredApi,
 	jobRun,
 	LIVE_STATUS,
@@ -91,6 +92,17 @@ test("a change that is not a finite number never leaves the page", () => {
 	assert.throws(() => scenarioBody({ ...form, product: "1.5", techChange: "0" }), /not an id/);
 });
 
+test("a change outside the job API's range never leaves the page", () => {
+	const form = { product: "180", originReg: "1", consumedBy: "198", consumedReg: "2" };
+	// the job API's own range (GET /catalog tech_change_percent) is the default
+	assert.deepEqual(CHANGE_RANGE, { min: -100, max: 1000 });
+	for (const techChange of ["-100.1", "-500", "1000.5"])
+		assert.throws(() => scenarioBody({ ...form, techChange }), /between −100 and 1000/, techChange);
+	for (const techChange of ["-100", "0", "1000"]) assert.doesNotThrow(() => scenarioBody({ ...form, techChange }));
+	// a catalog that advertises a narrower range wins
+	assert.throws(() => scenarioBody({ ...form, techChange: "60" }, { min: -50, max: 50 }), /between −50 and 50/);
+});
+
 test("a live result is compared with its own job's baseline", () => {
 	const data = liveData(job);
 	assert.equal(data.status, LIVE_STATUS);
@@ -134,7 +146,7 @@ test("without ?api= the page is unchanged: panel absent, panel code loaded only 
 test("unreachableMessage: a network failure reads as offline, an HTTP error keeps its detail", () => {
 	const offline = unreachableMessage("http://127.0.0.1:8020", new TypeError("Failed to fetch"));
 	assert.match(offline, /^Live job API not reachable \(offline\)/);
-	assert.match(offline, /precomputed results above are unaffected/);
+	assert.match(offline, /precomputed runs are unaffected/);
 	assert.doesNotMatch(offline, /Failed to fetch/);
 	const http = unreachableMessage("http://127.0.0.1:8020", new Error("503: Service Unavailable"));
 	assert.match(http, /^Job API at http:\/\/127\.0\.0\.1:8020 answered with an error: 503/);

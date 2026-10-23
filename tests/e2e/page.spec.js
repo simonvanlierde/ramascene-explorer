@@ -249,6 +249,10 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
 	await page.unroute("**/*.parquet");
+	await page.getByRole("button", { name: "Try again" }).first().click();
+	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
+	// picking it again from the list works too
 	await page.getByRole("button", { name: "Change the intervention" }).click();
 	await page.getByRole("radio", { name: /builders everywhere/i }).click();
 	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");

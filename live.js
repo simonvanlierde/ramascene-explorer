@@ -5,6 +5,10 @@
 import { at, cells } from "./embodied.js";
 
 export const LIVE_STATUS = "computed live by the job API, not precomputed";
+// The change the job API accepts, in percent. GET /catalog states it as
+// tech_change_percent; these are its values, for a job API that does not.
+export const CHANGE_RANGE = { min: -100, max: 1000 };
+const minus = (n) => String(n).replace("-", "−");
 
 // Loopback (a local run, or an SSH tunnel) over http, anything else over https.
 // Not [::1]: the job API only allows the 127.0.0.1 and localhost hosts.
@@ -34,16 +38,19 @@ export function ignoredApi(search) {
 // answers (no tunnel, laptop offline); anything else is the API's own error.
 export function unreachableMessage(api, error) {
 	if (error instanceof TypeError) {
-		return `Live job API not reachable (offline): nothing answers at ${api}. The precomputed results above are unaffected.`;
+		return `Live job API not reachable (offline): nothing answers at ${api}. The precomputed runs are unaffected.`;
 	}
 	return `Job API at ${api} answered with an error: ${error.message}`;
 }
 
 // Form values (strings from <select>/<input>) to a POST /jobs body in the
-// explorer's model_details format. Throws on a change that is not a finite number.
-export function scenarioBody({ product, originReg, consumedBy, consumedReg, techChange, label }) {
+// explorer's model_details format. Throws on a change that is not a finite number,
+// or outside range ({min, max} in percent, the job API's).
+export function scenarioBody({ product, originReg, consumedBy, consumedReg, techChange, label }, range = CHANGE_RANGE) {
 	const change = Number(techChange);
 	if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
+	if (change < range.min || change > range.max)
+		throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
 	const id = (v) => {
 		const n = Number(v);
 		if (!Number.isInteger(n)) throw new Error(`not an id: ${v}`);
@@ -163,6 +170,8 @@ export function liveFlows(job, meta) {
 // and note above its provenance rows.
 const JOB_SOURCE = {
 	status: LIVE_STATUS,
+	// the trust pill: the page's checks cover the precomputed runs only
+	pill: "Live job: not checked",
 	heading: "This run: computed live",
 	note: "The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.",
 };

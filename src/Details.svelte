@@ -281,7 +281,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<footer class="pf">
 		<p>{d.name} {d.year} (<a href="https://doi.org/{d.doi}">doi:{d.doi}</a>) · RaMa-Scene engine {e.label ?? shortCommit(e.commit)} · demand-pull Leontief model · {w.noun}</p>
-		{#if check}
+		{#if check && !live}
 			<p class="vf">
 				<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				Verified: flows sum to the engine's per-country totals (worst relative difference {check.max_relative_difference.toExponential(0)})

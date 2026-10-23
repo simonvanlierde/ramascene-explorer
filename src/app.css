@@ -229,6 +229,12 @@ a.pill.gh:hover {
 button.pill:hover {
   background: var(--tint-hover);
 }
+/* a live job: no check covers it, so it is neither Verified nor failed */
+.pill.live {
+  color: var(--ink);
+  font-weight: 600;
+  flex: none;
+}
 .pill.fail {
   color: var(--danger);
   border-color: currentColor;
@@ -1392,13 +1398,131 @@ details.more summary {
   margin: 0;
 }
 
-/* the dormant live panel (?api=) keeps a plain card */
-#live {
-  margin: 16px 20px;
-  padding: 16px;
-  background: var(--card);
-  border: 1px solid var(--rule);
+/* a retry inside a status line */
+.hint .chipb,
+.fn .chipb {
+  display: inline-flex;
+  height: 28px;
+  vertical-align: middle;
+  margin: 2px 2px 2px 0;
+  color: var(--ink);
+}
+
+/* the custom scenario (?api=): the run list's last card, its form folded under it */
+.custom {
+  margin-top: 10px;
+}
+#live .hint {
+  margin-top: 5px;
+}
+#live .hint.bad {
+  color: var(--danger);
+}
+#live-retry {
+  margin-top: 6px;
+}
+.live-body {
+  margin-top: 8px;
+  padding: 10px;
   border-radius: 8px;
+  background: var(--soft);
+}
+.live-body > .hint:first-of-type {
+  margin-top: 4px;
+}
+.live-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+#live-form {
+  display: grid;
+  margin-top: 10px;
+}
+#live label {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 8px 0 5px;
+}
+#live-form label:first-child {
+  margin-top: 0;
+}
+#live select,
+#live input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid #c9d1d7;
+  border-radius: 8px;
+  background: var(--card);
+  font: 600 12.5px var(--sans);
+  color: var(--ink);
+  padding: 0 8px;
+}
+#live input:invalid {
+  border-color: var(--danger);
+}
+#live .fh {
+  font-size: 12px;
+  color: var(--mut);
+  margin-top: 4px;
+}
+#live .go {
+  margin-top: 12px;
+  min-height: 34px;
+  background: var(--slate);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+}
+#live .go:hover {
+  background: var(--ink);
+}
+#live .go:disabled {
+  background: var(--tint);
+  color: var(--mut);
+  cursor: not-allowed;
+}
+#live .headline {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+}
+#live .table-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+#live table {
+  font-size: 12px;
+  border-collapse: collapse;
+  min-width: 100%;
+}
+#live th,
+#live td {
+  padding: 3px 6px 3px 0;
+  text-align: right;
+  white-space: nowrap;
+}
+#live th[scope="row"],
+#live thead th:first-child {
+  text-align: left;
+}
+#live details {
+  margin-top: 8px;
+  font-size: 12px;
+}
+#live summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#live dl {
+  margin: 6px 0 0;
+}
+#live dt {
+  color: var(--mut);
+}
+#live dd {
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1280px) {
@@ -1682,6 +1806,13 @@ details.more summary {
   }
   .seg button,
   .run,
+  .run.chosen .change,
+  #live select,
+  #live input,
+  #live .go,
+  #live summary,
+  .hint .chipb,
+  .fn .chipb,
   .gridpick select,
   .cb input,
   .rail .all {
