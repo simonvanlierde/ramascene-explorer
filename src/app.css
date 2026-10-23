@@ -1654,27 +1654,30 @@ details.more summary {
     width: 44px;
     padding: 0;
   }
-  /* 44 px tall targets that still look 32 px: a hit area above and below */
+  /* 44 px tall targets that still look smaller: a hit area (::after) above and
+     below. Where two overlap, ::before keeps each control's own box on top, so
+     a tap on what a control looks like always reaches it. */
   .top button.pill,
-  .top a.pill {
+  .top a.pill,
+  .hl .tok {
     position: relative;
     overflow: visible;
   }
-  .top button.pill::after,
-  .top a.pill::after,
-  .hl .tok::after {
+  :is(.top button.pill, .top a.pill, .hl .tok)::before,
+  :is(.top button.pill, .top a.pill, .hl .tok)::after {
     content: "";
     position: absolute;
-    inset: -8px 0; /* from inside the 1 px border */
-  }
-  .hl .tok {
-    position: relative;
-  }
-  /* the sentence's controls: 24 px of text, 44 px to a thumb; the looser
-     line height keeps two controls on neighbouring lines mostly apart */
-  .hl .tok::after {
-    inset: -11px -2px -13px; /* the inset starts inside the 2 px underline */
+    inset: -8px 0; /* the pills' 32 px, from inside the 1 px border */
     z-index: 1;
+  }
+  :is(.top button.pill, .top a.pill, .hl .tok)::before {
+    inset: -2px 0; /* over the 1 px border and the 2 px underline */
+    z-index: 2;
+  }
+  /* the sentence's 24 px controls; the inset starts inside the 2 px underline
+     (button.tok matches the :is() rule's weight, so this one wins) */
+  .hl button.tok::after {
+    inset: -11px -2px -13px;
   }
   .skip {
     padding: 13px 14px;
