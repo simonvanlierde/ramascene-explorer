@@ -147,7 +147,8 @@ async function submit(event) {
 	<div id="live-body" class="live-body" hidden={!open}>
 		<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
 		<p class="hint">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
-		<form id="live-form" onsubmit={submit} aria-busy={running}>
+		<!-- the pickers need the catalog; without it the status line says why -->
+		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
 			<label for="live-product">Product</label>
 			<select id="live-product" required disabled={!catalog} bind:value={pick.product}>{@render options(catalog?.products)}</select>
 			<label for="live-origin">Produced in</label>

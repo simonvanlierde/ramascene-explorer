@@ -190,6 +190,50 @@ test("the scroll wheel zooms the map about the pointer", async ({ page, isMobile
 	expect(Math.abs(Number(await ring.getAttribute("cx")) - cx)).toBeLessThan(5);
 });
 
+test("in the scrolling layout the wheel scrolls the page, not the map", async ({ page, isMobile }) => {
+	test.skip(isMobile, "a phone has no wheel");
+	await page.setViewportSize({ width: 700, height: 800 });
+	await page.goto("");
+	await ready(page);
+	const box = await page.locator("svg.map").boundingBox();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.wheel(0, 300);
+	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+	await page.mouse.wheel(0, -300);
+	await page.waitForTimeout(400);
+	await expect(page).not.toHaveURL(/zoom=/);
+});
+
+test("Reset zoom shows once zoomed and returns to the whole map", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	await expect(page.getByRole("button", { name: "Reset zoom" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Zoom out" })).toHaveAttribute("aria-disabled", "true");
+	await page.getByRole("button", { name: "Zoom in" }).click();
+	await expect(page).toHaveURL(/zoom=/);
+	await page.getByRole("button", { name: "Reset zoom" }).click();
+	await expect(page).not.toHaveURL(/zoom=/);
+	await expect(page.getByRole("button", { name: "Reset zoom" })).toHaveCount(0);
+});
+
+test("no flow label sits under the controls or the legend on the map", async ({ page }) => {
+	for (const url of ["", "?region=CN", "?region=BR&map=globe&zoom=2", "?region=CN&zoom=2.5,105,32"]) {
+		await page.goto(url);
+		await ready(page);
+		await page.waitForTimeout(400);
+		const clash = await page.evaluate(() => {
+			const boxes = [...document.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote")]
+				.map((e) => e.getBoundingClientRect())
+				.filter((b) => b.width);
+			const over = (a, b) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+			return [...document.querySelectorAll(".lbls text")]
+				.filter((t) => boxes.some((b) => over(t.getBoundingClientRect(), b)))
+				.map((t) => t.textContent);
+		});
+		expect(clash, url || "default view").toEqual([]);
+	}
+});
+
 test("jobs are never 'released': the cards, legend and table take the indicator's word", async ({ page }) => {
 	await page.goto("?mode=whatif&indicator=3");
 	await ready(page);
@@ -368,7 +412,21 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	const tall = async (selector) => {
 		for (const b of await heights(selector)) expect(b.h, `${selector}: ${b.name}`).toBeGreaterThanOrEqual(44);
 	};
-	for (const s of [".dock .seg button", ".dock .filters", ".sel-chip button", ".mtr .seg button"]) await tall(s);
+	for (const s of [".dock .seg button", ".dock .filters", ".sel-chip button", ".mtr .seg button", ".mzm button"])
+		await tall(s);
+	// the pills and the sentence's controls look smaller; their hit area is 44 px tall
+	const reach = await page.locator(".top button.pill, .top a.pill, .hl .tok").evaluateAll((els) =>
+		els.map((e) => {
+			const r = e.getBoundingClientRect();
+			const [x, y] = [r.left + r.width / 2, r.top + r.height / 2];
+			const at = (dy) => e.contains(document.elementFromPoint(x, y + dy));
+			return { name: (e.textContent ?? "").trim().slice(0, 30), ok: at(-21) && at(21) };
+		}),
+	);
+	expect(reach.length).toBeGreaterThan(2);
+	for (const r of reach) expect(r.ok, `hit area of ${r.name}`).toBe(true);
+	await page.locator(".skip").focus();
+	expect((await page.locator(".skip").boundingBox()).height).toBeGreaterThanOrEqual(44);
 	await page.locator(".dock .filters").click();
 	await expect(page.locator("#side")).toBeVisible();
 	const rail = await heights("#side .rail .t");
