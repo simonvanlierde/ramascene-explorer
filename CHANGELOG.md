@@ -20,6 +20,13 @@ follow [Semantic Versioning](https://semver.org/).
   accepts from `?api=` and `?data=` (`docs/security.md`).
 - `GOVERNANCE.md` (who decides and merges) and a code of conduct.
 
+### Changed
+
+- CI fails when line coverage drops below 80%, for the Python scripts and for
+  the page logic.
+- The Pages workflow publishes only when started from `main`, as
+  `docs/publishing.md` already said.
+
 ## [0.3.1] - 2026-10-19
 
 ### Fixed
