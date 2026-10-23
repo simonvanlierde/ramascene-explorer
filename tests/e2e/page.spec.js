@@ -470,3 +470,31 @@ test("“the” goes before the United States wherever its name sits in a phrase
 	await expect(page.locator("#headline")).toContainText("released in the United States would have come to");
 	await expect(page.locator(".kpis.k5")).toHaveAttribute("aria-label", /^The change in the United States,/);
 });
+
+test("the form controls' borders have 3:1 contrast on white and on the soft ground", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const ratios = await page.evaluate(() => {
+		const lum = (rgb) => {
+			const c = rgb
+				.match(/[\d.]+/g)
+				.slice(0, 3)
+				.map((v) => Number(v) / 255);
+			const [r, g, b] = c.map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+			return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+		};
+		const ratio = (a, b) => {
+			const [lo, hi] = [lum(a), lum(b)].sort((x, y) => x - y);
+			return (hi + 0.05) / (lo + 0.05);
+		};
+		const probe = document.createElement("i");
+		probe.style.color = "var(--soft)";
+		document.body.append(probe);
+		const soft = getComputedStyle(probe).color;
+		probe.remove();
+		const border = getComputedStyle(document.querySelector(".cb input")).borderTopColor;
+		return { white: ratio(border, "rgb(255, 255, 255)"), soft: ratio(border, soft) };
+	});
+	expect(ratios.white).toBeGreaterThanOrEqual(3);
+	expect(ratios.soft).toBeGreaterThanOrEqual(3);
+});
