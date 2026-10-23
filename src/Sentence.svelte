@@ -11,8 +11,9 @@ import { reducedMotion, ui } from "./view.svelte.js";
 let { data, meta, sum, whatif, text } = $props();
 
 const S = SECTION_SHORT.length;
-// one name per region, as the strip and the map write it
+// one name per region, as the strip and the map write it; "the" goes outside the country button
 const name = $derived(placeName(meta, ui.who));
+const the = $derived(theName(meta, ui.who) === name ? "" : "the ");
 const w = $derived(wording(ui.indicator));
 const out = $derived(ui.dir === "out");
 const scope = $derived(
@@ -56,9 +57,9 @@ const plain = $derived.by(() => {
 	const [n, u] = amount(sum.total + (whatif ? sum.dTotal : 0), ui.indicator);
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
-		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
+		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
 	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
+	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -101,14 +102,14 @@ function onFocusOut(e) {
 {#snippet unit(u)}{#each u.split("\u2082") as part, i (i)}{#if i}<sub>2</sub>{/if}{part}{/each}{/snippet}
 
 <!-- the possessive stays on the country's line -->
-{#snippet country(after = "")}
-	<span class="u"><button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
+{#snippet country(after = "", lead = the)}
+	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
 {/snippet}
 
 <div class="hl">
 	{#if !whatif}
 		<p id="headline" tabindex="-1">
-			{@render country(out ? "" : possessive(name))}{out ? w.out.verb : w.in.verb}
+			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>

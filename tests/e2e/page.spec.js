@@ -459,3 +459,14 @@ test("axe: the country popover, the globe and the Sankey and Method tabs", async
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
 	await expectNoAxeViolations(page);
 });
+
+test("“the” goes before the United States wherever its name sits in a phrase", async ({ page }) => {
+	await page.goto(`${FIXTURE}&region=US&dir=out`);
+	await ready(page);
+	await expect(page.locator("#headline")).toContainText("The United States");
+	await expect(page.locator(".kpis")).toContainText("outside the United States");
+	await expect(page.locator(".lg .lt")).toHaveText("Consumed here, made in the United States");
+	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
+	await expect(page.locator("#headline")).toContainText("released in the United States would have come to");
+	await expect(page.locator(".kpis.k5")).toHaveAttribute("aria-label", /^The change in the United States,/);
+});

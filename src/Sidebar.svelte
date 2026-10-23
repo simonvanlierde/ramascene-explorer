@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, placeName, runText, wording } from "../flows.js";
+import { amountShort, capitalise, runText, theName, wording } from "../flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -88,8 +88,8 @@ const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gr
 
 const directionHint = $derived(
 	ui.dir === "in"
-		? `Where ${w.source} to make what ${placeName(meta, ui.who)} consumes.`
-		: `Where what ${placeName(meta, ui.who)} makes is consumed.`,
+		? `Where ${w.source} to make what ${theName(meta, ui.who)} consumes.`
+		: `Where what ${theName(meta, ui.who)} makes is consumed.`,
 );
 </script>
 

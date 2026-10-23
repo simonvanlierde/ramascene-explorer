@@ -411,7 +411,7 @@ function hover(e, k) {
 	tip = { k, x: e.clientX - r.left, y: e.clientY - r.top };
 }
 const other = $derived(placeName(meta, ui.who));
-// after "in" or "for": "the United States"
+// inside a phrase: "the United States"
 const otherIn = $derived(theName(meta, ui.who));
 const tipText = $derived.by(() => {
 	if (!tip) return null;
@@ -497,7 +497,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
-			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}; the table in Details lists every flow"
+			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}; the table in Details lists every flow"
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
@@ -575,7 +575,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			{#if whatif}
 				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
 			{:else}
-				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
+				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}
 		</p>
 
@@ -632,7 +632,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</button>
 			</div>
 		{:else}
-			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${other} consumes` : `Consumed here, made in ${other}`}</div>
+			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${otherIn} consumes` : `Consumed here, made in ${otherIn}`}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
 				<div class="tk num ticks">
