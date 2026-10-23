@@ -483,14 +483,19 @@ button.pill:hover {
   border-radius: 8px;
   background: var(--soft);
 }
-.gridpick label {
+/* the form controls of the grid's pickers and the live panel */
+.gridpick label,
+#live label {
   display: block;
   font-size: 12px;
   font-weight: 700;
   margin-bottom: 5px;
 }
-.gridpick select {
+.gridpick select,
+#live select,
+#live input {
   width: 100%;
+  min-width: 0;
   height: 32px;
   border: 1px solid var(--control-border);
   border-radius: 8px;
@@ -1495,24 +1500,10 @@ details.more summary {
   margin-top: 10px;
 }
 #live label {
-  font-size: 12px;
-  font-weight: 700;
-  margin: 8px 0 5px;
+  margin-top: 8px;
 }
 #live-form label:first-child {
   margin-top: 0;
-}
-#live select,
-#live input {
-  width: 100%;
-  min-width: 0;
-  height: 32px;
-  border: 1px solid var(--control-border);
-  border-radius: 8px;
-  background: var(--card);
-  font: 600 12.5px var(--sans);
-  color: var(--ink);
-  padding: 0 8px;
 }
 #live input:invalid {
   border-color: var(--danger);
@@ -1546,7 +1537,6 @@ details.more summary {
   font-size: 12.5px;
 }
 #live-result label {
-  display: block;
   margin-top: 10px;
 }
 #live .table-wrap {
