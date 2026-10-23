@@ -316,3 +316,19 @@ test("without the 2011 flows the live panel still runs a job", async ({ page }) 
 	await expect(page.locator("#live-table tbody tr").first()).toContainText("Europe");
 	await expectNoAxeViolations(page);
 });
+
+test("on a phone Details starts under the header, however many rows it wraps to", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	await routeJob(page, flowsJob());
+	// the shipped data has no synthetic banner above the header
+	await page.goto(`?api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	// a live job's long basis takes its own row
+	await expect(page.locator("#status .pill.live")).toBeVisible();
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.getByRole("dialog")).toBeVisible();
+	const header = await page.locator(".top").boundingBox();
+	const panel = await page.locator(".pan").boundingBox();
+	expect(panel.y).toBeGreaterThanOrEqual(header.y + header.height - 0.5);
+});
