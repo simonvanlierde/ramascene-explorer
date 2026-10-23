@@ -15,6 +15,9 @@ follow [Semantic Versioning](https://semver.org/).
   with the job's provenance in Details → Method. This needs a job API that
   returns flows; an older one keeps the result in the panel. Without `?api=`
   nothing new loads or fetches.
+- Docs on how the parts fit together (`docs/architecture.md`), the URL
+  parameters and the job API calls (`docs/interface.md`), and what the page
+  accepts from `?api=` and `?data=` (`docs/security.md`).
 
 ## [0.3.1] - 2026-10-19
 
