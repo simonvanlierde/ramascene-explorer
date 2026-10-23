@@ -156,6 +156,8 @@ const stop = () => cancelAnimationFrame(frame);
 
 // phone: the selection lives in a bottom sheet opened from the dock
 let sheet = $state(false);
+// the phone header wraps to two or three rows; Details and its scrim start under it
+let headerH = $state(0);
 let sheetOpener = $state();
 function closeSheet() {
 	sheet = false;
@@ -222,8 +224,8 @@ $effect(() => {
 {/snippet}
 
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
-<div class="shell">
-	<header class="top" inert={ui.panel !== null}>
+<div class="shell" style:--header-h={headerH ? `${headerH}px` : null}>
+	<header class="top" inert={ui.panel !== null} bind:offsetHeight={headerH}>
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
 			<h1>RaMa-Scene Explorer</h1>

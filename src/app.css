@@ -1605,11 +1605,11 @@ details.more summary {
    the selection within thumb reach, and every control is a 44 px target. */
 @media (max-width: 760px) {
   :root {
-    --top: 86px; /* the header wraps to two rows */
     --rail-min: 36px;
     --rail-share: 120px;
   }
   .shell {
+    --top: var(--header-h, 86px); /* the header wraps to two or three rows; App measures it */
     display: block;
     height: auto;
     padding-bottom: calc(88px + env(safe-area-inset-bottom)); /* the dock, and room to see past it */
