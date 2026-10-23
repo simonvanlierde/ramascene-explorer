@@ -246,6 +246,7 @@ test("an unreachable job API says so, and Try again reconnects", async ({ page }
 	await page.unroute(`${API}/catalog`);
 	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
 	await page.locator("#live-retry").click();
+	await expect(page.locator("#live-open")).toBeFocused();
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await expect(page.locator("#live-run")).toBeEnabled();
 });

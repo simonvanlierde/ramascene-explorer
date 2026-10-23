@@ -252,9 +252,16 @@ function zoomAt(f, p = [view.w / 2, view.h / 2]) {
 	zk = k;
 	off = alpha < 0.5 ? clampOff([p[0] - (p[0] - tx) * r - view.t[0], p[1] - (p[1] - ty) * r - view.t[1]]) : [0, 0];
 }
-const resetZoom = () => {
+// the reset button goes once the map is whole, so focus moves to Zoom in
+const resetZoom = (group) => {
 	zk = 1;
 	off = [0, 0];
+	group.querySelector("button").focus();
+};
+// the Try again button goes while the run loads; the sentence is where it lands
+const retryHere = () => {
+	retry();
+	document.getElementById("headline")?.focus();
 };
 // the buttons zoom toward the selected country, so it stays where it is
 const towardSelection = () => (alpha < 0.5 && geom.B ? geom.B : undefined);
@@ -558,7 +565,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 			</button>
 			{#if zk > 1}
-				<button type="button" aria-label="Reset zoom" onclick={resetZoom}>
+				<button type="button" aria-label="Reset zoom" onclick={(e) => resetZoom(e.currentTarget.parentElement)}>
 					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
 			{/if}
@@ -640,11 +647,8 @@ const unit = $derived(wording(ui.indicator).unit);
 				{/each}
 			</div>
 		{/if}
-		{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}
-			<p class="fn" role="status">That run could not be loaded. <button type="button" class="chipb" onclick={retry}>Try again</button> or pick another.</p>
-		{:else if loadingRun && ui.mode === "whatif"}
-			<p class="fn" role="status">Loading the run’s flows…</p>
-		{/if}
+		<!-- always there, so the text it gets is read out; the sidebar shows the same note -->
+		<p class="fn runnote" role="status">{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.{:else if loadingRun && ui.mode === "whatif"}Loading the run’s flows…{/if}</p>
 	</div>
 
 </div>

@@ -982,6 +982,10 @@ svg.map.live .rg {
   line-height: 1.35;
   margin: 0;
 }
+/* out of the legend's grid while empty, still in the accessibility tree */
+.lg .runnote:empty {
+  position: absolute;
+}
 .scrub {
   display: flex;
   align-items: center;

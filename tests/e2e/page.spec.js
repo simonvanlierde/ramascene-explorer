@@ -212,6 +212,7 @@ test("Reset zoom shows once zoomed and returns to the whole map", async ({ page 
 	await page.getByRole("button", { name: "Zoom in" }).click();
 	await expect(page).toHaveURL(/zoom=/);
 	await page.getByRole("button", { name: "Reset zoom" }).click();
+	await expect(page.getByRole("button", { name: "Zoom in" })).toBeFocused();
 	await expect(page).not.toHaveURL(/zoom=/);
 	await expect(page.getByRole("button", { name: "Reset zoom" })).toHaveCount(0);
 });
@@ -292,8 +293,11 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.getByRole("radio", { name: /builders everywhere/i }).click();
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
+	// read out once, from the map's legend, also while a phone's sheet is closed
+	await expect(page.getByRole("status").filter({ hasText: "That run could not be loaded" })).toHaveCount(1);
 	await page.unroute("**/*.parquet");
 	await page.getByRole("button", { name: "Try again" }).first().click();
+	expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
 	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
