@@ -37,6 +37,8 @@ jobs:
       - run: uv run ruff format --check
       - run: uv run ty check
       - run: uv run pytest
+      # The routes need the EXIOBASE arrays; this checks the README table against their committed results.
+      - run: uv run python brightway-check/table.py --check
 
   page:
     name: page tests
