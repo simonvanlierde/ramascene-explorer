@@ -1,3 +1,8 @@
 # Install no package version younger than 7 days (in minutes), as Renovate
 # already waits, so a manual `pnpm add` cannot pull a release published hours ago.
 minimumReleaseAge: 10080
+
+overrides:
+  # typed-rest-client (via Stryker) pins qs 6.15.1, which has three advisories
+  # (GHSA-4mjr-xmp4-gh2g, GHSA-q8mj-m7cp-5q26, GHSA-x5fp-wj9c-mxmx). Drop once it moves.
+  qs: ">=6.16.0"
