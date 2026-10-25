@@ -65,9 +65,11 @@ site is in [docs/publishing.md](docs/publishing.md).
 ## Brightway check
 
 [`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
-Brightway as an input-output database and scores one product four ways: Brightway,
-numpy, pymrio and this engine through the adapter in `precompute.py`. All agree to
-within 2.2e-13. It is a separate uv project with its own Brightway and pymrio pins.
+Brightway as an input-output database and scores one product five ways: Brightway,
+numpy, pymrio, pycirk and this engine through the adapter in `precompute.py`. All
+agree to within 2.2e-13, except pycirk at 1.1e-9: it rebuilds the table from the
+supply and use tables instead of reading the arrays. It is a separate uv project
+with its own Brightway and pymrio pins; pycirk runs in its own Python 3.9 container.
 
 ## Test
 
