@@ -1,12 +1,14 @@
 <script>
 // Three numbers under the sentence in Flows; in What if… the five continents,
 // each its change in emissions (or jobs, or ores) released there.
-import { amount, divFill, pct, placeName, SECTION_SHORT, share, wording } from "../flows.js";
+import { amount, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "../flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, sum, conts, whatif, extent } = $props();
 
-const name = $derived(meta.countries[ui.who]);
+const name = $derived(placeName(meta, ui.who));
+// inside a phrase: "the United States"
+const nameIn = $derived(theName(meta, ui.who));
 const sections = $derived(
 	ui.on.size === SECTION_SHORT.length ? "All 15 industry sections" : `${ui.on.size} of 15 industry sections`,
 );
@@ -27,7 +29,7 @@ const fill = $derived(divFill(extent));
 		<div class="kpi">
 			<div class="kl">{ui.dir === "in" ? "Abroad" : "For consumption abroad"}</div>
 			<div class="kv num">{share(sum.total - sum.home, sum.total)}</div>
-			<div class="ks">{abroad.join(" ")} outside {name}</div>
+			<div class="ks">{abroad.join(" ")} outside {nameIn}</div>
 		</div>
 		<div class="kpi">
 			<div class="kl">Largest flow</div>
@@ -38,7 +40,7 @@ const fill = $derived(divFill(extent));
 		</div>
 	</div>
 {:else}
-	<div class="kpis k5" role="group" aria-label="The change in {name}{ui.dir === 'in' ? '’s consumption' : ''}, by the continent where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
+	<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the continent where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
 		{#each conts as c (c.name)}
 			{@const v = c.change}
 			{@const p = c.base ? (v / c.base) * 100 : 0}
