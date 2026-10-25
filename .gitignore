@@ -8,3 +8,4 @@ dist/
 data/embodied.parquet
 .stryker-tmp/
 reports/
+.env

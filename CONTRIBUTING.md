@@ -34,6 +34,20 @@ pnpm build && pnpm exec playwright test   # once: pnpm exec playwright install c
 
 `pnpm mutation` (about 4 minutes) fails when the mutation score of `flows.js` is below 75%.
 
+A pull request that adds or changes behaviour adds a test for it, and a bug fix adds a
+test that fails without the fix. Put page logic tests in `tests/*.test.js`, browser tests
+in `tests/e2e/`, and Python tests in `tests/` next to the ones already there.
+
+## Dependencies
+
+Add a dependency only when the standard library or an existing one cannot do the job.
+Every version is pinned in a lockfile (`pnpm-lock.yaml`, `uv.lock`), and CI installs from
+the lockfile without changing it. pnpm (`minimumReleaseAge` in `pnpm-workspace.yaml`) and uv
+(`exclude-newer` in `pyproject.toml`) install no release younger than 7 days, so a
+hijacked release has time to be yanked. GitHub Actions are pinned to a full commit SHA.
+[Renovate](renovate.json5) proposes updates once a month, and the dependency review job
+blocks a pull request that adds a package with a known vulnerability.
+
 ## Sign off your commits
 
 Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the

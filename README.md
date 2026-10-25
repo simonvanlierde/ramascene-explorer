@@ -102,6 +102,7 @@ change against main on the pull request.
 - [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
 - [docs/security.md](docs/security.md): what the page accepts from `?api=` and `?data=`
 - [GOVERNANCE.md](GOVERNANCE.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [docs/roadmap.md](docs/roadmap.md): what is planned for the next year, and what is not
 - [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
 - [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
 
