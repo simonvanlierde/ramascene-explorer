@@ -14,14 +14,6 @@
   so this needs a new layout (about seven times the 51.5 MB) and a fresh engine
   run; worth doing together with a newer EXIOBASE vintage.
 
-## Small fixes
-
-- 2026-10-24: with synthetic data (`?data=tests/fixture.json`) the red banner
-  is sticky above the sticky phone header, so once the page scrolls the header
-  slides under the banner, and Details starts 31 px into the header. Test data
-  only; offset the phone header and `--top` by the banner's height under
-  `body.synthetic`.
-
 ## Decided
 
 - 2026-10-18: the precompute keeps writing `regions.json` and `flows.json`.

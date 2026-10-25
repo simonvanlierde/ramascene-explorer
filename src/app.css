@@ -147,10 +147,7 @@ pre {
   display: grid;
   grid-template-columns: var(--side) minmax(0, 1fr);
   grid-template-rows: var(--top) minmax(0, 1fr);
-  height: 100dvh;
-}
-body.synthetic .shell {
-  height: calc(100dvh - 31px);
+  height: calc(100dvh - var(--banner-h, 0px));
 }
 .top {
   grid-column: 1 / -1;
@@ -1114,7 +1111,7 @@ svg.map.live .rg {
 /* --- slide-over ------------------------------------------------------------------ */
 .scrim {
   position: fixed;
-  inset: var(--top) 0 0 var(--side);
+  inset: calc(var(--top) + var(--banner-h, 0px)) 0 0 var(--side);
   background: rgb(31 42 51 / 10%);
   opacity: 0;
   pointer-events: none;
@@ -1127,7 +1124,7 @@ svg.map.live .rg {
 }
 .pan {
   position: fixed;
-  top: var(--top);
+  top: calc(var(--top) + var(--banner-h, 0px));
   right: 0;
   bottom: 0;
   width: min(520px, 100vw);
@@ -1616,7 +1613,7 @@ details.more summary {
   }
   .top {
     position: sticky;
-    top: 0;
+    top: var(--banner-h, 0px);
     z-index: 12;
     gap: 10px;
     padding: 0 12px;
@@ -1942,7 +1939,7 @@ details.more summary {
     align-items: center;
   }
   .scrim {
-    inset: var(--top) 0 0 0;
+    inset: calc(var(--top) + var(--banner-h, 0px)) 0 0 0;
   }
   .pan {
     width: 100vw;

@@ -34,6 +34,20 @@ test("synthetic data renders the map, sentence and method under a banner", async
 	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind", { useInner: true });
 });
 
+test("the synthetic banner never covers the header, and Details opens below both", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const box = async (s) => page.locator(s).evaluate((e) => e.getBoundingClientRect().toJSON());
+	// on a phone the page scrolls, and the header sticks under the banner
+	await page.evaluate(() => window.scrollTo(0, 400));
+	const banner = await box("#banner");
+	const header = await box(".top");
+	expect(header.top).toBeGreaterThanOrEqual(banner.bottom - 0.5);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.locator(".sk .lk").first()).toBeVisible();
+	expect((await box(".pan")).top).toBeGreaterThanOrEqual((await box(".top")).bottom - 0.5);
+});
+
 test("What if… loads a run, keeps it in the URL and survives a reload", async ({ page }) => {
 	await page.goto(FIXTURE);
 	await ready(page);
