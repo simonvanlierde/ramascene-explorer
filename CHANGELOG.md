@@ -57,6 +57,8 @@ follow [Semantic Versioning](https://semver.org/).
   caught by the map.
 - The Sankey's caption no longer says to tap a band, which did nothing on
   a touch screen.
+- On phones a tap just under one of the sentence's controls no longer goes
+  to the control on the line below.
 - The globe turns, drags and morphs from the flat map more smoothly on slow
   machines. While the map moves it draws simpler country outlines, then the
   full ones once it stops.

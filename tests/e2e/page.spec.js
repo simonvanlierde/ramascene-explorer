@@ -550,6 +550,37 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 	expect(stolen).toEqual([]);
 });
 
+test("on a phone a tap between two lines of the sentence goes to the nearer control", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	let pairs = 0;
+	for (const width of [390, 320]) {
+		await page.setViewportSize({ width, height: 800 });
+		for (const q of ["&region=US&dir=out", "&region=DE&dir=out", "&region=GB&indicator=3"]) {
+			await page.goto(FIXTURE + q);
+			await ready(page);
+			const found = await page.locator(".hl .tok").evaluateAll((els) => {
+				const out = [];
+				for (const a of els)
+					for (const b of els) {
+						const [ra, rb] = [a.getBoundingClientRect(), b.getBoundingClientRect()];
+						const gap = rb.top - ra.bottom;
+						const [l, r] = [Math.max(ra.left, rb.left), Math.min(ra.right, rb.right)];
+						if (gap <= 0 || gap > 12 || r - l < 4) continue;
+						const x = (l + r) / 2;
+						// a quarter of the gap from each line
+						const upper = a.contains(document.elementFromPoint(x, ra.bottom + gap / 4));
+						const lower = b.contains(document.elementFromPoint(x, rb.top - gap / 4));
+						out.push({ pair: `${a.textContent} / ${b.textContent}`, upper, lower });
+					}
+				return out;
+			});
+			pairs += found.length;
+			for (const f of found) expect(f, `${width} px${q}`).toEqual({ pair: f.pair, upper: true, lower: true });
+		}
+	}
+	expect(pairs, "stacked controls in the sentence").toBeGreaterThan(0);
+});
+
 test("the grid's pickers fold with their own Done, named apart from the sheet's", async ({ page }) => {
 	await page.goto(`${FIXTURE}&mode=whatif`);
 	await ready(page);
