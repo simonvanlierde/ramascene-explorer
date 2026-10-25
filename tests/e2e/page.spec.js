@@ -95,6 +95,23 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	await expect(page.getByRole("button", { name: /^Details for/ })).toBeFocused();
 });
 
+test("the Sankey's industry labels stay clear of the region columns in both directions", async ({ page }) => {
+	for (const dir of ["in", "out"]) {
+		await page.goto(`?panel=sankey${dir === "out" ? "&dir=out" : ""}`);
+		await expect(page.locator(".sk .lk").first()).toBeVisible();
+		const hits = await page.locator(".sk").evaluate((svg) => {
+			const r = (e) => e.getBoundingClientRect();
+			const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+			// the region nodes: the slate rects of the two outer columns
+			const nodes = [...svg.querySelectorAll('rect[fill="var(--slate)"]')].map(r);
+			return [...svg.querySelectorAll("text.halo")]
+				.filter((t) => nodes.some((n) => over(r(t), n)))
+				.map((t) => t.textContent);
+		});
+		expect(hits, `dir=${dir}`).toEqual([]);
+	}
+});
+
 test("the shipped results render without the synthetic banner", async ({ page }) => {
 	await page.goto("");
 	await ready(page);

@@ -453,9 +453,11 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {})
 	const top0 = 30;
 	const gap = 3;
 	const nw = 9;
+	// release mirrors consumption: the selected country is one node at the edge,
+	// and the industry labels face it, over the bands that fan into it
 	const xL = inDir ? 132 : 6;
-	const xM = 214;
-	const xR = inDir ? width - nw - 6 : 330;
+	const xM = inDir ? 214 : width - 214 - nw;
+	const xR = inDir ? width - nw - 6 : width - 132 - nw;
 	const total = sum.total || 1;
 	const scale = (c) => (height - top0 - gap * (c.length - 1)) / total;
 	const stack = (c) => {
