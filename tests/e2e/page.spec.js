@@ -117,6 +117,39 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+test("once the map stops moving it draws the full outlines", async ({ page }) => {
+	// a moving map draws thinned outlines; the globe it settles on must match one opened directly
+	const outlines = () => page.locator(".mapc .rg").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")).join(""));
+	await page.goto("?map=globe");
+	await ready(page);
+	await expect.poll(outlines).not.toBe("");
+	const atRest = await outlines();
+	await page.goto("");
+	await ready(page);
+	await page.getByRole("button", { name: "Globe" }).click();
+	await expect.poll(outlines).toBe(atRest);
+});
+
+test("a zoom button step draws the full outlines straight away", async ({ page }) => {
+	// the thinned outlines are for continuous movement; one step must not pop from thin to full
+	const outlines = () => page.locator(".mapc .rg").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")).join(""));
+	await page.goto("");
+	await ready(page);
+	const whole = await outlines();
+	await page.getByRole("button", { name: "Zoom in" }).click();
+	await expect.poll(outlines).not.toBe(whole);
+	// the next frame after the click, before the 150 ms settle
+	const next = await page.evaluate(() => {
+		document.querySelector('button[aria-label="Zoom out"]').click();
+		return new Promise((done) =>
+			requestAnimationFrame(() =>
+				done([...document.querySelectorAll(".mapc .rg")].map((p) => p.getAttribute("d")).join("")),
+			),
+		);
+	});
+	expect(next === whole, "zoomed back out, the full outlines in the next frame").toBe(true);
+});
+
 test("a click on a country selects it on the flat map, the zoomed map and the globe", async ({ page }) => {
 	for (const [url, zoomIn] of [
 		["", 0],
