@@ -126,6 +126,18 @@ test("the Sankey's industry labels stay clear of the region columns in both dire
 	}
 });
 
+test("each of the sentence's controls has its visible text in its name", async ({ page }) => {
+	for (const q of ["", "&dir=out", "&indicator=3", "&mode=whatif&scenario=cement-in-construction"]) {
+		await page.goto(FIXTURE + q);
+		await ready(page);
+		const toks = await page
+			.locator(".hl .tok")
+			.evaluateAll((els) => els.map((e) => [e.textContent, e.getAttribute("aria-label")]));
+		expect(toks.length).toBeGreaterThan(0);
+		for (const [text, label] of toks) expect(label, q).toContain(text);
+	}
+});
+
 test("the possessive sits on the country's underline", async ({ page }) => {
 	for (const q of ["", "&mode=whatif&scenario=cement-in-construction"]) {
 		await page.goto(FIXTURE + q);

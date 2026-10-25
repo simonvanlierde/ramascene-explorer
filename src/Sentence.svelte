@@ -103,7 +103,7 @@ function onFocusOut(e) {
 
 <!-- the possessive goes inside the button, on the country's underline and line -->
 {#snippet country(after = "", lead = the)}
-	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}{after}</button></span>
+	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}{after}. Change" onclick={(e) => openPop("country", e)}>{name}{after}</button></span>
 {/snippet}
 
 <div class="hl">
@@ -112,7 +112,7 @@ function onFocusOut(e) {
 			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
-				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
+				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {shown[1]}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
 			{:else}
 				<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span> of
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>

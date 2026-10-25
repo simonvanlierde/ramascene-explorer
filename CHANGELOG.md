@@ -67,6 +67,8 @@ follow [Semantic Versioning](https://semver.org/).
   column.
 - On phones the author link is a 44 px target like the other controls; the
   header's first row is 44 px tall to hold it.
+- Each of the sentence's controls has the words it shows in its name, so
+  voice control finds "Germany’s" and "thousand jobs" by what is on screen.
 - On phones a tap just under one of the sentence's controls no longer goes
   to the control on the line below.
 - The globe turns, drags and morphs from the flat map more smoothly on slow
