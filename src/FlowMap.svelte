@@ -36,12 +36,13 @@ import {
 	seqScale,
 	share,
 	taperGlyph,
+	theName,
 	wording,
 } from "../flows.js";
 import { regionForIso } from "../map.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
-let { meta, sum, whatif, extent, play, stop, loadingRun } = $props();
+let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
 
 // --- geometry: the 49 regions merged from Natural Earth countries -----------------
 let shapes = $state.raw([]);
@@ -139,8 +140,29 @@ const geom = $derived.by(() => {
 	}
 	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown: visible(self) };
 });
+// The boxes of what floats on the map (the chips, the zoom, the legend and the
+// note), in view px, so no label goes under them.
+let mapv = $state();
+let blocks = $state.raw([]);
+$effect(() => {
+	const host = mapv;
+	if (!host) return;
+	const els = host.parentElement.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote");
+	const measure = () => {
+		const r = host.getBoundingClientRect();
+		blocks = [...els]
+			.map((e) => e.getBoundingClientRect())
+			.filter((b) => b.width && b.bottom > r.top && b.top < r.bottom)
+			.map((b) => [b.left - r.left, b.top - r.top, b.right - r.left, b.bottom - r.top]);
+	};
+	const ro = new ResizeObserver(measure);
+	ro.observe(host);
+	for (const e of els) ro.observe(e);
+	return () => ro.disconnect();
+});
+const hits = (a, b) => !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
 const labels = $derived.by(() => {
-	const placed = [];
+	const placed = [...blocks];
 	const out = [];
 	for (const b of [...geom.bands].sort((x, y) => y.v - x.v)) {
 		const p = proj(shapes[b.k].at);
@@ -148,8 +170,8 @@ const labels = $derived.by(() => {
 		const t = placeName(meta, b.k);
 		const w = t.length * 5.6 + 6;
 		const box = [p[0] - w / 2, p[1] - 13, p[0] + w / 2, p[1] + 8];
-		if (box[0] < 4 || box[2] > view.w - 4) continue;
-		if (placed.some((q) => !(box[2] < q[0] || box[0] > q[2] || box[3] < q[1] || box[1] > q[3]))) continue;
+		if (box[0] < 4 || box[2] > view.w - 4 || box[1] < 4 || box[3] > view.h - 4) continue;
+		if (placed.some((q) => hits(box, q))) continue;
 		placed.push(box);
 		const fp = flowPct(sum, b.k);
 		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator) });
@@ -230,6 +252,17 @@ function zoomAt(f, p = [view.w / 2, view.h / 2]) {
 	zk = k;
 	off = alpha < 0.5 ? clampOff([p[0] - (p[0] - tx) * r - view.t[0], p[1] - (p[1] - ty) * r - view.t[1]]) : [0, 0];
 }
+// the reset button goes once the map is whole, so focus moves to Zoom in
+const resetZoom = (group) => {
+	zk = 1;
+	off = [0, 0];
+	group.querySelector("button").focus();
+};
+// the Try again button goes while the run loads; the sentence is where it lands
+const retryHere = () => {
+	retry();
+	document.getElementById("headline")?.focus();
+};
 // the buttons zoom toward the selected country, so it stays where it is
 const towardSelection = () => (alpha < 0.5 && geom.B ? geom.B : undefined);
 let svgEl = $state();
@@ -237,11 +270,17 @@ const local = (x, y) => {
 	const r = svgEl.getBoundingClientRect();
 	return [x - r.left, y - r.top];
 };
+// the phone layout, where the page scrolls past the map
+const narrow = matchMedia("(max-width: 760px)");
 // a wheel listener has to be non-passive to keep the page from scrolling
 $effect(() => {
 	const el = svgEl;
 	if (!el) return;
 	const wheel = (e) => {
+		// A trackpad pinch arrives with ctrlKey. Without it the page keeps the wheel
+		// where it scrolls (the phone layout), and when zooming out at the floor.
+		const zoomKey = e.ctrlKey || e.metaKey;
+		if (!zoomKey && (narrow.matches || (zk <= 1 && e.deltaY > 0))) return;
 		e.preventDefault();
 		// deltaMode 1 counts lines (Firefox); a trackpad pinch arrives as a wheel with ctrlKey
 		const d = e.deltaY * (e.deltaMode ? 33 : 1) * (e.ctrlKey ? 5 : 1);
@@ -371,23 +410,25 @@ function hover(e, k) {
 	const r = e.currentTarget.ownerSVGElement.getBoundingClientRect();
 	tip = { k, x: e.clientX - r.left, y: e.clientY - r.top };
 }
-const other = $derived(meta.countries[ui.who]);
+const other = $derived(placeName(meta, ui.who));
+// inside a phrase: "the United States"
+const otherIn = $derived(theName(meta, ui.who));
 const tipText = $derived.by(() => {
 	if (!tip) return null;
 	const k = tip.k;
 	const v = sum.vals[k];
-	const name = meta.countries[k];
+	const name = placeName(meta, k);
 	const where =
 		k === ui.who
 			? ui.dir === "in"
 				? "at home, for its own consumption"
 				: "at home and consumed at home"
 			: ui.dir === "in"
-				? `here, for consumption in ${other}`
-				: `in ${other}, for consumption here`;
+				? `here, for consumption in ${otherIn}`
+				: `in ${otherIn}, for consumption here`;
 	if (whatif) {
 		const p = flowPct(sum, k);
-		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${other}` : `from ${other}`}` };
+		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
 		return {
 			name,
 			big: pct(p),
@@ -429,11 +470,11 @@ const divStops = $derived(
 	}).join(","),
 );
 const divTicks = $derived.by(() => {
-	const m = fmtExtent(extent);
+	const m = extent;
 	const q = +(extent / 4).toPrecision(2);
-	if (arm < 0) return [`−${m}%`, `−${q}`, "0"];
-	if (arm > 0) return ["0", `+${q}`, `+${m}%`];
-	return [`−${m}%`, `−${q}`, "0", `+${q}`, `+${m}%`];
+	if (arm < 0) return [`−${m}%`, `−${q}%`, "0%"];
+	if (arm > 0) return ["0%", `+${q}%`, `+${m}%`];
+	return [`−${m}%`, `−${q}%`, "0%", `+${q}%`, `+${m}%`];
 });
 const glyphs = $derived.by(() => {
 	const a0 = sum.vals[sum.bands[0]] ?? 0;
@@ -441,13 +482,12 @@ const glyphs = $derived.by(() => {
 	return [a1, a0].filter((v) => v > 0);
 });
 const tickText = (t) => (t >= 1e6 ? `${t / 1e6}M` : t >= 1000 ? `${t / 1000}k` : String(t));
-const fmtExtent = (m) => `${m}`.replace(/^0\./, "0.");
 const unit = $derived(wording(ui.indicator).unit);
 </script>
 
 <div class="mapc" class:globe={ui.globe}>
 	<!-- the map and what sits on it; the legend goes under it on a phone -->
-	<div class="mapv" bind:clientWidth={W} bind:clientHeight={H}>
+	<div class="mapv" bind:this={mapv} bind:clientWidth={W} bind:clientHeight={H}>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions: the globe drags with a pointer; the country box is the keyboard path -->
 		<svg
 			bind:this={svgEl}
@@ -457,13 +497,13 @@ const unit = $derived(wording(ui.indicator).unit);
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
-			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}; the table in Details lists every flow"
+			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}; the table in Details lists every flow"
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
 			onpointercancel={up}
 		>
-			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "#dedfe1" : "none"} />
+			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "var(--rule)" : "none"} />
 			<g class="rgs">
 				{#each shapes as s (s.code)}
 					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
@@ -516,17 +556,26 @@ const unit = $derived(wording(ui.indicator).unit);
 				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
 				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
 			</div>
-			<div class="seg zoom" role="group" aria-label="Zoom">
-				<button type="button" aria-label="Zoom in" onclick={() => zoomAt(2, towardSelection())}>+</button>
-				<button type="button" aria-label="Zoom out" onclick={() => zoomAt(0.5, towardSelection())}>−</button>
-			</div>
+		</div>
+		<div class="seg mzm" role="group" aria-label="Zoom">
+			<button type="button" aria-label="Zoom in" aria-disabled={zk >= ZMAX} onclick={() => zoomAt(2, towardSelection())}>
+				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+			</button>
+			<button type="button" aria-label="Zoom out" aria-disabled={zk <= 1} onclick={() => zoomAt(0.5, towardSelection())}>
+				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+			</button>
+			{#if zk > 1}
+				<button type="button" aria-label="Reset zoom" onclick={(e) => resetZoom(e.currentTarget.parentElement)}>
+					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</button>
+			{/if}
 		</div>
 
 		<p class="mnote">
 			{#if whatif}
 				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
 			{:else}
-				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${other}${possessive(other)} consumption` : `out of ${other}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
+				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}
 		</p>
 
@@ -543,12 +592,12 @@ const unit = $derived(wording(ui.indicator).unit);
 	</div>
 	<div class="lg">
 		{#if whatif}
-			<div class="lt">% change in each 2011 flow, this run{arm < 0 ? ": all down" : arm > 0 ? ": all up" : ""}</div>
+			<div class="lt">Change in each 2011 flow, %{arm < 0 ? " (all decreases)" : arm > 0 ? " (all increases)" : ""}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale fitted to the flows shown: 90% fall within ±{fmtExtent(extent)}%, larger ones take the end colour. Band width: 2011 {unit}.</p>
+			<p class="fn">Square-root scale; 90% of flows within ±{extent}%, larger ones in the end colour. Band width: 2011 {unit}.</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
@@ -583,7 +632,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</button>
 			</div>
 		{:else}
-			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${other} consumes` : `Consumed here, made in ${other}`}</div>
+			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${otherIn} consumes` : `Consumed here, made in ${otherIn}`}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
 				<div class="tk num ticks">
@@ -598,9 +647,8 @@ const unit = $derived(wording(ui.indicator).unit);
 				{/each}
 			</div>
 		{/if}
-		{#if loadingRun && ui.mode === "whatif"}
-			<p class="fn" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Try again, or pick another." : "Loading the run’s flows…"}</p>
-		{/if}
+		<!-- always there, so the text it gets is read out; the sidebar shows the same note -->
+		<p class="fn runnote" role="status">{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.{:else if loadingRun && ui.mode === "whatif"}Loading the run’s flows…{/if}</p>
 	</div>
 
 </div>

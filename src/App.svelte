@@ -1,8 +1,9 @@
 <script>
+import { tick } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
-import { continents, fitExtent, parseView, runText, summarise, viewSearch, wording } from "../flows.js";
+import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "../flows.js";
 import { apiUrl, ignoredApi, jobRun } from "../live.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
@@ -14,7 +15,8 @@ import { reducedMotion, ui } from "./view.svelte.js";
 const search = location.search;
 const dataPath = dataUrl(search);
 const ignored = ignoredData(search);
-// Optional live panel: nothing is imported, and nothing is fetched, without ?api=.
+// Optional live panel, in What if… under the run list: nothing is imported, and
+// nothing is fetched, without ?api=.
 const api = apiUrl(search);
 const refusedApi = ignoredApi(search);
 
@@ -95,15 +97,26 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
+// A reader who went back to Flows stays there; What if… has the job when they return.
 function showLive(job, text) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
 	const next = jobRun(job, meta, api, text);
 	if (!next) return false;
+	if (ui.mode !== "whatif") {
+		show(next.run, async () => next);
+		return true;
+	}
 	stop();
-	ui.mode = "whatif";
-	show(next.run, async () => next);
+	const loaded = show(next.run, async () => next);
+	// a phone shows the result, not the sheet the form sits in
+	if (sheet) {
+		sheet = false;
+		loaded.then(tick).then(() => document.getElementById("headline")?.focus());
+	}
 	return true;
 }
+// The live panel's news, read out from here: its own status line may sit in a closed sheet.
+let news = $state.raw({ text: "", alert: false });
 
 // load: () => Promise<the shape of shown>, from any flow source
 let wanted = "";
@@ -143,6 +156,8 @@ const stop = () => cancelAnimationFrame(frame);
 
 // phone: the selection lives in a bottom sheet opened from the dock
 let sheet = $state(false);
+// the phone header wraps to two or three rows; Details and its scrim start under it
+let headerH = $state(0);
 let sheetOpener = $state();
 function closeSheet() {
 	sheet = false;
@@ -150,7 +165,7 @@ function closeSheet() {
 }
 const summary = $derived(
 	ready
-		? `${meta.countries[ui.who]} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
+		? `${placeName(meta, ui.who)} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
 		: "",
 );
 
@@ -179,8 +194,12 @@ const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
-// "Verified" only for engine output whose every published run passed every check
-const verified = $derived(data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true);
+// "Verified" only for engine output whose every published run passed every check,
+// and never while a run those checks did not cover is on screen
+const verified = $derived(
+	!live && data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true,
+);
+const retry = () => showRun(ui.run);
 
 // the selection lives in the query string, so every view can be shared
 $effect(() => {
@@ -194,9 +213,19 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert">{flag.text}</div>
 {/if}
 
+{#if api}
+	<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
+	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
+{/if}
+
+<!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
+{#snippet livePanel()}
+	{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
+{/snippet}
+
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
-<div class="shell">
-	<header class="top" inert={ui.panel !== null}>
+<div class="shell" style:--header-h={headerH ? `${headerH}px` : null}>
+	<header class="top" inert={ui.panel !== null} bind:offsetHeight={headerH}>
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
 			<h1>RaMa-Scene Explorer</h1>
@@ -207,7 +236,9 @@ $effect(() => {
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
 				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "precomputed, not a forecast"}</span>
-				{#if verified}
+				{#if live}
+					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
+				{:else if verified}
 					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
 						Verified
@@ -223,11 +254,13 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {sheet} onclose={closeSheet} inert={ui.panel !== null} />
+		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null}>
+			{#snippet custom()}{@render livePanel()}{/snippet}
+		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
-			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} />
+			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />
 		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
@@ -254,10 +287,9 @@ $effect(() => {
 			{:else}
 				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
 			{/if}
+			{@render livePanel()}
 		</main>
 	{:else}
 		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
 	{/if}
 </div>
-
-{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} />{/await}{/if}

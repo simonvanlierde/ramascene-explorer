@@ -1,12 +1,13 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, runText, wording } from "../flows.js";
+import { amountShort, capitalise, runText, theName, wording } from "../flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
 // live: {source, text, rows} while a run that is not precomputed is shown, else null
-let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
+// custom: a snippet for the run list's last card (the live panel with ?api=); retry reloads a run that failed
+let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom } = $props();
 
 let done = $state();
 // a phone opens the panel as a sheet: focus its Done button
@@ -57,10 +58,21 @@ function radioKeys(e, list, current, choose) {
 const runOptions = [...NAMED, "grid"];
 // The run list folds to the chosen run once one is picked, so country,
 // direction, indicator and rail stay in view; a link to a run opens folded.
+// The grid's pickers show only while the list is open: picking the grid keeps
+// it open for them, and their Done folds it.
 let showRuns = $state(!new URLSearchParams(location.search).has("scenario"));
 let changeButton = $state();
 function pickRun(v) {
 	chooseRun(v);
+	if (v === "grid") return;
+	foldRuns();
+}
+// the Try again button goes while the run loads: focus the chosen run instead
+function retryHere() {
+	retry();
+	queueMicrotask(() => (changeButton ?? document.querySelector('#run-list [aria-checked="true"]'))?.focus());
+}
+function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
@@ -70,14 +82,14 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(live.source.status) : onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 
 const directionHint = $derived(
 	ui.dir === "in"
-		? `Where ${w.source} to make what ${meta.countries[ui.who]} consumes.`
-		: `Where what ${meta.countries[ui.who]} makes is consumed.`,
+		? `Where ${w.source} to make what ${theName(meta, ui.who)} consumes.`
+		: `Where what ${theName(meta, ui.who)} makes is consumed.`,
 );
 </script>
 
@@ -133,7 +145,7 @@ const directionHint = $derived(
 				{/each}
 			</div>
 			{/if}
-			{#if onGrid && grid}
+			{#if onGrid && grid && showRuns}
 				<div class="gridpick">
 					<label for="g-product">Product used less</label>
 					<select id="g-product" value={gridPick.scenario} onchange={(e) => pickGrid("scenario", e.currentTarget.value)}>
@@ -156,12 +168,18 @@ const directionHint = $derived(
 							{gridTarget.failed ? `This combination was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This combination was not precomputed."}
 						</p>
 					{/if}
+					<button type="button" class="chipb done" aria-label="Done picking the product, region and cut" onclick={foldRuns}>Done</button>
 				</div>
 			{/if}
-			{#if loadingRun}
-				<p class="hint" role="status">{loadingRun.startsWith("failed:") ? "That run could not be loaded. Try again, or pick another." : "Loading the run’s flows…"}</p>
+			<!-- the map's legend has the same note as a status region, read out also while this sheet is closed -->
+			{#if loadingRun.startsWith("failed:")}
+				<p class="hint">That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.</p>
+			{:else if loadingRun}
+				<p class="hint">Loading the run’s flows…</p>
 			{/if}
 		{/if}
+		<!-- mounted in both modes, so a job keeps running while Flows is shown -->
+		{#if custom}<div class="custom" hidden={ui.mode !== "whatif"}>{@render custom()}</div>{/if}
 	</div>
 
 	<div class="grp">

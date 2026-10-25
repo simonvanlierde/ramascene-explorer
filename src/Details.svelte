@@ -9,11 +9,13 @@ import {
 	amountText,
 	flowsCsv,
 	pct,
+	placeName,
 	SECTION_COLOURS,
 	SECTION_SHORT,
 	sankeyLayout,
 	share,
 	tableRows,
+	theName,
 	wording,
 } from "../flows.js";
 import Provenance from "./Provenance.svelte";
@@ -28,7 +30,9 @@ const TABS = [
 	["method", "Method"],
 ];
 const open = $derived(ui.panel !== null);
-const name = $derived(meta.countries[ui.who]);
+const name = $derived(placeName(meta, ui.who));
+// inside a phrase: "the United States"
+const nameIn = $derived(theName(meta, ui.who));
 const w = $derived(wording(ui.indicator));
 const unit = $derived(amount(sum.total, ui.indicator)[1]);
 const all = $derived(ui.on.size === SECTION_SHORT.length);
@@ -75,6 +79,11 @@ const heads = $derived(
 			],
 );
 const fmtV = (v) => amount(v, ui.indicator)[0];
+// A Sankey drawn narrower than its layout scales its text down with it; k sets
+// the text back to its own size (in layout units), and labels need that much room.
+let skW = $state(0);
+const k = $derived(lay && skW ? Math.max(1, lay.width / skW) : 1);
+const room = $derived(7 * k);
 
 // --- table --------------------------------------------------------------------
 let sortK = $state("v");
@@ -162,7 +171,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${name} consumes` : w.made.own(name)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
+				{ui.dir === "in" ? `What ${nameIn} consumes` : w.made.own(nameIn)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
 			<p class="copied" role="status">{copied}</p>
 			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
@@ -194,7 +203,8 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<div class="pb" id="tp-sankey" role="tabpanel" tabindex="0" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
 		{#if lay}
-			<svg class="sk" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
+			<div class="skw" bind:clientWidth={skW}>
+			<svg class="sk" style="--k:{k}" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
 				{#each heads as [x, a, t] (t)}<text class="h" {x} y="11" text-anchor={a}>{t}</text>{/each}
 				{#each lay.links as l, i (i)}<path class="lk" d={l.d} fill={SECTION_COLOURS[l.q]}><title>{l.from} → {l.to}: {amountText(l.v, ui.indicator)}</title></path>{/each}
 				{#each lay.left as n (n.name)}<rect x={lay.x.L} y={n.y} width={lay.nw} height={n.h} fill="var(--slate)"><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
@@ -204,16 +214,17 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 					{#each col as n (n.name)}
 						{#if n.me}
 							<text class="me" x={side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4} y={lay.top0 - 6} text-anchor={side === "L" ? "start" : "end"}>{n.name} {amountText(n.v, ui.indicator)}</text>
-						{:else if n.h >= 7}
+						{:else if n.h >= room}
 							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5} text-anchor={side === "L" ? "end" : "start"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}
 					{/each}
 				{/each}
 				{#each lay.mid as n (n.q)}
-					{#if n.h >= 7}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
+					{#if n.h >= room}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
-			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover or tap a band for its value.</p>
+			</div>
+			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover a band for its value; the Table tab lists every flow.</p>
 		{/if}
 	</div>
 
@@ -239,7 +250,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 				<tbody>
 					{#each rows as r (r.k)}
 						<tr class:me={r.k === ui.who}>
-							<th scope="row">{r.n}{r.k === ui.who ? " (home)" : ""}</th>
+							<th scope="row">{placeName(meta, r.k)}{r.k === ui.who ? " (home)" : ""}</th>
 							<td class="num"><span class="mb" style="width:{(r.v / maxV) * 42}px"></span>{fmtV(r.v)}</td>
 							<td class="num">{share(r.v, sum.total)}</td>
 							<td class="ind2"><i style="background:{SECTION_COLOURS[r.ts]}"></i>{r.ind}</td>
@@ -281,7 +292,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 
 	<footer class="pf">
 		<p>{d.name} {d.year} (<a href="https://doi.org/{d.doi}">doi:{d.doi}</a>) · RaMa-Scene engine {e.label ?? shortCommit(e.commit)} · demand-pull Leontief model · {w.noun}</p>
-		{#if check}
+		{#if check && !live}
 			<p class="vf">
 				<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				Verified: flows sum to the engine's per-country totals (worst relative difference {check.max_relative_difference.toExponential(0)})

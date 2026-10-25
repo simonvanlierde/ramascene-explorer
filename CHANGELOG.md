@@ -13,8 +13,12 @@ follow [Semantic Versioning](https://semver.org/).
   strip, the sentence and Details show the job's flows against the baseline
   from the same job, labelled "computed live by the job API, not precomputed",
   with the job's provenance in Details → Method. This needs a job API that
-  returns flows; an older one keeps the result in the panel. Without `?api=`
-  nothing new loads or fetches.
+  returns flows; an older one keeps the result in the panel. A job that
+  finishes while Flows is shown waits in What if… instead of switching the
+  page. Without `?api=` nothing new loads or fetches.
+- A reset button next to + and − once the map is zoomed in.
+- Try again buttons: on a run that could not be loaded, and on the live
+  panel when the job API does not answer.
 - Docs on how the parts fit together (`docs/architecture.md`), the URL
   parameters and the job API calls (`docs/interface.md`), and what the page
   accepts from `?api=` and `?data=` (`docs/security.md`).
@@ -26,6 +30,41 @@ follow [Semantic Versioning](https://semver.org/).
   the page logic.
 - The Pages workflow publishes only when started from `main`, as
   `docs/publishing.md` already said.
+- The live panel (`?api=`) is now a Custom scenario card at the end of the
+  What if… run list, or in the selection sheet on a phone, instead of a form
+  below the page. Its fields are stacked and labelled, the options show names
+  without engine ids, and the change is held to the range the job API
+  accepts (−100 to +1000%). Its status line sits under Run while the form
+  is open, and screen readers hear it also when the phone's sheet is
+  closed.
+- While a live job is on the map, the trust pill reads "Live job: not
+  checked" instead of Verified, and Details no longer shows the green check,
+  which covers the precomputed runs only.
+- Each region has one name everywhere: the sentence now says "Rest of
+  Asia–Pacific", as the map and the cards do. "The" is added for the United
+  States, the United Kingdom, the Netherlands and the Czech Republic.
+- The What if… legend reads "Change in each 2011 flow, %", every tick has
+  its %, and the note is two lines.
+- On phones the zoom buttons sit at the map's bottom left, the Sankey's
+  labels stay at their full size, and the pills and the sentence's controls
+  are easier to tap.
+- The grid's pickers fold away with the run list, so the industry sections
+  stay in view in What if….
+- The desktop scrubber is wider, with Replay on its own row.
+- Inputs and selects have a darker border, at 3:1 contrast against the
+  page.
+
+### Fixed
+
+- Labels on the map no longer hide under the map's buttons, legend or note.
+- With Details open, the keyboard can no longer reach the live panel
+  behind it.
+- Focus stays on Run while a live job runs, instead of falling to the
+  page.
+- In a narrow window the scroll wheel scrolls the page instead of being
+  caught by the map.
+- The Sankey's caption no longer says to tap a band, which did nothing on
+  a touch screen.
 
 ## [0.3.1] - 2026-10-19
 
