@@ -45,6 +45,5 @@ workflow fails a pull request from a fork with a commit that lacks it. Pull requ
 ## Who maintains this
 
 Simon van Lierde ([@simonvanlierde](https://github.com/simonvanlierde)) maintains the
-project: reviews and merges pull requests, and tags releases. Only he can merge to `main`. A new maintainer would be named here
-first. If he stops maintaining it, the README says so and the repository is archived;
-anyone may fork it under the MIT license.
+project. How decisions are made, and what happens if he stops, is in
+[GOVERNANCE.md](GOVERNANCE.md).
