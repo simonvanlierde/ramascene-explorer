@@ -15,6 +15,12 @@ follow [Semantic Versioning](https://semver.org/).
   with the job's provenance in Details → Method. This needs a job API that
   returns flows; an older one keeps the result in the panel. Without `?api=`
   nothing new loads or fetches.
+- Releases carry build provenance. Each `v*` release gets the built page as a
+  tarball with its SHA-256 and a Sigstore bundle; check a download with
+  `gh attestation verify <file> --repo simonvanlierde/ramascene-explorer`.
+  `embodied.parquet` on `data-2011` is attested the same way.
+  [docs/assurance-case.md](docs/assurance-case.md) sets out why the page and
+  its files can be trusted.
 
 ## [0.3.1] - 2026-10-19
 
