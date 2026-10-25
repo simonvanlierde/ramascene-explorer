@@ -1621,6 +1621,13 @@ details.more summary {
     gap: 10px;
     padding: 0 12px;
   }
+  /* the author link is a 44 px target, the brand row's full height, so the
+     row starts at the header's edge instead of below 8 px of padding */
+  .brand .by a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
   .brand h1 {
     font-size: 13px;
   }
@@ -1628,7 +1635,7 @@ details.more summary {
   .top {
     flex-wrap: wrap;
     height: auto;
-    padding: 8px 12px;
+    padding: 0 12px 8px;
     row-gap: 6px;
   }
   .top .rt {
@@ -1667,7 +1674,7 @@ details.more summary {
   :is(.top button.pill, .top a.pill, .hl .tok)::after {
     content: "";
     position: absolute;
-    inset: -8px 0; /* the pills' 32 px, from inside the 1 px border */
+    inset: -7px 0; /* 44 px: the pills are 30 px inside their 1 px border */
     z-index: 1;
   }
   :is(.top button.pill, .top a.pill, .hl .tok)::before {

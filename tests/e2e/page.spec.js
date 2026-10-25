@@ -501,6 +501,17 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	);
 	expect(reach.length).toBeGreaterThan(2);
 	for (const r of reach) expect(r.ok, `hit area of ${r.name}`).toBe(true);
+	// the author link is 44 px tall; WebKit gives the pill below it the last pixel
+	const author = await page.locator(".brand .by a").evaluate((e) => {
+		const r = e.getBoundingClientRect();
+		const x = r.left + r.width / 2;
+		const on = (y) => e.contains(document.elementFromPoint(x, y));
+		let [top, bottom] = [r.top + r.height / 2, r.top + r.height / 2];
+		while (on(top - 0.25)) top -= 0.25;
+		while (on(bottom + 0.25)) bottom += 0.25;
+		return bottom - top;
+	});
+	expect(author, "the author link's hit area").toBeGreaterThanOrEqual(42.5);
 	await page.locator(".skip").focus();
 	expect((await page.locator(".skip").boundingBox()).height).toBeGreaterThanOrEqual(44);
 	await page.locator(".dock .filters").click();
@@ -576,7 +587,7 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 	// the country and the indicator on neighbouring lines of the sentence
 	await page.goto(`${FIXTURE}&region=US&dir=out`);
 	await ready(page);
-	const stolen = await page.locator(".top button.pill, .top a.pill, .hl .tok").evaluateAll((els) =>
+	const stolen = await page.locator(".top button.pill, .top a.pill, .brand .by a, .hl .tok").evaluateAll((els) =>
 		els.flatMap((e) => {
 			const r = e.getBoundingClientRect();
 			const points = [0.1, 0.5, 0.9].flatMap((fx) => [r.top + 1, r.bottom - 1].map((y) => [r.left + r.width * fx, y]));

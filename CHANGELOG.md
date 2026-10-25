@@ -65,6 +65,8 @@ follow [Semantic Versioning](https://semver.org/).
 - The Sankey of what a country releases mirrors the one of what it
   consumes, so the industry labels no longer run into the "Consumed in"
   column.
+- On phones the author link is a 44 px target like the other controls; the
+  header's first row is 44 px tall to hold it.
 - On phones a tap just under one of the sentence's controls no longer goes
   to the control on the line below.
 - The globe turns, drags and morphs from the flat map more smoothly on slow
