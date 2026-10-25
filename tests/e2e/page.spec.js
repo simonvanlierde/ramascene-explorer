@@ -12,9 +12,11 @@ async function expectNoAxeViolations(page) {
 
 const ready = (page) => expect(page.locator(".mapc .rg")).toHaveCount(49);
 
-// On a phone the selection lives in a bottom sheet opened from the dock.
+// On a phone the selection lives in a bottom sheet opened from the dock, which
+// shows once the data is in; on a wider screen it is the sidebar.
 async function openSelection(page) {
 	const dock = page.locator(".dock .filters");
+	await expect(dock.or(page.locator("#side")).filter({ visible: true }).first()).toBeVisible();
 	if (await dock.isVisible()) {
 		await dock.click();
 		await expect(page.locator("#side")).toBeVisible();
@@ -63,6 +65,7 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	// the run list folds to the chosen run, and stays folded after a reload
 	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 	await page.reload();
+	await ready(page);
 	await openSelection(page);
 	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 	await page.getByRole("button", { name: "Change the intervention" }).click();
