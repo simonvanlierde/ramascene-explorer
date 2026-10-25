@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { at } from "../embodied.js";
 import { compare } from "../explorer.js";
 import {
 	apiUrl,
 	ignoredApi,
+	jobRun,
 	LIVE_STATUS,
 	liveData,
 	liveFlows,
@@ -176,4 +178,31 @@ test("liveFlows: the job's own baseline, and the change against it, in the page'
 		/2 × 3 × 1 × 3/,
 	);
 	assert.throws(() => liveFlows({ result: { indicators: [{ id: 3 }, { id: 7 }], flows } }, meta), /indicator 5/);
+});
+
+test("jobRun: a job's flows and provenance as the page's run shape, with the job API's wording", () => {
+	const meta = { countries: ["A", "B"], sections: ["s"], indicators: [{ id: 5 }] };
+	const flows = { shape: [1, 2, 1, 2], baseline: [1, 2, 3, 4], scenario: [1, 2, 3, 3] };
+	const withFlows = { ...job, result: { ...job.result, flows } };
+	const run = jobRun(withFlows, meta, "http://127.0.0.1:8020", "the clause");
+	assert.equal(run.run, "live-abc123");
+	assert.deepEqual([...run.base], [1, 2, 3, 4]);
+	assert.deepEqual([...run.delta], [0, 0, 0, -1]);
+	assert.equal(run.live.text, "the clause");
+	assert.equal(Object.fromEntries(run.live.rows)["Job API"], "http://127.0.0.1:8020 · job abc123");
+	assert.equal(run.live.source.status, LIVE_STATUS);
+	assert.equal(jobRun(job, meta, "http://127.0.0.1:8020", "the clause"), null);
+});
+
+test("liveFlows: every producer, section and consumer lands in its own cell", () => {
+	// 2 countries, 3 sections; the job lists indicators 3 then 5, the page only 5
+	const meta = { countries: ["A", "B"], sections: ["s", "t", "u"], indicators: [{ id: 5 }] };
+	const baseline = Array.from({ length: 24 }, (_, x) => x);
+	const scenario = baseline.map((v) => 2 * v);
+	const flows = { shape: [2, 2, 3, 2], baseline, scenario };
+	const { base, delta } = liveFlows({ result: { indicators: [{ id: 3 }, { id: 5 }], flows } }, meta);
+	assert.deepEqual([...base], baseline.slice(12));
+	assert.deepEqual([...delta], baseline.slice(12));
+	// indicator 5, producer B, section u, consumer A: on the wire ((1·2 + 1)·3 + 2)·2 + 0 = 22
+	assert.equal(base[at(meta, 0, 1, 2, 0)], 22);
 });

@@ -22,8 +22,9 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import precompute  # noqa: E402
 
-CEMENT, NL, GHG = 177, 27, 5  # global ids in db.sqlite3
-NL_LOCAL, CEMENT_LOCAL = 20, 100  # 0-based leaf indices -> row 20 * 200 + 100
+from case import GHG_ROW, NL_LOCAL, YEAR, K  # noqa: E402
+
+CEMENT, NL, GHG = 177, 27, GHG_ROW + 1  # global ids in db.sqlite3
 
 
 def main():
@@ -37,10 +38,10 @@ def main():
         precompute.setup_django(args.engine.resolve(), args.data.resolve(), Path(tmp) / "db.sqlite3")
         from ramascene import querymanagement as qm
 
-        Y, B, L = (qm.get_numpy_objects(precompute.YEAR, n) for n in ("Y", "B", "L"))
+        Y, B, L = (qm.get_numpy_objects(YEAR, n) for n in ("Y", "B", "L"))
         validation = precompute.reference_validation(Y, B, L)
         y = np.zeros_like(Y)
-        y[NL_LOCAL * 200 + CEMENT_LOCAL, NL_LOCAL] = 1.0
+        y[K, NL_LOCAL] = 1.0
         t = time.perf_counter()
         sel = {
             "dimType": "Contribution",
@@ -48,7 +49,7 @@ def main():
             "nodesSec": [CEMENT],
             "nodesReg": [NL],
             "extn": [GHG],
-            "year": precompute.YEAR,
+            "year": YEAR,
         }
         values = precompute.run_route(sel, y, B, L)
         elapsed = time.perf_counter() - t

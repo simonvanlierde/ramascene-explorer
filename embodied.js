@@ -56,13 +56,15 @@ export const at = (meta, i, p, s, c) => {
 	return ((i * N + p) * meta.sections.length + s) * N + c;
 };
 
+// Length of a dense run with n indicators.
+export const cells = (meta, n) => at(meta, n, 0, 0, 0);
+
 // Long rows [indicator id, producer, section, consumer, value] to a dense
 // Float64Array in the indicators' units (value × scale). Missing cells are 0.
 export function dense(meta, rows) {
-	const N = meta.countries.length;
 	const ids = meta.indicators.map((i) => i.id);
 	const scale = meta.indicators.map((i) => i.scale ?? 1);
-	const out = new Float64Array(ids.length * N * meta.sections.length * N);
+	const out = new Float64Array(cells(meta, ids.length));
 	for (const [id, p, s, c, v] of rows) {
 		const i = ids.indexOf(Number(id));
 		if (i < 0) throw new Error(`embodied flows: unknown indicator ${id}`);

@@ -27,11 +27,12 @@ from pathlib import Path
 
 import numpy as np
 
+from case import GHG_ROW, array
+
 PROJECT = "exiobase-brightway-bridge"
 DB = "EXIOBASE v3.3.sm 2011 monetary"
 BIO = "EXIOBASE v3.3.sm 2011 extensions"
 METHOD = ("EXIOBASE v3.3.sm", "GHG emissions: Total", "as aggregated in dataset")
-GHG_ROW = 4  # indicator global_id 5 in the RaMa-Scene db; the engine reads B[global_id - 1]
 THRESHOLD = 1e-15  # the same "small balancing correction" floor bw2io's EXIOBASE extractor drops
 
 
@@ -63,7 +64,7 @@ def main():
 
     t0 = time.perf_counter()
     products, countries, indicators = labels(args.db)
-    B = np.load(args.data / "2011" / "B_v4.npy")
+    B = array(args.data, "B")
     assert B.shape[0] == 60
     indicators = indicators[: B.shape[0]]
     assert indicators[GHG_ROW][1] == "GHG emissions: Total"
@@ -112,7 +113,7 @@ def main():
     t_meta = time.perf_counter() - t0
 
     # Technosphere, row block by row block, so the dense 9800x9800 A never sits in memory twice.
-    A = np.load(args.data / "2011" / "A_v4.npy", mmap_mode="r")
+    A = array(args.data, "A", mmap_mode="r")
     rows, cols, vals, flips = [], [], [], []
     nnz_total = dropped = 0
     mass_total = mass_dropped = 0.0

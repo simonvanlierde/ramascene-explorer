@@ -1,12 +1,11 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
 import { amountShort, capitalise, runText, wording } from "../flows.js";
-import { LIVE_STATUS } from "../live.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-// live: {text, rows} while a job from the job API is shown, else null
+// live: {source, text, rows} while a run that is not precomputed is shown, else null
 let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, sheet = false, onclose, inert = false } = $props();
 
 let done = $state();
@@ -71,7 +70,7 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(LIVE_STATUS) : onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : onGrid ? "Material efficiency, one product" : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
 const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
 

@@ -1,3 +1,12 @@
 # Install no package version younger than 7 days (in minutes), as Renovate
 # already waits, so a manual `pnpm add` cannot pull a release published hours ago.
 minimumReleaseAge: 10080
+# fast-uri 3.1.9 (2026-10-19) fixes four advisories (GHSA-333x-w4r6-6crp, GHSA-w74x-v6f9-j3xg,
+# GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h). Remove this after 2026-10-26.
+minimumReleaseAgeExclude:
+  - fast-uri@3.1.9
+
+overrides:
+  # typed-rest-client (via Stryker) pins qs 6.15.1, which has three advisories
+  # (GHSA-4mjr-xmp4-gh2g, GHSA-q8mj-m7cp-5q26, GHSA-x5fp-wj9c-mxmx). Drop once it moves.
+  qs: ">=6.16.0"

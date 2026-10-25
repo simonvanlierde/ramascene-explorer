@@ -18,9 +18,7 @@ import numpy as np
 import pandas as pd
 import pymrio
 
-from build_db import GHG_ROW
-
-NL_LOCAL, CEMENT_LOCAL = 20, 100  # 0-based, region-major: row 4100
+from case import GHG_ROW, NL_LOCAL, K, array
 
 
 def main():
@@ -28,19 +26,17 @@ def main():
     ap.add_argument("--data", type=Path, required=True, help="DATASETS_DIR with 2011/{A,B,L}_v4.npy")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
-    data = args.data / "2011"
-    k = NL_LOCAL * 200 + CEMENT_LOCAL
 
     regions = [f"R{r:02d}" for r in range(49)]
     idx = pd.MultiIndex.from_product([regions, [f"S{s:03d}" for s in range(200)]], names=["region", "sector"])
     y = np.zeros((9800, 49))
-    y[k, NL_LOCAL] = 1.0
+    y[K, NL_LOCAL] = 1.0
     io = pymrio.IOSystem(
-        A=pd.DataFrame(np.load(data / "A_v4.npy"), index=idx, columns=idx),
+        A=pd.DataFrame(array(args.data, "A"), index=idx, columns=idx),
         Y=pd.DataFrame(y, index=idx, columns=pd.MultiIndex.from_product([regions, ["final demand"]])),
     )
     ghg = pd.Index(["GHG emissions: Total"], name="stressor")
-    b = np.load(data / "B_v4.npy")[GHG_ROW]
+    b = array(args.data, "B")[GHG_ROW]
     io.ghg = pymrio.Extension(
         name="ghg",
         S=pd.DataFrame(b[None, :], index=ghg, columns=idx),
@@ -51,14 +47,14 @@ def main():
     elapsed = time.perf_counter() - t
 
     score = float(io.ghg.D_cba.to_numpy().sum())
-    shipped = np.asarray(np.load(data / "L_v4.npy", mmap_mode="r")[:, k])
+    shipped = np.asarray(array(args.data, "L", mmap_mode="r")[:, K])
     out = {
         "pymrio": pymrio.__version__,
         "score_D_cba": score,
         "unit": "kg CO2 eq",
         "numpy_L_file": float(b @ shipped),
         "relative_difference_vs_L_file": abs(score - b @ shipped) / abs(b @ shipped),
-        "L_column_max_abs_vs_L_file": float(np.abs(io.L.to_numpy()[:, k] - shipped).max()),
+        "L_column_max_abs_vs_L_file": float(np.abs(io.L.to_numpy()[:, K] - shipped).max()),
         "calc_all_s": elapsed,
         "peak_rss_gib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20,
     }
