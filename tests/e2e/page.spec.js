@@ -112,6 +112,28 @@ test("the Sankey's industry labels stay clear of the region columns in both dire
 	}
 });
 
+test("the possessive sits on the country's underline", async ({ page }) => {
+	for (const q of ["", "&mode=whatif&scenario=cement-in-construction"]) {
+		await page.goto(FIXTURE + q);
+		await ready(page);
+		const { text, under } = await page
+			.locator("#headline .u")
+			.first()
+			.evaluate((u) => {
+				const tok = u.querySelector(".tok").getBoundingClientRect();
+				const walk = document.createTreeWalker(u, NodeFilter.SHOW_TEXT);
+				let node = walk.nextNode();
+				while (node && !node.textContent.includes("\u2019")) node = walk.nextNode();
+				const r = document.createRange();
+				r.selectNodeContents(node);
+				const g = r.getBoundingClientRect();
+				return { text: node.textContent, under: g.left >= tok.left - 0.5 && g.right <= tok.right + 0.5 };
+			});
+		expect(text).toContain("\u2019s");
+		expect(under, `${q}: the ’s under the token`).toBe(true);
+	}
+});
+
 test("the shipped results render without the synthetic banner", async ({ page }) => {
 	await page.goto("");
 	await ready(page);

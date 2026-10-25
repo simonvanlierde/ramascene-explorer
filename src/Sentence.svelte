@@ -101,9 +101,9 @@ function onFocusOut(e) {
 <!-- Neither font has a subscript two, so CO₂ sets its 2 as <sub> in the sentence's own face -->
 {#snippet unit(u)}{#each u.split("\u2082") as part, i (i)}{#if i}<sub>2</sub>{/if}{part}{/each}{/snippet}
 
-<!-- the possessive stays on the country's line -->
+<!-- the possessive goes inside the button, on the country's underline and line -->
 {#snippet country(after = "", lead = the)}
-	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
+	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}{after}</button></span>
 {/snippet}
 
 <div class="hl">

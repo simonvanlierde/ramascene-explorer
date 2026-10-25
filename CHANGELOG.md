@@ -43,6 +43,11 @@ follow [Semantic Versioning](https://semver.org/).
 - The grid's pickers fold away with the run list, so the industry sections
   stay in view in What if….
 - The desktop scrubber is wider, with Replay on its own row.
+- Text sizes keep to the type scale: the country box, run titles, pickers
+  and popover options are 13 px, the segmented controls, table and the
+  units beside the figures 12 px, and the phone's top-bar name 13 px.
+- The possessive ("Germany’s") sits on the country's underline, in the
+  same weight, instead of trailing after it.
 - Inputs and selects have a darker border, at 3:1 contrast against the
   page.
 
