@@ -74,7 +74,7 @@ const heads = $derived(
 			]
 		: [
 				[lay?.x.L, "start", w.made.col],
-				[lay?.x.M, "start", "Industry"],
+				[lay?.x.M + lay?.nw, "end", "Industry"],
 				[lay?.x.R, "start", "Consumed in"],
 			],
 );
@@ -220,7 +220,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 					{/each}
 				{/each}
 				{#each lay.mid as n (n.q)}
-					{#if n.h >= room}<text class="halo" x={lay.x.M + lay.nw + 4} y={n.y + n.h / 2 + 3.5}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
+					{#if n.h >= room}<text class="halo" x={ui.dir === "in" ? lay.x.M + lay.nw + 4 : lay.x.M - 4} y={n.y + n.h / 2 + 3.5} text-anchor={ui.dir === "in" ? "start" : "end"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
 			</div>
