@@ -36,7 +36,7 @@ jobs:
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run ty check
-      - run: uv run pytest
+      - run: uv run pytest --cov=precompute --cov=compare_data
       # The routes need the EXIOBASE arrays; this checks the README table against their committed results.
       - run: uv run python brightway-check/table.py --check
 
@@ -68,7 +68,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec biome ci .
-      - run: node --test
+      - run: pnpm test
 
   browser:
     name: browser and accessibility tests

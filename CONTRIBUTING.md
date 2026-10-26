@@ -26,13 +26,23 @@ These are the checks CI runs ([docs/publishing.md](docs/publishing.md) describes
 ```sh
 prek run -a
 uv run ruff check && uv run ruff format --check && uv run ty check
-uv run pytest
+uv run pytest --cov=precompute --cov=compare_data
 pnpm exec biome ci .
-node --test
+pnpm test
 pnpm build && pnpm exec playwright test   # once: pnpm exec playwright install chromium firefox webkit
 ```
 
 `pnpm mutation` (about 4 minutes) fails when the mutation score of `flows.js` is below 75%.
+
+New behaviour comes with a test, and a bug fix with a test that fails without it. Page
+logic tests go in `tests/*.test.js`, browser tests in `tests/e2e/`, Python tests in `tests/`.
+
+## Dependencies
+
+Add one only when the standard library or an existing dependency can't do the job. CI
+installs from the lockfiles unchanged. The release-age rule is in `pnpm-workspace.yaml` and
+`pyproject.toml`, the update schedule in [renovate.json5](renovate.json5), and the
+dependency review in `.github/workflows/hygiene.yml`.
 
 ## Sign off your commits
 
@@ -45,6 +55,5 @@ workflow fails a pull request from a fork with a commit that lacks it. Pull requ
 ## Who maintains this
 
 Simon van Lierde ([@simonvanlierde](https://github.com/simonvanlierde)) maintains the
-project: reviews and merges pull requests, and tags releases. Only he can merge to `main`. A new maintainer would be named here
-first. If he stops maintaining it, the README says so and the repository is archived;
-anyone may fork it under the MIT license.
+project. How decisions are made, and what happens if he stops, is in
+[GOVERNANCE.md](GOVERNANCE.md).

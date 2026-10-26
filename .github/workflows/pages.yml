@@ -18,6 +18,8 @@ concurrency:
 jobs:
   build:
     name: assemble
+    # Run workflow offers every branch; only main publishes.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

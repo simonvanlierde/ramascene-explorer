@@ -7,6 +7,14 @@
   link once in Slack or LinkedIn to see the preview card. On the phones, also
   try the pinch zoom, which the tests cannot.
 
+## Maintainer decisions
+
+- 2026-10-23: name who takes over if the maintainer stops (a second person with
+  write access, or how long without activity before the repository is
+  archived), then update the last section of `GOVERNANCE.md`.
+- 2026-10-23: decide whether code of conduct reports get their own contact,
+  such as an email address, then update `CODE_OF_CONDUCT.md`.
+
 ## With the next data release
 
 - Split the Sankey's consumption side by final-demand category (households,

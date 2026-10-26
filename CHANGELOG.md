@@ -19,9 +19,14 @@ follow [Semantic Versioning](https://semver.org/).
 - A reset button next to + and − once the map is zoomed in.
 - Try again buttons: on a run that could not be loaded, and on the live
   panel when the job API does not answer.
+- Docs on the architecture, the URL parameters and job API, what the page
+  accepts from `?api=` and `?data=`, and a roadmap.
+- `GOVERNANCE.md` and a code of conduct.
 
 ### Changed
 
+- CI fails when line coverage drops below 80%. `pnpm test` checks the same floor.
+- The Pages workflow publishes only from `main`.
 - The live panel (`?api=`) is now a Custom scenario card at the end of the
   What if… run list, or in the selection sheet on a phone, instead of a form
   below the page. Its fields are stacked and labelled, the options show names
@@ -53,6 +58,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Screen readers name each industry in the rail with the words it shows
+  first ("Agriculture 11%"), so voice control can find it.
 - Labels on the map no longer hide under the map's buttons, legend or note.
 - With Details open, the keyboard can no longer reach the live panel
   behind it.
