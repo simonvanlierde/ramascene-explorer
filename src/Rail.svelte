@@ -51,10 +51,10 @@ function toggle(q) {
 			onfocus={() => (current = q)}
 			style="--c:{SECTION_COLOURS[q]};--f:{on ? sum.sec[q] / total : 0}"
 			title="{name}: {amountText(sum.sec[q], ui.indicator)}"
-			aria-label="{name}, {amountText(sum.sec[q], ui.indicator)}{on ? `, ${share(sum.sec[q], total)} of the selection` : ', off'}"
+			aria-label="{name}{on ? ` ${share(sum.sec[q], total)} of the selection` : ', off'}, {amountText(sum.sec[q], ui.indicator)}"
 			onclick={() => toggle(q)}
 		>
-			<i></i><span>{name}</span><em class="num">{on ? share(sum.sec[q], total) : ""}</em>
+			<i></i><span>{name}</span> <em class="num">{on ? share(sum.sec[q], total) : ""}</em>
 		</button>
 	{/each}
 </div>
