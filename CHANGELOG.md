@@ -48,6 +48,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Screen readers name each industry in the rail with the words it shows
+  first ("Agriculture 11%"), so voice control can find it.
 - Labels on the map no longer hide under the map's buttons, legend or note.
 - With Details open, the keyboard can no longer reach the live panel
   behind it.
