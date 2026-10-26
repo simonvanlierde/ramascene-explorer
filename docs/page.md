@@ -47,8 +47,8 @@ that size, it sends a HEAD request first to ask the server for the size. Then
 it reads the baseline row group and draws the map. The default What if… run
 loads when the browser is idle. Each run is fetched once, on demand.
 
-The selection lives in the query string (`mode`, `scenario`, `indicator`,
-`region`, `dir`, `sections`, `map`, `zoom`, `panel`), so every view can be shared;
+The selection lives in the query string
+([interface.md](interface.md#url-parameters)), so every view can be shared;
 links from the first version (`?scenario=&indicator=&region=`) still open
 their run.
 
@@ -101,9 +101,8 @@ Without `?api=` the panel stays hidden and its code is not loaded. The page
 then fetches only its own files: `data/results.json`, `data/embodied.parquet`,
 the map geometry and the fonts.
 
-The parameter accepts a bare origin: `http://` only on loopback (a local run
-or an SSH tunnel), and `https://` otherwise. The page ignores anything else
-and reports it in the status line.
+What `?api=` accepts is in [security.md](security.md#what-api-accepts), and
+the calls the page makes are in [interface.md](interface.md#job-api).
 
 ```sh
 # job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 5173
