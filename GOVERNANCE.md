@@ -5,19 +5,14 @@ RaMa-Scene Explorer has one maintainer: Simon van Lierde
 
 ## How decisions are made
 
-- The maintainer decides what goes into the project, and reviews and merges
-  every pull request. He is the only person with write access, so only he can
-  merge to `main`.
-- He tags the releases. The precomputed results in `data/` change only through
-  a new precompute run ([docs/precompute.md](docs/precompute.md)).
-- Anyone can propose a change in an issue or a pull request. How to do that is
-  in [CONTRIBUTING.md](CONTRIBUTING.md). The maintainer says yes, asks for
-  changes, or says no and gives the reason.
-- The code of conduct is in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-  The maintainer enforces it.
+- The maintainer decides what goes in, reviews and merges every pull request
+  (only he has write access), and tags releases.
+- Anyone can propose a change in an issue or pull request
+  ([CONTRIBUTING.md](CONTRIBUTING.md)). The maintainer says yes, asks for
+  changes, or says no with a reason.
+- The maintainer enforces the [code of conduct](CODE_OF_CONDUCT.md).
 
-## If the maintainer is unavailable
+## If the maintainer stops
 
-No second maintainer is named yet. If he stops maintaining the project, the
-README says so and the repository is archived. The project is MIT-licensed, so
-anyone may fork it.
+No second maintainer is named yet. If he stops, the README says so and the
+repository is archived. Anyone may fork it under the MIT license.

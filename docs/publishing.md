@@ -3,9 +3,9 @@
 `.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `biome ci`,
 `node --test` and `pnpm exec playwright test`. None of them needs the engine or
 the EXIOBASE matrices, because the engine checks skip without `--engine`.
-The pytest step fails below 80% line coverage of `precompute.py` and
-`compare_data.py`. The `node --test` step fails below 80% line coverage of the
-JS modules next to `index.html`; the Svelte files are not measured.
+Both test steps fail below a line-coverage floor: `fail_under` in
+`pyproject.toml` for `precompute.py` and `compare_data.py`, and the `test`
+script in `package.json` for the JS modules (not the Svelte files).
 
 The page jobs read the synthetic fixtures and the shipped results. CI
 downloads `embodied.parquet` from the `data-2011` release and checks it with

@@ -13,8 +13,7 @@
   write access, or how long without activity before the repository is
   archived), then update the last section of `GOVERNANCE.md`.
 - 2026-10-23: decide whether code of conduct reports get their own contact,
-  such as an email address. `CODE_OF_CONDUCT.md` now routes them to a private
-  security advisory, and reports about the maintainer to GitHub.
+  such as an email address, then update `CODE_OF_CONDUCT.md`.
 
 ## With the next data release
 

@@ -8,7 +8,7 @@ you open the page with `?api=`.
 RaMa-Scene engine + EXIOBASE matrices
         |  precompute.py (run by hand, needs the engine)
         v
-data/results.json        data/embodied.parquet  (release asset, 51.5 MB)
+data/results.json        data/embodied.parquet  (release asset)
         |                        |
         +--- GitHub Pages -------+
                    |  fetch + HTTP range requests
@@ -19,13 +19,7 @@ data/results.json        data/embodied.parquet  (release asset, 51.5 MB)
               job API (ramascene-jobs), optional
 ```
 
-- Precompute, its checks and the Parquet layout: [precompute.md](precompute.md).
-  The scenarios: [scenarios.md](scenarios.md).
-- The release asset, its checksum and Pages: [publishing.md](publishing.md).
-- What the page shows, how it reads the Parquet file, and the live panel:
-  [page.md](page.md).
-- The URL parameters and the job API: [interface.md](interface.md). What the
-  page accepts from them: [security.md](security.md).
+Each part has its own page; the README's Docs list links them all.
 
 `index.html` loads `src/main.js`, which mounts `src/App.svelte`. The Svelte
 files in `src/` draw the view. The logic that needs no browser lives in plain

@@ -68,7 +68,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec biome ci .
-      - run: node --test --experimental-test-coverage --test-coverage-lines=80
+      - run: pnpm test
 
   browser:
     name: browser and accessibility tests

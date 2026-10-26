@@ -54,29 +54,24 @@ string, so you can share a view by its URL.
 
 ## Build
 
-`pnpm build` runs `vite build` and writes the static site to `dist/`, with
-relative paths, so any static host can serve it. The build copies
-`data/results.json`, `data/embodied.parquet` and `geo/` into `dist/`, and
-skips any that is missing. The host must answer HTTP range requests, because
-the page reads the Parquet file in pieces ([docs/page.md](docs/page.md)).
-`pnpm preview` serves `dist/`. The GitHub Pages workflow that publishes the
-site is in [docs/publishing.md](docs/publishing.md).
+`pnpm build` writes a static site to `dist/`, with `data/` and `geo/` copied in
+when present. Any static host serves it, as long as it answers HTTP range
+requests: the page reads the Parquet file in pieces. Publishing to GitHub
+Pages is in [docs/publishing.md](docs/publishing.md).
 
 ## Brightway check
 
 [`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
 Brightway as an input-output database and scores one product five ways: Brightway,
-numpy, pymrio, pycirk and this engine through the adapter in `precompute.py`. All
-agree to within 2.2e-13, except pycirk at 1.1e-9: it rebuilds the table from the
-supply and use tables instead of reading the arrays. It is a separate uv project
-with its own Brightway and pymrio pins; pycirk runs in its own Python 3.9 container.
+numpy, pymrio, pycirk and this engine through the adapter in `precompute.py`. Its
+README has the agreement table. It is a separate uv project with its own pins.
 
 ## Test
 
 ```sh
 uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
-node --test                            # the page logic (after pnpm install)
+pnpm test                              # the page logic, with the coverage floor
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
 ```
