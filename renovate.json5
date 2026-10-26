@@ -9,6 +9,10 @@
     "group:allNonMajor",
   ],
 
+  // config:best-practices brings this preset, a 3-day rule for npm that beats the
+  // 7 days below, so Renovate proposed npm releases pnpm still refuses.
+  ignorePresets: ["security:minimumReleaseAgeNpm"],
+
   // A week gives a hijacked release time to be yanked.
   minimumReleaseAge: "7 days",
 
@@ -28,6 +32,12 @@
     {
       matchFileNames: ["brightway-check/**"],
       enabled: false,
+    },
+    // A pin keeps the version, and Renovate has no release date for it, so the
+    // week's wait would hold it for good. The ignored npm preset did the same.
+    {
+      matchUpdateTypes: ["pin"],
+      minimumReleaseAge: null,
     },
     // Majors stay manual.
     {
