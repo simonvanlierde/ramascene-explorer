@@ -59,6 +59,20 @@ The page shows GHG emissions and metal-ore extraction in megatonnes (the data
 holds kg CO2 eq and kt), and employment in jobs (the data holds thousands of
 persons).
 
+## First-load size
+
+A cold first load of the live page, up to the default What if… run, transfers
+about 0.98 MB (980,407 bytes, headers included) and unpacks to 1.65 MB. Data is
+0.80 MB of that: `results.json` (77 KB gzipped), the map geometry (28 KB) and
+three range requests into `embodied.parquet` (the footer, 131 KB; the
+baseline, 342 KB; the default run, 222 KB). The rest is fonts (89 KB), the
+script (81 KB), CSS (6 KB) and HTML (2 KB). Measured on 2026-10-26, median of
+three loads with the cache off:
+
+```sh
+pnpm measure-load [url] [runs]
+```
+
 ## Map geometry
 
 `geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
