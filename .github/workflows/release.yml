@@ -1,0 +1,150 @@
+name: release
+
+# Build provenance for what a release ships, so anyone can check a file came
+# from this repository's workflow. How to verify: docs/assurance-case.md, C4.
+#
+# - A published v* release: builds dist/ as pages.yml does, packs it as a
+#   tarball, attests it and uploads the tarball, its SHA256SUMS and the Sigstore
+#   bundle to the release. It runs on the release being published, the same
+#   event Zenodo archives, so a tag pushed without a release attests nothing.
+# - Run by hand: attests embodied.parquet on the data-2011 release, after
+#   checking it against data/embodied.sha256, and uploads the bundle there.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build dist
+    # data-* releases hold precomputed data, not code.
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Read-only: pnpm install runs third-party code.
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same checks and build as pages.yml.
+      - name: check the data
+        run: |
+          set -euo pipefail
+          test -f data/results.json || { echo "data/results.json is missing: run precompute.py first"; exit 1; }
+          jq -e '.data_kind == "exiobase-v3"' data/results.json >/dev/null \
+            || { echo "data/results.json is not exiobase-v3 output"; exit 1; }
+
+      - name: fetch the embodied flows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          sha256sum --check data/embodied.sha256
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          # No cache: a poisoned cache from another run must not reach a release.
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: pack dist
+        run: |
+          set -euo pipefail
+          mkdir out
+          tar -czf "out/ramascene-explorer-$TAG-dist.tar.gz" -C dist .
+          (cd out && sha256sum -- *.tar.gz > SHA256SUMS)
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-assets
+          path: out/
+          if-no-files-found: error
+          retention-days: 1
+
+  upload:
+    name: attest and upload to the release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # add assets to the release
+      id-token: write # Sigstore signs the attestation with the run's OIDC identity
+      attestations: write # store the attestation on the repository
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-assets
+          path: out
+
+      # Attest the downloaded files, so the attested bytes are the uploaded bytes.
+      - id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: out/*.tar.gz
+
+      - name: keep the bundle
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: cp "$BUNDLE" "out/ramascene-explorer-$TAG-dist.tar.gz.sigstore.json"
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" out/* --repo "$GITHUB_REPOSITORY" --clobber
+
+  data:
+    name: attest embodied.parquet
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # add the bundle to the data-2011 release
+      id-token: write # Sigstore signs the attestation with the run's OIDC identity
+      attestations: write # store the attestation on the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Attest only the exact file the workflows already pin.
+      - name: fetch and check the embodied flows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          sha256sum --check data/embodied.sha256
+
+      - id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: data/embodied.parquet
+
+      - name: upload the bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |-
+          set -euo pipefail
+          cp "$BUNDLE" embodied.parquet.sigstore.json
+          gh release upload data-2011 embodied.parquet.sigstore.json --repo "$GITHUB_REPOSITORY" --clobber

@@ -31,3 +31,17 @@ must be `206`:
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanlierde.github.io/ramascene-explorer/data/embodied.parquet
 ```
+
+## Check a release file
+
+`release.yml` attests what a release ships: the `dist` tarball with its
+`SHA256SUMS` when a `v*` release is published, and `embodied.parquet` on
+`data-2011` when run by hand from `main`. To check a downloaded file:
+
+```sh
+gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-workflow simonvanlierde/ramascene-explorer/.github/workflows/release.yml
+```
+
+For `embodied.parquet`, add `--source-ref refs/heads/main`. Add
+`--bundle <file>.sigstore.json` to check against the downloaded bundle instead
+of GitHub's attestation store.

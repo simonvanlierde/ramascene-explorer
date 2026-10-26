@@ -22,6 +22,12 @@ follow [Semantic Versioning](https://semver.org/).
 - Docs on the architecture, the URL parameters and job API, what the page
   accepts from `?api=` and `?data=`, and a roadmap.
 - `GOVERNANCE.md` and a code of conduct.
+- Releases carry build provenance. Each `v*` release gets the built page as a
+  tarball with its SHA-256 and a Sigstore bundle, and `embodied.parquet` on
+  `data-2011` gets one too. How to check a download is in
+  [docs/publishing.md](docs/publishing.md#check-a-release-file), and
+  [docs/assurance-case.md](docs/assurance-case.md) says why the page and its
+  files can be trusted.
 
 ### Changed
 
