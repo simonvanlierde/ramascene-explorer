@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { geoArea, geoOrthographic, geoPath } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
+import { merge } from "topojson-client";
 import { openEmbodied } from "../embodied.js";
 import { REST_OF, regionForIso, thinTopology } from "../map.js";
 
@@ -88,4 +90,25 @@ test("the thinned topology keeps every arc's ends and stays within the tolerance
 			if (n && p[0] === b[0] && p[1] === b[1]) k++;
 		});
 	});
+});
+
+test("thinned regions keep real rings, so the globe never floods with one", () => {
+	const thin = thinTopology(topo, 0.2);
+	const geoms = topo.objects.countries.geometries;
+	const globe = geoOrthographic().rotate([66, 54]).fitSize([400, 400], { type: "Sphere" });
+	const area = (geometry) => geoPath(globe).area({ type: "Feature", geometry });
+	for (const code of codes) {
+		const mine = geoms.filter((g) => regionForIso(g.properties.iso, codes) === code);
+		const lite = merge(thin, mine);
+		for (const ring of lite.coordinates.flat()) {
+			const distinct = new Set(ring.map(String)).size;
+			// fewer than 3 and d3-geo may read the ring as the whole sphere
+			assert.ok(distinct >= 3, `${code}: a ring of ${distinct} distinct points`);
+		}
+		assert.ok(geoArea(lite) < 2 * Math.PI, `${code} covers over half the sphere`);
+	}
+	// the region that flooded the globe at this angle
+	const wa = geoms.filter((g) => regionForIso(g.properties.iso, codes) === "WA");
+	const [lite, full] = [area(merge(thin, wa)), area(merge(topo, wa))];
+	assert.ok(lite < 2 * full, `WA thinned ${lite.toFixed(0)} against ${full.toFixed(0)}`);
 });

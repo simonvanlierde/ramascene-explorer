@@ -60,6 +60,9 @@ export function thinTopology(topo, tol) {
 				todo.push([i, at], [at, j]);
 			}
 		}
+		const [a, z] = [pts[0], pts.at(-1)];
+		// a closed arc thinned below 4 points is no ring: d3-geo reads it as the sphere
+		if (a[0] === z[0] && a[1] === z[1] && keep.reduce((n, k) => n + k, 0) < 4) return arc;
 		let [px, py] = [0, 0];
 		return pts
 			.filter((_, m) => keep[m])
