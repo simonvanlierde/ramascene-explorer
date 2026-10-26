@@ -1,7 +1,7 @@
 // Benchmarks of what the page computes on every selection: reading a run's
 // embodied flows from Parquet, summing a selection, and drawing the map bands,
 // the Sankey, the table and the CSV. Inputs are the synthetic fixtures.
-// Run with `pnpm bench`; CodSpeed measures them in CI.
+// Run with `pnpm bench`.
 
 import { readFileSync } from "node:fs";
 import { geoEqualEarth } from "d3-geo";
