@@ -1,15 +1,17 @@
 <script>
 // The country combobox (WAI-ARIA combobox with a listbox popup): type to
 // filter by name or code, arrows to move, Enter to choose, Escape to close.
+import { placeName } from "../flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, labelledby } = $props();
+const nm = (i) => placeName(meta, i);
 
 // meta never changes: the page mounts once per load
 // svelte-ignore state_referenced_locally
-const order = [...meta.countries.keys()].sort((a, b) => meta.countries[a].localeCompare(meta.countries[b]));
+const order = [...meta.countries.keys()].sort((a, b) => nm(a).localeCompare(nm(b)));
 // svelte-ignore state_referenced_locally
-let text = $state(meta.countries[ui.who]);
+let text = $state(nm(ui.who));
 let open = $state(false);
 let active = $state(0);
 let input = $state();
@@ -18,13 +20,13 @@ let focused = false;
 
 const options = $derived.by(() => {
 	const q = text.trim().toLowerCase();
-	const all = q === meta.countries[ui.who].toLowerCase() ? order : null;
-	return all ?? order.filter((i) => meta.countries[i].toLowerCase().includes(q) || meta.country_codes[i].toLowerCase() === q);
+	const all = q === nm(ui.who).toLowerCase() ? order : null;
+	return all ?? order.filter((i) => nm(i).toLowerCase().includes(q) || meta.countries[i].toLowerCase().includes(q) || meta.country_codes[i].toLowerCase() === q);
 });
 
 // follow selections made elsewhere (map, sentence) while not typing
 $effect(() => {
-	const name = meta.countries[ui.who];
+	const name = nm(ui.who);
 	if (!focused) text = name;
 });
 
@@ -34,7 +36,7 @@ function show() {
 }
 function choose(i) {
 	ui.who = i;
-	text = meta.countries[i];
+	text = nm(i);
 	open = false;
 }
 function keys(e) {
@@ -53,7 +55,7 @@ function keys(e) {
 	} else if (e.key === "Escape" && open) {
 		e.stopPropagation();
 		open = false;
-		text = meta.countries[ui.who];
+		text = nm(ui.who);
 	}
 }
 </script>
@@ -85,7 +87,7 @@ function keys(e) {
 		onblur={() => {
 			focused = false;
 			open = false;
-			text = meta.countries[ui.who];
+			text = nm(ui.who);
 		}}
 	/>
 	<ul id="country-list" role="listbox" tabindex="-1" aria-label="Countries and regions" bind:this={list} hidden={!open}>
@@ -102,7 +104,7 @@ function keys(e) {
 					input.blur();
 				}}
 			>
-				{meta.countries[i]}<span>{meta.country_codes[i]}</span>
+				{nm(i)}<span>{meta.country_codes[i]}</span>
 			</li>
 		{:else}
 			<li class="none" role="option" aria-selected="false" aria-disabled="true">No region matches</li>

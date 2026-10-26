@@ -4,10 +4,36 @@ import { expect, test } from "@playwright/test";
 const API = "http://127.0.0.1:8020";
 
 async function expectNoAxeViolations(page) {
+	// a colour still mid-transition (the mode switch) is not the page's contrast
+	// a transition cancelled on the way rejects its promise; it is still over
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
 	const { violations } = await new AxeBuilder({ page })
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
 		.analyze();
 	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+}
+
+// The custom-scenario form lives in What if…, folded under the run list, and on a
+// phone in the selection sheet.
+async function openLive(page) {
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	if (await page.locator("#live-run").isVisible()) return;
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	const dock = page.locator(".dock .filters");
+	if (await dock.isVisible()) await dock.click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeVisible();
+}
+
+function routeJob(page, done, onPost) {
+	return Promise.all([
+		page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog })),
+		page.route(`${API}/jobs`, (route) => {
+			onPost?.(route.request().postDataJSON());
+			return route.fulfill({ json: { id: done.id, status: "queued" } });
+		}),
+		page.route(`${API}/jobs/${done.id}`, (route) => route.fulfill({ json: done })),
+	]);
 }
 
 const catalog = {
@@ -17,6 +43,7 @@ const catalog = {
 		{ id: 2, name: "Africa" },
 	],
 	consumers: [{ id: 198, name: "Manufacture of motor vehicles" }],
+	tech_change_percent: { min: -100, max: 1000 },
 };
 
 // A succeeded job, shaped as GET /jobs/{id} returns it. GHG in kg CO2 eq:
@@ -62,6 +89,7 @@ test("the live panel runs one intervention and labels the result live", async ({
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	expect(posted).toEqual({ label: "custom scenario", model_details: job.scenario.model_details });
@@ -118,6 +146,7 @@ test("a live job's flows light the map, labelled live", async ({ page }) => {
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
@@ -139,8 +168,183 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	await expect(page.locator("#status .basis")).toContainText("precomputed, not a forecast");
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
+});
+
+test("Details stays modal while the live panel is on the page", async ({ page, isMobile }) => {
+	await routeJob(page, job);
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	// the panel open in What if…, where its controls are in the tab order
+	await openLive(page);
+	if (isMobile) await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.getByRole("dialog")).toBeVisible();
+	let fromBody = false;
+	for (let i = 0; i < 40; i++) {
+		await page.keyboard.press("Tab");
+		const where = await page.evaluate(() => ({
+			inDialog: Boolean(document.activeElement?.closest("[role=dialog]")),
+			body: document.activeElement === document.body,
+			id: document.activeElement?.id,
+		}));
+		// past the dialog's last control the browser takes focus to the page itself; the next Tab must come back
+		if (where.body && !fromBody) {
+			fromBody = true;
+			continue;
+		}
+		expect(where.inDialog, `Tab ${i + 1} reached #${where.id}`).toBe(true);
+		fromBody = false;
+	}
+});
+
+test("a live run is never shown as Verified", async ({ page }) => {
+	await routeJob(page, flowsJob());
+	// the shipped data passes every check, so the page starts Verified
+	await page.goto(`?api=${API}`);
+	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#status .basis")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#status .pill.ok")).toHaveCount(0);
+	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
+	await page.locator("#status .pill.live").click();
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expect(page.locator(".pf .vf")).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	// back to a precomputed run: Verified again
+	await page.getByRole("button", { name: "Flows, 2011" }).first().click();
+	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
+});
+
+test("the change field holds to the job API's range", async ({ page }) => {
+	let posted = null;
+	await routeJob(page, job, (body) => {
+		posted = body;
+	});
+	// a range other than the page's own default, so the field must have read it from the catalog
+	// (the route registered last answers first)
+	await page.route(`${API}/catalog`, (route) =>
+		route.fulfill({ json: { ...catalog, tech_change_percent: { min: -50, max: 50 } } }),
+	);
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await openLive(page);
+	const change = page.locator("#live-change");
+	await expect(change).toHaveAttribute("min", "-50");
+	await expect(change).toHaveAttribute("max", "50");
+	await expect(page.locator("#live-change-h")).toHaveText("From −50 to +50");
+	await change.fill("-60");
+	await page.locator("#live-run").click();
+	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);
+	await page.waitForTimeout(300);
+	expect(posted).toBe(null);
+	await change.fill("-20");
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("finished in");
+	expect(posted?.model_details[0].techChange).toEqual([-20]);
+});
+
+test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.abort());
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	const dock = page.locator(".dock .filters");
+	if (await dock.isVisible()) await dock.click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toContainText("not reachable");
+	await expect(page.locator("#live-form")).toBeHidden();
+	await page.unroute(`${API}/catalog`);
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.locator("#live-retry").click();
+	await expect(page.locator("#live-open")).toBeFocused();
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await expect(page.locator("#live-run")).toBeEnabled();
+});
+
+test("a finished job is announced outside the selection, and a phone shows the result", async ({ page, isMobile }) => {
+	await routeJob(page, flowsJob());
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	if (isMobile) {
+		await expect(page.locator("#side")).toBeHidden();
+		await expect(page.locator("#headline")).toBeFocused();
+	}
+	// in the accessibility tree, which the closed sheet's status line has left
+	await expect(page.getByRole("status").filter({ hasText: "finished in" })).toHaveCount(1);
+});
+
+test("a failed job says why next to Run, as an alert", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ status: 503, json: { detail: "the engine is busy" } }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.getByRole("alert").filter({ hasText: "Job failed: 503: the engine is busy" })).toHaveCount(1);
+	const run = await page.locator("#live-run").boundingBox();
+	const state = await page.locator("#live-state").boundingBox();
+	expect(state.y).toBeGreaterThan(run.y + run.height);
+	expect(state.y - (run.y + run.height)).toBeLessThan(40);
+	// Run stays focusable while the job runs, so focus is still on it
+	await expect(page.locator("#live-run")).toBeFocused();
+});
+
+test("a job that finishes while Flows is shown leaves the reader in Flows", async ({ page, isMobile }) => {
+	const done = flowsJob();
+	let release;
+	const gate = new Promise((resolve) => {
+		release = resolve;
+	});
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ json: { id: done.id, status: "queued" } }));
+	await page.route(`${API}/jobs/${done.id}`, async (route) => {
+		await gate;
+		await route.fulfill({ json: done });
+	});
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	// a phone switches mode from the dock, under the sheet
+	if (isMobile) await page.keyboard.press("Escape");
+	const flows = page.getByRole("button", { name: "Flows, 2011" }).filter({ visible: true });
+	await flows.click();
+	release();
+	await expect(page.locator("#live-state")).toContainText("What if… shows its flows");
+	await expect(flows).toHaveAttribute("aria-pressed", "true");
+	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
+	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
+});
+
+test("without the 2011 flows the live panel still runs a job", async ({ page }) => {
+	await routeJob(page, flowsJob());
+	await page.route("**/*.parquet", (route) => route.fulfill({ status: 404 }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator("#empty")).toContainText("The embodied flows are not here.");
+	await page.locator("#live-open").click();
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Its flows are not on the map");
+	await expect(page.locator("#live-table tbody tr").first()).toContainText("Europe");
+	await expectNoAxeViolations(page);
+});
+
+test("on a phone Details starts under the header, however many rows it wraps to", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	await routeJob(page, flowsJob());
+	// the shipped data has no synthetic banner above the header
+	await page.goto(`?api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	// a live job's long basis takes its own row
+	await expect(page.locator("#status .pill.live")).toBeVisible();
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.getByRole("dialog")).toBeVisible();
+	const header = await page.locator(".top").boundingBox();
+	const panel = await page.locator(".pan").boundingBox();
+	expect(panel.y).toBeGreaterThanOrEqual(header.y + header.height - 0.5);
 });

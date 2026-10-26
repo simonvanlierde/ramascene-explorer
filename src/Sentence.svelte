@@ -4,14 +4,16 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, pct, possessive, SECTION_SHORT, wording } from "../flows.js";
+import { amount, amountText, capitalise, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "../flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
 let { data, meta, sum, whatif, text } = $props();
 
 const S = SECTION_SHORT.length;
-const name = $derived(meta.countries[ui.who]);
+// one name per region, as the strip and the map write it; "the" goes outside the country button
+const name = $derived(placeName(meta, ui.who));
+const the = $derived(theName(meta, ui.who) === name ? "" : "the ");
 const w = $derived(wording(ui.indicator));
 const out = $derived(ui.dir === "out");
 const scope = $derived(
@@ -22,14 +24,14 @@ const scope = $derived(
 			: ` through ${ui.on.size} of 15 industry sections`,
 );
 const year = $derived(data.base_year);
-const top = $derived(meta.countries[sum.others[0]] ?? name);
+const top = $derived(sum.others.length ? theName(meta, sum.others[0]) : name);
 const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 : 0);
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? sum.dTotal : 0);
-const changed = $derived(sum.changed != null ? meta.countries[sum.changed] : "");
+const changed = $derived(sum.changed != null ? theName(meta, sum.changed) : "");
 const noneAbroad = $derived(sum.others.length === 0);
 const abroadToo = $derived(
-	sum.changed === ui.who && sum.changedAbroad != null ? meta.countries[sum.changedAbroad] : "",
+	sum.changed === ui.who && sum.changedAbroad != null ? theName(meta, sum.changedAbroad) : "",
 );
 
 // eased numbers; the scrubber drives the What if… ones directly
@@ -55,15 +57,15 @@ const plain = $derived.by(() => {
 	const [n, u] = amount(sum.total + (whatif ? sum.dTotal : 0), ui.indicator);
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
-		return `${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
+		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
 	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${name}${w.out.come}` : `${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
+	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
 let pop = $state(null); // null | "country" | "indicator"
 let opener = null;
-const byName = $derived([...meta.countries.keys()].sort((a, b) => meta.countries[a].localeCompare(meta.countries[b])));
+const byName = $derived([...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b))));
 function openPop(kind, e) {
 	e.stopPropagation();
 	opener = e.currentTarget;
@@ -100,14 +102,14 @@ function onFocusOut(e) {
 {#snippet unit(u)}{#each u.split("\u2082") as part, i (i)}{#if i}<sub>2</sub>{/if}{part}{/each}{/snippet}
 
 <!-- the possessive stays on the country's line -->
-{#snippet country(after = "")}
-	<span class="u"><button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
+{#snippet country(after = "", lead = the)}
+	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}. Change" onclick={(e) => openPop("country", e)}>{name}</button>{after}</span>
 {/snippet}
 
 <div class="hl">
 	{#if !whatif}
-		<p id="headline">
-			{@render country(out ? "" : possessive(name))}{out ? w.out.verb : w.in.verb}
+		<p id="headline" tabindex="-1">
+			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
@@ -119,7 +121,7 @@ function onFocusOut(e) {
 			{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}.
 		</p>
 	{:else}
-		<p id="headline">
+		<p id="headline" tabindex="-1">
 			In the {year} economy, if <b>{text}</b>,
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
@@ -140,7 +142,7 @@ function onFocusOut(e) {
 					onclick={() => {
 						ui.who = i;
 						closePop();
-					}}>{meta.countries[i]}</button
+					}}>{placeName(meta, i)}</button
 				>
 			{/each}
 		</div>
