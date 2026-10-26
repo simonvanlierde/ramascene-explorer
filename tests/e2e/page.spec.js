@@ -12,9 +12,11 @@ async function expectNoAxeViolations(page) {
 
 const ready = (page) => expect(page.locator(".mapc .rg")).toHaveCount(49);
 
-// On a phone the selection lives in a bottom sheet opened from the dock.
+// On a phone the selection lives in a bottom sheet opened from the dock, which
+// shows once the data is in; on a wider screen it is the sidebar.
 async function openSelection(page) {
 	const dock = page.locator(".dock .filters");
+	await expect(dock.or(page.locator("#side")).filter({ visible: true }).first()).toBeVisible();
 	if (await dock.isVisible()) {
 		await dock.click();
 		await expect(page.locator("#side")).toBeVisible();
@@ -34,6 +36,20 @@ test("synthetic data renders the map, sentence and method under a banner", async
 	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind", { useInner: true });
 });
 
+test("the synthetic banner never covers the header, and Details opens below both", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const box = async (s) => page.locator(s).evaluate((e) => e.getBoundingClientRect().toJSON());
+	// on a phone the page scrolls, and the header sticks under the banner
+	await page.evaluate(() => window.scrollTo(0, 400));
+	const banner = await box("#banner");
+	const header = await box(".top");
+	expect(header.top).toBeGreaterThanOrEqual(banner.bottom - 0.5);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await expect(page.locator(".sk .lk").first()).toBeVisible();
+	expect((await box(".pan")).top).toBeGreaterThanOrEqual((await box(".top")).bottom - 0.5);
+});
+
 test("What if… loads a run, keeps it in the URL and survives a reload", async ({ page }) => {
 	await page.goto(FIXTURE);
 	await ready(page);
@@ -49,6 +65,7 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	// the run list folds to the chosen run, and stays folded after a reload
 	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 	await page.reload();
+	await ready(page);
 	await openSelection(page);
 	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
 	await page.getByRole("button", { name: "Change the intervention" }).click();
@@ -95,6 +112,57 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	await expect(page.getByRole("button", { name: /^Details for/ })).toBeFocused();
 });
 
+test("the Sankey's industry labels stay clear of the region columns in both directions", async ({ page }) => {
+	for (const dir of ["in", "out"]) {
+		await page.goto(`?panel=sankey${dir === "out" ? "&dir=out" : ""}`);
+		await expect(page.locator(".sk .lk").first()).toBeVisible();
+		const hits = await page.locator(".sk").evaluate((svg) => {
+			const r = (e) => e.getBoundingClientRect();
+			const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+			// the region nodes: the slate rects of the two outer columns
+			const nodes = [...svg.querySelectorAll('rect[fill="var(--slate)"]')].map(r);
+			return [...svg.querySelectorAll("text.halo")]
+				.filter((t) => nodes.some((n) => over(r(t), n)))
+				.map((t) => t.textContent);
+		});
+		expect(hits, `dir=${dir}`).toEqual([]);
+	}
+});
+
+test("each of the sentence's controls has its visible text in its name", async ({ page }) => {
+	for (const q of ["", "&dir=out", "&indicator=3", "&mode=whatif&scenario=cement-in-construction"]) {
+		await page.goto(FIXTURE + q);
+		await ready(page);
+		const toks = await page
+			.locator(".hl .tok")
+			.evaluateAll((els) => els.map((e) => [e.textContent, e.getAttribute("aria-label")]));
+		expect(toks.length).toBeGreaterThan(0);
+		for (const [text, label] of toks) expect(label, q).toContain(text);
+	}
+});
+
+test("the possessive sits on the country's underline", async ({ page }) => {
+	for (const q of ["", "&mode=whatif&scenario=cement-in-construction"]) {
+		await page.goto(FIXTURE + q);
+		await ready(page);
+		const { text, under } = await page
+			.locator("#headline .u")
+			.first()
+			.evaluate((u) => {
+				const tok = u.querySelector(".tok").getBoundingClientRect();
+				const walk = document.createTreeWalker(u, NodeFilter.SHOW_TEXT);
+				let node = walk.nextNode();
+				while (node && !node.textContent.includes("\u2019")) node = walk.nextNode();
+				const r = document.createRange();
+				r.selectNodeContents(node);
+				const g = r.getBoundingClientRect();
+				return { text: node.textContent, under: g.left >= tok.left - 0.5 && g.right <= tok.right + 0.5 };
+			});
+		expect(text).toContain("\u2019s");
+		expect(under, `${q}: the ’s under the token`).toBe(true);
+	}
+});
+
 test("the shipped results render without the synthetic banner", async ({ page }) => {
 	await page.goto("");
 	await ready(page);
@@ -115,6 +183,39 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 	for (const code of ["GB", "IT"]) await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(1);
 	for (const code of ["NL", "BE", "AT"])
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
+});
+
+test("once the map stops moving it draws the full outlines", async ({ page }) => {
+	// a moving map draws thinned outlines; the globe it settles on must match one opened directly
+	const outlines = () => page.locator(".mapc .rg").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")).join(""));
+	await page.goto("?map=globe");
+	await ready(page);
+	await expect.poll(outlines).not.toBe("");
+	const atRest = await outlines();
+	await page.goto("");
+	await ready(page);
+	await page.getByRole("button", { name: "Globe" }).click();
+	await expect.poll(outlines).toBe(atRest);
+});
+
+test("a zoom button step draws the full outlines straight away", async ({ page }) => {
+	// the thinned outlines are for continuous movement; one step must not pop from thin to full
+	const outlines = () => page.locator(".mapc .rg").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")).join(""));
+	await page.goto("");
+	await ready(page);
+	const whole = await outlines();
+	await page.getByRole("button", { name: "Zoom in" }).click();
+	await expect.poll(outlines).not.toBe(whole);
+	// the next frame after the click, before the 150 ms settle
+	const next = await page.evaluate(() => {
+		document.querySelector('button[aria-label="Zoom out"]').click();
+		return new Promise((done) =>
+			requestAnimationFrame(() =>
+				done([...document.querySelectorAll(".mapc .rg")].map((p) => p.getAttribute("d")).join("")),
+			),
+		);
+	});
+	expect(next === whole, "zoomed back out, the full outlines in the next frame").toBe(true);
 });
 
 test("a click on a country selects it on the flat map, the zoomed map and the globe", async ({ page }) => {
@@ -429,6 +530,17 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	);
 	expect(reach.length).toBeGreaterThan(2);
 	for (const r of reach) expect(r.ok, `hit area of ${r.name}`).toBe(true);
+	// the author link is 44 px tall; WebKit gives the pill below it the last pixel
+	const author = await page.locator(".brand .by a").evaluate((e) => {
+		const r = e.getBoundingClientRect();
+		const x = r.left + r.width / 2;
+		const on = (y) => e.contains(document.elementFromPoint(x, y));
+		let [top, bottom] = [r.top + r.height / 2, r.top + r.height / 2];
+		while (on(top - 0.25)) top -= 0.25;
+		while (on(bottom + 0.25)) bottom += 0.25;
+		return bottom - top;
+	});
+	expect(author, "the author link's hit area").toBeGreaterThanOrEqual(42.5);
 	await page.locator(".skip").focus();
 	expect((await page.locator(".skip").boundingBox()).height).toBeGreaterThanOrEqual(44);
 	await page.locator(".dock .filters").click();
@@ -504,7 +616,7 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 	// the country and the indicator on neighbouring lines of the sentence
 	await page.goto(`${FIXTURE}&region=US&dir=out`);
 	await ready(page);
-	const stolen = await page.locator(".top button.pill, .top a.pill, .hl .tok").evaluateAll((els) =>
+	const stolen = await page.locator(".top button.pill, .top a.pill, .brand .by a, .hl .tok").evaluateAll((els) =>
 		els.flatMap((e) => {
 			const r = e.getBoundingClientRect();
 			const points = [0.1, 0.5, 0.9].flatMap((fx) => [r.top + 1, r.bottom - 1].map((y) => [r.left + r.width * fx, y]));
@@ -515,6 +627,37 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 		}),
 	);
 	expect(stolen).toEqual([]);
+});
+
+test("on a phone a tap between two lines of the sentence goes to the nearer control", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	let pairs = 0;
+	for (const width of [390, 320]) {
+		await page.setViewportSize({ width, height: 800 });
+		for (const q of ["&region=US&dir=out", "&region=DE&dir=out", "&region=GB&indicator=3"]) {
+			await page.goto(FIXTURE + q);
+			await ready(page);
+			const found = await page.locator(".hl .tok").evaluateAll((els) => {
+				const out = [];
+				for (const a of els)
+					for (const b of els) {
+						const [ra, rb] = [a.getBoundingClientRect(), b.getBoundingClientRect()];
+						const gap = rb.top - ra.bottom;
+						const [l, r] = [Math.max(ra.left, rb.left), Math.min(ra.right, rb.right)];
+						if (gap <= 0 || gap > 12 || r - l < 4) continue;
+						const x = (l + r) / 2;
+						// a quarter of the gap from each line
+						const upper = a.contains(document.elementFromPoint(x, ra.bottom + gap / 4));
+						const lower = b.contains(document.elementFromPoint(x, rb.top - gap / 4));
+						out.push({ pair: `${a.textContent} / ${b.textContent}`, upper, lower });
+					}
+				return out;
+			});
+			pairs += found.length;
+			for (const f of found) expect(f, `${width} px${q}`).toEqual({ pair: f.pair, upper: true, lower: true });
+		}
+	}
+	expect(pairs, "stacked controls in the sentence").toBeGreaterThan(0);
 });
 
 test("the grid's pickers fold with their own Done, named apart from the sheet's", async ({ page }) => {

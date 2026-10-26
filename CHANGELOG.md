@@ -19,9 +19,14 @@ follow [Semantic Versioning](https://semver.org/).
 - A reset button next to + and − once the map is zoomed in.
 - Try again buttons: on a run that could not be loaded, and on the live
   panel when the job API does not answer.
+- Docs on the architecture, the URL parameters and job API, what the page
+  accepts from `?api=` and `?data=`, and a roadmap.
+- `GOVERNANCE.md` and a code of conduct.
 
 ### Changed
 
+- CI fails when line coverage drops below 80%. `pnpm test` checks the same floor.
+- The Pages workflow publishes only from `main`.
 - The live panel (`?api=`) is now a Custom scenario card at the end of the
   What if… run list, or in the selection sheet on a phone, instead of a form
   below the page. Its fields are stacked and labelled, the options show names
@@ -43,6 +48,11 @@ follow [Semantic Versioning](https://semver.org/).
 - The grid's pickers fold away with the run list, so the industry sections
   stay in view in What if….
 - The desktop scrubber is wider, with Replay on its own row.
+- Text sizes keep to the type scale: the country box, run titles, pickers
+  and popover options are 13 px, the segmented controls, table and the
+  units beside the figures 12 px, and the phone's top-bar name 13 px.
+- The possessive ("Germany’s") sits on the country's underline, in the
+  same weight, instead of trailing after it.
 - Inputs and selects have a darker border, at 3:1 contrast against the
   page.
 
@@ -59,6 +69,18 @@ follow [Semantic Versioning](https://semver.org/).
   caught by the map.
 - The Sankey's caption no longer says to tap a band, which did nothing on
   a touch screen.
+- The Sankey of what a country releases mirrors the one of what it
+  consumes, so the industry labels no longer run into the "Consumed in"
+  column.
+- On phones the author link is a 44 px target like the other controls; the
+  header's first row is 44 px tall to hold it.
+- Each of the sentence's controls has the words it shows in its name, so
+  voice control finds "Germany’s" and "thousand jobs" by what is on screen.
+- On phones a tap just under one of the sentence's controls no longer goes
+  to the control on the line below.
+- The globe turns, drags and morphs from the flat map more smoothly on slow
+  machines. While the map moves it draws simpler country outlines, then the
+  full ones once it stops.
 
 ## [0.3.1] - 2026-10-19
 

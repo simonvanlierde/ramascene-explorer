@@ -2,8 +2,8 @@
 
 Loads EXIOBASE v3.3.sm (2011, monetary product-by-product, as the numpy
 arrays that RaMa-Scene reads) into a Brightway project as one input-output
-database. Then it runs one LCA and checks the score against numpy, pymrio and
-RaMa-Scene's own engine. The engine route uses the explorer's adapter in
+database. Then it runs one LCA and checks the score against numpy, pymrio,
+pycirk and RaMa-Scene's own engine. The engine route uses the explorer's adapter in
 `../precompute.py`, so this is a check on the same engine the explorer's
 results come from.
 

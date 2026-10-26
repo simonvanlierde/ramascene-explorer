@@ -51,19 +51,26 @@ Open `?mode=whatif&scenario=steel-in-vehicles-europe` or
 see the page on the synthetic fixture. The selection lives in the query
 string, so you can share a view by its URL.
 
+## Build
+
+`pnpm build` writes a static site to `dist/`, with `data/` and `geo/` copied in
+when present. Any static host serves it, as long as it answers HTTP range
+requests: the page reads the Parquet file in pieces. Publishing to GitHub
+Pages is in [docs/publishing.md](docs/publishing.md).
+
 ## Brightway check
 
 [`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
-Brightway as an input-output database and scores one product four ways: Brightway,
-numpy, pymrio and this engine through the adapter in `precompute.py`. All agree to
-within 2.2e-13. It is a separate uv project with its own Brightway and pymrio pins.
+Brightway as an input-output database and scores one product five ways: Brightway,
+numpy, pymrio, pycirk and this engine through the adapter in `precompute.py`. Its
+README has the agreement table. It is a separate uv project with its own pins.
 
 ## Test
 
 ```sh
 uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
-node --test                            # the page logic (after pnpm install)
+pnpm test                              # the page logic, with the coverage floor
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
 ```
@@ -87,6 +94,11 @@ them before and after a change to the code they cover.
 - [docs/precompute.md](docs/precompute.md): how to regenerate the data, the embodied flows, and the checks they must pass
 - [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
 - [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
+- [docs/architecture.md](docs/architecture.md): how the parts fit together, and the page's modules
+- [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
+- [docs/security.md](docs/security.md): what the page accepts from `?api=` and `?data=`
+- [GOVERNANCE.md](GOVERNANCE.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [docs/roadmap.md](docs/roadmap.md): what is planned for the next year, and what is not
 
 ## Cite
 
