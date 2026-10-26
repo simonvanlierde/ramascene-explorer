@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { geoArea, geoOrthographic, geoPath } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
+import { merge } from "topojson-client";
 import { openEmbodied } from "../embodied.js";
-import { REST_OF, regionForIso } from "../map.js";
+import { REST_OF, regionForIso, thinTopology } from "../map.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const topo = JSON.parse(readFileSync(path("../geo/countries-110m.topo.json"), "utf8"));
@@ -50,4 +52,63 @@ test("a named country is itself, a rest-of country its aggregate", () => {
 	assert.ok(listed.every((iso) => !codes.includes(iso)));
 	// the five rest-of aggregates are the footer's
 	assert.ok(Object.keys(REST_OF).every((c) => codes.includes(c)));
+});
+
+test("the thinned topology keeps every arc's ends and stays within the tolerance", () => {
+	const tol = 0.2;
+	const thin = thinTopology(topo, tol);
+	const [sx, sy] = topo.transform.scale;
+	const abs = (arc) => {
+		const out = [];
+		for (const [dx, dy] of arc) {
+			const [x, y] = out.at(-1) ?? [0, 0];
+			out.push([x + dx, y + dy]);
+		}
+		return out.map(([x, y]) => [x * sx, y * sy]);
+	};
+	const before = topo.arcs.reduce((n, a) => n + a.length, 0);
+	const after = thin.arcs.reduce((n, a) => n + a.length, 0);
+	// over a third of the points go, which is what makes a moving frame cheaper
+	assert.ok(after < before * 0.7, `${after} of ${before} points kept`);
+	assert.equal(thin.arcs.length, topo.arcs.length);
+	assert.deepEqual(thin.objects, topo.objects);
+	topo.arcs.forEach((arc, i) => {
+		const full = abs(arc);
+		const kept = abs(thin.arcs[i]);
+		// shared borders still meet: the ends are where neighbouring arcs join
+		assert.deepEqual(kept[0], full[0]);
+		assert.deepEqual(kept.at(-1), full.at(-1));
+		// every dropped point lies within tol of the segment that replaced it
+		let k = 0;
+		full.forEach((p, n) => {
+			const [a, b] = [kept[k], kept[k + 1] ?? kept[k]];
+			const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+			const d = L
+				? Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / L
+				: Math.hypot(p[0] - a[0], p[1] - a[1]);
+			assert.ok(d <= tol + 1e-9, `arc ${i}: a point ${d.toFixed(3)}° off`);
+			if (n && p[0] === b[0] && p[1] === b[1]) k++;
+		});
+	});
+});
+
+test("thinned regions keep real rings, so the globe never floods with one", () => {
+	const thin = thinTopology(topo, 0.2);
+	const geoms = topo.objects.countries.geometries;
+	const globe = geoOrthographic().rotate([66, 54]).fitSize([400, 400], { type: "Sphere" });
+	const area = (geometry) => geoPath(globe).area({ type: "Feature", geometry });
+	for (const code of codes) {
+		const mine = geoms.filter((g) => regionForIso(g.properties.iso, codes) === code);
+		const lite = merge(thin, mine);
+		for (const ring of lite.coordinates.flat()) {
+			const distinct = new Set(ring.map(String)).size;
+			// fewer than 3 and d3-geo may read the ring as the whole sphere
+			assert.ok(distinct >= 3, `${code}: a ring of ${distinct} distinct points`);
+		}
+		assert.ok(geoArea(lite) < 2 * Math.PI, `${code} covers over half the sphere`);
+	}
+	// the region that flooded the globe at this angle
+	const wa = geoms.filter((g) => regionForIso(g.properties.iso, codes) === "WA");
+	const [lite, full] = [area(merge(thin, wa)), area(merge(topo, wa))];
+	assert.ok(lite < 2 * full, `WA thinned ${lite.toFixed(0)} against ${full.toFixed(0)}`);
 });

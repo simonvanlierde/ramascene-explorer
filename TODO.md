@@ -7,6 +7,14 @@
   link once in Slack or LinkedIn to see the preview card. On the phones, also
   try the pinch zoom, which the tests cannot.
 
+## Maintainer decisions
+
+- 2026-10-23: name who takes over if the maintainer stops (a second person with
+  write access, or how long without activity before the repository is
+  archived), then update the last section of `GOVERNANCE.md`.
+- 2026-10-23: decide whether code of conduct reports get their own contact,
+  such as an email address, then update `CODE_OF_CONDUCT.md`.
+
 ## With the next data release
 
 - Split the Sankey's consumption side by final-demand category (households,
@@ -14,13 +22,16 @@
   so this needs a new layout (about seven times the 51.5 MB) and a fresh engine
   run; worth doing together with a newer EXIOBASE vintage.
 
-## Small fixes
+## Performance
 
-- 2026-10-24: with synthetic data (`?data=tests/fixture.json`) the red banner
-  is sticky above the sticky phone header, so once the page scrolls the header
-  slides under the banner, and Details starts 31 px into the header. Test data
-  only; offset the phone header and `--top` by the banner's height under
-  `body.synthetic`.
+- 2026-10-25: profile the moving map on a quiet machine (load under 2,
+  interleaved against 4e40fb1, the commit before the thinned outlines)
+  before quoting numbers for them. In the same pass, try clipping the
+  projection to the view while zoomed (off-screen regions still build full
+  path strings) and whether that lets the `zk < 2` gate go; check whether
+  the band geometry and labels, recomputed every frame while moving, and
+  the one full redraw 150 ms after it stops show up as long tasks. Keep
+  only what measures better.
 
 ## Decided
 

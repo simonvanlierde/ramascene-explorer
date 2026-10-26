@@ -147,10 +147,7 @@ pre {
   display: grid;
   grid-template-columns: var(--side) minmax(0, 1fr);
   grid-template-rows: var(--top) minmax(0, 1fr);
-  height: 100dvh;
-}
-body.synthetic .shell {
-  height: calc(100dvh - 31px);
+  height: calc(100dvh - var(--banner-h, 0px));
 }
 .top {
   grid-column: 1 / -1;
@@ -301,7 +298,7 @@ button.pill:hover {
   flex: 1;
   min-height: 28px;
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--mut);
   white-space: nowrap;
   padding: 0 8px;
@@ -355,7 +352,7 @@ button.pill:hover {
   border: 1px solid var(--input-border);
   border-radius: 8px;
   padding: 0 10px 0 31px;
-  font: 700 13.5px var(--sans);
+  font: 700 13px var(--sans);
   color: var(--ink);
   background: var(--card);
   outline: none;
@@ -454,7 +451,7 @@ button.pill:hover {
 }
 .run b {
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13px;
   display: block;
 }
 .run small {
@@ -501,7 +498,7 @@ button.pill:hover {
   border: 1px solid var(--input-border);
   border-radius: 8px;
   background: var(--card);
-  font: 600 12.5px var(--sans);
+  font: 600 13px var(--sans);
   color: var(--ink);
   padding: 0 8px;
 }
@@ -678,7 +675,7 @@ button.pill:hover {
   width: 280px;
 }
 .pop button {
-  font-size: 12.5px;
+  font-size: 13px;
   padding: 5px 7px;
   white-space: nowrap;
   overflow: hidden;
@@ -733,7 +730,7 @@ button.pill:hover {
   white-space: nowrap;
 }
 .kpi .kv small {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--mut);
   letter-spacing: 0;
@@ -1114,7 +1111,7 @@ svg.map.live .rg {
 /* --- slide-over ------------------------------------------------------------------ */
 .scrim {
   position: fixed;
-  inset: var(--top) 0 0 var(--side);
+  inset: calc(var(--top) + var(--banner-h, 0px)) 0 0 var(--side);
   background: rgb(31 42 51 / 10%);
   opacity: 0;
   pointer-events: none;
@@ -1127,7 +1124,7 @@ svg.map.live .rg {
 }
 .pan {
   position: fixed;
-  top: var(--top);
+  top: calc(var(--top) + var(--banner-h, 0px));
   right: 0;
   bottom: 0;
   width: min(520px, 100vw);
@@ -1281,7 +1278,7 @@ svg.map.live .rg {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 caption {
   text-align: left;
@@ -1535,7 +1532,7 @@ details.more summary {
 }
 #live .headline {
   margin: 12px 0 0;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 #live-result label {
   margin-top: 10px;
@@ -1616,19 +1613,26 @@ details.more summary {
   }
   .top {
     position: sticky;
-    top: 0;
+    top: var(--banner-h, 0px);
     z-index: 12;
     gap: 10px;
     padding: 0 12px;
   }
+  /* the author link is a 44 px target, the brand row's full height, so the
+     row starts at the header's edge instead of below 8 px of padding */
+  .brand .by a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
   .brand h1 {
-    font-size: 13.5px;
+    font-size: 13px;
   }
   /* the caveat and the trust pill both stay; the dataset name goes */
   .top {
     flex-wrap: wrap;
     height: auto;
-    padding: 8px 12px;
+    padding: 0 12px 8px;
     row-gap: 6px;
   }
   .top .rt {
@@ -1667,7 +1671,7 @@ details.more summary {
   :is(.top button.pill, .top a.pill, .hl .tok)::after {
     content: "";
     position: absolute;
-    inset: -8px 0; /* the pills' 32 px, from inside the 1 px border */
+    inset: -7px 0; /* 44 px: the pills are 30 px inside their 1 px border */
     z-index: 1;
   }
   :is(.top button.pill, .top a.pill, .hl .tok)::before {
@@ -1678,6 +1682,15 @@ details.more summary {
      (button.tok matches the :is() rule's weight, so this one wins) */
   .hl button.tok::after {
     inset: -11px -2px -13px;
+  }
+  /* Between two lines of the sentence (1.45em apart, 24 px controls) the
+     upper control's own box takes the top half of the gap; the lower one's
+     box starts at its top edge, and its hit area, later in the page, wins the
+     rest. So a tap goes to the nearer control. The bottom inset is the 2 px
+     underline plus half the gap, 2px + (1.45em - 24px) / 2; retune it with
+     the line height or the controls' height. */
+  .hl button.tok::before {
+    inset: 0 0 min(-2px, 10px - 0.725em);
   }
   .skip {
     padding: 13px 14px;
@@ -1926,7 +1939,7 @@ details.more summary {
     align-items: center;
   }
   .scrim {
-    inset: var(--top) 0 0 0;
+    inset: calc(var(--top) + var(--banner-h, 0px)) 0 0 0;
   }
   .pan {
     width: 100vw;

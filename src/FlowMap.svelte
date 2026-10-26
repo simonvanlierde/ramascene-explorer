@@ -39,7 +39,7 @@ import {
 	theName,
 	wording,
 } from "../flows.js";
-import { regionForIso } from "../map.js";
+import { regionForIso, thinTopology } from "../map.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
@@ -52,10 +52,13 @@ fetch("geo/countries-110m.topo.json")
 	.then((r) => r.json())
 	.then((topo) => {
 		const geoms = topo.objects.countries.geometries;
+		// within 0.2°: about 1.4 px on a full-height globe, under a pixel on the flat map
+		const thin = thinTopology(topo, 0.2);
 		shapes = meta.country_codes.map((code, i) => {
-			const geometry = merge(topo, geoms.filter((g) => regionForIso(g.properties.iso, meta.country_codes) === code));
-			const feature = { type: "Feature", geometry };
-			return { i, code, feature, at: ANCHOR[code] ?? geoPath().centroid(feature) };
+			const mine = geoms.filter((g) => regionForIso(g.properties.iso, meta.country_codes) === code);
+			const feature = { type: "Feature", geometry: merge(topo, mine) };
+			const lite = { type: "Feature", geometry: merge(thin, mine) };
+			return { i, code, feature, lite, at: ANCHOR[code] ?? geoPath().centroid(feature) };
 		});
 	});
 
@@ -68,6 +71,19 @@ let rot = $state([0, 0]);
 let zk = $state(1);
 let off = $state([0, 0]);
 const ZMAX = 8;
+// Every frame of a morph, turn, drag or zoom redraws all 49 regions, and that
+// is most of the frame. While the map moves it draws the thinned outlines
+// (over a third fewer points), unless zoomed in far enough for the difference
+// to show; 150 ms after it stops, the full ones. A zoom button's single step
+// is not movement, so only the animations, drags, the wheel and pinches nudge.
+let moving = $state(false);
+let settleT = 0;
+function nudge() {
+	moving = true;
+	clearTimeout(settleT);
+	settleT = setTimeout(() => (moving = false), 150);
+}
+$effect(() => () => clearTimeout(settleT));
 const mutate = geoProjectionMutator((a) => (x, y) => {
 	const p = geoEqualEarthRaw(x, y);
 	const q = geoOrthographicRaw(x, y);
@@ -95,7 +111,7 @@ const view = $derived.by(() => {
 });
 const centre = () => [-rot[0] * alpha, -rot[1] * alpha];
 const visible = (ll) => alpha < 0.5 || geoDistance(ll, centre()) < Math.PI / 2 - 0.04;
-const regionPaths = $derived((view, shapes.map((s) => path(s.feature) ?? "")));
+const regionPaths = $derived((view, shapes.map((s) => path(moving && zk < 2 ? s.lite : s.feature) ?? "")));
 const sphere = $derived((view, path({ type: "Sphere" })));
 
 // --- colour -------------------------------------------------------------------
@@ -212,6 +228,7 @@ function animate(ms, stepFn) {
 	const t0 = performance.now();
 	const frame = (now) => {
 		const p = Math.min(1, (now - t0) / ms);
+		nudge();
 		stepFn(cubicInOut(p));
 		if (p < 1) tween = requestAnimationFrame(frame);
 	};
@@ -284,6 +301,7 @@ $effect(() => {
 		e.preventDefault();
 		// deltaMode 1 counts lines (Firefox); a trackpad pinch arrives as a wheel with ctrlKey
 		const d = e.deltaY * (e.deltaMode ? 33 : 1) * (e.ctrlKey ? 5 : 1);
+		nudge();
 		zoomAt(Math.exp(-d * 0.002), local(e.clientX, e.clientY));
 	};
 	el.addEventListener("wheel", wheel, { passive: false });
@@ -369,6 +387,7 @@ function move(e) {
 	if (pinch && pts.size === 2) {
 		const [a, b] = [...pts.values()];
 		const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+		nudge();
 		zoomAt(d / pinch, local((a[0] + b[0]) / 2, (a[1] + b[1]) / 2));
 		pinch = d;
 		return;
@@ -390,6 +409,7 @@ function move(e) {
 	// keeps its own reference, so a release before it runs still applies the turn.
 	const d = drag;
 	d.frame ||= requestAnimationFrame(() => {
+		nudge();
 		if (alpha > 0.5) rot = [rot[0] + (d.dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (d.dy * 0.35) / zk))];
 		else off = clampOff([off[0] + d.dx, off[1] + d.dy]);
 		d.dx = d.dy = d.frame = 0;

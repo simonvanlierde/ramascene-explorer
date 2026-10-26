@@ -41,7 +41,7 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
   [security.md](security.md).
 - A refused value is shown in the status line (`ignoredData`, `ignoredApi`),
   not silently dropped.
-- The Content-Security-Policy in [`index.html` L8](../index.html#L8) allows
+- The Content-Security-Policy in [`index.html`](../index.html) allows
   scripts and fonts from the page's own origin only, and no `object`, `base`
   or form targets.
 - A live result is labelled "computed live by the job API, not precomputed"
@@ -51,13 +51,13 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
 
 - `pages.yml` stops unless `data/results.json` is marked
   `data_kind: exiobase-v3`
-  ([`pages.yml` L28-L35](../.github/workflows/pages.yml#L28-L35)). The page
+  ([`pages.yml`](../.github/workflows/pages.yml)). The page
   itself shows the red synthetic banner for any other value (`banner` in
   [`explorer.js`](../explorer.js)).
 - Every workflow that downloads `embodied.parquet` checks it against the
   SHA-256 committed in [`data/embodied.sha256`](../data/embodied.sha256):
-  [`pages.yml` L45](../.github/workflows/pages.yml#L45),
-  [`ci.yml` L67 and L96](../.github/workflows/ci.yml#L67), and
+  [`pages.yml`](../.github/workflows/pages.yml),
+  [`ci.yml`](../.github/workflows/ci.yml) (twice), and
   [`release.yml`](../.github/workflows/release.yml). A swapped release asset
   fails the build. For the data job of `release.yml` and for `pages.yml`,
   changing the pinned hash needs a commit to `main`: both run only from `main`.
@@ -70,11 +70,11 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
 - Every action is pinned to a full commit SHA, with the version in a comment
   (all files in [`.github/workflows/`](../.github/workflows/)). Renovate's
   `config:best-practices` keeps them pinned
-  ([`renovate.json5` L5](../renovate.json5#L5)).
+  ([`renovate.json5`](../renovate.json5)).
 - Renovate proposes no release younger than 7 days
-  ([`renovate.json5` L13](../renovate.json5#L13)). pnpm installs none
-  ([`pnpm-workspace.yaml` L3](../pnpm-workspace.yaml#L3)) and uv resolves
-  none ([`pyproject.toml` L24](../pyproject.toml#L24)), so a manual add or a
+  ([`renovate.json5`](../renovate.json5)). pnpm installs none
+  ([`pnpm-workspace.yaml`](../pnpm-workspace.yaml)) and uv resolves
+  none ([`pyproject.toml`](../pyproject.toml)), so a manual add or a
   lock refresh waits too. An exception for a security fix (the pnpm
   `minimumReleaseAgeExclude` entry in
   [`pnpm-workspace.yaml`](../pnpm-workspace.yaml)) is dated and names its
