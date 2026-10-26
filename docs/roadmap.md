@@ -4,8 +4,8 @@ What is planned for the next year (to late 2027), in rough order. None of it has
 
 ## Planned
 
-- **A newer EXIOBASE vintage.** [v3.8.2](https://doi.org/10.5281/zenodo.3583070) has the same 200 products and 49 regions as the
-  v3.3.sm data used now, so the engine reads it once the arrays are converted. It is
+- **A newer EXIOBASE vintage.** [v3.8.2](https://doi.org/10.5281/zenodo.3583070)
+  has the same 200 products and 49 regions as the v3.3.sm data used now, so the engine reads it once the arrays are converted. It is
   licensed CC BY-SA 4.0, so the derived data would be share-alike; later vintages need the
   publisher's permission to publish multipliers. The move waits on that licence question.
 - **Final demand by category.** Split the Sankey's consumption side into households,
