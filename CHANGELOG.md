@@ -23,11 +23,11 @@ follow [Semantic Versioning](https://semver.org/).
   accepts from `?api=` and `?data=`, and a roadmap.
 - `GOVERNANCE.md` and a code of conduct.
 - Releases carry build provenance. Each `v*` release gets the built page as a
-  tarball with its SHA-256 and a Sigstore bundle; how to check a
-  download is in
-  [docs/assurance-case.md](docs/assurance-case.md#c4-anyone-can-check-a-release-file-came-from-this-repositorys-workflow).
-  `embodied.parquet` on `data-2011` is attested by running the workflow by
-  hand. The same page sets out why the page and its files can be trusted.
+  tarball with its SHA-256 and a Sigstore bundle, and `embodied.parquet` on
+  `data-2011` gets one too. How to check a download is in
+  [docs/publishing.md](docs/publishing.md#check-a-release-file), and
+  [docs/assurance-case.md](docs/assurance-case.md) says why the page and its
+  files can be trusted.
 
 ### Changed
 
