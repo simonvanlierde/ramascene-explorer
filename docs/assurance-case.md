@@ -34,14 +34,11 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
 
 ### C1. A link cannot make the page load data from another origin without saying so
 
-- `?data=` takes only a relative path ending in `.json`, with no `..`
-  segment, or falls back to `data/results.json`:
-  [`explorer.js` L7-L12](../explorer.js#L7-L12), tested in
-  [`tests/explorer.test.js`](../tests/explorer.test.js).
-- `?api=` takes only a bare `https` origin, or `http` on `127.0.0.1` or
-  `localhost`, with no credentials, path, query or fragment:
-  [`live.js` L12-L25](../live.js#L12-L25), tested in
-  [`tests/live.test.js`](../tests/live.test.js).
+- `?data=` and `?api=` are checked before use, by `dataUrl`
+  ([`explorer.js`](../explorer.js)) and `apiUrl` ([`live.js`](../live.js)).
+  Tests: [`tests/explorer.test.js`](../tests/explorer.test.js),
+  [`tests/live.test.js`](../tests/live.test.js). The rules are in
+  [security.md](security.md).
 - A refused value is shown in the status line (`ignoredData`, `ignoredApi`),
   not silently dropped.
 - The Content-Security-Policy in [`index.html` L8](../index.html#L8) allows
@@ -62,7 +59,8 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
   [`pages.yml` L45](../.github/workflows/pages.yml#L45),
   [`ci.yml` L67 and L96](../.github/workflows/ci.yml#L67), and
   [`release.yml`](../.github/workflows/release.yml). A swapped release asset
-  fails the build; changing the pinned hash needs a commit to `main`.
+  fails the build. For the data job of `release.yml` and for `pages.yml`,
+  changing the pinned hash needs a commit to `main`: both run only from `main`.
 - The page shows the Parquet flows only if their footer names the same
   dataset hash, engine commit and timestamp as `results.json` (`sameRun` in
   [`explorer.js`](../explorer.js)).
@@ -77,8 +75,10 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
   ([`renovate.json5` L13](../renovate.json5#L13)). pnpm installs none
   ([`pnpm-workspace.yaml` L3](../pnpm-workspace.yaml#L3)) and uv resolves
   none ([`pyproject.toml` L24](../pyproject.toml#L24)), so a manual add or a
-  lock refresh waits too. An exception for a security fix is dated and names
-  its advisories ([`pnpm-workspace.yaml` L4-L7](../pnpm-workspace.yaml#L4-L7)).
+  lock refresh waits too. An exception for a security fix (the pnpm
+  `minimumReleaseAgeExclude` entry in
+  [`pnpm-workspace.yaml`](../pnpm-workspace.yaml)) is dated and names its
+  advisories.
 - CI installs from the lockfiles only: `pnpm install --frozen-lockfile`,
   `uv sync --locked` ([`ci.yml`](../.github/workflows/ci.yml)).
 - zizmor and actionlint check every workflow on each commit and in CI
@@ -100,8 +100,9 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
   `ramascene-explorer-<tag>-dist.tar.gz`, and attests it with
   `actions/attest-build-provenance`. It uploads the tarball, `SHA256SUMS` and
   the Sigstore bundle (`.sigstore.json`) to the release. The build job, which
-  runs `pnpm install`, has no write access to the repository; a separate job
-  with `contents: write` only uploads.
+  runs `pnpm install`, only has `contents: read`. The upload job, which runs
+  no repository code, attests the downloaded tarball and uploads those same
+  files.
 - Run by hand, the same workflow checks `embodied.parquet` against
   `data/embodied.sha256`, attests it and adds its bundle to `data-2011`. This
   attestation says this repository's workflow vouched for a file with that
@@ -110,9 +111,10 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
 - To verify a file:
 
   ```sh
-  gh attestation verify ramascene-explorer-v0.4.0-dist.tar.gz --repo simonvanlierde/ramascene-explorer
-  gh attestation verify embodied.parquet --repo simonvanlierde/ramascene-explorer
+  gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-workflow simonvanlierde/ramascene-explorer/.github/workflows/release.yml
   ```
+
+  For `embodied.parquet`, add `--source-ref refs/heads/main`.
 
   Add `--bundle <file>.sigstore.json` to check against the downloaded bundle
   instead of GitHub's attestation store.
@@ -122,7 +124,10 @@ cannot tell a good job API from a bad one ([security.md](security.md)).
 - Releases from v0.1.0 to v0.3.1 have no attestation. The first one with a
   tarball and bundle is the next `v*` release.
 - The page served by GitHub Pages is not checked against the tarball. Pages
-  deploys from its own run of `pages.yml`, from the same commit.
+  deploys from `pages.yml`, which is run by hand from `main`, possibly from a
+  later commit than the tag.
+- A `v*` tag is not checked to be on `main`. Only the maintainer can publish
+  releases.
 - If immutable releases are turned on for the repository, the upload job
   can no longer add assets after publishing, and must move to a draft-release
   flow.

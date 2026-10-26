@@ -15,9 +15,8 @@ The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
 `release.yml` attests what a release ships: the `dist` tarball when a `v*`
-release is published, and `embodied.parquet` when run by hand. Check a file
-with `gh attestation verify <file> --repo simonvanlierde/ramascene-explorer`
-([assurance-case.md](assurance-case.md#c4-anyone-can-check-a-release-file-came-from-this-repositorys-workflow)).
+release is published, and `embodied.parquet` when run by hand. To check a
+file, see [assurance-case.md](assurance-case.md#c4-anyone-can-check-a-release-file-came-from-this-repositorys-workflow).
 
 `pages.yml` publishes to <https://simonvanlierde.github.io/ramascene-explorer/>
 only when started by hand (Actions → pages → Run workflow), and only from

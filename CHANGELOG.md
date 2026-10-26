@@ -20,11 +20,11 @@ follow [Semantic Versioning](https://semver.org/).
 - Try again buttons: on a run that could not be loaded, and on the live
   panel when the job API does not answer.
 - Releases carry build provenance. Each `v*` release gets the built page as a
-  tarball with its SHA-256 and a Sigstore bundle; check a download with
-  `gh attestation verify <file> --repo simonvanlierde/ramascene-explorer`.
-  `embodied.parquet` on `data-2011` is attested the same way.
-  [docs/assurance-case.md](docs/assurance-case.md) sets out why the page and
-  its files can be trusted.
+  tarball with its SHA-256 and a Sigstore bundle; how to check a
+  download is in
+  [docs/assurance-case.md](docs/assurance-case.md#c4-anyone-can-check-a-release-file-came-from-this-repositorys-workflow).
+  `embodied.parquet` on `data-2011` is attested by running the workflow by
+  hand. The same page sets out why the page and its files can be trusted.
 
 ### Changed
 
