@@ -49,7 +49,9 @@ shows its status and the API's `detail`, and a failed job shows its `error`.
 A succeeded job returns `result` with `provenance`, `regions`, `indicators`,
 `results.baseline` and `results.scenario`. It may add `result.flows`: a `shape`
 (indicator, producer, section, consumer) and `baseline` and `scenario` arrays
-in that order. The page draws these flows only when the shape matches the
-precomputed file; otherwise the result stays in the panel. `liveFlows` in
+in that order. Producers and consumers follow the precomputed file's country
+order (EXIOBASE's), and every value is a finite number. The page draws these
+flows only when the shape matches the precomputed file; otherwise the result
+stays in the panel. `liveFlows` in
 `live.js` does the check. How a live run is shown is in
 [page.md](page.md#live-scenarios-optional).

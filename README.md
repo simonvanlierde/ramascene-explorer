@@ -98,6 +98,8 @@ them before and after a change to the code they cover.
 - [docs/architecture.md](docs/architecture.md): how the parts fit together, and the page's modules
 - [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
 - [docs/security.md](docs/security.md): what the page accepts from `?api=` and `?data=`
+- [docs/assurance-case.md](docs/assurance-case.md): why the page and its release files can be trusted
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to set up, test and send a change
 - [GOVERNANCE.md](GOVERNANCE.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [docs/roadmap.md](docs/roadmap.md): what is planned for the next year, and what is not
 
