@@ -33,7 +33,8 @@ A refused value shows in the status line and the page stays static.
 The page then talks only to that origin, without cookies
 ([interface.md](interface.md#job-api) lists the calls). `scenarioBody` builds
 the request from the form and throws on anything but integer ids and a finite
-number.
+number from −100 to +1000. `liveFlows` refuses a job whose flows do not fit
+the page's layout or hold a value that is not a number.
 
 ## Trusting a live result
 

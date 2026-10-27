@@ -1,6 +1,7 @@
 # CI and publishing
 
-`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest`, `biome ci`,
+`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest --cov`,
+`brightway-check/table.py --check`, `biome ci`,
 `pnpm test` and `pnpm exec playwright test`. None of them needs the engine or
 the EXIOBASE matrices, because the engine checks skip without `--engine`.
 Both test steps fail below a line-coverage floor: `fail_under` in
@@ -45,3 +46,11 @@ gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-w
 For `embodied.parquet`, add `--source-ref refs/heads/main`. Add
 `--bundle <file>.sigstore.json` to check against the downloaded bundle instead
 of GitHub's attestation store.
+
+## Tags
+
+Each `v*` tag from v0.4.0 on is signed (`git tag -s`) with an SSH key that
+GitHub knows, so the tag shows as Verified on GitHub. To check one locally,
+add the maintainer's signing keys (listed at
+<https://api.github.com/users/simonvanlierde/ssh_signing_keys>) to the file
+`gpg.ssh.allowedSignersFile` names, then run `git verify-tag v0.4.0`.
