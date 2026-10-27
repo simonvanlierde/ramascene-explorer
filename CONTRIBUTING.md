@@ -36,6 +36,8 @@ pnpm build && pnpm exec playwright test   # once: pnpm exec playwright install c
 
 New behaviour comes with a test, and a bug fix with a test that fails without it. Page
 logic tests go in `tests/*.test.js`, browser tests in `tests/e2e/`, Python tests in `tests/`.
+Browser tests import `test` and `expect` from `tests/e2e/test.js`, not `@playwright/test`,
+so `pnpm measure-coverage` counts them.
 
 ## Dependencies
 
