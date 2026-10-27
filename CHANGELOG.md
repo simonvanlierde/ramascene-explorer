@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `pnpm measure-coverage` reports how much of each Svelte file the browser
+  tests run, in Chromium ([docs/publishing.md](docs/publishing.md#svelte-coverage)).
+
 ## [0.4.0] - 2026-10-27
 
 ### Added

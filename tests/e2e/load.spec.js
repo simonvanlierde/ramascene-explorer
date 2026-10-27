@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test.js";
 
 // results.json carries the Parquet file's size (provenance.embodied.bytes), so
 // the reader goes straight to the footer: no HEAD request before the map draws.
