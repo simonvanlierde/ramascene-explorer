@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test.js";
 
 // A quick flick can release the pointer before the next frame; WebKit runs its
 // frames late enough that every test drag did. The turn must still land.

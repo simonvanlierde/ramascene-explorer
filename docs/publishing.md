@@ -54,3 +54,20 @@ GitHub knows, so the tag shows as Verified on GitHub. To check one locally,
 add the maintainer's signing keys (listed at
 <https://api.github.com/users/simonvanlierde/ssh_signing_keys>) to the file
 `gpg.ssh.allowedSignersFile` names, then run `git verify-tag v0.4.0`.
+
+## Svelte coverage
+
+`pnpm test` measures the JS modules only. The browser tests can measure the
+Svelte files too, in Chromium:
+
+```sh
+COVERAGE=1 pnpm build
+CI=1 COVERAGE=1 pnpm exec playwright test --project light --project dark --project phone
+pnpm measure-coverage
+```
+
+A Svelte line counts when the build made code from it, and is covered when any
+test ran that code. On 2026-10-27 the browser tests covered 92.1% of the
+Svelte lines (1,397 of 1,517); `Sentence.svelte` was lowest at 69.3%. One
+`load.spec.js` test alone covers 50.4%. CI does not run this, so the number is
+a snapshot, not a gate.

@@ -33,6 +33,7 @@ export default defineConfig({
 	// relative, so the build works under the GitHub Pages subpath and from any file server
 	base: "./",
 	plugins: [svelte(), staticFiles],
-	build: { outDir: "dist" },
+	// source maps only for pnpm measure-coverage, so the published build stays as it is
+	build: { outDir: "dist", sourcemap: !!process.env.COVERAGE },
 	preview: { host: "127.0.0.1", port: 4180, strictPort: true },
 });
