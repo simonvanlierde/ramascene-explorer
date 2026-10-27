@@ -70,10 +70,37 @@ jobs:
       - run: pnpm exec biome ci .
       - run: pnpm test
 
+  playwright-version:
+    name: playwright version
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The browser container's tag must match the Playwright in package.json
+      # (pinned exactly), so it is read from there, not kept in sync by hand.
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+
   browser:
     name: browser and accessibility tests
+    needs: playwright-version
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The browsers and their system libraries come with the image, so the job needs
+    # no apt or browser download. The tag comes from package.json, so no digest can
+    # be pinned next to it. The site self-hosts its fonts (@fontsource), so the
+    # image needs no extra system font.
+    container:
+      # jactionlint ignore=unpinned-images
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright-version.outputs.version }}-noble
+    # Firefox expects HOME to be the root user's home inside the container.
+    env:
+      HOME: /root
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -86,16 +113,14 @@ jobs:
           node-version: "24"
 
       # The shipped-data test reads the embodied flows from the release, by
-      # range request, as the live page does.
+      # range request, as the live page does. The image has curl but not gh.
       - name: fetch the embodied flows
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          curl -fsSL --retry 3 --output data/embodied.parquet \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/embodied.parquet"
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium-headless-shell firefox webkit
       - run: pnpm build
       - run: pnpm exec playwright test
