@@ -3,6 +3,7 @@
 [![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23461260.svg)](https://doi.org/10.5281/zenodo.23461260)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/ramascene-explorer/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/ramascene-explorer)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16003/badge)](https://www.bestpractices.dev/projects/16003)
 
 A static, map-first page over **precomputed** RaMa-Scene engine output on the
 EXIOBASE 2011 base year. It shows where a country's consumption causes
