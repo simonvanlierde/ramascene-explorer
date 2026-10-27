@@ -504,6 +504,8 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	test.skip(!isMobile, "phone layout only");
 	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
 	await ready(page);
+	// WebKit's layout rounding can leave a 44 px box at 43.99994 px
+	const px = 0.01;
 	const heights = async (selector) => {
 		const boxes = await page.locator(`${selector}:visible`).evaluateAll((els) =>
 			els.map((e) => {
@@ -515,7 +517,7 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 		return boxes;
 	};
 	const tall = async (selector) => {
-		for (const b of await heights(selector)) expect(b.h, `${selector}: ${b.name}`).toBeGreaterThanOrEqual(44);
+		for (const b of await heights(selector)) expect(b.h, `${selector}: ${b.name}`).toBeGreaterThanOrEqual(44 - px);
 	};
 	for (const s of [".dock .seg button", ".dock .filters", ".sel-chip button", ".mtr .seg button", ".mzm button"])
 		await tall(s);
@@ -547,8 +549,8 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	await expect(page.locator("#side")).toBeVisible();
 	const rail = await heights("#side .rail .t");
 	for (const [i, b] of rail.entries()) {
-		expect(b.h, `rail tab ${b.name}`).toBeGreaterThanOrEqual(36);
-		if (i > 0) expect(b.cy - rail[i - 1].cy, `centres ${rail[i - 1].name} / ${b.name}`).toBeGreaterThanOrEqual(44);
+		expect(b.h, `rail tab ${b.name}`).toBeGreaterThanOrEqual(36 - px);
+		if (i > 0) expect(b.cy - rail[i - 1].cy, `centres ${rail[i - 1].name} / ${b.name}`).toBeGreaterThanOrEqual(44 - px);
 	}
 	for (const s of ["#side .rail .all", "#side .seg button", "#side .run"]) await tall(s);
 });
