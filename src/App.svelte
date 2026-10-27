@@ -125,7 +125,8 @@ async function show(run, load) {
 		if (wanted !== run) return;
 		shown = next;
 		loadingRun = "";
-		play();
+		// Flows mode does not draw the replay; setMode plays it on the way to What if…
+		if (ui.mode === "whatif") play();
 	} catch {
 		if (wanted === run) loadingRun = `failed:${run}`;
 	}

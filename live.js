@@ -130,9 +130,10 @@ export function liveText(job, catalog) {
 // A job's flows as the page's {base, delta}: dense arrays in meta's layout, the
 // job's own baseline and its scenario minus that baseline. The job sends both
 // absolute, row-major (indicator, producer, section, consumer), indicators in
-// result.indicators order. null when the job has no flows (an older job API);
-// throws when they do not fit meta's countries, sections or indicators, or a value
-// is not a finite number.
+// result.indicators order, already in each indicator's unit: unlike the Parquet
+// that dense() reads, there is no `scale` to apply. null when the job has no flows
+// (an older job API); throws when they do not fit meta's countries, sections or
+// indicators, or a value is not a finite number.
 export function liveFlows(job, meta) {
 	const f = job.result.flows;
 	if (!f) return null;
