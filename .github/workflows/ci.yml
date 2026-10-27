@@ -101,6 +101,10 @@ jobs:
     # Firefox expects HOME to be the root user's home inside the container.
     env:
       HOME: /root
+    # Container jobs default to sh, which has no pipefail.
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
