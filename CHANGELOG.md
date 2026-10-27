@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-27
+
 ### Added
 
 - Live mode lights the map. With `?api=`, a finished job that carries its
@@ -22,6 +24,13 @@ follow [Semantic Versioning](https://semver.org/).
 - Docs on the architecture, the URL parameters and job API, what the page
   accepts from `?api=` and `?data=`, and a roadmap.
 - `GOVERNANCE.md` and a code of conduct.
+- `CONTRIBUTING.md`: how to set up, test and send a change. Commits from
+  forks need a DCO sign-off, which a check on each pull request enforces.
+  `SECURITY.md` says how a fix is disclosed and credited.
+- `brightway-check/`, a separate check that loads the same EXIOBASE arrays
+  into Brightway and scores one product five ways (Brightway, numpy,
+  pymrio, pycirk and this engine), with the agreement table in its README.
+  CI checks that the table matches the committed results.
 - Releases carry build provenance. Each `v*` release gets the built page as a
   tarball with its SHA-256 and a Sigstore bundle, and `embodied.parquet` on
   `data-2011` gets one too. How to check a download is in
@@ -84,6 +93,8 @@ follow [Semantic Versioning](https://semver.org/).
   voice control finds "Germany’s" and "thousand jobs" by what is on screen.
 - On phones a tap just under one of the sentence's controls no longer goes
   to the control on the line below.
+- A live job whose flows hold a value that is not a number stays in the
+  panel instead of showing NaN on the page.
 - The globe turns, drags and morphs from the flat map more smoothly on slow
   machines. While the map moves it draws simpler country outlines, then the
   full ones once it stops.
@@ -157,7 +168,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.1.0...v0.2.0
