@@ -131,7 +131,8 @@ export function liveText(job, catalog) {
 // job's own baseline and its scenario minus that baseline. The job sends both
 // absolute, row-major (indicator, producer, section, consumer), indicators in
 // result.indicators order. null when the job has no flows (an older job API);
-// throws when they do not fit meta's countries, sections or indicators.
+// throws when they do not fit meta's countries, sections or indicators, or a value
+// is not a finite number.
 export function liveFlows(job, meta) {
 	const f = job.result.flows;
 	if (!f) return null;
@@ -159,8 +160,11 @@ export function liveFlows(job, meta) {
 					// the job API's wire layout, read from its own shape; the page's through at()
 					const from = ((j * P + p) * Q + s) * C + c;
 					const to = at(meta, k, p, s, c);
-					base[to] = f.baseline[from];
-					delta[to] = f.scenario[from] - f.baseline[from];
+					const [b, x] = [f.baseline[from], f.scenario[from]];
+					if (!Number.isFinite(b) || !Number.isFinite(x))
+						throw new Error(`the job's flows hold a value that is not a number: ${b}, ${x}`);
+					base[to] = b;
+					delta[to] = x - b;
 				}
 	});
 	return { base, delta };

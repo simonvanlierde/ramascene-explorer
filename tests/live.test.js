@@ -190,6 +190,8 @@ test("liveFlows: the job's own baseline, and the change against it, in the page'
 		/2 × 3 × 1 × 3/,
 	);
 	assert.throws(() => liveFlows({ result: { indicators: [{ id: 3 }, { id: 7 }], flows } }, meta), /indicator 5/);
+	const broken = { ...flows, scenario: [1, 2, 3, "x", 10, 20, 30, 36] };
+	assert.throws(() => liveFlows({ result: { ...live.result, flows: broken } }, meta), /not a number/);
 });
 
 test("jobRun: a job's flows and provenance as the page's run shape, with the job API's wording", () => {
