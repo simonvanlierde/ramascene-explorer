@@ -18,7 +18,7 @@ with axe checking WCAG 2.2 AA.
 The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
-`pages.yml` publishes to <https://simonvanlierde.github.io/ramascene-explorer/>
+`pages.yml` publishes to <https://simonvanlierde.com/ramascene-explorer/>
 only when started by hand (Actions → pages → Run workflow), and only from
 `main`. Before you run it, commit the precompute output. The workflow ships the
 bundled page and fonts, the map geometry, `results.json` and `embodied.parquet`
@@ -30,7 +30,7 @@ To check that Pages serves range requests, ask for two bytes. The answer
 must be `206`:
 
 ```sh
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanlierde.github.io/ramascene-explorer/data/embodied.parquet
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanlierde.com/ramascene-explorer/data/embodied.parquet
 ```
 
 ## Check a release file

@@ -2,7 +2,7 @@
 // See docs/page.md#first-load-size.
 import { chromium } from "@playwright/test";
 
-const url = process.argv[2] ?? "https://simonvanlierde.github.io/ramascene-explorer/";
+const url = process.argv[2] ?? "https://simonvanlierde.com/ramascene-explorer/";
 const runs = Number(process.argv[3] ?? 3);
 
 const kind = (u) => {

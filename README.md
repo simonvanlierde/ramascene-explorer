@@ -14,7 +14,7 @@ published page is a live calculation (an optional live mode needs a job API; see
 [docs/page.md](docs/page.md)), and nothing is a forecast. The engine changes final demand
 or technical coefficients in the 2011 economy and has no projection step.
 
-Open it at <https://simonvanlierde.github.io/ramascene-explorer/>.
+Open it at <https://simonvanlierde.com/ramascene-explorer/>.
 
 `data/results.json` and `data/embodied.parquet` come from one precompute run
 on 2026-10-14, with engine `split/3-performance @ d9113ca`, the head of

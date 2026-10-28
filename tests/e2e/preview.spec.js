@@ -1,6 +1,6 @@
 import { expect, test } from "./test.js";
 
-const SITE = "https://simonvanlierde.github.io/ramascene-explorer/";
+const SITE = "https://simonvanlierde.com/ramascene-explorer/";
 const meta = (page, attr, name) => page.locator(`head meta[${attr}="${name}"]`);
 
 test("the head carries absolute share tags and the image is served", async ({ page, request }) => {
