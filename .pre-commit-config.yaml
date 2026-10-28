@@ -6,7 +6,6 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: check-json
       - id: check-toml
       - id: check-yaml
         args: [--allow-multiple-documents]  # pnpm 12 writes its own pin as a first document in pnpm-lock.yaml
@@ -14,6 +13,13 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
         exclude: ^fonts/OFL\.txt$  # the licence text stays byte-for-byte as issued
+
+  # .json files are read as JSON5, so comments and trailing commas pass;
+  # syntax errors and duplicate keys fail.
+  - repo: https://github.com/simonvanlierde/jsonvet
+    rev: 022d320d5b971eccb28cfa6ce205152cbb382e53  # frozen: v3.2.0
+    hooks:
+      - id: jsonvet
 
   # Rules in pyproject.toml [tool.ruff]. Keep rev in step with ruff in uv.lock.
   - repo: https://github.com/astral-sh/ruff-pre-commit
