@@ -2,7 +2,7 @@
   "@context": "https://w3id.org/codemeta/3.0",
   "type": "SoftwareSourceCode",
   "name": "RaMa-Scene Explorer",
-  "description": "A static, map-first explorer of the emissions, jobs and metal-ore extraction embodied in each country's final demand, over precomputed RaMa-Scene engine runs on EXIOBASE v3.3.sm (2011), with an optional live mode for the RaMa-Scene job API.",
+  "description": "A static, map-first explorer of the greenhouse-gas emissions, jobs and metal-ore extraction embodied in each country's final demand, split by 15 industry sections, over precomputed RaMa-Scene engine runs on EXIOBASE v3.3.sm (base year 2011): the baseline, three named interventions and 150 material-efficiency scenarios. Flows are drawn on a flat map or a globe, and What if… shows how each run changes them. Every precomputed number comes from a verified engine run, with its provenance and checks on the same page. An optional live mode sends a custom scenario to the RaMa-Scene job API and shows its result, marked as not checked. Releases carry build provenance. Nothing is a forecast.",
   "version": "0.4.0",
   "dateCreated": "2026-09-26",
   "datePublished": "2026-10-27",
