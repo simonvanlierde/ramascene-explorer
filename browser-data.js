@@ -1,17 +1,27 @@
 import { parquetMetadataAsync, parquetRead } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
 
-export async function matrixReader(file, shape) {
+export async function matrixReader(file, shape, { cacheBytes = 16 * 1024 ** 2 } = {}) {
+	if (!Number.isSafeInteger(cacheBytes) || cacheBytes < 0) throw new Error("invalid matrix cache budget");
 	const metadata = await parquetMetadataAsync(file);
 	const [height, width] = shape;
 	if (metadata.row_groups.length !== height || metadata.row_groups.some((g) => Number(g.num_rows) !== width))
 		throw new Error("matrix row groups do not match the manifest");
 	const cache = new Map();
+	const pending = new Map();
+	let retained = 0;
 	return (index) => {
 		if (!Number.isInteger(index) || index < 0 || index >= height) throw new Error("invalid matrix row");
-		if (!cache.has(index)) {
+		if (cache.has(index)) {
+			const value = cache.get(index);
+			cache.delete(index);
+			cache.set(index, value);
+			return Promise.resolve(value);
+		}
+		if (!pending.has(index)) {
 			const loading = (async () => {
-				let values;
+				const values = new Float64Array(width);
+				let count = 0;
 				await parquetRead({
 					file,
 					metadata,
@@ -19,19 +29,26 @@ export async function matrixReader(file, shape) {
 					columns: ["value"],
 					rowStart: index * width,
 					rowEnd: (index + 1) * width,
-					onComplete: (rows) => {
-						values = Float64Array.from(rows, (r) => r[0]);
+					onChunk: ({ rowStart, columnData }) => {
+						values.set(columnData, rowStart - index * width);
+						count += columnData.length;
 					},
 				});
-				if (values?.length !== width || !values.every(Number.isFinite)) throw new Error("invalid matrix values");
+				if (count !== width || !values.every(Number.isFinite)) throw new Error("invalid matrix values");
+				if (values.byteLength <= cacheBytes) {
+					while (retained + values.byteLength > cacheBytes) {
+						const oldest = cache.keys().next().value;
+						retained -= cache.get(oldest).byteLength;
+						cache.delete(oldest);
+					}
+					cache.set(index, values);
+					retained += values.byteLength;
+				}
 				return values;
-			})().catch((e) => {
-				cache.delete(index);
-				throw e;
-			});
-			cache.set(index, loading);
+			})().finally(() => pending.delete(index));
+			pending.set(index, loading);
 		}
-		return cache.get(index);
+		return pending.get(index);
 	};
 }
 
@@ -84,13 +101,24 @@ export async function openEngine(meta, openFile) {
 		const metadata = await parquetMetadataAsync(file);
 		if (Number(metadata.num_rows) !== height * width) throw new Error("invalid matrix dimensions");
 		const values = new Float64Array(height * width);
-		await parquetRead({
-			file,
-			compressors,
-			columns: ["value"],
-			onChunk: ({ rowStart, columnData }) => values.set(columnData, rowStart),
-		});
-		if (!values.every(Number.isFinite)) throw new Error("non-finite matrix");
+		let count = 0;
+		// X and Y have 9,800 row groups. Decode bounded batches to avoid keeping
+		// thousands of resolved column promises and their buffers alive at once.
+		for (let start = 0; start < height; start += 128) {
+			await parquetRead({
+				file,
+				metadata,
+				compressors,
+				columns: ["value"],
+				rowStart: start * width,
+				rowEnd: Math.min(start + 128, height) * width,
+				onChunk: ({ rowStart, columnData }) => {
+					values.set(columnData, rowStart);
+					count += columnData.length;
+				},
+			});
+		}
+		if (count !== values.length || !values.every(Number.isFinite)) throw new Error("invalid matrix values");
 		return Array.from({ length: height }, (_, r) => values.subarray(r * width, (r + 1) * width));
 	};
 	const [X, Y, B] = await Promise.all([all("X"), all("Y"), all("B")]);
@@ -112,7 +140,7 @@ export function rangeFile(url, byteLength) {
 		async slice(start, end = byteLength) {
 			if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 				throw new Error("invalid matrix byte range");
-			const response = await fetch(url, { cache: "no-cache", headers: { Range: `bytes=${start}-${end - 1}` } });
+			const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` } });
 			if (
 				response.status !== 206 ||
 				response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`

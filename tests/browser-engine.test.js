@@ -95,3 +95,85 @@ test("a change to more than one row uses the full Woodbury system", async () => 
 		close(v, want[i]);
 	});
 });
+
+test("identity cancellation is refused while nearby and uniformly small solves remain valid", async () => {
+	const data = tiny(0.092, 0, 0, 0.1);
+	await assert.rejects(
+		scenarioOutput(data, [step({ consumedBy: [20], techChange: [986.9565217391305] })]),
+		/singular or ill-conditioned/,
+	);
+	const got = await scenarioOutput(data, [step({ consumedBy: [20], techChange: [980] })]);
+	close(got[0], 2 / (1 - 0.092 * 10.8));
+	close(solve([1e-30], [2e-30], 1, 1)[0], 2);
+});
+
+test("broad and mixed scenarios are refused before reading any matrix", async () => {
+	// Use the shipped catalog: Manufacturing has 85 leaves, not all products.
+	const meta = {
+		countries: 49,
+		products: 200,
+		catalog: {
+			products: [
+				{ id: 1, leaves: Array.from({ length: 200 }, (_, i) => i) },
+				{ id: 82, leaves: [5] },
+			],
+			regions: [
+				{ id: 1, leaves: Array.from({ length: 49 }, (_, i) => i) },
+				{ id: 5, leaves: [29, 30, 32, 34, 37, 40, 42, 44] },
+			],
+			consumers: [
+				{ id: 4, leaves: Array.from({ length: 85 }, (_, i) => i + 42) },
+				{ id: 276, final: true, leaves: [0] },
+			],
+		},
+	};
+	let reads = 0;
+	const data = {
+		meta,
+		X: Array.from({ length: 9800 }, () => new Float64Array(49)),
+		Y: Array.from({ length: 9800 }, () => new Float64Array(49)),
+		row: async () => {
+			reads++;
+			throw new Error("matrix read before budget check");
+		},
+	};
+	const broad = { product: [1], originReg: [5], consumedBy: [4], consumedReg: [1], techChange: [-20] };
+	const final = meta.catalog.consumers.find((c) => c.final);
+	for (const steps of [[broad], [{ ...broad, product: [82], consumedBy: [final.id] }, broad]]) {
+		await assert.rejects(scenarioOutput(data, steps), /browser work budget/);
+		assert.equal(reads, 0);
+	}
+});
+
+test("matrix reads stay bounded and grow linearly across selection sizes", async () => {
+	for (const size of [20, 200]) {
+		let active = 0;
+		let peak = 0;
+		let reads = 0;
+		const data = {
+			meta: {
+				products: size,
+				countries: 1,
+				catalog: {
+					products: [{ id: 10, leaves: Array.from({ length: size }, (_, i) => i) }],
+					regions: [{ id: 1, leaves: [0] }],
+					consumers: [{ id: 21, leaves: [0] }],
+				},
+			},
+			X: Array.from({ length: size }, () => [0]),
+			Y: Array.from({ length: size }, () => [0]),
+			row: async (name, index) => {
+				reads++;
+				peak = Math.max(peak, ++active);
+				await new Promise((resolve) => setImmediate(resolve));
+				active--;
+				const row = new Float64Array(size);
+				if (name === "L") row[index] = 1;
+				return row;
+			},
+		};
+		assert.deepEqual(await scenarioOutput(data, [step()]), new Float64Array(size));
+		assert.equal(reads, 2 * size);
+		assert.ok(peak <= 64, `started ${peak} matrix reads at once`);
+	}
+});

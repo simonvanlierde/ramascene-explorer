@@ -63,3 +63,27 @@ test("invalid manifests are refused before reading a matrix", async () => {
 		/manifest/,
 	);
 });
+
+test("the byte-bounded row cache evicts completed rows and shares in-flight reads", async () => {
+	const inner = await asyncBufferFromFile(new URL("fixture-matrix.parquet", import.meta.url).pathname);
+	let calls = 0;
+	const file = {
+		byteLength: inner.byteLength,
+		slice: (a, b) => {
+			calls++;
+			return inner.slice(a, b);
+		},
+	};
+	const row = await matrixReader(file, [2, 3], { cacheBytes: 24 });
+	for (const cacheBytes of [-1, NaN, Infinity])
+		await assert.rejects(matrixReader(file, [2, 3], { cacheBytes }), /cache budget/);
+	const [a, b] = await Promise.all([row(0), row(0)]);
+	assert.strictEqual(a, b);
+	await row(1);
+	const before = calls;
+	await row(0);
+	assert.ok(calls > before, "an evicted row must be read again");
+	const after = calls;
+	await row(0);
+	assert.equal(calls, after, "the most recent row stays cached");
+});

@@ -18,6 +18,13 @@ follow [Semantic Versioning](https://semver.org/).
 - `pnpm measure-coverage` reports how much of each Svelte file the browser
   tests run, in Chromium ([docs/publishing.md](docs/publishing.md#svelte-coverage)).
 
+### Fixed
+
+- Browser scenarios reject numerical cancellation near a singular system and
+  announce loading, errors and completion to screen readers. Decoding and row
+  caching use bounded memory; broad selections are checked before matrix reads.
+  See the [browser limits and measurements](docs/browser-engine.md).
+
 ## [0.4.0] - 2026-10-27
 
 ### Added

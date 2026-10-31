@@ -214,7 +214,7 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert" bind:offsetHeight={bannerH}>{flag.text}</div>
 {/if}
 
-{#if api}
+{#if api || compute}
 	<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
 	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
 {/if}

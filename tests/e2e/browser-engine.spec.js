@@ -14,12 +14,14 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	});
 	await page.goto("?compute=1");
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await expect(page.locator("#live-news")).toHaveText("Ready to compute in this browser.");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	await page.getByRole("button", { name: "What if…" }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	await expect(page.locator("#live-news")).toContainText("Computed in this browser in");
 	await expect(page.locator("#status .basis")).toContainText("computed in this browser, not precomputed");
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	expect(external).toEqual([]);
@@ -43,6 +45,7 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 	});
 	await page.goto("?compute=1");
 	await expect(page.locator("#live-state")).toContainText("Browser data could not load");
+	await expect(page.locator(".sr-only[role=alert]")).toContainText("Browser data could not load");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	await page.getByRole("button", { name: "What if…" }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();

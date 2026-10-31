@@ -1,7 +1,10 @@
 // Float64 output from changes to technical coefficients or final demand.
 // Matrix rows come from the data reader; this module has no network or DOM.
 
-export function solve(matrix, rhs, n, columns) {
+// One default scenario has 49 rows: keep it in one batch per matrix.
+const ROW_BATCH = 64;
+
+export function solve(matrix, rhs, n, columns, referenceScale = 0) {
 	if (
 		!Number.isInteger(n) ||
 		n < 1 ||
@@ -14,7 +17,7 @@ export function solve(matrix, rhs, n, columns) {
 	if (!matrix.every(Number.isFinite) || !rhs.every(Number.isFinite)) throw new Error("the solve needs finite numbers");
 	const a = Float64Array.from(matrix);
 	const x = Float64Array.from(rhs);
-	const norm = a.reduce((max, v) => Math.max(max, Math.abs(v)), 0);
+	const norm = a.reduce((max, v) => Math.max(max, Math.abs(v)), referenceScale);
 	for (let k = 0; k < n; k++) {
 		let pivot = k;
 		for (let i = k + 1; i < n; i++) if (Math.abs(a[i * n + k]) > Math.abs(a[pivot * n + k])) pivot = i;
@@ -89,49 +92,81 @@ export async function scenarioOutput(data, steps) {
 	const C = meta.countries;
 	const N = C * meta.products;
 	const edits = steps.map((step) => selection(meta, step)).filter((s) => s.factor !== 1);
-	const output = Float64Array.from(data.X.flatMap((row) => Array.from(row)));
-	if (output.length !== N * C || !output.every(Number.isFinite)) throw new Error("invalid baseline output");
+	const technical = edits.filter((s) => !s.final);
+	const rows = [...new Set(technical.flatMap((s) => s.rows))].sort((a, b) => a - b);
+	const columns = [...new Set(technical.flatMap((s) => s.columns))].sort((a, b) => a - b);
+	const R = rows.length;
+	const K = columns.length;
+	const finalRows = new Set(edits.filter((s) => s.final).flatMap((s) => s.rows)).size;
+	if (R > 2000 || finalRows > 2000) throw new Error("select at most 2000 changed rows");
+	// Bound dense arithmetic and scenario buffers before any matrix read.
+	const work = R * R * K + R ** 3 / 3 + R * C * (N + K) + finalRows * N * C;
+	const bytes = 8 * (R * N + 2 * R * K + 2 * R * R + 3 * R * C + N * C + ROW_BATCH * N);
+	if (work > 100_000_000 || bytes > 64 * 1024 ** 2)
+		throw new Error("selection exceeds the browser work budget; choose fewer products or regions");
+	const output = new Float64Array(N * C);
+	if (data.X.length !== N || data.X.some((row) => row.length !== C)) throw new Error("invalid baseline output");
+	for (let i = 0; i < N; i++) output.set(data.X[i], i * C);
+	if (!output.every(Number.isFinite)) throw new Error("invalid baseline output");
 	const demand = new Map();
 	for (const s of edits.filter((s) => s.final))
 		for (const r of s.rows) {
 			if (!demand.has(r)) demand.set(r, Float64Array.from(data.Y[r]));
 			for (const c of s.columns) demand.get(r)[c] *= s.factor;
 		}
-	if (demand.size > 2000) throw new Error("select at most 2000 final-demand products across regions");
 	for (const [r, values] of demand) {
 		const column = await data.row("L", r);
-		for (let i = 0; i < N; i++) for (let c = 0; c < C; c++) output[i * C + c] += column[i] * (values[c] - data.Y[r][c]);
+		for (let c = 0; c < C; c++) {
+			const delta = values[c] - data.Y[r][c];
+			if (delta) for (let i = 0; i < N; i++) output[i * C + c] += column[i] * delta;
+		}
 	}
-	const technical = edits.filter((s) => !s.final);
-	const rows = [...new Set(technical.flatMap((s) => s.rows))].sort((a, b) => a - b);
-	const columns = [...new Set(technical.flatMap((s) => s.columns))].sort((a, b) => a - b);
-	const R = rows.length;
-	if (R > 2000) throw new Error("select at most 2000 technical-coefficient rows");
 	if (!R) {
 		if (!output.every(Number.isFinite)) throw new Error("non-finite scenario output");
 		return output;
 	}
 	const positions = new Map(rows.map((r, i) => [r, i]));
 	const columnPositions = new Map(columns.map((c, i) => [c, i]));
-	const original = await Promise.all(rows.map((r) => data.row("A", r)));
-	const changed = original.map((row) => Float64Array.from(columns, (c) => row[c]));
-	const leontief = await Promise.all(rows.map((r) => data.row("L", r)));
+	const original = [];
+	const leontief = [];
+	// Bound concurrent decoders; retain only the selected A columns.
+	for (let offset = 0; offset < R; offset += ROW_BATCH) {
+		const batch = rows.slice(offset, offset + ROW_BATCH);
+		original.push(
+			...(await Promise.all(
+				batch.map(async (r) => {
+					const row = await data.row("A", r);
+					return Float64Array.from(columns, (c) => row[c]);
+				}),
+			)),
+		);
+		leontief.push(...(await Promise.all(batch.map((r) => data.row("L", r)))));
+	}
+	const changed = original.map((row) => Float64Array.from(row));
 	for (const s of technical)
 		for (const r of s.rows) for (const c of s.columns) changed[positions.get(r)][columnPositions.get(c)] *= s.factor;
-	const D = changed.map((row, i) => row.map((v, j) => v - original[i][columns[j]]));
+	for (let r = 0; r < R; r++) for (let j = 0; j < K; j++) changed[r][j] -= original[r][j];
 	const S = new Float64Array(R * R);
 	const rhs = new Float64Array(R * C);
+	let referenceScale = 1;
 	for (let r = 0; r < R; r++) {
 		S[r * R + r] = 1;
+		let rowScale = 1;
 		for (let j = 0; j < columns.length; j++) {
-			const v = D[r][j];
+			const v = changed[r][j];
 			if (!v) continue;
 			const col = columns[j];
-			for (let k = 0; k < R; k++) S[r * R + k] -= v * leontief[k][col];
+			for (let k = 0; k < R; k++) {
+				const term = v * leontief[k][col];
+				S[r * R + k] -= term;
+				rowScale += Math.abs(term);
+			}
 			for (let c = 0; c < C; c++) rhs[r * C + c] += v * output[col * C + c];
 		}
+		// Compare pivots with the scale before I - D L cancels, not just S.
+		referenceScale = Math.max(referenceScale, rowScale);
 	}
-	const correction = solve(S, rhs, R, C);
+	const correction = solve(S, rhs, R, C, referenceScale);
 	for (let r = 0; r < R; r++)
 		for (let i = 0; i < N; i++) for (let c = 0; c < C; c++) output[i * C + c] += leontief[r][i] * correction[r * C + c];
 	if (!output.every(Number.isFinite)) throw new Error("non-finite scenario output");
