@@ -9,9 +9,9 @@ A static, map-first page over **precomputed** RaMa-Scene engine output on the
 EXIOBASE 2011 base year. It shows where a country's consumption causes
 greenhouse-gas emissions, jobs and metal-ore extraction, split by 15 industry
 sections, and what one intervention would have changed: three named
-interventions and a grid of 150 material-efficiency scenarios. Nothing on the
-published page is a live calculation (an optional live mode needs a job API; see
-[docs/page.md](docs/page.md)), and nothing is a forecast. The engine changes final demand
+interventions and a grid of 150 material-efficiency scenarios. Add `?compute=1`
+to [compute a custom scenario on your device](docs/browser-engine.md), or use
+the optional [job API mode](docs/page.md#live-scenarios-optional). Nothing is a forecast. The engine changes final demand
 or technical coefficients in the 2011 economy and has no projection step.
 
 Open it at <https://simonvanlierde.com/ramascene-explorer/>.
@@ -24,7 +24,7 @@ checks the flows against these detail files, and the page does not read them.
 The Parquet file is too large for git, so it ships as a release asset (see
 [docs/precompute.md](docs/precompute.md#embodied-flows)).
 
-Nothing else in the repository is a result. `tests/fixture.json` and
+`brightway-check/results/` holds the independent agreement checks. `tests/fixture.json` and
 `tests/fixture-embodied.parquet` are synthetic data for testing the page. For
 any data whose `data_kind` is not `exiobase-v3`, the page shows a red
 "SYNTHETIC TEST DATA: NOT A RESULT" banner.
@@ -62,8 +62,8 @@ Pages is in [docs/publishing.md](docs/publishing.md).
 ## Brightway check
 
 [`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
-Brightway as an input-output database and scores one product five ways: Brightway,
-numpy, pymrio, pycirk and this engine through the adapter in `precompute.py`. Its
+Brightway as an input-output database and scores one product six ways: Brightway,
+numpy, pymrio, pycirk, the browser reader and this engine through the adapter in `precompute.py`. Its
 README has the agreement table. It is a separate uv project with its own pins.
 
 ## Test
@@ -94,6 +94,7 @@ them before and after a change to the code they cover.
 - [docs/scenarios.md](docs/scenarios.md): what each scenario changes
 - [docs/precompute.md](docs/precompute.md): how to regenerate the data, the embodied flows, and the checks they must pass
 - [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
+- [docs/browser-engine.md](docs/browser-engine.md): custom scenarios computed on the device, data and checks
 - [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
 - [docs/architecture.md](docs/architecture.md): how the parts fit together, and the page's modules
 - [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
@@ -119,10 +120,10 @@ Donati and Arjan de Koning (Zenodo, version V1, 2019-11-08,
 [doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)), which
 the Zenodo record publishes under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
-The results are a changed version of that dataset: each file holds scenario
-totals and flows computed from its matrices, not the matrices themselves. They
-are shared under CC BY 4.0 too. Reuse them with credit to EXIOBASE v3.3.sm and
-its authors, as above, and say that they were changed.
+The result files hold scenario totals and flows. The optional
+[browser export](docs/browser-engine.md) also includes matrices and derived
+multipliers. All these data files are shared under CC BY 4.0. Reuse them with
+credit to EXIOBASE v3.3.sm and its authors, as above, and say what was changed.
 
 The fonts are Public Sans and Spectral, under the SIL Open Font License 1.1,
 bundled from the `@fontsource` packages. The map geometry is Natural Earth,

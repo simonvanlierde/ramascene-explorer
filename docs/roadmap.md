@@ -11,10 +11,12 @@ What is planned for the next year (to late 2027), in rough order. None of it has
 - **Final demand by category.** Split the Sankey's consumption side into households,
   government and investment. This needs a new Parquet layout and a fresh engine run, so it
   comes with the next data release.
-- **An exact scenario engine in the browser.** Run custom scenarios in the page itself
-  from range reads of L, and check it against RaMa-Scene in CI to a relative 1e-9.
-- **One more agreement route.** The browser engine joins the agreement table in
-  [brightway-check/](../brightway-check/README.md).
+
+## Available
+
+- [Browser scenarios](browser-engine.md) use float64 Woodbury updates and range reads.
+  CI checks all 153 published scenarios against RaMa-Scene at relative 1e-9.
+- The browser reader joins the [agreement table](../brightway-check/README.md).
 
 ## Not planned
 

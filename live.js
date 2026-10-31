@@ -73,11 +73,11 @@ export function scenarioBody({ product, originReg, consumedBy, consumedReg, tech
 // A succeeded job, reshaped like data/results.json so compare() and the rest
 // of explorer.js work on it unchanged. Its own baseline, computed in the same
 // job, is the reference: never the precomputed one.
-export function liveData(job) {
+export function liveData(job, status = LIVE_STATUS) {
 	const r = job.result;
 	return {
 		data_kind: "exiobase-v3",
-		status: LIVE_STATUS,
+		status,
 		base_year: r.provenance.dataset.year,
 		regions: r.regions,
 		indicators: r.indicators,

@@ -4,7 +4,7 @@
 
 The page keeps its state in the query string, so a view can be shared as a
 link. A missing or out-of-range value falls back to its default, and defaults
-are left out of the link. `data` and `api` survive when the page rewrites it.
+are left out of the link. `data`, `api` and `compute` survive when the page rewrites it.
 Code: `parseView` and `viewSearch` in `flows.js`, `data` in `explorer.js`, `api`
 in `live.js`.
 
@@ -21,6 +21,7 @@ in `live.js`.
 | `panel` | `sankey`, `table`, `method` | none |
 | `data` | a relative path to a `.json` file ([security.md](security.md#what-data-accepts)) | `data/results.json` |
 | `api` | a job API origin ([security.md](security.md#what-api-accepts)) | none |
+| `compute` | `1` enables [browser scenarios](browser-engine.md); `api` takes precedence | none |
 
 The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the
@@ -56,3 +57,25 @@ flows only when the shape matches the precomputed file; otherwise the result
 stays in the panel. `liveFlows` in
 `live.js` does the check. How a live run is shown is in
 [page.md](page.md#live-scenarios-optional).
+
+### Measure a live scenario
+
+Start the job API with the EXIOBASE arrays, then run from the explorer:
+
+```sh
+pnpm build
+CI=1 LIVE_API=http://127.0.0.1:8020 pnpm exec playwright test tests/e2e/live-timing.spec.js --project=light
+```
+
+This runs the default steel intervention five times against the real API.
+It measures from the browser's click to the first painted frame with the new
+result, including polling, transfer, decoding and rendering. Each sample also
+records worker duration and peak memory. The test attaches `live-timing.json`
+to its Playwright results. It runs only when `LIVE_API` is set.
+
+On a shared development machine on 31 October 2026, the median was 2.58 s,
+with 1.64 GB peak worker RSS, including memory-mapped data pages. The median worker
+duration was 1.44 s. These are local measurements, with the dataset already
+cached by the API, rather than a performance budget. The page polls every
+2 seconds; the result becoming ready between polls still waits for the next
+one. Map movement has a separate profiling workload.

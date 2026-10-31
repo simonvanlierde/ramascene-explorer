@@ -3,7 +3,7 @@
 Loads EXIOBASE v3.3.sm (2011, monetary product-by-product, as the numpy
 arrays that RaMa-Scene reads) into a Brightway project as one input-output
 database. Then it runs one LCA and checks the score against numpy, pymrio,
-pycirk and RaMa-Scene's own engine. The engine route uses the explorer's adapter in
+pycirk, the browser reader and RaMa-Scene's own engine. The engine route uses the explorer's adapter in
 `../precompute.py`, so this is a check on the same engine the explorer's
 results come from.
 
@@ -25,6 +25,7 @@ All routes give the same footprint, 1,642,630.56 kg CO2 eq per M EUR, to within
 | RaMa-Scene engine, `route_one` | 1642630.5555952408 | 2.2e-13 |
 | pymrio 0.7.0, `calc_all` with its own inverse | 1642630.5555952433 | 2.2e-13 |
 | pycirk, v3.3 SUTs rebuilt with make_secondary and method 0 | 1642630.5538405646 | 1.1e-09 |
+| Browser, float64 L column and B (hyparquet) | 1642630.5555952399 | 2.2e-13 |
 <!-- /agreement-table -->
 
 The small gap between Brightway and the full solve comes from the entries
@@ -94,8 +95,11 @@ uv run python pymrio_check.py --data "$DATASETS_DIR" --out results/pymrio.json
 uv run python table.py  # rewrites the table above from results/
 ```
 
-The case (functional unit, GHG row, array paths) lives in `case.py`. CI cannot rerun the routes, because they need the arrays, but it fails when the
-table does not match the committed results.
+The case (functional unit, GHG row, array paths) lives in `case.py`. CI reruns
+`node brightway-check/browser_check.js data/browser-engine` using the exported
+float64 matrices. The browser's modified-coefficient path is checked separately
+on all 153 published scenarios at relative 1e-9. The other routes still need
+the original arrays; CI checks their committed results against this table.
 
 `engine.py` runs in the explorer's environment, as `precompute.py` does.
 `results/engine.json` comes from

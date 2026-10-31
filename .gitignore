@@ -6,6 +6,7 @@ test-results/
 playwright-report/
 dist/
 data/embodied.parquet
+data/browser-engine/
 .stryker-tmp/
 reports/
 .env

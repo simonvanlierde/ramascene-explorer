@@ -17,6 +17,12 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
+`?compute=1` enables a worker that reads only the page's own browser dataset.
+It sends no scenario to an external service. Matrix dimensions, finite values,
+ids and percentage bounds are checked; a server that ignores Range is refused.
+The worker stops after a two-minute request timeout. The data archive is pinned
+by `data/browser-engine.sha256` in CI and publishing.
+
 ## What `?api=` accepts
 
 `apiUrl` in `live.js` turns the value into an origin, or ignores it. It accepts

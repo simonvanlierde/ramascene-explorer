@@ -4,6 +4,9 @@ The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. Nothing runs on a server, unless
 you open the page with `?api=`.
 
+With `?compute=1`, a worker computes custom scenarios from exported float64
+matrices. [browser-engine.md](browser-engine.md) describes its data and checks.
+
 ```text
 RaMa-Scene engine + EXIOBASE matrices
         |  precompute.py (run by hand, needs the engine)
@@ -32,3 +35,10 @@ modules next to `index.html`, so `node --test` can test it:
 | `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
+| `browser-engine.js` | float64 Woodbury updates and the small linear solve |
+| `browser-data.js` | matrix range reads and output-to-flow aggregation |
+| `browser-results.js` | browser source labels, provenance and result shape |
+
+`browser-client.js` sends requests to `browser-worker.js`, which loads the data
+and computes off the main thread. The existing custom-scenario form uses either
+that worker or the job API. Both hand the same flow layout to the map.
