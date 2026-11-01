@@ -162,3 +162,54 @@ test("a selection too broad for the browser says so before Run, and search narro
 	await page.locator("#live-origin").selectOption(europe);
 	await expect(page.locator("#live-origin")).toHaveValue(europe);
 });
+
+test("the open form reads its selection before Run, so Run downloads nothing more", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	test.setTimeout(90_000);
+	let reads = 0;
+	page.on("request", (request) => {
+		if (request.url().includes("/browser-engine/store-")) reads++;
+	});
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	// wait for the prefetch to start, then to go quiet
+	await expect.poll(() => reads, { timeout: 10_000 }).toBeGreaterThan(0);
+	let last = -1;
+	await expect
+		.poll(
+			() => {
+				const quiet = reads === last;
+				last = reads;
+				return quiet;
+			},
+			{ intervals: [1000], timeout: 30_000 },
+		)
+		.toBe(true);
+	const before = reads;
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	expect(reads).toBe(before);
+});
+
+test("Cancel stops a running browser scenario and leaves the form ready", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	test.setTimeout(60_000);
+	// the matrix reads never answer, so the run is still going when Cancel is pressed
+	await page.route("**/browser-engine/store-*/**", () => {});
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-run")).toHaveText("Running…");
+	await expect(page.locator(".live-elapsed")).toContainText(/[1-9]\.\d s/, { timeout: 5_000 });
+	await page.locator("#live-cancel").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 30_000 });
+	await expect(page.locator("#live-run")).toHaveText("Run scenario");
+	await expect(page.locator("#live-cancel")).toHaveCount(0);
+	await expect(page.locator("#live-state")).not.toHaveClass(/bad/);
+});

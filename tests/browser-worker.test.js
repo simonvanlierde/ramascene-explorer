@@ -9,7 +9,12 @@ const at = (path) => new URL(path, import.meta.url).href;
 let scenarioFlows;
 mock.module(at("../browser-data.js"), { namedExports: { fetchEngine: async () => ({ meta: {} }) } });
 mock.module(at("../browser-engine.js"), {
-	namedExports: { plan: () => ({}), scenarioFlows: (...args) => scenarioFlows(...args) },
+	namedExports: {
+		plan: () => ({}),
+		readKey: () => "",
+		startReads: () => ({}),
+		scenarioFlows: (...args) => scenarioFlows(...args),
+	},
 });
 mock.module(at("../browser-kernel.js"), {
 	namedExports: {
@@ -29,7 +34,7 @@ const run = async (single) => {
 
 test("a trap in a threaded calculation asks the page to retry on one thread", async () => {
 	const kernels = [];
-	scenarioFlows = async (_data, _steps, maths) => {
+	scenarioFlows = async (_data, _steps, _ahead, maths) => {
 		kernels.push(maths.single);
 		throw new WebAssembly.RuntimeError("unreachable");
 	};

@@ -1607,6 +1607,14 @@ details.more summary {
   font-weight: 700;
   border-radius: 8px;
 }
+#live .live-elapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-variant-numeric: tabular-nums;
+}
 @media (hover: hover) {
   #live .go:hover {
     background: var(--ink);

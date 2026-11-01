@@ -38,7 +38,18 @@ test("an ordinary error leaves the worker running, a fatal one stops it", { time
 	await assert.rejects(second, /the calculation stopped/);
 	await assert.rejects(waiting, /browser worker stopped/);
 	assert.equal(worker.terminated, true);
-	await assert.rejects(client.request({ n: 4 }), /reload to try again/);
+	assert.equal(client.stopped, true);
+	await assert.rejects(client.request({ n: 4 }), /browser worker stopped/);
+});
+
+test("a prefetch sends the selection without an id, and a stopped client sends none", () => {
+	const client = browserClient();
+	const worker = FakeWorker.last;
+	client.prefetch({ model_details: [{ product: 1 }] });
+	assert.deepEqual(worker.sent, [{ base: "https://example.org/data/browser-engine/", ahead: [{ product: 1 }] }]);
+	client.close();
+	client.prefetch({ model_details: [] });
+	assert.equal(worker.sent.length, 1);
 });
 
 test("a failed thread pool is terminated and pending requests retry on one thread", { timeout: 2000 }, async () => {

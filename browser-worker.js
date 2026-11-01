@@ -1,5 +1,5 @@
 import { fetchEngine } from "./browser-data.js";
-import { plan, scenarioFlows } from "./browser-engine.js";
+import { plan, readKey, scenarioFlows, startReads } from "./browser-engine.js";
 import { loadKernel, useThreads } from "./browser-kernel.js";
 import { browserResult } from "./browser-results.js";
 import init from "./engine/pkg/ramascene_engine.js";
@@ -7,13 +7,44 @@ import init from "./engine/pkg/ramascene_engine.js";
 let loaded;
 let engine;
 let compute;
-self.onmessage = async ({ data: { id, base, body, single } }) => {
+const load = (base) =>
+	(loaded ??= fetchEngine(new URL(base)).catch((e) => {
+		loaded = null;
+		throw e;
+	}));
+
+// Reads started for the selection the form shows, before Run: {key, reads}. One
+// prefetch downloads at a time; while it does, only the newest selection waits.
+let ahead = null;
+let waiting = null;
+let prefetching = false;
+async function prefetch(base, steps) {
+	waiting = steps;
+	if (prefetching) return;
+	prefetching = true;
+	try {
+		const data = await load(base);
+		while (waiting) {
+			const planned = plan(data.meta, waiting);
+			waiting = null;
+			const key = readKey(planned);
+			if (ahead?.key === key) continue;
+			ahead = { key, reads: startReads(data, planned) };
+			await Promise.allSettled(Object.values(ahead.reads));
+		}
+	} catch {
+		// a selection the form will refuse, or a failed load: Run reports either
+	} finally {
+		waiting = null;
+		prefetching = false;
+	}
+}
+
+self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
+	if (steps) return prefetch(base, steps);
 	let threaded = false;
 	try {
-		loaded ??= fetchEngine(new URL(base)).catch((e) => {
-			loaded = null;
-			throw e;
-		});
+		const loading = load(base);
 		// the kernel loads alongside the data, and a failed load is tried again on the next message
 		engine ??= init().catch((e) => {
 			engine = null;
@@ -22,7 +53,7 @@ self.onmessage = async ({ data: { id, base, body, single } }) => {
 		// this message's own load: a failure resets engine before a later await could see null
 		const kernel = engine;
 		kernel.catch(() => {});
-		const data = await loaded;
+		const data = await loading;
 		// the form checks a selection's size with these before sending it
 		if (!body)
 			self.postMessage({
@@ -54,7 +85,9 @@ self.onmessage = async ({ data: { id, base, body, single } }) => {
 				self.postMessage({ id, retrySingle: true });
 				return;
 			}
-			const flows = await scenarioFlows(data, body.model_details, maths);
+			const used = ahead;
+			ahead = null;
+			const flows = await scenarioFlows(data, body.model_details, used, maths);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
 			value.threads = maths.thread_count();
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
@@ -67,8 +100,7 @@ self.onmessage = async ({ data: { id, base, body, single } }) => {
 			self.postMessage({
 				id,
 				fatal: true,
-				error:
-					"the calculation stopped in this browser, likely out of memory; reload the page to try again, or choose a narrower selection",
+				error: "the calculation stopped in this browser, likely out of memory; choose a narrower selection",
 			});
 		else self.postMessage({ id, error: e.message });
 	}
