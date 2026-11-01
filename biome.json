@@ -9,29 +9,15 @@
 			"!**/.venv",
 			"!**/dist",
 			"!!**/.stryker-tmp",
-			"!!**/engine/pkg",
 			"!**/*.tmp.mjs"
 		]
 	},
-	"formatter": {
-		"indentStyle": "tab",
-		"lineWidth": 120
-	},
+	"formatter": { "indentStyle": "tab", "lineWidth": 120 },
 	"overrides": [
 		{
 			"includes": ["tests/**", "vite.config.js"],
-			"linter": {
-				"rules": {
-					"correctness": {
-						"noNodejsModules": "off"
-					}
-				}
-			}
+			"linter": { "rules": { "correctness": { "noNodejsModules": "off" } } }
 		}
 	],
-	"vcs": {
-		"enabled": true,
-		"clientKind": "git",
-		"useIgnoreFile": true
-	}
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true }
 }

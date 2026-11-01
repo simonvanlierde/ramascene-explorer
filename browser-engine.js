@@ -113,11 +113,6 @@ export function plan(meta, steps) {
 	return { edits, technical, rows, columns, finals, J, byRows, download };
 }
 
-// Flows for the changed economy, indicator × producer × section × consumer, flat.
-// X' = X₀ + L[:,R] W with W = (I − ΔA L[K,R])⁻¹ ΔA X₀[K,:] = ΔA (I − L[K,R] ΔA)⁻¹ X₀[K,:],
-// solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
-// The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
-// flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
 // ΔA = A' − A on the selected rows and columns, in place, so no copy of A stays
 // alive. Each step scales a block of rows × columns; masks find the steps per cell.
 function change(a, technical, rows, columns) {
@@ -140,6 +135,11 @@ function change(a, technical, rows, columns) {
 	return a;
 }
 
+// Flows for the changed economy, indicator × producer × section × consumer, flat.
+// X' = X₀ + L[:,R] W with W = (I − ΔA L[K,R])⁻¹ ΔA X₀[K,:] = ΔA (I − L[K,R] ΔA)⁻¹ X₀[K,:],
+// solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
+// The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
+// flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
 export async function scenarioFlows(data, steps) {
 	const { meta, baseline, read } = data;
 	const C = meta.countries;
