@@ -120,9 +120,20 @@ export function plan(meta, steps) {
 	// L[K, J] from K rows of L or J columns, whichever is less to fetch.
 	const byRows = !R || K * size("L") <= J.length * size("LC");
 	const download = R * size("A") + (R ? (byRows ? K * size("L") : J.length * size("LC")) : 0) + J.length * size("H");
-	// L[K, J] by columns also holds the untransposed copy while it transposes.
+	// Reserve all working copies, including T, the solve's copies, final demand,
+	// the L transpose, and the first H batch while later batches load.
 	const memory =
-		8 * (2 * R * K + (byRows ? 1 : 2) * K * J.length + n * n + 2 * n * C + K * C + J.length * C + F * C + H_BATCH * F);
+		8 *
+		(3 * R * K +
+			(byRows ? 1 : 2) * K * J.length +
+			2 * n * n +
+			K * C +
+			(R <= K ? 2 * R : K + R) * C +
+			Math.max(R, K) +
+			2 * finals.length * C +
+			J.length * C +
+			F * C +
+			Math.min(J.length, 2 * H_BATCH) * F);
 	if (work > LIMITS.work || memory > LIMITS.memory || (meta.arrays && download > LIMITS.download)) {
 		const one = steps.length === 1 && edits.length === 1;
 		const detail = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";

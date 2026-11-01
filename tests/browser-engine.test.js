@@ -195,10 +195,12 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 				{ id: 1, leaves: Array.from({ length: 200 }, (_, i) => i) },
 				{ id: 82, leaves: [5] },
 				{ id: 83, leaves: [5, 6] },
+				{ id: 17, leaves: Array.from({ length: 17 }, (_, i) => i) },
 			],
 			regions: [
 				{ id: 1, leaves: Array.from({ length: 49 }, (_, i) => i) },
 				{ id: 5, leaves: [29, 30, 32, 34, 37, 40, 42, 44] },
+				{ id: 2, leaves: Array.from({ length: 32 }, (_, i) => i) },
 			],
 			consumers: [
 				{ id: 4, leaves: Array.from({ length: 85 }, (_, i) => i + 42) },
@@ -238,6 +240,15 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 	// with byte costs, a selection that fits the arithmetic can exceed the download
 	const heavy = { A: { chunk_bytes: 1e8 }, L: { chunk_bytes: 1 }, LC: { chunk_bytes: 1 }, H: { chunk_bytes: 1 } };
 	assert.throws(() => plan({ ...meta, arrays: heavy }, [{ ...broad, product: [82] }]), /too broad/);
+	// Each edit fits alone. Together, 833 technical rows into 2,720 columns plus
+	// 9,800 final-demand rows exceed memory once T and the solver copies are counted.
+	const mixed = [
+		{ ...broad, product: [17], originReg: [1], consumedReg: [2] },
+		{ ...broad, originReg: [1], consumedBy: [final.id] },
+	];
+	for (const edit of mixed) assert.doesNotThrow(() => plan(meta, [edit]));
+	assert.throws(() => plan(meta, mixed), /too broad/);
+	await assert.rejects(scenarioFlows(data, mixed), /too broad/);
 	assert.equal(reads, 0);
 });
 

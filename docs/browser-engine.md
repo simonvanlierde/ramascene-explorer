@@ -40,8 +40,10 @@ electricity in every country (4,165 pairs into 1,078 columns) and one country's
 whole final demand (9,800 pairs) both fit. Every product from every country, or
 Europe's manufacturing feeding every European industry, does not: choose a narrower
 product, fewer producing countries, or fewer industries or regions that use it. The [job API](interface.md#job-api) remains available for
-work outside the browser budget. The budgets exclude the baseline, metadata and
-decoder buffers; they are not a total browser memory limit.
+work outside the browser budget. The memory estimate includes the matrix copies
+used for the coefficient update, transpose, solve and final-demand changes, plus
+overlapping flow batches. It excludes the baseline, metadata, row caches and
+decoder buffers; it is not a total browser memory limit.
 
 A broad scenario can take several seconds on a desktop, and longer on a phone:
 see [the measurements](#measure-a-change). The worker keeps at most 16 MiB of

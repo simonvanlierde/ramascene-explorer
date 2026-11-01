@@ -33,7 +33,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- A selection too broad for the browser, such as all manufacturing used by electricity, now says
+- The browser's [memory check](docs/browser-engine.md) counts the matrix copies used during
+  a custom calculation. Mixed scenarios that exceed the working-memory budget are refused before downloading matrices.
+- A selection too broad for the browser, such as every product used by electricity, now says
   how many product–country pairs it changes and what to narrow, before Run, instead of failing with
   "select at most 2000 changed rows". The check counts each pair once and uses the change you typed,
   so a 0% change no longer blocks Run.
