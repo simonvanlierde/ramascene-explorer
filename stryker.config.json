@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
 	"testRunner": "command",
 	"commandRunner": {
-		"command": "FC_SEED=1 node --test"
+		"command": "FC_SEED=1 node --test --experimental-test-module-mocks"
 	},
 	"mutate": [
 		"flows.js",
