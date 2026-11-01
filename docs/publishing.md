@@ -87,9 +87,12 @@ a snapshot, not a gate.
 prefix. The domain's DNS records are proxied through Cloudflare, so these routes take
 production, and the domain's other pages still come from GitHub Pages through the proxy.
 
-`cloudflare.yml` deploys it on every push to `main`. Each pull request from this
-repository uploads a version without deploying it, with the alias `pr-<number>`. Its
-version URL, `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
+`cloudflare.yml` deploys it on every push to `main`. Each run first uploads a version
+without serving it, then runs `hosting/check.js` against that version's preview URL in
+the Playwright image. On `main`, only a version that passes the check goes on the
+production routes. Each pull request from this repository stops after the check, with the
+alias `pr-<number>`. Its version URL,
+`https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
 shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
 `X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
 forks get no secrets, so they get no preview.
@@ -104,6 +107,17 @@ exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
 The Worker streams it from the `ramascene-explorer-data` R2 bucket at the same
 `data/embodied.parquet` URL. Its R2 key includes the checksum from `results.json`,
 so an older deployment keeps reading its own dataset.
+
+Nothing deletes those older objects, so each data change leaves one in the bucket
+(about 52 MB). Keep it while you might roll back to a version that reads it. After that,
+find its checksum in the history of `data/embodied.sha256` and delete it:
+
+```sh
+git log -p --format=%h -- data/embodied.sha256
+pnpm exec wrangler r2 object delete "ramascene-explorer-data/embodied/<old sha256>.parquet" --remote
+```
+
+Never delete the key the current `results.json` names: the live site reads it.
 
 The local Workers asset server returns whole files for range requests.
 The Worker therefore routes Zarr store reads through Cloudflare's Cache API,
@@ -139,7 +153,7 @@ pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local
 node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another terminal
 ```
 
-Pass a preview's version URL instead to check a pull request's deployment.
+Pass a preview's version URL instead to check a pull request's deployment, as `cloudflare.yml` does.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
 
 SSL/TLS on the zone stays Full, not Full (strict): GitHub's certificate renewal can fail

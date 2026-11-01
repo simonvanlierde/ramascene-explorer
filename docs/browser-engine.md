@@ -18,6 +18,15 @@ then downloads only the rows it needs: the changed rows of A, the part of L that
 links the changed rows to their consumers, one row of flow totals for each
 changed row, and the matching rows of baseline output X and final demand Y.
 
+While the form is open, those downloads start half a second after the selection
+last changed, so Run waits only for what is still loading. A new percentage reads the
+same rows, so it starts nothing new. One selection downloads at a time; while it does,
+only the newest waits, so quick changes waste at most one download.
+
+While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
+stops the worker and starts a fresh one. A worker that runs out of memory, or passes
+the two-minute limit, is replaced the same way, and its error stays on screen.
+
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
