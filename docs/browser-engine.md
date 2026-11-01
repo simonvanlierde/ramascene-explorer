@@ -14,10 +14,9 @@ precomputed scenario, so reopening it does not reconstruct the custom calculatio
 
 The calculation runs in a worker. It downloads the baseline output, final demand
 and three extension rows once, then downloads each required A row and L column
-as a small, complete Parquet file. These requests do not depend on HTTP range
-caching for a large object. Other matrices still use HTTP range requests. The
-reader refuses a server that ignores Range before it reads a full, unexpected
-matrix.
+as a small, complete Parquet file. These requests do not depend on HTTP range caching for a large object.
+Other matrices still use HTTP range requests; a server that ignores Range is
+refused before a full unexpected matrix is read.
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-9
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
