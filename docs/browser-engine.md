@@ -33,8 +33,9 @@ for work outside the browser budget.
 The worker keeps at most 16 MiB of completed rows per matrix, or 32 MiB for A
 and L together. Least recently used rows are evicted. A repeated selection can
 therefore require another read after other selections fill the cache. No more
-than 64 selected matrix rows decode at once. Initial X and Y decoding also
-uses bounded batches.
+than 64 selected matrix rows decode at once. A and L rows load together in
+batches of 32 per matrix, so one matrix does not wait for the other. Initial X
+and Y decoding also uses bounded batches.
 
 ## Data and method
 

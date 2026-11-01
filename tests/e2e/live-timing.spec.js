@@ -1,4 +1,4 @@
-import { apiUrl } from "../../live.js";
+import { apiUrl, LIVE_STATUS } from "../../live.js";
 import { expect, test } from "./test.js";
 
 const api = process.env.LIVE_API;
@@ -19,7 +19,7 @@ test("click to a drawn result from the real job API", async ({ page }, info) => 
 	const samples = [];
 	for (let run = 0; run < 5; run++) {
 		// Mark the browser's click, excluding Playwright's actionability wait.
-		await page.locator("#live-run").evaluate((button) => {
+		await page.locator("#live-run").evaluate((button, status) => {
 			button.addEventListener(
 				"click",
 				() => {
@@ -30,12 +30,7 @@ test("click to a drawn result from the real job API", async ({ page }, info) => 
 							const state = document.querySelector("#live-state").textContent;
 							const source = document.querySelector("#status .basis").textContent;
 							const progress = Number(document.querySelector('.scrub [role="slider"]')?.getAttribute("aria-valuenow"));
-							if (
-								state !== previous &&
-								/Job .* finished/.test(state) &&
-								source.includes("computed live by the job API") &&
-								progress > 0
-							)
+							if (state !== previous && /Job .* finished/.test(state) && source.includes(status) && progress > 0)
 								requestAnimationFrame(() => resolve(performance.now() - start));
 							else requestAnimationFrame(check);
 						};
@@ -44,7 +39,7 @@ test("click to a drawn result from the real job API", async ({ page }, info) => 
 				},
 				{ once: true },
 			);
-		});
+		}, LIVE_STATUS);
 		const finished = page.waitForResponse(async (response) => {
 			if (!response.url().startsWith(`${api}/jobs/`) || !response.ok()) return false;
 			return ["succeeded", "failed"].includes((await response.json()).status);
@@ -53,7 +48,7 @@ test("click to a drawn result from the real job API", async ({ page }, info) => 
 		const job = await (await finished).json();
 		expect(job.status, job.error).toBe("succeeded");
 		await expect(page.locator("#live-state")).toContainText(`Job ${job.id} finished`);
-		await expect(page.locator("#status .basis")).toContainText("computed live by the job API");
+		await expect(page.locator("#status .basis")).toContainText(LIVE_STATUS);
 		await expect(page.locator(".bands path").first()).toBeVisible();
 		const clickToPaintMs = await page.evaluate(() => window.scenarioPaint);
 		expect(job.result.flows.shape).toEqual([3, 49, 15, 49]);

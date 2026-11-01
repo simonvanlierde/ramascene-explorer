@@ -1,8 +1,8 @@
 // Float64 output from changes to technical coefficients or final demand.
 // Matrix rows come from the data reader; this module has no network or DOM.
 
-// One default scenario has 49 rows: keep it in one batch per matrix.
-const ROW_BATCH = 64;
+// Load both matrices together with at most 64 row decoders in total.
+const ROW_BATCH = 32;
 
 export function solve(matrix, rhs, n, columns, referenceScale = 0) {
 	if (
@@ -101,7 +101,7 @@ export async function scenarioOutput(data, steps) {
 	if (R > 2000 || finalRows > 2000) throw new Error("select at most 2000 changed rows");
 	// Bound dense arithmetic and scenario buffers before any matrix read.
 	const work = R * R * K + R ** 3 / 3 + R * C * (N + K) + finalRows * N * C;
-	const bytes = 8 * (R * N + 2 * R * K + 2 * R * R + 3 * R * C + N * C + ROW_BATCH * N);
+	const bytes = 8 * (R * N + 2 * R * K + 2 * R * R + 3 * R * C + N * C + 2 * ROW_BATCH * N);
 	if (work > 100_000_000 || bytes > 64 * 1024 ** 2)
 		throw new Error("selection exceeds the browser work budget; choose fewer products or regions");
 	const output = new Float64Array(N * C);
@@ -132,15 +132,17 @@ export async function scenarioOutput(data, steps) {
 	// Bound concurrent decoders; retain only the selected A columns.
 	for (let offset = 0; offset < R; offset += ROW_BATCH) {
 		const batch = rows.slice(offset, offset + ROW_BATCH);
-		original.push(
-			...(await Promise.all(
+		const [a, l] = await Promise.all([
+			Promise.all(
 				batch.map(async (r) => {
 					const row = await data.row("A", r);
 					return Float64Array.from(columns, (c) => row[c]);
 				}),
-			)),
-		);
-		leontief.push(...(await Promise.all(batch.map((r) => data.row("L", r)))));
+			),
+			Promise.all(batch.map((r) => data.row("L", r))),
+		]);
+		original.push(...a);
+		leontief.push(...l);
 	}
 	const changed = original.map((row) => Float64Array.from(row));
 	for (const s of technical)

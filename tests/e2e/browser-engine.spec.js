@@ -1,13 +1,14 @@
 import { existsSync } from "node:fs";
 import { expect, test } from "./test.js";
 
-test("a browser scenario draws its own flows without a job server", async ({ page, isMobile }, info) => {
+test("a browser scenario draws its own flows without a job server", async ({ page, isMobile, baseURL }, info) => {
 	test.skip(!existsSync("data/browser-engine/manifest.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
 	const external = [];
+	const site = new URL(baseURL).origin;
 	let matrixBytes = 0;
 	page.on("request", (request) => {
-		if (!request.url().startsWith("http://127.0.0.1:4180/")) external.push(request.url());
+		if (!request.url().startsWith(`${site}/`)) external.push(request.url());
 	});
 	page.on("response", (response) => {
 		if (response.url().includes("/browser-engine/")) matrixBytes += Number(response.headers()["content-length"] ?? 0);

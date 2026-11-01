@@ -1,7 +1,17 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"root": true,
-	"files": { "includes": ["**/*.js", "biome.json", "!**/node_modules", "!**/.venv", "!**/dist", "!**/*.tmp.mjs"] },
+	"files": {
+		"includes": [
+			"**/*.js",
+			"biome.json",
+			"!**/node_modules",
+			"!**/.venv",
+			"!**/dist",
+			"!!**/.stryker-tmp",
+			"!**/*.tmp.mjs"
+		]
+	},
 	"formatter": { "indentStyle": "tab", "lineWidth": 120 },
 	"overrides": [
 		{
