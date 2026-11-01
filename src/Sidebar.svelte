@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, runText, theName, wording } from "../flows.js";
+import { amountShort, capitalise, FEATURED, runText, theName, wording } from "../flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -16,17 +16,20 @@ $effect(() => {
 });
 
 // svelte-ignore state_referenced_locally
-const NAMED = ["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"].filter((id) =>
-	meta.runs.includes(id),
-);
-const KIND = { "vehicle-demand-europe": "Final demand" };
+const NAMED = FEATURED.filter((id) => meta.runs.includes(id));
+const KIND = {
+	"vehicle-demand-europe": "Final demand",
+	"construction-demand-europe": "Final demand",
+	"coal-power-china": "Electricity use",
+};
 const grid = $derived(data.grid);
 const firstGrid = $derived.by(() => meta.runs.find((r) => data.scenarios.find((s) => s.id === r)?.grid));
 
 // the grid's three pickers, remembered while a named run is shown
 // svelte-ignore state_referenced_locally
 let gridPick = $state(pickerState(data, data.scenarios.find((s) => s.id === ui.run)?.grid ? ui.run : firstGrid));
-const onGrid = $derived(!NAMED.includes(ui.run));
+// a run outside the list (an original intervention, opened by link) checks no card
+const onGrid = $derived(!NAMED.includes(ui.run) && !!data.scenarios.find((s) => s.id === ui.run)?.grid);
 const gridTarget = $derived(lookupGrid(data, gridPick));
 const gridMissing = $derived(onGrid && !meta.runs.includes(gridTarget.id));
 
@@ -125,13 +128,14 @@ const directionHint = $derived(
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
 				{#each runOptions as v (v)}
 					{@const checked = v === "grid" ? onGrid : ui.run === v}
+					{@const none = !onGrid && !NAMED.includes(ui.run)}
 					<button
 						type="button"
 						class="run"
 						role="radio"
 						data-v={v}
 						aria-checked={checked}
-						tabindex={checked ? 0 : -1}
+						tabindex={checked || (none && v === runOptions[0]) ? 0 : -1}
 						onclick={() => pickRun(v)}
 						onkeydown={(e) => radioKeys(e, runOptions, onGrid ? "grid" : ui.run, chooseRun)}
 					>

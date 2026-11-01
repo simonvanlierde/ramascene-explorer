@@ -55,27 +55,27 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page).toHaveURL(/mode=whatif/);
-	await expect(page).toHaveURL(/scenario=cement-in-construction/);
+	await expect(page).toHaveURL(/scenario=construction-demand-europe/);
 	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
 	// the run list folds to the chosen run, and stays folded after a reload
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 	await page.reload();
 	await ready(page);
 	await openSelection(page);
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await expect(page.getByRole("radio", { name: /construction required/i })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("radio", { name: /construction work fell/i })).toHaveAttribute("aria-checked", "true");
 });
 
 test("the industry rail, country box and direction drive the sentence and the URL", async ({ page }) => {
@@ -397,7 +397,7 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.route("**/*.parquet", (route) => route.abort());
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
 	// read out once, from the map's legend, also while a phone's sheet is closed
@@ -406,14 +406,14 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.getByRole("button", { name: "Try again" }).first().click();
 	expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
 	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 });
 
@@ -473,7 +473,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
 	await expect(
-		page.getByRole("radio", { name: /European final demand for European-made motor vehicles/i }),
+		page.getByRole("radio", { name: /Chinese coal power/i }),
 	).toHaveAttribute("aria-checked", "true");
 	await expect(page.locator("#headline")).toContainText("would have");
 	// every request made between the two clicks is A's: hold them until B is shown
@@ -495,22 +495,22 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 		await route.continue();
 	});
 	hold = true;
-	await page.getByRole("radio", { name: /European vehicle makers/i }).click();
+	await page.getByRole("radio", { name: /Asia-Pacific required 20% less basic iron/i }).click();
 	await started;
 	hold = false;
 	// picking a run folds the list: open it again for the second pick
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	const headline = page.locator("#headline");
-	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
+	await expect(headline).toContainText("European final demand for construction work fell by 20%");
 	expect(held).toBeGreaterThan(0);
 	// let A's request finish and the page settle: B must stay
 	release();
 	await page.waitForTimeout(800);
-	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
-	await expect(headline).not.toContainText("European vehicle makers");
+	await expect(headline).toContainText("European final demand for construction work fell by 20%");
+	await expect(headline).not.toContainText("Asia-Pacific");
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 });
 
