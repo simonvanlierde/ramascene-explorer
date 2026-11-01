@@ -28,7 +28,8 @@ jobs:
       name: cloudflare
       url: ${{ steps.publish.outputs.url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # the threaded kernel builds std from source on a pinned nightly, with no cache
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -65,7 +66,10 @@ jobs:
       # The build copies results.json, the embodied flows and the map geometry into dist/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
+      # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
       - uses: ./.github/actions/engine
+        with:
+          cache: "false"
       - run: pnpm build
 
       - name: publish

@@ -143,7 +143,13 @@ The compatibility date matches the runtime bundled with the pinned Wrangler rele
 To switch production from GitHub Pages:
 
 1. Run the check against a pull request's preview URL.
-2. In Cloudflare, proxy the simonvanlierde.com DNS records and set SSL/TLS to Full, not
-   Full (strict): GitHub's certificate renewal can fail behind the proxy.
-3. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
-4. Remove `pages.yml` once production has served a few days.
+2. In Cloudflare, set SSL/TLS to Full, not Full (strict): GitHub's certificate renewal can
+   fail behind the proxy. Do this before the next step. With Flexible, Cloudflare asks
+   GitHub Pages over HTTP, Pages redirects to HTTPS, and every page on the domain loops.
+3. Proxy the simonvanlierde.com DNS records.
+4. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
+5. Remove `pages.yml` once production has served a few days.
+
+To roll back a bad production deploy, run `pnpm exec wrangler rollback` and pick the last
+good version; it needs no rebuild. Before `pages.yml` is gone, switching the DNS records
+back to DNS only hands the whole domain back to GitHub Pages.
