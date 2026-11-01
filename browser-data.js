@@ -8,8 +8,8 @@ const EMPTY = 0xffffffffffffffffn;
 // with the whole file. Chunks closer than GAP share a request.
 const GAP = 64 * 1024;
 // At most PARALLEL × MAX_RANGE bytes in flight per array.
-const MAX_RANGE = 2 * 1024 ** 2;
-const PARALLEL = 16;
+const MAX_RANGE = 1024 ** 2;
+const PARALLEL = 64;
 
 const SHAPES = { A: [9800, 9800], L: [9800, 9800], LC: [9800, 9800], H: [9800, 2205], X: [9800, 49], Y: [9800, 49] };
 
