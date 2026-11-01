@@ -9,7 +9,7 @@ intervention on the 2011 base year through ramascene.modelling.Modelling; the
 engine makes no projection, so nothing here is a forecast.
 
 Scenarios: five named ones (the three original interventions and two of the
-page's featured runs; `--scenarios original` runs these) plus a material-efficiency grid,
+page's featured runs; `--scenarios named` runs these) plus a material-efficiency grid,
 ten products x five continental regions x three cut sizes (150), all defined
 as data below.
 
@@ -1402,7 +1402,7 @@ def indicator_meta(indicators):
     return [{"id": i, "name": n, "unit": units[n]} for i, n in zip(indicators, names, strict=False)]
 
 
-SCENARIO_SETS = {"all": lambda: ALL_SCENARIOS, "original": lambda: SCENARIOS, "grid": grid_scenarios}
+SCENARIO_SETS = {"all": lambda: ALL_SCENARIOS, "named": lambda: SCENARIOS, "grid": grid_scenarios}
 
 
 def main(argv=None):

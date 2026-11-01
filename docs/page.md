@@ -40,7 +40,7 @@ Three scenarios come first:
 3. **Final demand in Europe buys 20% less construction work.**
    World greenhouse-gas emissions fall by 0.44%, employment by 0.36% and metal-ore extraction by 0.32%.
 
-Below them, **Material efficiency, one product** holds 150 more: one of ten products,
+Below them, **Material efficiency, one product** holds the 150 grid cells, the steel one above included: one of ten products,
 used by every industry of one of five world regions, cut by 10%, 20% or 50%.
 [What each scenario changes](scenarios.md) gives the exact definition of every one.
 
@@ -106,9 +106,10 @@ For an industry, the percentage changes how much of the product it uses per unit
 For **Final demand**, it changes the spending on the product.
 The model then calculates the total use. It is not fixed to that percentage.
 
-Your device can calculate a change to about 200 product–country pairs, where a pair is one
-product from one producing country. Manufacturing from every country is 85 × 49 = 4,165 pairs, too many:
-the card says so before you run it. Choose a narrower product or fewer producing countries, or use the job API.
+Your device can calculate a change to up to about 200 product–country pairs, where a pair is one
+product from one producing country. The limit is lower when many industries use the product.
+Manufacturing from every country is 85 × 49 = 4,165 pairs, too many: the card says so before you run it.
+Choose a narrower product, fewer producing countries, or fewer industries or regions that use it, or use the job API.
 
 A finished custom scenario replaces the map's scenario, with its own baseline and provenance.
 **Details → Method** lists its totals by producing region.

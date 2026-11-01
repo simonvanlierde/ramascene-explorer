@@ -20,7 +20,7 @@ What if… lists these three first, in this order.
 | `construction-demand-europe` | Final demand in European regions for construction work produced in all regions, −20% | `Modelling.model_final_demand` (Y), stored L |
 
 "Every industry" is the engine database's 15 industry sections (`consumedBy` 1–15),
-whose leaves are all 200 industries.
+which together hold all 200 industries.
 
 ## The original interventions
 
@@ -41,7 +41,7 @@ Russia, Switzerland, Norway and Rest of Europe.
 
 ## Material-efficiency grid
 
-150 more scenarios of one shape, defined as data in `precompute.py`
+150 scenarios of one shape, `steel-asia-pacific-20` above included, defined as data in `precompute.py`
 (`GRID_PRODUCTS`, `GRID_REGIONS`, `GRID_CUTS`, `grid_scenarios()`). Each one
 scales the technical coefficient of one product, from all regions, into
 **every industry of one world region** by the cut. Nothing else changes.

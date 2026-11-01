@@ -117,19 +117,20 @@ test("a selection too broad for the browser says so before Run, and search narro
 		"4,165 product–country pairs (85 products × 49 producing countries)",
 	);
 	await expect(page.locator("#live-run")).toBeDisabled();
+	await expect(page.locator("#live-broad")).toHaveAttribute("role", "status");
 	// the check plans the form's own change: 0% changes nothing, so it fits
 	await page.locator("#live-change").fill("0");
-	await expect(page.locator("#live-broad")).toHaveCount(0);
+	await expect(page.locator("#live-broad")).toBeEmpty();
 	await expect(page.locator("#live-run")).toBeEnabled();
 	await page.locator("#live-change").fill("-20");
-	await expect(page.locator("#live-broad")).toBeVisible();
+	await expect(page.locator("#live-broad")).not.toBeEmpty();
 	await page.getByRole("button", { name: "Search produced in" }).click();
 	await page.getByRole("searchbox", { name: "Search produced in" }).fill("netherl");
 	await expect(page.locator("#live-origin option")).toHaveText(
 		["Total", "Europe", "Netherlands"].map((t) => new RegExp(t)),
 	);
 	await expect(page.locator("#live-origin")).toHaveValue("27");
-	await expect(page.locator("#live-broad")).toHaveCount(0);
+	await expect(page.locator("#live-broad")).toBeEmpty();
 	await expect(page.locator("#live-run")).toBeEnabled();
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
 	const { violations } = await new AxeBuilder({ page })

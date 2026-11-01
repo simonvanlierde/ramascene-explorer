@@ -110,7 +110,7 @@ export function plan(meta, steps) {
 		// a row edited both as an input and in final demand is one pair
 		const pairs = new Set([...rows, ...finalSet]).size;
 		throw new Error(
-			`too broad to compute in the browser: it changes ${pairs.toLocaleString("en")} product–country pairs${size}, and the browser handles about 200. Choose a narrower product or fewer producing countries.`,
+			`too broad to compute in the browser: it changes ${pairs.toLocaleString("en")} product–country pairs${size}. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it.`,
 		);
 	}
 	return { edits, technical, rows, columns, finalRows };

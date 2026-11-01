@@ -17,8 +17,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 - What if… opens on three featured scenarios: coal power in China, steel in Asia-Pacific and
   construction demand in Europe. The three original interventions still open from their links.
-- The README is a short introduction; the development steps moved to [develop.md](docs/develop.md).
-
+- The README is a short introduction; the development steps moved to [develop.md](docs/develop.md),
+  with the README's View, Build, Data, Test and Benchmark sections.
+- The page says "scenario" instead of "intervention", and Details → Method opens with a plain
+  explanation of what the map and the scenarios show.
 - The custom-scenario card is always in What if…; `?compute=1` is no longer needed. The page
   loads the browser data when the card opens ([page.md](docs/page.md#custom-scenarios)).
 - The custom-scenario lists are nested by section and region, sorted by name, and searchable

@@ -41,7 +41,6 @@ async function fetchJson(url, init) {
 
 // The explorer's steel-into-vehicles scenario, preselected so one click reproduces it.
 let pick = $state({ product: "180", origin: "1", consumer: "198", consumedReg: "2" });
-let changeInput;
 // the form's change as typed, so the too-broad check plans what Run would send
 let change = $state("-20");
 let catalog = $state.raw(null);
@@ -133,7 +132,7 @@ async function submit(event) {
 	if (running) return;
 	let scenario;
 	try {
-		scenario = body(changeInput.value);
+		scenario = body(change);
 	} catch (e) {
 		say(e.message, true);
 		return;
@@ -193,9 +192,10 @@ async function submit(event) {
 			<Picker id="live-consumer" label="Used by" tree={trees.consumers} bind:value={pick.consumer} />
 			<Picker id="live-consumed-reg" label="Used in" tree={trees.regions} bind:value={pick.consumedReg} />
 			<label for="live-change">Input or demand change, %</label>
-			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} oninput={(e) => (change = e.currentTarget.value)} />
+			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value={change} required aria-describedby="live-change-h" oninput={(e) => (change = e.currentTarget.value)} />
 			<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>
-			{#if tooBroad}<p class="hint bad" id="live-broad">{tooBroad}</p>{/if}
+			<!-- always present, so a screen reader announces the message as it comes and goes -->
+			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->

@@ -15,7 +15,7 @@ The matrices are float64.
 ```sh
 # the command data/results.json records, verbatim
 uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
-# subsets: --scenarios original|grid, --limit N
+# subsets: --scenarios named|grid, --limit N
 ```
 
 ## The shipped run

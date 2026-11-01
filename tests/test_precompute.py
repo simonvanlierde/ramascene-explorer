@@ -532,7 +532,7 @@ def test_cli_refuses_to_write_when_the_engine_checkout_moves_during_the_run(tmp_
                 "--out",
                 str(out),
                 "--scenarios",
-                "original",
+                "named",
             ]
         )
     assert exit_info.value.code != 0
