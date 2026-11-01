@@ -11,7 +11,8 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 			loaded = null;
 			throw e;
 		});
-		const [data] = await Promise.all([loaded, (engine ??= init())]);
+		engine ??= init();
+		const [data] = await Promise.all([loaded, engine]);
 		// the form checks a selection's size with these before sending it
 		if (!body)
 			self.postMessage({
