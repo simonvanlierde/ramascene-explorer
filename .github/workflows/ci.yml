@@ -139,10 +139,21 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
 
   browser:
-    name: browser and accessibility tests
+    name: browser tests (${{ matrix.engine }})
     needs: [playwright-version, engine]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # One job per browser engine, so the slow WebKit projects run beside the others.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: chromium
+            projects: --project=light --project=dark --project=phone
+          - engine: firefox
+            projects: --project=firefox
+          - engine: webkit
+            projects: --project=safari --project=iphone
     # The browsers and their system libraries come with the image, so the job needs
     # no apt or browser download. The tag comes from package.json, so no digest can
     # be pinned next to it. The site self-hosts its fonts (@fontsource), so the
@@ -187,8 +198,10 @@ jobs:
           name: engine-pkg
           path: engine
       - run: pnpm build
-      - run: pnpm exec playwright test
+      - run: pnpm exec playwright test ${{ matrix.projects }}
+      # in the shortest shard; check.js drives all three engines itself
       - name: check Cloudflare range reads and isolation
+        if: matrix.engine == 'firefox'
         run: |
           set -euo pipefail
           pnpm build:cloudflare
@@ -202,3 +215,16 @@ jobs:
             sleep 1
           done
           node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/ || { cat /tmp/cloudflare.log; exit 1; }
+
+  # The ruleset requires this name; it passes only when every engine passed.
+  browser-all:
+    name: browser and accessibility tests
+    needs: browser
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every engine passed
+        env:
+          RESULT: ${{ needs.browser.result }}
+        run: test "$RESULT" = success

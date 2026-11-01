@@ -7,6 +7,9 @@ the EXIOBASE matrices, because the engine checks skip without `--engine`.
 Both test steps fail below a line-coverage floor: `fail_under` in
 `pyproject.toml` for `precompute.py` and `compare_data.py`, and the `test`
 script in `package.json` for the JS modules (not the Svelte files).
+Playwright runs as one job per browser engine (Chromium, Firefox, WebKit) with
+four workers each; the required check `browser and accessibility tests` passes
+only when all three did.
 
 The page jobs read the synthetic fixtures and the shipped results. CI
 downloads `embodied.parquet` from the `data-2011-r2` release and checks it with
