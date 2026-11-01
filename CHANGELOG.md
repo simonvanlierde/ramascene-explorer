@@ -28,6 +28,14 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Browser calculations fetch small, complete A and L row files instead of ranges
+  near the ends of large matrices. The new [row layout](docs/browser-engine.md#data-and-method)
+  bounds each fetch and uses a versioned manifest to avoid stale-cache conflicts.
+
+- Amounts use at most three significant figures, and percentages avoid signed
+  zeros and unnecessary decimal places. Changes below display resolution no longer
+  name a false hotspot; [calculations and CSV values retain their precision](docs/interface.md#number-display).
+
 - Scenarios that change production inputs load both required matrices together,
   so a slow read of one
   does not hold up requests for the other. See [browser calculations](docs/browser-engine.md).

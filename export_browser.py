@@ -2,7 +2,7 @@
 
     uv run python export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
 
-A rows and L columns are separate row groups, so a scenario reads just the
+A rows and L columns are separate files, so a scenario reads just the
 changed products. The manifest is written last. Generate into a new directory;
 an existing manifest is refused to prevent mixing exports.
 """
@@ -59,6 +59,23 @@ def write_matrix(path, matrix, rows_per_group=1):
     return {"shape": list(matrix.shape), "bytes": path.stat().st_size, "sha256": sha}
 
 
+def write_row_matrix(directory, name, matrix):
+    """Store bounded row files under the hash of their ordered SHA-256 digests."""
+    staging = directory / name
+    staging.mkdir()
+    digest = hashlib.sha256()
+    size = 0
+    for index, row in enumerate(matrix):
+        info = write_matrix(staging / f"{index}.parquet", row.reshape(1, -1))
+        if info["bytes"] > 128 * 1024:
+            raise ValueError("matrix row file exceeds the browser byte limit")
+        digest.update(bytes.fromhex(info["sha256"]))
+        size += info["bytes"]
+    sha = digest.hexdigest()
+    staging.rename(directory / f"{name}-{sha}")
+    return {"shape": list(matrix.shape), "bytes": size, "sha256": sha, "storage": "rows"}
+
+
 def verify_arrays(data, expected):
     for name, want in expected.items():
         with (data / "2011" / f"{name}_v4.npy").open("rb") as stream:
@@ -68,7 +85,7 @@ def verify_arrays(data, expected):
 
 
 def export(data, db, out):
-    if (out / "manifest.json").exists():
+    if any((out / name).exists() for name in ("manifest.json", "manifest-v2.json")):
         raise ValueError("output already has a manifest; use a new directory")
     reference = json.loads((Path(__file__).parent / "data" / "results.json").read_text(encoding="utf-8"))
     verify_arrays(data, reference["provenance"]["dataset"]["sha256"])
@@ -87,11 +104,15 @@ def export(data, db, out):
     matrices = {"A": A, "L": L.T, "Y": Y, "X": X, "B": B[[i - 1 for i in INDICATORS]], "M": B @ L}
     files = {}
     for name, matrix in matrices.items():
+        if name in {"A", "L"}:
+            files[name] = write_row_matrix(out, name, matrix)
+            print(f"{name}: {files[name]['bytes']} bytes", flush=True)
+            continue
         files[name] = write_matrix(out / f"{name}.parquet", matrix, rows_per_group=128 if name in {"X", "Y"} else 1)
         (out / f"{name}.parquet").rename(out / f"{name}-{files[name]['sha256']}.parquet")
         print(f"{name}: {files[name]['bytes']} bytes", flush=True)
     metadata = {
-        "version": 1,
+        "version": 2,
         "products": 200,
         "countries": 49,
         "catalog": labels,
@@ -102,7 +123,7 @@ def export(data, db, out):
         "baseline_flows": baseline.ravel().tolist(),
         "dataset": {"name": "EXIOBASE v3.3.sm", "year": 2011, "doi": "10.5281/zenodo.3533196", "license": "CC BY 4.0"},
     }
-    (out / "manifest.json").write_text(json.dumps(metadata, separators=(",", ":")) + "\n", encoding="utf-8")
+    (out / "manifest-v2.json").write_text(json.dumps(metadata, separators=(",", ":")) + "\n", encoding="utf-8")
     return metadata
 
 

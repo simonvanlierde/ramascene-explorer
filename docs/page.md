@@ -30,7 +30,10 @@ The five world-region summaries show where that change occurs.
 The scrubber moves between baseline and scenario and replays when the scenario changes.
 
 The colour scale adjusts to the flows on screen and uses a square-root transformation.
-It contains 90% of the larger flows; more extreme changes use the end colour.
+Its limit uses the lower 90th percentile of absolute percentage changes among flows
+worth at least 0.1% of the selected total, rounded up to a readable step. More extreme
+changes share the end colour. If all eligible changes are zero at display resolution,
+the range defaults to ±1%.
 Compare the printed percentages when comparing different selections, since their colour scales can differ.
 
 These are changes to the 2011 economy, not forecasts.

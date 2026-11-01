@@ -14,7 +14,7 @@ What is planned for the next year (to late 2027), in rough order. None of it has
 
 ## Available
 
-- [Browser scenarios](browser-engine.md) use float64 Woodbury updates and range reads.
+- [Browser scenarios](browser-engine.md) use float64 Woodbury updates and bounded matrix reads.
   CI checks all 153 published scenarios against RaMa-Scene at relative 1e-9.
 - The browser reader joins the [agreement table](../brightway-check/README.md).
 

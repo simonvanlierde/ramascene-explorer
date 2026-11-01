@@ -7,6 +7,7 @@ import { shortCommit } from "../explorer.js";
 import {
 	amount,
 	amountText,
+	displayChange,
 	flowsCsv,
 	pct,
 	placeName,
@@ -255,7 +256,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 							<td class="num"><span class="mb" style="width:{(r.v / maxV) * 42}px"></span>{fmtV(r.v)}</td>
 							<td class="num">{share(r.v, sum.total)}</td>
 							<td class="ind2"><i style="background:{SECTION_COLOURS[r.ts]}"></i>{r.ind}</td>
-							{#if whatif}<td class="num {r.c < 0 ? 'neg' : r.c > 0 ? 'pos' : ''}">{r.c === null ? "–" : pct(r.c)}</td>{/if}
+							{#if whatif}<td class="num {r.c < 0 ? 'neg' : r.c > 0 ? 'pos' : ''}">{r.c === null ? "–" : pct(displayChange(sum.dv[r.k], sum.total) === 0 ? 0 : r.c)}</td>{/if}
 						</tr>
 					{/each}
 				</tbody>

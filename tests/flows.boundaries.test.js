@@ -23,24 +23,24 @@ import {
 const opts = { runs: ["baseline", "a"], indicators: [5], codes: ["DE", "FR"] };
 const zoom = (z) => parseView(`?zoom=${z}`, opts).zoom;
 
-test("fmt switches step exactly where rounding would move a value up", () => {
+test("fmt rounds to three significant figures across scale boundaries", () => {
 	assert.equal(fmt(99.95), "100");
 	assert.equal(fmt(99.94), "99.9");
-	assert.equal(fmt(9.995), "10.0");
+	assert.equal(fmt(9.995), "10");
 	assert.equal(fmt(9.99), "9.99");
-	assert.equal(fmt(0.00995), "0.01");
+	assert.equal(fmt(0.00995), "0.00995");
 	assert.equal(fmt(0.004), "0.004");
-	assert.equal(fmt(-1234.5), "−1,235");
-	assert.equal(fmt(-1e-9), "−0.000000001");
+	assert.equal(fmt(-1234.5), "−1,230");
+	assert.equal(fmt(-1e-9), "−1e−9");
 });
 
-test("pct and share keep their step edges and never read a real change as zero", () => {
-	assert.equal(pct(0), "0.000%");
+test("percentages omit padding and shares preserve small nonzero flows", () => {
+	assert.equal(pct(0), "0%");
 	assert.equal(pct(10), "+10%");
 	assert.equal(pct(-9.9), "−9.9%");
-	assert.equal(pct(1), "+1.0%");
-	assert.equal(pct(0.1), "+0.10%");
-	assert.equal(pct(0.05), "+0.050%");
+	assert.equal(pct(1), "+1%");
+	assert.equal(pct(0.1), "+0.1%");
+	assert.equal(pct(0.05), "+0.05%");
 	assert.equal(share(1, 200), "1%");
 	assert.equal(share(1, 201), "<1%");
 	assert.equal(share(0, 5), "0%");
@@ -49,9 +49,9 @@ test("pct and share keep their step edges and never read a real change as zero",
 
 test("amounts step up to thousand and million jobs at the exact edge", () => {
 	assert.equal(amountText(999, 3), "999 jobs");
-	assert.equal(amountText(1e3, 3), "1.00 thousand jobs");
-	assert.equal(amountText(1e6, 3), "1.00 million jobs");
-	assert.equal(amountText(-1e6, 3), "−1.00 million jobs");
+	assert.equal(amountText(1e3, 3), "1 thousand jobs");
+	assert.equal(amountText(1e6, 3), "1 million jobs");
+	assert.equal(amountText(-1e6, 3), "−1 million jobs");
 });
 
 test("small text helpers", () => {
@@ -72,9 +72,9 @@ test("flowPct needs a run and a flow above a millionth of the total", () => {
 	assert.equal(flowPct({ ...sum, dv: null }, 0), null);
 });
 
-test("changeArm: zero change counts for either arm", () => {
+test("changeArm: a neutral change uses both arms and zeros do not alter a real change", () => {
 	const arm = (dv) => changeArm({ others: [0, 1], vals: [1, 1], total: 2, dv });
-	assert.equal(arm([0, 0]), -1);
+	assert.equal(arm([0, 0]), 0);
 	assert.equal(arm([0, -1]), -1);
 	assert.equal(arm([0, 1]), 1);
 	assert.equal(arm([1, -1]), 0);

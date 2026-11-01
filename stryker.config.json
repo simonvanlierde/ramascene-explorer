@@ -8,6 +8,16 @@
 		"flows.js"
 	],
 	"coverageAnalysis": "off",
+	"ignorePatterns": [
+		".venv",
+		"__pycache__",
+		".pytest_cache",
+		"dist",
+		"test-results",
+		"playwright-report",
+		"data/browser-engine",
+		"data/ramascene-browser-engine*.tar"
+	],
 	"concurrency": 8,
 	"reporters": [
 		"clear-text",

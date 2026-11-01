@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { expect, test } from "./test.js";
 
 test("a browser scenario draws its own flows without a job server", async ({ page, isMobile, baseURL }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
 	const external = [];
 	const site = new URL(baseURL).origin;
@@ -38,7 +38,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 });
 
 test("Try again replaces a failed browser worker", async ({ page, isMobile }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
 	test.setTimeout(30_000);
 	let attempts = 0;
 	await page.route("**/assets/browser-worker-*.js", (route) => {
@@ -59,4 +59,34 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 	await page.locator("#live-open").click();
 	if (["light", "phone"].includes(info.project.name))
 		await page.screenshot({ path: info.outputPath("browser-form.png"), fullPage: true });
+});
+
+test("a negligible custom change stays readable without claiming a hotspot", async ({ page, isMobile }, info) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
+	test.setTimeout(90_000);
+	await page.goto("?compute=1");
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await page.locator("#live-product").selectOption("181");
+	await page.locator("#live-origin").selectOption("13");
+	await page.locator("#live-consumer").selectOption("204");
+	await page.locator("#live-consumed-reg").selectOption("4");
+	await page.locator("#live-change").fill("-55");
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	await expect(page.locator(".dock .filters")).toHaveAttribute("aria-expanded", "false");
+	if (isMobile) await expect(page.locator("#side")).not.toBeVisible();
+	await expect(page.locator("#headline")).toContainText("No change at the displayed precision.");
+	await expect(page.locator("#headline")).not.toContainText("largest change");
+	await expect(page.locator("#headline")).not.toContainText("−0");
+	await expect(page.locator(".lg")).not.toContainText("all decreases");
+	await expect(page.locator(".lg")).not.toContainText("e−12");
+	for (const card of await page.locator(".kpis.k5 .kv").all()) {
+		await expect(card).toContainText("0");
+		expect(await card.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+	}
+	if (["light", "phone"].includes(info.project.name))
+		await page.screenshot({ path: info.outputPath("negligible-change.png"), fullPage: true, animations: "disabled" });
 });

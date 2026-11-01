@@ -4,7 +4,7 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "../flows.js";
+import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "../flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
@@ -27,7 +27,7 @@ const year = $derived(data.base_year);
 const top = $derived(sum.others.length ? theName(meta, sum.others[0]) : name);
 const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 : 0);
 // the run's settled change: the replay animates the map, never these numbers
-const dTot = $derived(whatif ? sum.dTotal : 0);
+const dTot = $derived(whatif ? displayChange(sum.dTotal, sum.total) : 0);
 const changed = $derived(sum.changed != null ? theName(meta, sum.changed) : "");
 const noneAbroad = $derived(sum.others.length === 0);
 const abroadToo = $derived(
@@ -49,17 +49,19 @@ $effect(() => {
 });
 const shown = $derived(amount(tTotal.current, ui.indicator));
 const delta = $derived(amount(dTot, ui.indicator));
-const dPct = $derived(sum.total ? (dTot / sum.total) * 100 : 0);
+const dPct = $derived(sum.total ? (dTot / sum.total) * 100 : null);
+const percent = $derived(dPct === null ? "zero 2011 baseline" : pct(dPct));
 const tone = $derived(dTot < 0 ? "neg" : dTot > 0 ? "pos" : "");
 
 // the settled sentence, for the live region
 const plain = $derived.by(() => {
-	const [n, u] = amount(sum.total + (whatif ? sum.dTotal : 0), ui.indicator);
+	const [n, u] = amount(sum.total + dTot, ui.indicator);
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
 		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
-	const d = `${sum.dTotal > 0 ? "+" : ""}${amountText(sum.dTotal, ui.indicator)}`;
-	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}, ${d} (${pct(sum.total ? (sum.dTotal / sum.total) * 100 : 0)}), ${changed ? `the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : "unchanged by this run"}.`;
+	const detail = changed ? `, the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : dTot === 0 ? ", no change at the displayed precision" : "";
+	const d = dTot !== 0 || changed ? `, a change of ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
+	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${d}${detail}.`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -124,12 +126,12 @@ function onFocusOut(e) {
 		<p id="headline" tabindex="-1">
 			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
-			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}; a change of
+			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}; a change of
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
-			(<span class="n {tone}">{pct(dPct)}</span>).
-			<span class="scenario-context">
+			(<span class="n {tone}">{percent}</span>){/if}.
+			{#if changed || dTot === 0}<span class="scenario-context">
 			{#if changed}The largest change {out ? "was linked to consumption in" : "occurred in"}
-				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}unchanged by this run{/if}.</span>
+				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}No change at the displayed precision{/if}.</span>{/if}
 		</p>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>

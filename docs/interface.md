@@ -27,6 +27,18 @@ The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the
 synthetic fixture.
 
+## Number display
+
+Amounts use at most three significant figures, without padded zeros. Values below
+0.0001 use scientific notation to keep labels short. Percentage changes use at most
+three significant figures and two decimal places; nonzero changes below 0.01%
+are labelled as a smaller increase or decrease rather than rounded to a signed zero.
+A change from a zero baseline has no percentage; the display says so.
+
+For display, differences no larger than a trillionth of the baseline are treated
+as zero and do not name a largest change. This is a display rule, not an uncertainty
+estimate. The calculations and downloadable CSV retain the original values.
+
 ## Job API
 
 `?api=` points the page at a RaMa-Scene job API such as `ramascene-jobs`. Its

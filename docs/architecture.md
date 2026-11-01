@@ -36,7 +36,7 @@ modules next to `index.html`, so `node --test` can test it:
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
 | `browser-engine.js` | float64 Woodbury updates and the small linear solve |
-| `browser-data.js` | matrix range reads and output-to-flow aggregation |
+| `browser-data.js` | matrix loading and output-to-flow aggregation |
 | `browser-results.js` | browser source labels, provenance and result shape |
 
 `browser-client.js` sends requests to `browser-worker.js`, which loads the data

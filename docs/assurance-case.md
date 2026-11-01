@@ -40,8 +40,8 @@ good one from a bad one, so it labels a live result with its origin.
   ignored, and the status line says so. `pages.yml` refuses data not marked
   `exiobase-v3`, and every download of `embodied.parquet` must match the hash
   in `data/embodied.sha256`.
-  The browser archive must match `data/browser-engine.sha256`. Its matrix
-  filenames include their hashes, so deployment cannot silently mix exports.
+  The browser archive must match `data/browser-engine-rows.sha256`. Its matrix
+  paths include their content hashes, so deployment cannot silently mix exports.
 - **Small attack surface.** No server, cookies or login. The
   Content-Security-Policy in `index.html` allows scripts and fonts from the
   page's own origin only.
