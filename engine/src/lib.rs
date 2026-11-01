@@ -62,18 +62,8 @@ pub fn correction(
     finite(delta)?;
     finite(t)?;
     finite(x)?;
-    let (delta_slice, t_slice, x_slice) = (delta, t, x);
-    let delta = MatRef::from_row_major_slice(delta, r, k);
-    let t = MatRef::from_row_major_slice(t, k, r);
-    let x = MatRef::from_row_major_slice(x, k, c);
-    let row_abs = |m: MatRef<'_, f64>| -> Vec<f64> {
-        (0..m.nrows())
-            .map(|i| (0..m.ncols()).map(|j| m[(i, j)].abs()).sum())
-            .collect()
-    };
     let w = if r <= k {
-        let dense = prefer_dense(delta_slice);
-        let (s, rhs, scale) = small_system(delta_slice, t_slice, x_slice, r, k, c, dense);
+        let (s, rhs, scale) = small_system(delta, t, x, r, k, c, prefer_dense(delta));
         solve(
             MatRef::from_row_major_slice(&s, r, r),
             MatRef::from_row_major_slice(&rhs, r, c),
@@ -82,10 +72,10 @@ pub fn correction(
         )?
     } else {
         // S = I − T ΔA (k × k), W = ΔA S⁻¹ X
-        let d_abs = row_abs(delta);
-        let scale = (0..k)
-            .map(|i| 1.0 + (0..r).map(|j| t[(i, j)].abs() * d_abs[j]).sum::<f64>())
-            .fold(1.0, f64::max);
+        let scale = max_row_scale(t, r, &abs_row_sums(delta, k));
+        let delta = MatRef::from_row_major_slice(delta, r, k);
+        let t = MatRef::from_row_major_slice(t, k, r);
+        let x = MatRef::from_row_major_slice(x, k, c);
         let mut s = Mat::<f64>::identity(k, k);
         matmul(&mut s, Accum::Add, t, delta, -1.0, Par::Seq);
         let v = solve(s.as_ref(), x, scale, epsilon)?;
@@ -99,6 +89,21 @@ pub fn correction(
         .collect();
     finite(&out).map_err(|_| Error::Singular)?;
     Ok(out)
+}
+
+// Each row's sum of absolute values, for a row-major matrix `width` wide.
+fn abs_row_sums(m: &[f64], width: usize) -> Vec<f64> {
+    m.chunks_exact(width)
+        .map(|row| row.iter().map(|v| v.abs()).sum())
+        .collect()
+}
+
+// The largest row scale of I − A B before it cancels, 1 + Σⱼ |aᵢⱼ| · Σ|row j of B|,
+// for A row-major `width` wide and `b_abs` from `abs_row_sums` on B; at least 1.
+fn max_row_scale(a: &[f64], width: usize, b_abs: &[f64]) -> f64 {
+    a.chunks_exact(width)
+        .map(|row| 1.0 + row.iter().zip(b_abs).map(|(v, b)| v.abs() * b).sum::<f64>())
+        .fold(1.0, f64::max)
 }
 
 // Measured break-even of the two builds in `small_system`.
@@ -121,20 +126,7 @@ fn small_system(
 ) -> (Vec<f64>, Vec<f64>, f64) {
     let t_rows: Vec<&[f64]> = t.chunks_exact(r).collect();
     let x_rows: Vec<&[f64]> = x.chunks_exact(c).collect();
-    let t_abs: Vec<f64> = t_rows
-        .iter()
-        .map(|row| row.iter().map(|v| v.abs()).sum())
-        .collect();
-    let scale = delta
-        .chunks_exact(k)
-        .map(|d_row| {
-            1.0 + d_row
-                .iter()
-                .zip(&t_abs)
-                .map(|(v, a)| v.abs() * a)
-                .sum::<f64>()
-        })
-        .fold(1.0, f64::max);
+    let scale = max_row_scale(delta, k, &abs_row_sums(t, r));
     let mut s = vec![0.0; r * r];
     let mut rhs = vec![0.0; r * c];
     if dense {
