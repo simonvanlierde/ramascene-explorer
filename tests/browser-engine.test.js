@@ -177,3 +177,23 @@ test("matrix reads stay bounded and grow linearly across selection sizes", async
 		assert.ok(peak <= 64, `started ${peak} matrix reads at once`);
 	}
 });
+
+test("technical scenarios start both matrices before waiting for either", async () => {
+	const data = tiny(0.1, 0.2, 0.1, 0.1);
+	const read = data.row;
+	const first = Promise.withResolvers();
+	const release = Promise.withResolvers();
+	const started = new Set();
+	data.row = async (name, index) => {
+		started.add(name);
+		first.resolve();
+		await release.promise;
+		return read(name, index);
+	};
+	const output = scenarioOutput(data, [step()]);
+	await first.promise;
+	const overlapped = started.has("A") && started.has("L");
+	release.resolve();
+	await output;
+	assert.ok(overlapped, "one matrix waited for the other matrix's network reads");
+});

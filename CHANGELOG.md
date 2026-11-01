@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-01
+
 ### Added
 
 - Custom scenarios can run on the device with `?compute=1`, using float64
@@ -25,6 +27,25 @@ follow [Semantic Versioning](https://semver.org/).
   and the limits of sharing custom results explicit.
 
 ### Fixed
+
+- Browser calculations fetch small, complete A and L row files instead of ranges
+  near the ends of large matrices. The new [row layout](docs/browser-engine.md#data-and-method)
+  bounds each fetch and uses a versioned manifest to avoid stale-cache conflicts.
+
+- Amounts use at most three significant figures, and percentages avoid signed
+  zeros and unnecessary decimal places. Changes below display resolution no longer
+  name a false hotspot; [calculations and CSV values retain their precision](docs/interface.md#number-display).
+
+- Scenarios that change production inputs load both required matrices together,
+  so a slow read of one
+  does not hold up requests for the other. See [browser calculations](docs/browser-engine.md).
+
+- Scenario checks recognize the current job API result label and the configured
+  browser-test address, fixing paint measurements and tests on separate local ports.
+  See [running the checks](CONTRIBUTING.md#run-the-checks-before-you-push).
+
+- Source linting skips temporary mutation-test copies, so it can run alongside
+  [mutation testing](CONTRIBUTING.md#run-the-checks-before-you-push).
 
 - Browser scenario data groups X and Y into larger Parquet row groups, reducing
   startup work and download size without changing the float64 values. See the
@@ -196,7 +217,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.2.0...v0.3.0

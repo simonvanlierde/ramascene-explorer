@@ -1,7 +1,7 @@
 [project]
 name = "ramascene-explorer"
-version = "0.4.0"
-description = "Precomputed RaMa-Scene scenario results and a static page to explore them"
+version = "0.5.0"
+description = "Explore consumption footprints and calculate scenarios using EXIOBASE 2011"
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]

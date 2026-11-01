@@ -2,17 +2,17 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
-import { openEngine, outputFlows } from "../browser-data.js";
+import { matrixPath, openEngine, outputFlows } from "../browser-data.js";
 import { scenarioOutput } from "../browser-engine.js";
 
 const directory = process.env.BROWSER_ENGINE_DATA;
 test("all 153 browser scenarios match the shipped engine results at relative 1e-9", {
 	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async () => {
-	assert.ok(existsSync(`${directory}/manifest.json`));
-	const meta = JSON.parse(readFileSync(`${directory}/manifest.json`, "utf8"));
-	const data = await openEngine(meta, (name) =>
-		asyncBufferFromFile(`${directory}/${name}-${meta.files[name].sha256}.parquet`),
+	assert.ok(existsSync(`${directory}/manifest-v2.json`));
+	const meta = JSON.parse(readFileSync(`${directory}/manifest-v2.json`, "utf8"));
+	const data = await openEngine(meta, (name, index) =>
+		asyncBufferFromFile(`${directory}/${matrixPath(meta, name, index)}`),
 	);
 	for (const name of ["X", "Y", "B"]) await assert.rejects(data.row(name, 0), /use X, Y or B directly/);
 	await assert.rejects(

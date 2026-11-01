@@ -1,7 +1,7 @@
 <script>
 // Three numbers under the sentence in Flows; in What if… the five world regions,
 // each its change in emissions (or jobs, or ores) released there.
-import { amount, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "../flows.js";
+import { amount, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "../flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, sum, conts, whatif, extent } = $props();
@@ -42,13 +42,13 @@ const fill = $derived(divFill(extent));
 {:else}
 	<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the world region where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
 		{#each conts as c (c.name)}
-			{@const v = c.change}
+			{@const v = displayChange(c.change, sum.total)}
 			{@const p = c.base ? (v / c.base) * 100 : 0}
 			{@const a = amount(v, ui.indicator)}
 			<div class="kpi">
 				<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
 				<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<small>{a[1]}</small></div>
-				<div class="ks">{c.base ? `${pct(p)} of 2011` : "no 2011 flow"}</div>
+				<div class="ks">{c.base ? `${pct(p)} relative to 2011` : "no 2011 flow"}</div>
 			</div>
 		{/each}
 	</div>

@@ -4,11 +4,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { cpus, loadavg } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { matrixPath } from "./browser-data.js";
 
 const filename = fileURLToPath(import.meta.url);
 const root = dirname(filename);
@@ -34,13 +35,16 @@ async function sample(ref, workload, delayMs, directory = `${root}/data/browser-
 	const { openEngine, outputFlows } = await module("browser-data.js");
 	const { scenarioOutput } = await module("browser-engine.js");
 	const { asyncBufferFromFile } = await import("hyparquet");
-	const manifest = readFileSync(`${directory}/manifest.json`, "utf8");
+	const manifest = readFileSync(
+		`${directory}/${existsSync(`${directory}/manifest-v2.json`) ? "manifest-v2.json" : "manifest.json"}`,
+		"utf8",
+	);
 	const meta = JSON.parse(manifest);
 	let bytes = 0;
 	let reads = 0;
 	const started = performance.now();
-	const data = await openEngine(meta, async (name) => {
-		const file = await asyncBufferFromFile(`${directory}/${name}-${meta.files[name].sha256}.parquet`);
+	const data = await openEngine(meta, async (name, index) => {
+		const file = await asyncBufferFromFile(`${directory}/${matrixPath(meta, name, index)}`);
 		return {
 			byteLength: file.byteLength,
 			slice: async (start, end) => {

@@ -3,13 +3,13 @@
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { asyncBufferFromFile } from "hyparquet";
-import { openEngine } from "../browser-data.js";
+import { matrixPath, openEngine } from "../browser-data.js";
 
 const directory = process.argv[2];
 if (!directory) throw new Error("pass the exported browser data directory");
-const meta = JSON.parse(readFileSync(`${directory}/manifest.json`, "utf8"));
-const data = await openEngine(meta, (name) =>
-	asyncBufferFromFile(`${directory}/${name}-${meta.files[name].sha256}.parquet`),
+const meta = JSON.parse(readFileSync(`${directory}/manifest-v2.json`, "utf8"));
+const data = await openEngine(meta, (name, index) =>
+	asyncBufferFromFile(`${directory}/${matrixPath(meta, name, index)}`),
 );
 const column = await data.row("L", 4100);
 const score = column.reduce((sum, v, i) => sum + data.B[0][i] * v, 0);

@@ -61,19 +61,29 @@ export const theName = (meta, k) => (THE.has(meta.country_codes[k]) ? "the " : "
 // --- numbers ------------------------------------------------------------------
 
 const MINUS = "−";
-const grouped = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
-const tiny = new Intl.NumberFormat("en", { maximumSignificantDigits: 1, maximumFractionDigits: 20 });
-// Three significant figures at most, never exponent notation; a true minus.
-// The thresholds sit where rounding moves a value up a step (99.96 is "100").
+const numbers = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
+const scientific = new Intl.NumberFormat("en", { notation: "scientific", maximumSignificantDigits: 3 });
+const percentages = new Intl.NumberFormat("en", {
+	maximumSignificantDigits: 3,
+	maximumFractionDigits: 2,
+	roundingPriority: "lessPrecision",
+});
+// Display only: differences below a trillionth of their baseline are shown
+// as zero. Keep the original values for calculations and exports.
+export const displayChange = (value, baseline) => (Math.abs(value) <= Math.abs(baseline) * 1e-12 ? 0 : value);
+
+// Three significant figures; scientific notation keeps very small values short.
 export function fmt(v) {
 	const a = Math.abs(v);
-	const s = a >= 99.95 ? grouped.format(a) : a >= 9.995 ? a.toFixed(1) : a >= 0.00995 ? a.toFixed(2) : tiny.format(a);
-	return (v < 0 && Number(s.replace(/,/g, "")) !== 0 ? MINUS : "") + s;
+	const s = (a > 0 && a < 1e-4 ? scientific : numbers).format(a).replace("E-", "e−").replace("E", "e");
+	return (v < 0 ? MINUS : "") + s;
 }
 const sign = (v) => (v > 0 ? "+" : v < 0 ? MINUS : "");
 export function pct(v) {
-	const a = Math.abs(v);
-	return `${sign(v)}${a >= 10 ? a.toFixed(0) : a >= 1 ? a.toFixed(1) : a >= 0.1 ? a.toFixed(2) : a.toFixed(3)}%`;
+	const value = displayChange(v, 100);
+	const a = Math.abs(value);
+	if (a > 0 && a < 0.01) return `<0.01% ${value < 0 ? "decrease" : "increase"}`;
+	return `${sign(value)}${percentages.format(a)}%`;
 }
 // A share that is not zero never reads as 0%.
 export function share(a, b) {
@@ -243,10 +253,12 @@ export function summarise(meta, base, delta, sel) {
 	const bands = others.filter((k) => vals[k] >= floor).slice(0, 18);
 	const dTotal = delta ? dv.reduce((a, b) => a + b, 0) : 0;
 	const byChange = delta ? [...dv.keys()].sort((a, b) => Math.abs(dv[b]) - Math.abs(dv[a])) : [];
-	// nothing in the selection changes: there is no largest change to name
-	const changed = delta && dv[byChange[0]] !== 0 ? byChange[0] : null;
+	// A change below display resolution has no hotspot to name.
+	const changed = delta && displayChange(dv[byChange[0]], total) !== 0 ? byChange[0] : null;
 	// the home country often changes most; the sentence then also names the largest abroad
-	const changedAbroad = delta ? (byChange.find((k) => k !== sel.who && dv[k] !== 0) ?? null) : null;
+	const changedAbroad = delta
+		? (byChange.find((k) => k !== sel.who && displayChange(dv[k], total) !== 0) ?? null)
+		: null;
 	return {
 		vals,
 		dv: delta ? dv : null,
@@ -266,10 +278,18 @@ export function summarise(meta, base, delta, sel) {
 // carry a percentage (under a millionth of the selection's total).
 export const flowPct = (sum, k) => (sum.dv && sum.vals[k] > sum.total * 1e-6 ? (sum.dv[k] / sum.vals[k]) * 100 : null);
 
+// Map colours and labels use the selection's display resolution; exports
+// retain the unrounded percentage returned by flowPct.
+export function displayFlowPct(sum, k) {
+	const p = flowPct(sum, k);
+	return p === null ? null : displayChange(sum.dv[k], sum.total) === 0 ? 0 : p;
+}
+
 // Which way the flows on screen move in a run: -1 all down, 1 all up, 0 both
 // (the legend then shows one arm of the change ramp, or both).
 export function changeArm(sum) {
-	const p = sum.others.map((k) => flowPct(sum, k) ?? 0);
+	const p = sum.others.map((k) => displayFlowPct(sum, k) ?? 0);
+	if (p.every((v) => v === 0)) return 0;
 	return p.every((v) => v <= 0) ? -1 : p.every((v) => v >= 0) ? 1 : 0;
 }
 
@@ -288,7 +308,7 @@ export function niceUp(m) {
 export function fitExtent(sum) {
 	const a = [...sum.vals.keys()]
 		.filter((k) => sum.vals[k] >= sum.total * 1e-3)
-		.map((k) => Math.abs(flowPct(sum, k) ?? 0))
+		.map((k) => Math.abs(displayFlowPct(sum, k) ?? 0))
 		.sort((x, y) => x - y);
 	return niceUp(a.length ? a[Math.floor(0.9 * (a.length - 1))] : 0);
 }

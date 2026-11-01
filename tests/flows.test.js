@@ -12,6 +12,7 @@ import {
 	bandPartners,
 	changeArm,
 	continents,
+	displayChange,
 	fitExtent,
 	flowPct,
 	fmt,
@@ -60,14 +61,14 @@ test("a region has one name on the page, with 'the' where English needs it", () 
 	);
 });
 
-test("numbers keep three figures, a true minus and no exponent", () => {
-	assert.equal(fmt(1001.4), "1,001");
+test("numbers use at most three significant figures and a true minus", () => {
+	assert.equal(fmt(1001.4), "1,000");
 	assert.equal(fmt(42.37), "42.4");
 	assert.equal(fmt(-7.834), "−7.83");
 	assert.equal(fmt(0.0004), "0.0004");
 	assert.equal(pct(-0.78), "−0.78%");
-	assert.equal(pct(-0.012), "−0.012%");
-	assert.equal(pct(12.4), "+12%");
+	assert.equal(pct(-0.012), "−0.01%");
+	assert.equal(pct(12.4), "+12.4%");
 	assert.equal(amountText(52_300_000, 3), "52.3 million jobs");
 	assert.equal(amountText(1234, 3), "1.23 thousand jobs");
 	assert.equal(amountText(104, 5), "104 Mt CO₂-eq");
@@ -284,7 +285,7 @@ test("short units fit the legend and the map labels", () => {
 	assert.equal(amountShort(42.37, 5), "42.4 Mt");
 	assert.equal(amountShort(7_660_000, 3), "7.66M jobs");
 	assert.equal(amountShort(965_000, 3), "965k jobs");
-	assert.equal(amountShort(12, 7), "12.0 Mt");
+	assert.equal(amountShort(12, 7), "12 Mt");
 });
 
 test("the matrix is read the right way round: a consumer draws on itself and three producers", () => {
@@ -318,10 +319,10 @@ test("a run that leaves the selection unchanged names no largest change", () => 
 	assert.equal(local.changed, null);
 });
 
-test("numbers never take exponent notation or float noise", () => {
-	assert.equal(fmt(6e-7), "0.0000006");
+test("small numbers stay compact and rounded step boundaries stay readable", () => {
+	assert.equal(fmt(6e-7), "6e−7");
 	assert.equal(fmt(99.96), "100");
-	assert.equal(fmt(9.996), "10.0");
+	assert.equal(fmt(9.996), "10");
 	assert.equal(niceUp(0.29), 0.3);
 	assert.equal(niceUp(0.13), 0.15);
 	assert.equal(niceUp(6e-6), 7.5e-6);
@@ -381,4 +382,37 @@ test("the zoom goes into the link and back, and a bad one is dropped", () => {
 	for (const bad of ["1", "9", "4,200,0", "4,10", "x", ""])
 		assert.equal(parseView(`?zoom=${bad}`, opts).zoom, null, bad);
 	assert.doesNotMatch(viewSearch(parseView("", opts), meta.country_codes), /zoom/);
+});
+
+test("small changes do not produce long decimals or signed zero", () => {
+	assert.equal(pct(-7e-13), "0%");
+	assert.equal(pct(-0), "0%");
+	assert.equal(pct(-0.0007), "<0.01% decrease");
+	assert.equal(pct(0.0007), "<0.01% increase");
+	assert.equal(fmt(-7e-12), "−7e−12");
+	assert.equal(fmt(1001.4), "1,000");
+});
+
+test("changes below display resolution name no hotspot but retain the raw differences", () => {
+	const noise = Float64Array.from(base, (value) => -value * 1e-15);
+	const summary = summarise(meta, base, noise, sel());
+	assert.equal(summary.changed, null);
+	assert.equal(summary.changedAbroad, null);
+	assert.notEqual(summary.dTotal, 0);
+	assert.ok(summary.dv.some((value) => value !== 0));
+});
+
+test("display resolution scales with the baseline without hiding new flows", () => {
+	assert.equal(displayChange(-7e-12, 1001), 0);
+	assert.equal(displayChange(1e-12, 1), 0);
+	assert.equal(displayChange(2e-12, 1), 2e-12);
+	assert.equal(displayChange(1e-20, 0), 1e-20);
+	assert.equal(displayChange(-0, 0), 0);
+});
+
+test("a change below display resolution keeps the map legend neutral", () => {
+	const noise = Float64Array.from(base, (value) => -value * 1e-15);
+	const summary = summarise(meta, base, noise, sel());
+	assert.equal(changeArm(summary), 0);
+	assert.equal(fitExtent(summary), 1);
 });

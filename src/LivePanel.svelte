@@ -4,7 +4,7 @@
 import { compare } from "../explorer.js";
 import { onDestroy } from "svelte";
 import { BROWSER_STATUS, browserProvenance } from "../browser-results.js";
-import { amountText, pct, wording } from "../flows.js";
+import { amountText, displayChange, pct, wording } from "../flows.js";
 import {
 	catalogName,
 	CHANGE_RANGE,
@@ -105,7 +105,7 @@ const view = $derived.by(() => {
 	const w = wording(id);
 	const rows = compare(data, { scenario: "live", indicator: indicatorId }, w.factor);
 	const baseTotal = rows.reduce((s, r) => s + r.baseline, 0);
-	const deltaTotal = rows.reduce((s, r) => s + r.delta, 0);
+	const deltaTotal = displayChange(rows.reduce((s, r) => s + r.delta, 0), baseTotal);
 	const share = pctText(baseTotal ? (100 * deltaTotal) / baseTotal : null);
 	return {
 		id,
@@ -152,7 +152,8 @@ async function submit(event) {
 		}
 		job = done;
 		data = d;
-		let text = browser ? `Computed in this browser in ${done.duration_s.toFixed(1)} s.` : `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
+		const duration = done.duration_s < 0.1 ? "less than 0.1" : done.duration_s.toFixed(1);
+		let text = browser ? `Computed in this browser in ${duration} s.` : `Job ${done.id} finished in ${duration} s.`;
 		try {
 			if (onflows?.(done, liveText(done, catalog)))
 				text += ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map.";
@@ -221,12 +222,13 @@ async function submit(event) {
 						</tr></thead>
 						<tbody>
 							{#each view.rows as r (r.region)}
+								{@const change = displayChange(r.delta, r.baseline)}
 								<tr>
 									<th scope="row">{r.region}</th>
 									<td>{amountText(r.baseline, view.id)}</td>
 									<td>{amountText(r.scenario, view.id)}</td>
-									<td>{signedText(r.delta, view.id)}</td>
-									<td>{pctText(r.percent)}</td>
+									<td>{signedText(change, view.id)}</td>
+									<td>{pctText(r.baseline ? (100 * change) / r.baseline : null)}</td>
 								</tr>
 							{/each}
 						</tbody>

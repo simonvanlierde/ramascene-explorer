@@ -96,9 +96,9 @@ test("the live panel runs one intervention and labels the result live", async ({
 
 	await expect(page.locator("#live-label")).toHaveText("Results are computed by the job API.");
 	await expect(page.locator("#live-headline")).toHaveText(
-		"Summed over all regions, greenhouse gases would change by −10.0 Mt CO₂-eq (−0.67%) against the job’s own baseline of 1,500 Mt CO₂-eq.",
+		"Summed over all regions, greenhouse gases would change by −10 Mt CO₂-eq (−0.67%) against the job’s own baseline of 1,500 Mt CO₂-eq.",
 	);
-	await expect(page.locator("#live-table tbody tr").first()).toContainText("−10.0 Mt CO₂-eq");
+	await expect(page.locator("#live-table tbody tr").first()).toContainText("−10 Mt CO₂-eq");
 	await expect(page.locator("#live-provenance")).toContainText("computed by the job API");
 	await expectNoAxeViolations(page);
 });
@@ -345,4 +345,37 @@ test("on a phone Details starts under the header, however many rows it wraps to"
 	const header = await page.locator(".top").boundingBox();
 	const panel = await page.locator(".pan").boundingBox();
 	expect(panel.y).toBeGreaterThanOrEqual(header.y + header.height - 0.5);
+});
+
+test("small country changes can sum to a displayed change without naming a hotspot", async ({ page }) => {
+	const done = flowsJob();
+	const { baseline, scenario } = done.result.flows;
+	baseline.fill(0);
+	scenario.fill(0);
+	for (let producer = 0; producer < 49; producer++)
+		for (let consumer = 0; consumer < 49; consumer++) {
+			const cell = producer * 15 * 49 + consumer;
+			baseline[cell] = 1e9;
+			scenario[cell] = 1e9 + 0.01;
+		}
+	await routeJob(page, done);
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
+	await expect(page.locator("#headline")).toContainText("a change of");
+	await expect(page.locator("#headline")).not.toContainText("No change at the displayed precision");
+	await expect(page.locator("#headline")).not.toContainText("largest change");
+});
+
+test("a new flow on a zero baseline has no percentage change", async ({ page }) => {
+	const done = flowsJob();
+	done.result.flows.baseline.fill(0);
+	await routeJob(page, done);
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
+	await expect(page.locator("#headline")).toContainText("zero 2011 baseline");
+	await expect(page.locator("#headline")).not.toContainText("(0%)");
 });

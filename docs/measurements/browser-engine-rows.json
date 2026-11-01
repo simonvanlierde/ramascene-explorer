@@ -1,0 +1,1914 @@
+{
+  "version": 1,
+  "date": "2026-11-01T04:34:50.563Z",
+  "node": "v26.9.0",
+  "cpu": "Intel(R) Core(TM) i9-14900KF",
+  "affinity": "30-31",
+  "method": "seven interleaved pairs per case, fresh processes, local files with warm OS cache; initialization then cold/warm scenario plus flow aggregation; delayMs adds synthetic latency to each file read, without bandwidth limits; not a browser or network benchmark",
+  "results": [
+    {
+      "pair": 0,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 160.97736700000002,
+      "trials": [
+        {
+          "ms": 185.93573399999997,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 14.968769000000009,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 228487168,
+      "rssBytes": 226652160,
+      "privateDirtyBytes": 175722496,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 152.963113,
+      "trials": [
+        {
+          "ms": 32.321848999999986,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.290783000000005,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 123981824,
+      "rssBytes": 122261504,
+      "privateDirtyBytes": 71393280,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 164.94293199999998,
+      "trials": [
+        {
+          "ms": 26.280883999999986,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.93068900000003,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 132685824,
+      "rssBytes": 130850816,
+      "privateDirtyBytes": 80158720,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 154.88187,
+      "trials": [
+        {
+          "ms": 197.739788,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 16.546839000000034,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 214454272,
+      "rssBytes": 212647936,
+      "privateDirtyBytes": 161677312,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 166.432262,
+      "trials": [
+        {
+          "ms": 182.624598,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 41.73771399999998,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 227053568,
+      "rssBytes": 225288192,
+      "privateDirtyBytes": 174354432,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 155.479042,
+      "trials": [
+        {
+          "ms": 33.40116800000001,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.316451,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 124383232,
+      "rssBytes": 122605568,
+      "privateDirtyBytes": 71921664,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 159.899858,
+      "trials": [
+        {
+          "ms": 32.47082799999998,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.50518700000001,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 127307776,
+      "rssBytes": 125575168,
+      "privateDirtyBytes": 74715136,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 173.24564600000002,
+      "trials": [
+        {
+          "ms": 175.69035799999997,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 39.47189700000001,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 221335552,
+      "rssBytes": 219672576,
+      "privateDirtyBytes": 168607744,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 160.38420399999998,
+      "trials": [
+        {
+          "ms": 166.859518,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 12.051278999999965,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 216956928,
+      "rssBytes": 215150592,
+      "privateDirtyBytes": 164220928,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 138.452352,
+      "trials": [
+        {
+          "ms": 25.193061,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 39.58602600000003,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 131149824,
+      "rssBytes": 129499136,
+      "privateDirtyBytes": 78766080,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 162.598392,
+      "trials": [
+        {
+          "ms": 26.10094000000001,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.64007099999998,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 134078464,
+      "rssBytes": 132349952,
+      "privateDirtyBytes": 81707008,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 152.889259,
+      "trials": [
+        {
+          "ms": 186.12582600000002,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 46.047686,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 218079232,
+      "rssBytes": 216227840,
+      "privateDirtyBytes": 165236736,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "0cb782a",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 136.454255,
+      "trials": [
+        {
+          "ms": 172.81820700000003,
+          "bytes": 2506454,
+          "reads": 6,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 19.830123999999955,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 227086336,
+      "rssBytes": 225464320,
+      "privateDirtyBytes": 174579712,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "working-tree",
+      "workload": "tiny",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 157.327476,
+      "trials": [
+        {
+          "ms": 32.62030299999998,
+          "bytes": 78750,
+          "reads": 2,
+          "checksum": 38379762943350.664
+        },
+        {
+          "ms": 35.52894199999997,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.664
+        }
+      ],
+      "peakRssBytes": 125112320,
+      "rssBytes": 123424768,
+      "privateDirtyBytes": 72364032,
+      "load": [
+        3.08,
+        1.88,
+        1.83
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 156.847327,
+      "trials": [
+        {
+          "ms": 363.46631499999995,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.15167299999996,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 231014400,
+      "rssBytes": 229023744,
+      "privateDirtyBytes": 178135040,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 154.662775,
+      "trials": [
+        {
+          "ms": 211.05857,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.916251999999986,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 142229504,
+      "rssBytes": 140558336,
+      "privateDirtyBytes": 89886720,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 153.28062799999998,
+      "trials": [
+        {
+          "ms": 228.57675,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.801244999999994,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 183193600,
+      "rssBytes": 181477376,
+      "privateDirtyBytes": 130424832,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 156.49922899999999,
+      "trials": [
+        {
+          "ms": 350.838797,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 49.55758500000002,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 241500160,
+      "rssBytes": 239882240,
+      "privateDirtyBytes": 188940288,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 152.408909,
+      "trials": [
+        {
+          "ms": 361.63550599999996,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 48.998224999999934,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 236539904,
+      "rssBytes": 234737664,
+      "privateDirtyBytes": 183500800,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 155.60956599999997,
+      "trials": [
+        {
+          "ms": 186.97636900000003,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.804238999999995,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 144695296,
+      "rssBytes": 142938112,
+      "privateDirtyBytes": 92311552,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 140.132234,
+      "trials": [
+        {
+          "ms": 210.12783600000003,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 48.597577,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 170508288,
+      "rssBytes": 168710144,
+      "privateDirtyBytes": 118112256,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 153.458201,
+      "trials": [
+        {
+          "ms": 393.47021499999994,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.262750000000096,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 242507776,
+      "rssBytes": 240754688,
+      "privateDirtyBytes": 189616128,
+      "load": [
+        2.99,
+        1.88,
+        1.84
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 152.291742,
+      "trials": [
+        {
+          "ms": 390.403748,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 45.916931999999974,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 239173632,
+      "rssBytes": 237449216,
+      "privateDirtyBytes": 186474496,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 148.152499,
+      "trials": [
+        {
+          "ms": 221.740437,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 50.92422300000004,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 165408768,
+      "rssBytes": 163672064,
+      "privateDirtyBytes": 112795648,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 156.118774,
+      "trials": [
+        {
+          "ms": 207.404349,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.930361000000005,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 159645696,
+      "rssBytes": 157839360,
+      "privateDirtyBytes": 106938368,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 153.112785,
+      "trials": [
+        {
+          "ms": 378.499601,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 47.746437000000014,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 235462656,
+      "rssBytes": 233783296,
+      "privateDirtyBytes": 182665216,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 149.233753,
+      "trials": [
+        {
+          "ms": 355.17063800000005,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 45.65999799999997,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 243970048,
+      "rssBytes": 242122752,
+      "privateDirtyBytes": 191062016,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 152.098843,
+      "trials": [
+        {
+          "ms": 215.81765099999998,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 47.12121500000001,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 144834560,
+      "rssBytes": 143179776,
+      "privateDirtyBytes": 92381184,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 161.825194,
+      "trials": [
+        {
+          "ms": 588.506719,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 159.809396,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 258355200,
+      "rssBytes": 256671744,
+      "privateDirtyBytes": 205520896,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 148.346723,
+      "trials": [
+        {
+          "ms": 425.055436,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 153.405349,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 205606912,
+      "rssBytes": 203935744,
+      "privateDirtyBytes": 152981504,
+      "load": [
+        2.91,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 148.805028,
+      "trials": [
+        {
+          "ms": 410.798762,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 154.62075099999993,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 193282048,
+      "rssBytes": 191512576,
+      "privateDirtyBytes": 140541952,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 149.719017,
+      "trials": [
+        {
+          "ms": 553.1420109999999,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 153.973839,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 256057344,
+      "rssBytes": 254320640,
+      "privateDirtyBytes": 203186176,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 146.435239,
+      "trials": [
+        {
+          "ms": 556.404357,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 155.17563500000006,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 255082496,
+      "rssBytes": 253239296,
+      "privateDirtyBytes": 202076160,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 162.825248,
+      "trials": [
+        {
+          "ms": 395.153319,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 172.850418,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 166162432,
+      "rssBytes": 164356096,
+      "privateDirtyBytes": 113664000,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 157.051758,
+      "trials": [
+        {
+          "ms": 399.4120270000001,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 155.61367599999994,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 192638976,
+      "rssBytes": 190844928,
+      "privateDirtyBytes": 139784192,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 143.937998,
+      "trials": [
+        {
+          "ms": 561.385873,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 152.12707699999999,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 254119936,
+      "rssBytes": 252416000,
+      "privateDirtyBytes": 201400320,
+      "load": [
+        2.84,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 159.498447,
+      "trials": [
+        {
+          "ms": 540.7504120000001,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 156.742211,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 255148032,
+      "rssBytes": 253292544,
+      "privateDirtyBytes": 201994240,
+      "load": [
+        2.77,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 151.130053,
+      "trials": [
+        {
+          "ms": 420.042277,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 153.7494569999999,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 183324672,
+      "rssBytes": 181477376,
+      "privateDirtyBytes": 130899968,
+      "load": [
+        2.77,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 150.533646,
+      "trials": [
+        {
+          "ms": 402.333774,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 174.41369899999995,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 163708928,
+      "rssBytes": 161882112,
+      "privateDirtyBytes": 110727168,
+      "load": [
+        2.77,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 144.395367,
+      "trials": [
+        {
+          "ms": 570.7525519999999,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 154.521347,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 257064960,
+      "rssBytes": 255299584,
+      "privateDirtyBytes": 204390400,
+      "load": [
+        2.77,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "0cb782a",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 144.320361,
+      "trials": [
+        {
+          "ms": 563.019637,
+          "bytes": 11537870,
+          "reads": 174,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 152.56956100000002,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 262311936,
+      "rssBytes": 260472832,
+      "privateDirtyBytes": 209346560,
+      "load": [
+        2.77,
+        1.89,
+        1.84
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "working-tree",
+      "workload": "broad",
+      "delayMs": 0,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 146.799369,
+      "trials": [
+        {
+          "ms": 396.621569,
+          "bytes": 9176662,
+          "reads": 170,
+          "checksum": 38374794952193.336
+        },
+        {
+          "ms": 175.53787699999998,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38374794952193.336
+        }
+      ],
+      "peakRssBytes": 161050624,
+      "rssBytes": 159260672,
+      "privateDirtyBytes": 108204032,
+      "load": [
+        2.79,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 311.516198,
+      "trials": [
+        {
+          "ms": 911.610383,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 50.89729599999987,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 243019776,
+      "rssBytes": 241328128,
+      "privateDirtyBytes": 190074880,
+      "load": [
+        2.79,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 0,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 301.671407,
+      "trials": [
+        {
+          "ms": 513.765164,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 47.02072599999997,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 169840640,
+      "rssBytes": 168226816,
+      "privateDirtyBytes": 117149696,
+      "load": [
+        2.79,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 314.129096,
+      "trials": [
+        {
+          "ms": 525.4452239999999,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 50.49213899999995,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 182415360,
+      "rssBytes": 180793344,
+      "privateDirtyBytes": 129781760,
+      "load": [
+        2.79,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 1,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 310.221024,
+      "trials": [
+        {
+          "ms": 934.274687,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 48.97759199999996,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 234004480,
+      "rssBytes": 232288256,
+      "privateDirtyBytes": 181215232,
+      "load": [
+        2.79,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 301.387299,
+      "trials": [
+        {
+          "ms": 933.904048,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.764331000000084,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 237072384,
+      "rssBytes": 235274240,
+      "privateDirtyBytes": 184287232,
+      "load": [
+        2.81,
+        1.93,
+        1.85
+      ]
+    },
+    {
+      "pair": 2,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 318.72326999999996,
+      "trials": [
+        {
+          "ms": 511.20215299999995,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.92936599999996,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 156274688,
+      "rssBytes": 154574848,
+      "privateDirtyBytes": 103751680,
+      "load": [
+        2.81,
+        1.93,
+        1.85
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 305.558769,
+      "trials": [
+        {
+          "ms": 493.03285400000004,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.32616600000006,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 138567680,
+      "rssBytes": 136904704,
+      "privateDirtyBytes": 85905408,
+      "load": [
+        2.81,
+        1.93,
+        1.85
+      ]
+    },
+    {
+      "pair": 3,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 316.623264,
+      "trials": [
+        {
+          "ms": 924.600451,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 49.918138,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 234754048,
+      "rssBytes": 232988672,
+      "privateDirtyBytes": 181641216,
+      "load": [
+        2.81,
+        1.93,
+        1.85
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 307.555273,
+      "trials": [
+        {
+          "ms": 925.6604409999999,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 49.62049900000011,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 254918656,
+      "rssBytes": 253313024,
+      "privateDirtyBytes": 202260480,
+      "load": [
+        2.66,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 4,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 306.736672,
+      "trials": [
+        {
+          "ms": 515.298011,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 46.47507299999995,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 173625344,
+      "rssBytes": 171929600,
+      "privateDirtyBytes": 121249792,
+      "load": [
+        2.66,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 309.542311,
+      "trials": [
+        {
+          "ms": 541.982811,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 47.63029500000005,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 174911488,
+      "rssBytes": 173273088,
+      "privateDirtyBytes": 122195968,
+      "load": [
+        2.66,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 5,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 296.780281,
+      "trials": [
+        {
+          "ms": 926.93464,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 48.49966500000005,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 233582592,
+      "rssBytes": 231882752,
+      "privateDirtyBytes": 180936704,
+      "load": [
+        2.66,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "0cb782a",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "125ebb30081e6b9151342204df9a32ab823575f5272bb7fa040c52e83965e130",
+      "hashes": {
+        "browser-data.js": "5f0ed8e5b657c3f2e4a8111c5cdf604caa63c952d613c3d3f6a522e77300f063",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 306.948598,
+      "trials": [
+        {
+          "ms": 921.9555740000001,
+          "bytes": 8485579,
+          "reads": 102,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 45.51417100000003,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 234369024,
+      "rssBytes": 232730624,
+      "privateDirtyBytes": 181764096,
+      "load": [
+        2.61,
+        1.91,
+        1.85
+      ]
+    },
+    {
+      "pair": 6,
+      "ref": "working-tree",
+      "workload": "default",
+      "delayMs": 150,
+      "datasetManifestSha256": "88965bcfb345680285bc7655d6f1139a9f04f81c717dc8931a82e86962f9f26b",
+      "hashes": {
+        "browser-data.js": "83f44227aafacfb70139c453e4c13c831d58b7803674a76420617cf4c61f3771",
+        "browser-engine.js": "1d709f1be30f546616a5a0c3555b1976ec15a94d072f2f1f2663abb2fff1a05e"
+      },
+      "readyMs": 309.40947300000005,
+      "trials": [
+        {
+          "ms": 518.215453,
+          "bytes": 6095891,
+          "reads": 98,
+          "checksum": 38375617165810
+        },
+        {
+          "ms": 47.055484999999976,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165810
+        }
+      ],
+      "peakRssBytes": 177102848,
+      "rssBytes": 175247360,
+      "privateDirtyBytes": 124612608,
+      "load": [
+        2.61,
+        1.91,
+        1.85
+      ]
+    }
+  ]
+}

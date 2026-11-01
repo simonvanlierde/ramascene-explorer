@@ -15,6 +15,7 @@ import { untrack } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { merge } from "topojson-client";
 import {
+	displayChange,
 	amountShort,
 	amountText,
 	arc,
@@ -24,7 +25,8 @@ import {
 	changeArm,
 	divBand,
 	divFill,
-	flowPct,
+	displayFlowPct,
+	fmt,
 	LAND,
 	pct,
 	placeName,
@@ -123,14 +125,14 @@ const fb = $derived(divBand(extent));
 const oneSection = $derived(ui.on.size === 1 ? [...ui.on][0] : null);
 function fillOf(k) {
 	if (whatif) {
-		const p = flowPct(sum, k);
+		const p = displayFlowPct(sum, k);
 		return p === null ? LAND : ff(p * ui.s);
 	}
 	if (k === ui.who) return SELF;
 	return sum.vals[k] < lo / 10 ? LAND : seq(sum.vals[k]);
 }
 const bandColour = (k) =>
-	whatif ? fb((flowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : BAND;
+	whatif ? fb((displayFlowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : BAND;
 
 // --- bands and labels -----------------------------------------------------------
 const STEPS = Array.from({ length: 31 }, (_, i) => i / 30);
@@ -189,7 +191,7 @@ const labels = $derived.by(() => {
 		if (box[0] < 4 || box[2] > view.w - 4 || box[1] < 4 || box[3] > view.h - 4) continue;
 		if (placed.some((q) => hits(box, q))) continue;
 		placed.push(box);
-		const fp = flowPct(sum, b.k);
+		const fp = displayFlowPct(sum, b.k);
 		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator) });
 		if (out.length > 6) break;
 	}
@@ -447,12 +449,13 @@ const tipText = $derived.by(() => {
 				? `here, for consumption in ${otherIn}`
 				: `in ${otherIn}, for consumption here`;
 	if (whatif) {
-		const p = flowPct(sum, k);
+		const p = displayFlowPct(sum, k);
+		const change = displayChange(sum.dv[k], sum.total);
 		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
 		return {
 			name,
-			big: pct(p),
-			line: `${sum.dv[k] > 0 ? "+" : ""}${amountText(sum.dv[k], ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
+			big: pct(change === 0 ? 0 : p),
+			line: `${change > 0 ? "+" : ""}${amountText(change, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
 		};
 	}
 	const secs = [...ui.on].map((q) => [q, sum.cell(k, q)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
@@ -492,16 +495,16 @@ const divStops = $derived(
 const divTicks = $derived.by(() => {
 	const m = extent;
 	const q = +(extent / 4).toPrecision(2);
-	if (arm < 0) return [`−${m}%`, `−${q}%`, "0%"];
-	if (arm > 0) return ["0%", `+${q}%`, `+${m}%`];
-	return [`−${m}%`, `−${q}%`, "0%", `+${q}%`, `+${m}%`];
+	if (arm < 0) return [`−${fmt(m)}%`, `−${fmt(q)}%`, "0%"];
+	if (arm > 0) return ["0%", `+${fmt(q)}%`, `+${fmt(m)}%`];
+	return [`−${fmt(m)}%`, `−${fmt(q)}%`, "0%", `+${fmt(q)}%`, `+${fmt(m)}%`];
 });
 const glyphs = $derived.by(() => {
 	const a0 = sum.vals[sum.bands[0]] ?? 0;
 	const a1 = Number((a0 / 5).toPrecision(1));
 	return [a1, a0].filter((v) => v > 0);
 });
-const tickText = (t) => (t >= 1e6 ? `${t / 1e6}M` : t >= 1000 ? `${t / 1000}k` : String(t));
+const tickText = (t) => (t >= 1e6 ? `${fmt(t / 1e6)}M` : t >= 1000 ? `${fmt(t / 1000)}k` : fmt(t));
 const unit = $derived(wording(ui.indicator).unit);
 </script>
 
@@ -612,12 +615,12 @@ const unit = $derived(wording(ui.indicator).unit);
 	</div>
 	<div class="lg">
 		{#if whatif}
-			<div class="lt">Change in each 2011 flow, %{arm < 0 ? " (all decreases)" : arm > 0 ? " (all increases)" : ""}</div>
+			<div class="lt">Change in each 2011 flow, %</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale; 90% of flows within ±{extent}%, larger ones in the end colour. Band width: 2011 {unit}.</p>
+			<p class="fn">Square-root scale, fitted to the larger flows; changes beyond its limits share the end colour. Band width: 2011 {unit}.</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->

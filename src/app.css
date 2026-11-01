@@ -749,6 +749,9 @@ button.pill:hover {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.kpis.k5 .ks {
+  white-space: normal;
+}
 .kpis.k5 .kv {
   font-size: 19px;
 }
