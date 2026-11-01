@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { plan, scenarioFlows } from "../browser-engine.js";
+import { LIMITS, plan, scenarioFlows } from "../browser-engine.js";
 import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
@@ -143,6 +143,11 @@ test("Woodbury and final demand changes agree with a direct solve, in both forms
 test("overlapping edits compose, zero changes return the baseline, and inputs are validated", async () => {
 	const data = tiny(0.1, 0.2, 0.1, 0.1);
 	assert.deepEqual(await scenarioFlows(data, [step({ techChange: [0] })]), data.baseline);
+	// a 0% step asks for no rows of any matrix
+	assert.ok(
+		data.log.every(([, rows]) => rows === 0),
+		JSON.stringify(data.log),
+	);
 	const got = await scenarioFlows(data, [step(), step()]);
 	const want = direct([
 		[0.1, 0.2 * 0.8 ** 2],
@@ -291,4 +296,72 @@ test("technical scenarios start A, L and X reads before waiting for any", async 
 	release.resolve();
 	await output;
 	assert.ok(overlapped, "one matrix waited for another matrix's network reads");
+});
+
+// The smallest LIMITS[name] that plans the steps, with the other limits off. Each
+// cost is a whole number here (n³/3 aside, which cancels in the differences below).
+function need(name, meta, steps) {
+	const saved = { ...LIMITS };
+	try {
+		Object.assign(LIMITS, { work: Infinity, memory: Infinity, download: Infinity });
+		let lo = 0;
+		let hi = 2 ** 40;
+		while (hi - lo > 1) {
+			LIMITS[name] = Math.floor((lo + hi) / 2);
+			try {
+				plan(meta, steps);
+				hi = LIMITS[name];
+			} catch {
+				lo = LIMITS[name];
+			}
+		}
+		// just over the limit is refused, the limit itself is not
+		LIMITS[name] = hi - 1;
+		assert.throws(() => plan(meta, steps), /too broad/);
+		return hi;
+	} finally {
+		Object.assign(LIMITS, saved);
+	}
+}
+
+test("each planner cost term moves its limit by exactly its own size", () => {
+	const C = 49;
+	const F = 2205;
+	const catalog = {
+		products: [
+			{ id: 82, leaves: [5] },
+			{ id: 84, leaves: [7] },
+		],
+		regions: [
+			{ id: 5, leaves: [29, 30, 32, 34, 37, 40, 42, 44] },
+			{ id: 9, leaves: [0] },
+		],
+		consumers: [
+			{ id: 4, leaves: Array.from({ length: 85 }, (_, i) => i + 42) },
+			{ id: 276, final: true, leaves: [0] },
+		],
+	};
+	const sized = (L, LC, H) => ({
+		countries: C,
+		products: 200,
+		catalog,
+		arrays: { A: { chunk_bytes: 10 }, L: { chunk_bytes: L }, LC: { chunk_bytes: LC }, H: { chunk_bytes: H } },
+	});
+	// 8 rows (one product in 8 countries) into 85 columns (one country's manufacturing)
+	const technical = { product: [82], originReg: [5], consumedBy: [4], consumedReg: [9], techChange: [-20] };
+	const [R, K, J] = [8, 85, 8];
+	// download: R rows of A, K rows of L, and J rows of H
+	assert.equal(need("download", sized(1, 1000, 3), [technical]), R * 10 + K * 1 + J * 3);
+	// memory: L[K, J] through its columns holds a second copy while it transposes
+	assert.equal(
+		need("memory", sized(1000, 1, 1), [technical]) - need("memory", sized(1, 1000, 1), [technical]),
+		8 * K * J,
+	);
+	// work: final demand for another 8 rows adds its X₀ update and its H fold
+	const demand = { ...technical, product: [84], consumedBy: [276] };
+	const f = 8;
+	assert.equal(
+		need("work", sized(1, 1000, 1), [technical, demand]) - need("work", sized(1, 1000, 1), [technical]),
+		K * f * C + f * F * C,
+	);
 });
