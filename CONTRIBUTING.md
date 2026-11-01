@@ -8,11 +8,13 @@ vulnerability as [.github/SECURITY.md](.github/SECURITY.md) says, not in an issu
 ## Set up
 
 Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.json`),
-[uv](https://docs.astral.sh/uv/) for the Python side, and prek for the git hooks
+[uv](https://docs.astral.sh/uv/) for the Python side, Rust through rustup with
+`wasm-bindgen-cli` for the browser kernel, and prek for the git hooks
 (`uv tool install prek`, then `prek install`).
 
 ```sh
 pnpm install
+pnpm engine
 gh release download data-2011-r2 --pattern embodied.parquet --dir data
 pnpm dev
 ```

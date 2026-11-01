@@ -30,6 +30,9 @@ follow [Semantic Versioning](https://semver.org/).
   [Zarr store](docs/browser-engine.md#data-and-method) that reads only the rows a scenario needs,
   so manufacturing used by electricity in every country, or one region's whole final demand,
   now computes on the device. Results match every published scenario within relative 1e-6.
+- Broad custom scenarios compute faster: the small system and the flow sums run in WebAssembly,
+  so manufacturing used by electricity in every country takes about 4 s instead of 10 s on a
+  desktop ([browser-engine.md](docs/browser-engine.md#measure-a-change)).
 
 ### Fixed
 

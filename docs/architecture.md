@@ -35,7 +35,8 @@ modules next to `index.html`, so `node --test` can test it:
 | `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
-| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse), the small linear solve |
+| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse) |
+| `engine/` | the Rust kernel, built to WebAssembly: the small linear solve and the flow sums |
 | `browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
 | `browser-results.js` | browser source labels, provenance and result shape |
 

@@ -5,7 +5,12 @@ and the checks to run before you push.
 
 ## View
 
-Use Node 26 and pnpm. Install once with `pnpm install`. The map flows are a release
+Use Node 26 and pnpm. Install once with `pnpm install`. The custom-scenario kernel
+in `engine/` is Rust built to WebAssembly: with [rustup](https://rustup.rs/) and
+`wasm-bindgen-cli` at the version of the `wasm-bindgen` crate in `engine/Cargo.lock`
+(`cargo install wasm-bindgen-cli --version <that version> --locked`), run
+`pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/`,
+which `pnpm dev`, `pnpm build` and `pnpm test` import. The map flows are a release
 asset, not in git, so fetch them into `data/`:
 
 ```sh

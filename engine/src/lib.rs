@@ -58,6 +58,7 @@ pub fn correction(
     finite(delta)?;
     finite(t)?;
     finite(x)?;
+    let (delta_slice, t_slice, x_slice) = (delta, t, x);
     let delta = MatRef::from_row_major_slice(delta, r, k);
     let t = MatRef::from_row_major_slice(t, k, r);
     let x = MatRef::from_row_major_slice(x, k, c);
@@ -67,16 +68,14 @@ pub fn correction(
             .collect()
     };
     let w = if r <= k {
-        // S = I − ΔA T (r × r), right side ΔA X
-        let t_abs = row_abs(t);
-        let scale = (0..r)
-            .map(|i| 1.0 + (0..k).map(|j| delta[(i, j)].abs() * t_abs[j]).sum::<f64>())
-            .fold(1.0, f64::max);
-        let mut s = Mat::<f64>::identity(r, r);
-        matmul(&mut s, Accum::Add, delta, t, -1.0, Par::Seq);
-        let mut rhs = Mat::<f64>::zeros(r, c);
-        matmul(&mut rhs, Accum::Replace, delta, x, 1.0, Par::Seq);
-        solve(s.as_ref(), rhs.as_ref(), scale, epsilon)?
+        let dense = prefer_dense(delta_slice);
+        let (s, rhs, scale) = small_system(delta_slice, t_slice, x_slice, r, k, c, dense);
+        solve(
+            MatRef::from_row_major_slice(&s, r, r),
+            MatRef::from_row_major_slice(&rhs, r, c),
+            scale,
+            epsilon,
+        )?
     } else {
         // S = I − T ΔA (k × k), W = ΔA S⁻¹ X
         let d_abs = row_abs(delta);
@@ -96,6 +95,84 @@ pub fn correction(
         .collect();
     finite(&out).map_err(|_| Error::Singular)?;
     Ok(out)
+}
+
+// Measured break-even of the two builds in `small_system`.
+fn prefer_dense(delta: &[f64]) -> bool {
+    delta.iter().filter(|&&v| v != 0.0).count() * 5 > delta.len()
+}
+
+// S = I − ΔA T (r × r) and ΔA X (r × c), row-major, and the largest row scale
+// before I − ΔA T cancels. A scenario's rows of A are often mostly zero: then each
+// nonzero adds a contiguous row of T and of X. Above about one nonzero in five,
+// faer's dense products are faster.
+fn small_system(
+    delta: &[f64],
+    t: &[f64],
+    x: &[f64],
+    r: usize,
+    k: usize,
+    c: usize,
+    dense: bool,
+) -> (Vec<f64>, Vec<f64>, f64) {
+    let t_rows: Vec<&[f64]> = t.chunks_exact(r).collect();
+    let x_rows: Vec<&[f64]> = x.chunks_exact(c).collect();
+    let t_abs: Vec<f64> = t_rows
+        .iter()
+        .map(|row| row.iter().map(|v| v.abs()).sum())
+        .collect();
+    let scale = delta
+        .chunks_exact(k)
+        .map(|d_row| {
+            1.0 + d_row
+                .iter()
+                .zip(&t_abs)
+                .map(|(v, a)| v.abs() * a)
+                .sum::<f64>()
+        })
+        .fold(1.0, f64::max);
+    let mut s = vec![0.0; r * r];
+    let mut rhs = vec![0.0; r * c];
+    if dense {
+        let d = MatRef::from_row_major_slice(delta, r, k);
+        matmul(
+            MatMut::from_row_major_slice_mut(&mut s, r, r),
+            Accum::Replace,
+            d,
+            MatRef::from_row_major_slice(t, k, r),
+            -1.0,
+            Par::Seq,
+        );
+        matmul(
+            MatMut::from_row_major_slice_mut(&mut rhs, r, c),
+            Accum::Replace,
+            d,
+            MatRef::from_row_major_slice(x, k, c),
+            1.0,
+            Par::Seq,
+        );
+    } else {
+        for (d_row, (s_row, rhs_row)) in delta
+            .chunks_exact(k)
+            .zip(s.chunks_exact_mut(r).zip(rhs.chunks_exact_mut(c)))
+        {
+            for (j, &v) in d_row.iter().enumerate() {
+                if v == 0.0 {
+                    continue;
+                }
+                for (sq, tq) in s_row.iter_mut().zip(t_rows[j]) {
+                    *sq -= v * tq;
+                }
+                for (rq, xq) in rhs_row.iter_mut().zip(x_rows[j]) {
+                    *rq += v * xq;
+                }
+            }
+        }
+    }
+    for i in 0..r {
+        s[i * r + i] += 1.0;
+    }
+    (s, rhs, scale)
 }
 
 // Partial-pivot LU, refusing a pivot that float32 data cannot tell apart from zero.
@@ -340,6 +417,32 @@ mod tests {
             "singular or ill-conditioned scenario"
         );
         assert_eq!(Error::Dimensions.to_string(), "invalid solve dimensions");
+    }
+
+    #[test]
+    fn sparse_and_dense_builds_agree() {
+        // 3 × 4 ΔA with zeros, T 4 × 3, X 4 × 2
+        let delta = [
+            0.1, 0.0, -0.2, 0.0, 0.0, 0.0, 0.3, 0.05, -0.4, 0.0, 0.0, 0.0,
+        ];
+        let t = [
+            0.5, 1.0, -0.25, 2.0, 0.0, 0.75, 1.5, -1.0, 0.25, 0.1, 0.2, 0.3,
+        ];
+        let x = [1.0, 2.0, -1.0, 0.5, 3.0, 0.0, 0.25, 4.0];
+        let sparse = small_system(&delta, &t, &x, 3, 4, 2, false);
+        let dense = small_system(&delta, &t, &x, 3, 4, 2, true);
+        assert_eq!(sparse.2, dense.2);
+        for (a, b) in sparse
+            .0
+            .iter()
+            .zip(&dense.0)
+            .chain(sparse.1.iter().zip(&dense.1))
+        {
+            close(*a, *b);
+        }
+        // row 0 of S: 1 − (0.1·0.5 − 0.2·1.5), and of ΔA X: 0.1·1 − 0.2·3
+        close(sparse.0[0], 1.0 - (0.05 - 0.3));
+        close(sparse.1[0], 0.1 - 0.6);
     }
 
     #[test]
