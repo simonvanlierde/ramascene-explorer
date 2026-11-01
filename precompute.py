@@ -8,7 +8,8 @@ drives it, without Celery, a broker or channels. Every scenario is an
 intervention on the 2011 base year through ramascene.modelling.Modelling; the
 engine makes no projection, so nothing here is a forecast.
 
-Scenarios: the three original interventions plus a material-efficiency grid,
+Scenarios: five named ones (the three original interventions and two of the
+page's featured runs; `--scenarios original` runs these) plus a material-efficiency grid,
 ten products x five continental regions x three cut sizes (150), all defined
 as data below.
 
@@ -655,7 +656,7 @@ def compute(engine, scenarios, indicators, embodied=False):
     Optional detail (the real engine has it, a minimal fake need not):
     by_country, by_sector_country, country_leaves and aggregate_members give
     the 49 leaf regions and the sector x region cells for the baseline, the
-    original interventions and the control (grid cells keep the continental
+    named scenarios and the control (grid cells keep the continental
     aggregates only). A detail check that fails writes nothing.
 
     embodied=True adds the flows embodied in final demand for the baseline and
