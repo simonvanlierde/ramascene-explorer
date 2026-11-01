@@ -16,7 +16,9 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 			engine = null;
 			throw e;
 		});
-		engine.catch(() => {});
+		// this message's own load: a failure resets engine before a later await could see null
+		const kernel = engine;
+		kernel.catch(() => {});
 		const data = await loaded;
 		// the form checks a selection's size with these before sending it
 		if (!body)
@@ -34,7 +36,7 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 				},
 			});
 		else {
-			await engine;
+			await kernel;
 			const start = performance.now();
 			const flows = await scenarioFlows(data, body.model_details);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
