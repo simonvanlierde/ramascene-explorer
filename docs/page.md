@@ -106,10 +106,11 @@ For an industry, the percentage changes how much of the product it uses per unit
 For **Final demand**, it changes the spending on the product.
 The model then calculates the total use. It is not fixed to that percentage.
 
-Your device can calculate a change to up to about 200 product–country pairs, where a pair is one
-product from one producing country. The limit is lower when many industries use the product.
-Manufacturing from every country is 85 × 49 = 4,165 pairs, too many: the card says so before you run it.
-Choose a narrower product, fewer producing countries, or fewer industries or regions that use it, or use the job API.
+Your device calculates within [download, memory and arithmetic budgets](browser-engine.md). A pair
+is one product from one producing country. Manufacturing from every country used by electricity
+(85 × 49 = 4,165 pairs) fits, and takes several seconds; every product from every country does not,
+and the card says so before you run it. Choose a narrower product, fewer producing countries, or
+fewer industries or regions that use it, or use the job API.
 
 A finished custom scenario replaces the map's scenario, with its own baseline and provenance.
 **Details → Method** lists its totals by producing region.

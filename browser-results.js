@@ -5,14 +5,14 @@ export const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
 	pill: "Browser method",
 	heading: "Custom calculation",
-	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates. All published scenarios match RaMa-Scene within relative 1e-9. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
+	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates on matrices stored as float32. All published scenarios match RaMa-Scene within relative 1e-6. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
 };
 
 export function browserProvenance(job) {
 	return [
 		["Status", BROWSER_STATUS],
 		["Dataset", "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
-		["Method", "Float64 Woodbury update, computed in a worker on this device"],
+		["Method", "Float64 Woodbury update on float32 matrices, computed in a worker on this device"],
 		["Scenario parameters", JSON.stringify(job.scenario.model_details)],
 		["Computed", `${job.duration_s < 0.01 ? "less than 0.01" : job.duration_s.toFixed(2)} s including data reads`],
 	];
@@ -31,7 +31,7 @@ export function browserRun(job, meta, text) {
 export function browserResult(data, body, scenario, duration) {
 	const { meta } = data;
 	const countries = meta.catalog.regions.filter((r) => r.leaves.length === 1).sort((a, b) => a.leaves[0] - b.leaves[0]);
-	const baseline = Float64Array.from(meta.baseline_flows);
+	const baseline = Float64Array.from(data.baseline);
 	const C = meta.countries;
 	const S = meta.sections.length;
 	const totals = (flows) =>

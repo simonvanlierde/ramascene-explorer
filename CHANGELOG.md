@@ -26,10 +26,16 @@ follow [Semantic Versioning](https://semver.org/).
 - The custom-scenario lists are nested by section and region, sorted by name, and searchable
   ([page.md](docs/page.md#custom-scenarios)).
 - A custom result's totals by region moved from the sidebar to Details → Method.
+- Custom scenarios can be much broader: the browser data is a float32
+  [Zarr store](docs/browser-engine.md#data-and-method) that reads only the rows a scenario needs,
+  so manufacturing used by electricity in every country, or one region's whole final demand,
+  now computes on the device. Results match every published scenario within relative 1e-6.
 
 ### Fixed
 
-- A selection too broad for the browser, such as all manufacturing used by electricity, now says
+- The browser's [memory check](docs/browser-engine.md) counts the matrix copies used during
+  a custom calculation. Mixed scenarios that exceed the working-memory budget are refused before downloading matrices.
+- A selection too broad for the browser, such as every product used by electricity, now says
   how many product–country pairs it changes and what to narrow, before Run, instead of failing with
   "select at most 2000 changed rows". The check counts each pair once and uses the change you typed,
   so a 0% change no longer blocks Run.

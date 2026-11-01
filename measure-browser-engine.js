@@ -1,68 +1,66 @@
-// Paired diagnostics: node measure-browser-engine.js <before-ref> [output.json] [before-data-dir] [after-data-dir]
-// Each sample gets a fresh process. Pin the parent to the same CPUs for both refs.
+// Diagnostics: node measure-browser-engine.js [output.json] [data-dir]
+// Each sample gets a fresh process. Pin the parent to fixed CPUs.
 
-import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { readFileSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { matrixPath } from "./browser-data.js";
+import { fileURLToPath } from "node:url";
+import { openEngine } from "./browser-data.js";
+import { plan, scenarioFlows } from "./browser-engine.js";
+import { localRange } from "./tests/local-range.js";
 
 const filename = fileURLToPath(import.meta.url);
 const root = dirname(filename);
-const require = createRequire(import.meta.url);
+const sections = Array.from({ length: 15 }, (_, i) => i + 1);
 const steps = {
 	tiny: { product: [82], originReg: [7], consumedBy: [81], consumedReg: [7], techChange: [-20] },
 	default: { product: [180], originReg: [1], consumedBy: [198], consumedReg: [2], techChange: [-20] },
-	broad: { product: [5], originReg: [7], consumedBy: [4], consumedReg: [1], techChange: [-20] },
+	"steel to all of Europe": {
+		product: [180],
+		originReg: [1],
+		consumedBy: sections,
+		consumedReg: [2],
+		techChange: [-20],
+	},
+	"electricity to manufacturing": {
+		product: [6],
+		originReg: [1],
+		consumedBy: [4],
+		consumedReg: [1],
+		techChange: [-20],
+	},
+	"manufacturing to electricity": {
+		product: [5],
+		originReg: [1],
+		consumedBy: [5],
+		consumedReg: [1],
+		techChange: [-20],
+	},
+	"China final demand": { product: [1], originReg: [1], consumedBy: [276], consumedReg: [37], techChange: [-20] },
 };
 
-async function sample(ref, workload, delayMs, directory = `${root}/data/browser-engine`) {
-	const hashes = {};
-	async function module(name) {
-		let source =
-			ref === "working-tree"
-				? readFileSync(`${root}/${name}`, "utf8")
-				: execFileSync("git", ["show", `${ref}:${name}`], { cwd: root, encoding: "utf8" });
-		hashes[name] = createHash("sha256").update(source).digest("hex");
-		for (const dependency of ["hyparquet", "hyparquet-compressors"])
-			source = source.replace(`from "${dependency}"`, `from "${pathToFileURL(require.resolve(dependency)).href}"`);
-		return import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
-	}
-	const { openEngine, outputFlows } = await module("browser-data.js");
-	const { scenarioOutput } = await module("browser-engine.js");
-	const { asyncBufferFromFile } = await import("hyparquet");
-	const manifest = readFileSync(
-		`${directory}/${existsSync(`${directory}/manifest-v2.json`) ? "manifest-v2.json" : "manifest.json"}`,
-		"utf8",
-	);
+async function sample(workload, delayMs, directory) {
+	const manifest = readFileSync(`${directory}/manifest-v3.json`, "utf8");
 	const meta = JSON.parse(manifest);
+	const local = localRange(directory, meta);
 	let bytes = 0;
 	let reads = 0;
-	const started = performance.now();
-	const data = await openEngine(meta, async (name, index) => {
-		const file = await asyncBufferFromFile(`${directory}/${matrixPath(meta, name, index)}`);
-		return {
-			byteLength: file.byteLength,
-			slice: async (start, end) => {
-				bytes += (end ?? file.byteLength) - start;
-				reads++;
-				if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
-				return file.slice(start, end);
-			},
-		};
+	const data = openEngine(meta, async (...args) => {
+		reads++;
+		if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+		const buffer = await local(...args);
+		bytes += buffer.byteLength;
+		return buffer;
 	});
-	const readyMs = performance.now() - started;
+	const { rows, columns, J, byRows, download } = plan(meta, [steps[workload]]);
 	const trials = [];
 	for (let repeat = 0; repeat < 2; repeat++) {
 		const beforeBytes = bytes;
 		const beforeReads = reads;
 		const start = performance.now();
-		const output = await scenarioOutput(data, [steps[workload]]);
-		const flows = outputFlows(data, output);
+		const flows = await scenarioFlows(data, [steps[workload]]);
 		trials.push({
 			ms: performance.now() - start,
 			bytes: bytes - beforeBytes,
@@ -71,85 +69,73 @@ async function sample(ref, workload, delayMs, directory = `${root}/data/browser-
 		});
 	}
 	return {
-		ref,
 		workload,
 		delayMs,
+		size: { rows: rows.length, columns: columns.length, flowColumns: J.length, lByRows: byRows, download },
 		datasetManifestSha256: createHash("sha256").update(manifest).digest("hex"),
-		hashes,
-		readyMs,
 		trials,
 		peakRssBytes: process.resourceUsage().maxRSS * (process.platform === "darwin" ? 1 : 1024),
-		rssBytes: process.memoryUsage().rss,
-		privateDirtyBytes:
-			process.platform === "linux"
-				? Number(readFileSync("/proc/self/smaps_rollup", "utf8").match(/Private_Dirty:\s*(\d+)/)[1]) * 1024
-				: null,
 		load: loadavg(),
 	};
 }
 
 if (process.argv[2] === "--sample") {
-	console.log(JSON.stringify(await sample(process.argv[3], process.argv[4], Number(process.argv[5]), process.argv[6])));
+	console.log(JSON.stringify(await sample(process.argv[3], Number(process.argv[4]), process.argv[5])));
 } else {
-	const before = process.argv[2];
-	if (!before)
-		throw new Error(
-			"usage: node measure-browser-engine.js <before-ref> [output.json] [before-data-dir] [after-data-dir]",
-		);
+	const directory = process.argv[3] ?? `${root}/data/browser-engine`;
 	const results = [];
-	for (const [workload, delayMs] of [
-		["tiny", 0],
-		["default", 0],
-		["broad", 0],
-		["default", 150],
-	]) {
-		for (let pair = 0; pair < 7; pair++) {
-			const paired = [];
-			for (const ref of pair % 2 ? ["working-tree", before] : [before, "working-tree"]) {
-				const result = JSON.parse(
-					execFileSync(
-						process.execPath,
-						[
-							filename,
-							"--sample",
-							ref,
-							workload,
-							String(delayMs),
-							(ref === before ? process.argv[4] : process.argv[5]) ?? `${root}/data/browser-engine`,
-						],
-						{
-							cwd: root,
-							encoding: "utf8",
-						},
-					),
-				);
-				results.push({ pair, ...result });
-				paired.push(result);
-			}
-			for (let repeat = 0; repeat < 2; repeat++) {
-				const a = paired[0].trials[repeat].checksum;
-				const b = paired[1].trials[repeat].checksum;
-				assert.ok(
-					Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)),
-					"benchmark results differ",
-				);
-			}
-		}
-	}
+	const cases = [...Object.keys(steps).map((w) => [w, 0]), ["default", 150]];
+	for (const [workload, delayMs] of cases)
+		for (let repeat = 0; repeat < 5; repeat++)
+			results.push(
+				JSON.parse(
+					execFileSync(process.execPath, [filename, "--sample", workload, String(delayMs), directory], {
+						cwd: root,
+						encoding: "utf8",
+					}),
+				),
+			);
+	const median = (values) => values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
+	const summary = cases.map(([workload, delayMs]) => {
+		const runs = results.filter((r) => r.workload === workload && r.delayMs === delayMs);
+		return {
+			workload,
+			delayMs,
+			...runs[0].size,
+			firstMs: median(runs.map((r) => r.trials[0].ms)),
+			repeatMs: median(runs.map((r) => r.trials[1].ms)),
+			firstBytes: runs[0].trials[0].bytes,
+			firstReads: runs[0].trials[0].reads,
+			peakRssBytes: median(runs.map((r) => r.peakRssBytes)),
+		};
+	});
+	const sources = Object.fromEntries(
+		["browser-data.js", "browser-engine.js"].map((name) => [
+			name,
+			createHash("sha256")
+				.update(readFileSync(`${root}/${name}`))
+				.digest("hex"),
+		]),
+	);
 	const report = {
-		version: 1,
-		date: new Date().toISOString(),
+		version: 2,
 		node: process.version,
-		cpu: cpus()[0].model,
-		affinity:
-			process.platform === "linux"
-				? readFileSync("/proc/self/status", "utf8").match(/Cpus_allowed_list:\s*(.*)/)[1]
-				: null,
-		method:
-			"seven interleaved pairs per case, fresh processes, local files with warm OS cache; initialization then cold/warm scenario plus flow aggregation; delayMs adds synthetic latency to each file read, without bandwidth limits; not a browser or network benchmark",
+		cpu: cpus()[0]?.model,
+		date: new Date().toISOString().slice(0, 10),
+		sources,
+		summary,
 		results,
 	};
-	const text = `${JSON.stringify(report, null, 2)}\n`;
-	if (process.argv[3]) writeFileSync(process.argv[3], text);
-	else process.stdout.write(text);
+	const out = `${JSON.stringify(report, null, 2)}\n`;
+	if (process.argv[2]) writeFileSync(process.argv[2], out);
+	else process.stdout.write(out);
+	console.table(
+		summary.map(({ workload, delayMs, firstMs, repeatMs, firstBytes }) => ({
+			workload,
+			delayMs,
+			firstMs,
+			repeatMs,
+			MB: firstBytes / 1e6,
+		})),
+	);
 }

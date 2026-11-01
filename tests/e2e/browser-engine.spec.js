@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./test.js";
 
 test("a browser scenario draws its own flows without a job server", async ({ page, isMobile, baseURL }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
 	const external = [];
 	const site = new URL(baseURL).origin;
@@ -43,7 +43,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 });
 
 test("Try again replaces a failed browser worker", async ({ page, isMobile }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(30_000);
 	let attempts = 0;
 	await page.route("**/assets/browser-worker-*.js", (route) => {
@@ -67,7 +67,7 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 });
 
 test("a negligible custom change stays readable without claiming a hotspot", async ({ page, isMobile }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…" }).first().click();
@@ -100,7 +100,7 @@ test("a selection too broad for the browser says so before Run, and search narro
 	page,
 	isMobile,
 }) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v2.json"), "Export or download the browser dataset first.");
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…" }).first().click();
@@ -110,11 +110,11 @@ test("a selection too broad for the browser says so before Run, and search narro
 	// the published runs fold to the chosen one, so the form sits higher
 	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
-	// Manufacturing from every country, used by electricity
-	await page.locator("#live-product").selectOption("5");
+	// every product from every country, used by electricity
+	await page.locator("#live-product").selectOption("1");
 	await page.locator("#live-consumer").selectOption("5");
 	await expect(page.locator("#live-broad")).toContainText(
-		"4,165 product–country pairs (85 products × 49 producing countries)",
+		"9,800 product–country pairs (200 products × 49 producing countries)",
 	);
 	await expect(page.locator("#live-run")).toBeDisabled();
 	await expect(page.locator("#live-broad")).toHaveAttribute("role", "status");

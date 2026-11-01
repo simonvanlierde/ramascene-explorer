@@ -1,239 +1,285 @@
-import { parquetMetadataAsync, parquetRead } from "hyparquet";
-import { compressors } from "hyparquet-compressors";
+import { gunzip } from "hyparquet-compressors";
 
-export async function matrixReader(file, shape, { cacheBytes = 16 * 1024 ** 2 } = {}) {
-	if (!Number.isSafeInteger(cacheBytes) || cacheBytes < 0) throw new Error("invalid matrix cache budget");
-	const metadata = await parquetMetadataAsync(file);
-	const [height, width] = shape;
-	if (metadata.row_groups.length !== height || metadata.row_groups.some((g) => Number(g.num_rows) !== width))
-		throw new Error("matrix row groups do not match the manifest");
-	return cachedRows(
-		height,
-		async (index) => {
-			const values = new Float64Array(width);
-			let count = 0;
-			await parquetRead({
-				file,
-				metadata,
-				compressors,
-				columns: ["value"],
-				rowStart: index * width,
-				rowEnd: (index + 1) * width,
-				onChunk: ({ rowStart, columnData }) => {
-					values.set(columnData, rowStart - index * width);
-					count += columnData.length;
-				},
-			});
-			if (count !== width || !values.every(Number.isFinite)) throw new Error("invalid matrix values");
-			return values;
-		},
-		cacheBytes,
-	);
+// The browser export is a float32 Zarr v3 store (export_browser.py): each array
+// is sharded by producing country, with gzip chunks of whole rows and a shard
+// index of (offset, size) uint64 pairs at the end of each shard file.
+const EMPTY = 0xffffffffffffffffn;
+// Each request is one byte range: GitHub Pages answers a multi-range request
+// with the whole file. Chunks closer than GAP share a request.
+const GAP = 64 * 1024;
+// At most PARALLEL × MAX_RANGE bytes in flight per array.
+const MAX_RANGE = 1024 ** 2;
+const PARALLEL = 64;
+
+const SHAPES = { A: [9800, 9800], L: [9800, 9800], LC: [9800, 9800], H: [9800, 2205], X: [9800, 49], Y: [9800, 49] };
+
+// Slicing-by-8: table k holds the CRC of byte n followed by k zero bytes, so one
+// step takes 8 bytes. A byte at a time ran at under 100 MB/s, slower than gunzip.
+const CRC_TABLE = new Uint32Array(8 * 256);
+for (let n = 0; n < 256; n++) {
+	let c = n;
+	for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+	CRC_TABLE[n] = c;
+}
+for (let i = 256; i < CRC_TABLE.length; i++)
+	CRC_TABLE[i] = CRC_TABLE[CRC_TABLE[i - 256] & 0xff] ^ (CRC_TABLE[i - 256] >>> 8);
+
+function crc32(bytes) {
+	const T = CRC_TABLE;
+	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+	const end = bytes.byteLength - (bytes.byteLength % 8);
+	let c = 0xffffffff;
+	let i = 0;
+	for (; i < end; i += 8) {
+		const a = view.getUint32(i, true) ^ c;
+		const b = view.getUint32(i + 4, true);
+		c =
+			T[1792 + (a & 0xff)] ^
+			T[1536 + ((a >>> 8) & 0xff)] ^
+			T[1280 + ((a >>> 16) & 0xff)] ^
+			T[1024 + (a >>> 24)] ^
+			T[768 + (b & 0xff)] ^
+			T[512 + ((b >>> 8) & 0xff)] ^
+			T[256 + ((b >>> 16) & 0xff)] ^
+			T[b >>> 24];
+	}
+	for (; i < bytes.byteLength; i++) c = T[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+	return (c ^ 0xffffffff) >>> 0;
 }
 
-function cachedRows(height, load, cacheBytes = 16 * 1024 ** 2) {
+// readRange(shard, start, end) resolves to that byte range of the shard file.
+export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {}) {
 	if (!Number.isSafeInteger(cacheBytes) || cacheBytes < 0) throw new Error("invalid matrix cache budget");
+	const [height, width] = info.shape;
+	const rows = info.chunk_rows;
+	const perShard = info.shard_rows / rows;
+	const indexes = new Map();
 	const cache = new Map();
-	const pending = new Map();
 	let retained = 0;
-	return (index) => {
-		if (!Number.isInteger(index) || index < 0 || index >= height) throw new Error("invalid matrix row");
-		if (cache.has(index)) {
-			const value = cache.get(index);
-			cache.delete(index);
-			cache.set(index, value);
-			return Promise.resolve(value);
+
+	function index(shard) {
+		if (!indexes.has(shard)) {
+			const size = info.shard_bytes[shard];
+			const start = size - 16 * perShard;
+			indexes.set(
+				shard,
+				readRange(shard, start, size)
+					.then((buffer) => {
+						if (buffer.byteLength !== 16 * perShard) throw new Error("truncated shard index");
+						const view = new DataView(buffer);
+						return Array.from({ length: perShard }, (_, i) => {
+							const offset = view.getBigUint64(16 * i, true);
+							const bytes = view.getBigUint64(16 * i + 8, true);
+							if (offset === EMPTY && bytes === EMPTY) return null;
+							if (offset + bytes > BigInt(start)) throw new Error("invalid shard index");
+							return [Number(offset), Number(bytes)];
+						});
+					})
+					.catch((e) => {
+						indexes.delete(shard);
+						throw e;
+					}),
+			);
 		}
-		if (!pending.has(index)) {
-			const loading = (async () => {
-				const values = await load(index);
-				if (values.byteLength <= cacheBytes) {
-					while (retained + values.byteLength > cacheBytes) {
-						const oldest = cache.keys().next().value;
-						retained -= cache.get(oldest).byteLength;
-						cache.delete(oldest);
+		return indexes.get(shard);
+	}
+
+	function keep(chunk, values) {
+		// Two overlapping reads of one chunk must not count its bytes twice.
+		if (cache.has(chunk) || values.byteLength > cacheBytes) return;
+		while (retained + values.byteLength > cacheBytes) {
+			const oldest = cache.keys().next().value;
+			retained -= cache.get(oldest).byteLength;
+			cache.delete(oldest);
+		}
+		cache.set(chunk, values);
+		retained += values.byteLength;
+	}
+
+	// The decoder writes into a buffer of the row's size, which bounds memory, but does
+	// not report how much it filled; the gzip trailer's CRC-32 and size catch short data.
+	function decode(bytes) {
+		const length = rows * width * 4;
+		if (bytes.byteLength < 18) throw new Error("invalid matrix chunk");
+		const trailer = new DataView(bytes.buffer, bytes.byteOffset + bytes.byteLength - 8, 8);
+		if (trailer.getUint32(4, true) !== length) throw new Error("invalid matrix chunk");
+		const raw = gunzip(bytes, new Uint8Array(length));
+		if (crc32(raw) !== trailer.getUint32(0, true)) throw new Error("invalid matrix chunk");
+		const values = new Float32Array(raw.buffer);
+		// v * 0 is NaN for NaN and ±Infinity, so one sum checks every value
+		let sum = 0;
+		for (let i = 0; i < values.length; i++) sum += values[i] * 0;
+		if (sum !== 0) throw new Error("invalid matrix values");
+		return values;
+	}
+
+	// One shard's chunks, as single ranges with small gaps merged.
+	async function ranges(shard, chunks) {
+		const entries = await index(shard);
+		const found = [];
+		const empty = [];
+		for (const chunk of chunks) {
+			const entry = entries[chunk - shard * perShard];
+			if (entry) found.push([chunk, ...entry]);
+			else empty.push(chunk);
+		}
+		found.sort((a, b) => a[1] - b[1]);
+		const out = [];
+		for (const [chunk, offset, bytes] of found) {
+			const last = out.at(-1);
+			if (last && offset - last.end <= GAP && offset + bytes - last.start <= MAX_RANGE) {
+				last.end = Math.max(last.end, offset + bytes);
+				last.chunks.push([chunk, offset, bytes]);
+			} else out.push({ shard, start: offset, end: offset + bytes, chunks: [[chunk, offset, bytes]] });
+		}
+		return { out, empty };
+	}
+
+	// Calls onChunk(chunk, values) once per requested chunk, in any order.
+	return async function chunks(list, onChunk) {
+		const byShard = new Map();
+		for (const chunk of new Set(list)) {
+			if (!Number.isInteger(chunk) || chunk < 0 || chunk * rows >= height) throw new Error("invalid matrix row");
+			if (cache.has(chunk)) {
+				const values = cache.get(chunk);
+				cache.delete(chunk);
+				cache.set(chunk, values);
+				onChunk(chunk, values);
+				continue;
+			}
+			const shard = Math.floor(chunk / perShard);
+			if (!byShard.has(shard)) byShard.set(shard, []);
+			byShard.get(shard).push(chunk);
+		}
+		const planned = await Promise.all([...byShard].map(([shard, list]) => ranges(shard, list)));
+		const zeros = new Float32Array(rows * width);
+		for (const { empty } of planned) for (const chunk of empty) onChunk(chunk, zeros);
+		const queue = planned.flatMap((p) => p.out);
+		async function worker() {
+			try {
+				for (let range = queue.shift(); range; range = queue.shift()) {
+					const bytes = new Uint8Array(await readRange(range.shard, range.start, range.end));
+					if (bytes.byteLength !== range.end - range.start) throw new Error("truncated matrix range");
+					for (const [chunk, offset, size] of range.chunks) {
+						const values = decode(bytes.subarray(offset - range.start, offset - range.start + size));
+						keep(chunk, values);
+						onChunk(chunk, values);
 					}
-					cache.set(index, values);
-					retained += values.byteLength;
 				}
-				return values;
-			})().finally(() => pending.delete(index));
-			pending.set(index, loading);
+			} catch (e) {
+				// the read has failed: the other workers stop instead of fetching the rest
+				queue.length = 0;
+				throw e;
+			}
 		}
-		return pending.get(index);
+		await Promise.all(Array.from({ length: Math.min(PARALLEL, queue.length) }, worker));
 	};
 }
 
-// openFile is injected for local parity tests. Browser calls stay on this
-// data directory; the manifest cannot redirect a matrix to another origin.
-export async function openEngine(meta, openFile) {
-	if (
-		meta.version !== 2 ||
-		meta.products !== 200 ||
-		meta.countries !== 49 ||
-		!Number.isFinite(meta.baseline_residual) ||
-		meta.baseline_residual > 1e-9
-	)
-		throw new Error("unsupported browser dataset");
-	for (const [name, shape] of Object.entries({
-		A: [9800, 9800],
-		L: [9800, 9800],
-		Y: [9800, 49],
-		X: [9800, 49],
-		B: [3, 9800],
-		M: [60, 9800],
-	})) {
-		const info = meta.files?.[name];
-		if (
-			JSON.stringify(info?.shape) !== JSON.stringify(shape) ||
-			!/^[a-f0-9]{64}$/.test(info?.sha256) ||
-			!Number.isSafeInteger(info.bytes) ||
-			info.bytes <= 0 ||
-			(["A", "L"].includes(name) && info.storage !== "rows")
-		)
-			throw new Error(`invalid ${name} matrix manifest`);
-	}
-	const readers = new Map();
-	async function row(name, index) {
-		if (!["A", "L", "M"].includes(name))
-			throw new Error("matrix rows are available for A, L and M; use X, Y or B directly");
-		if (!readers.has(name))
-			readers.set(
-				name,
-				(async () =>
-					name === "M"
-						? matrixReader(await openFile(name), meta.files[name].shape)
-						: rowReader((index) => openFile(name, index), meta.files[name].shape))().catch((e) => {
-					readers.delete(name);
-					throw e;
-				}),
-			);
-		return (await readers.get(name))(index);
-	}
-	const all = async (name) => wholeMatrix(await openFile(name), meta.files[name].shape);
-	const [X, Y, B] = await Promise.all([all("X"), all("Y"), all("B")]);
-	return { meta, row, X, Y, B };
-}
-
-async function wholeMatrix(remote, [height, width]) {
-	const buffer = await remote.slice(0, remote.byteLength);
-	const file = { byteLength: buffer.byteLength, slice: (a, b) => buffer.slice(a, b) };
-	const metadata = await parquetMetadataAsync(file);
-	if (Number(metadata.num_rows) !== height * width) throw new Error("invalid matrix dimensions");
-	const values = new Float64Array(height * width);
-	let count = 0;
-	// Bound decoding so intermediate column buffers can be released between batches.
-	for (let start = 0; start < height; start += 128) {
-		await parquetRead({
-			file,
-			metadata,
-			compressors,
-			columns: ["value"],
-			rowStart: start * width,
-			rowEnd: Math.min(start + 128, height) * width,
-			onChunk: ({ rowStart, columnData }) => {
-				values.set(columnData, rowStart);
-				count += columnData.length;
-			},
-		});
-	}
-	if (count !== values.length || !values.every(Number.isFinite)) throw new Error("invalid matrix values");
-	return Array.from({ length: height }, (_, r) => values.subarray(r * width, (r + 1) * width));
-}
-
-export function rowReader(openRow, [height, width], { cacheBytes = 16 * 1024 ** 2 } = {}) {
-	return cachedRows(
-		height,
-		async (index) => {
-			const file = await openRow(index);
-			if (file.byteLength > ROW_FILE_LIMIT) throw new Error("matrix row file exceeds the byte limit");
-			return (await wholeMatrix(file, [1, width]))[0];
-		},
-		cacheBytes,
+function validArray(info, shape) {
+	return (
+		JSON.stringify(info?.shape) === JSON.stringify(shape) &&
+		Number.isInteger(info.chunk_rows) &&
+		info.chunk_rows > 0 &&
+		info.shard_rows % info.chunk_rows === 0 &&
+		shape[0] % info.shard_rows === 0 &&
+		Array.isArray(info.shard_bytes) &&
+		info.shard_bytes.length === shape[0] / info.shard_rows &&
+		info.shard_bytes.every((v) => Number.isSafeInteger(v) && v >= (16 * info.shard_rows) / info.chunk_rows) &&
+		Number.isFinite(info.chunk_bytes) &&
+		info.chunk_bytes >= 0
 	);
 }
 
-export function matrixPath(meta, name, index) {
-	const stem = `${name}-${meta.files[name].sha256}`;
-	return index === undefined ? `${stem}.parquet` : `${stem}/${index}.parquet`;
+// Rows of one array as float64, rows.length × columns.length (all columns when
+// none are given), in the order asked.
+export function matrixReader(info, readRange, options) {
+	const chunks = arrayReader(info, readRange, options);
+	const [height, width] = info.shape;
+	const step = info.chunk_rows;
+	return async function read(rows, columns) {
+		if (columns && !columns.every((c) => Number.isInteger(c) && c >= 0 && c < width))
+			throw new Error("invalid matrix column");
+		const w = columns ? columns.length : width;
+		const out = new Float64Array(rows.length * w);
+		const wanted = new Map();
+		rows.forEach((r, i) => {
+			if (!Number.isInteger(r) || r < 0 || r >= height) throw new Error("invalid matrix row");
+			const chunk = Math.floor(r / step);
+			if (!wanted.has(chunk)) wanted.set(chunk, []);
+			wanted.get(chunk).push([r, i]);
+		});
+		await chunks([...wanted.keys()], (chunk, values) => {
+			for (const [r, i] of wanted.get(chunk)) {
+				const at = (r - chunk * step) * width;
+				if (!columns) out.set(values.subarray(at, at + width), i * w);
+				else for (let j = 0; j < w; j++) out[i * w + j] = values[at + columns[j]];
+			}
+		});
+		return out;
+	};
+}
+
+// readRange(name, shard, start, end) is injected for local parity tests.
+// Browser calls stay on this data directory; the manifest cannot redirect a
+// matrix to another origin.
+export function openEngine(meta, readRange) {
+	const C = meta.countries;
+	if (
+		meta.version !== 3 ||
+		meta.products !== 200 ||
+		C !== 49 ||
+		!/^[a-f0-9]{64}$/.test(meta.store) ||
+		!Number.isFinite(meta.baseline_residual) ||
+		meta.baseline_residual > 1e-9 ||
+		meta.baseline_flows?.length !== meta.indicators.length * C * meta.sections.length * C ||
+		// the flows' width is the stored width of H
+		meta.baseline_flows.length !== SHAPES.H[1] * C
+	)
+		throw new Error("unsupported browser dataset");
+	const readers = {};
+	for (const [name, shape] of Object.entries(SHAPES)) {
+		if (!validArray(meta.arrays?.[name], shape)) throw new Error(`invalid ${name} matrix manifest`);
+		readers[name] = matrixReader(meta.arrays[name], (shard, start, end) => readRange(name, shard, start, end));
+	}
+	const baseline = Float64Array.from(meta.baseline_flows);
+	if (!baseline.every(Number.isFinite)) throw new Error("invalid baseline flows");
+
+	async function read(name, rows, columns) {
+		if (!readers[name]) throw new Error(`unknown matrix ${name}`);
+		return readers[name](rows, columns);
+	}
+	return { meta, baseline, read };
+}
+
+export function shardPath(meta, name, shard) {
+	return `store-${meta.store}/${name}/c/${shard}/0`;
 }
 
 export async function fetchEngine(base) {
-	const response = await fetch(new URL("manifest-v2.json", base));
+	// Revalidated, so a deploy's new store is not paired with a cached manifest.
+	const response = await fetch(new URL("manifest-v3.json", base), { cache: "no-cache" });
 	if (!response.ok) throw new Error(`browser dataset: ${response.status}`);
 	const meta = await response.json();
-	return openEngine(meta, async (name, index) => {
-		const url = new URL(matrixPath(meta, name, index), base);
-		if (index === undefined) return rangeFile(url, meta.files[name].bytes);
-		return rowFile(url);
-	});
+	return openEngine(meta, (name, shard, start, end) =>
+		fetchRange(new URL(shardPath(meta, name, shard), base), start, end, meta.arrays[name].shard_bytes[shard]),
+	);
 }
 
-// A row is at most 78,400 uncompressed value bytes plus its Parquet framing.
-const ROW_FILE_LIMIT = 128 * 1024;
-
-export async function rowFile(url) {
-	const response = await fetch(url);
-	if (response.status !== 200) {
+export async function fetchRange(url, start, end, byteLength) {
+	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
+		throw new Error("invalid matrix byte range");
+	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` } });
+	if (response.status === 404) {
 		await response.body?.cancel();
-		throw new Error(`browser matrix row: ${response.status}`);
+		// The manifest names the store by its hash, so a 404 means a newer deploy.
+		throw new Error("the browser data was updated: reload the page");
 	}
-	if (Number(response.headers.get("Content-Length")) > ROW_FILE_LIMIT) {
+	if (response.status !== 206 || response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`) {
 		await response.body?.cancel();
-		throw new Error("matrix row file exceeds the byte limit");
+		throw new Error("browser scenario data needs a server with HTTP range support");
 	}
-	const reader = response.body.getReader();
-	const values = new Uint8Array(ROW_FILE_LIMIT);
-	let size = 0;
-	try {
-		for (;;) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			if (size + value.byteLength > ROW_FILE_LIMIT) {
-				await reader.cancel();
-				throw new Error("matrix row file exceeds the byte limit");
-			}
-			values.set(value, size);
-			size += value.byteLength;
-		}
-	} finally {
-		reader.releaseLock();
-	}
-	const buffer = values.buffer.slice(0, size);
-	return { byteLength: size, slice: (a, b) => buffer.slice(a, b) };
-}
-
-export function rangeFile(url, byteLength) {
-	return {
-		byteLength,
-		async slice(start, end = byteLength) {
-			if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
-				throw new Error("invalid matrix byte range");
-			const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` } });
-			if (
-				response.status !== 206 ||
-				response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`
-			) {
-				await response.body?.cancel();
-				throw new Error("browser scenario data needs a server with HTTP range support");
-			}
-			const buffer = await response.arrayBuffer();
-			if (buffer.byteLength !== end - start) throw new Error("truncated matrix range");
-			return buffer;
-		},
-	};
-}
-
-export function outputFlows(data, X) {
-	const { countries: C, products: P, sections, indicators } = data.meta;
-	const S = sections.length;
-	const out = new Float64Array(indicators.length * C * S * C);
-	for (let i = 0; i < indicators.length; i++)
-		for (let p = 0; p < C; p++)
-			for (let s = 0; s < S; s++)
-				for (const product of sections[s].leaves) {
-					const row = p * P + product;
-					for (let c = 0; c < C; c++) out[((i * C + p) * S + s) * C + c] += data.B[i][row] * X[row * C + c];
-				}
-	return out;
+	const buffer = await response.arrayBuffer();
+	if (buffer.byteLength !== end - start) throw new Error("truncated matrix range");
+	return buffer;
 }

@@ -1,0 +1,1 @@
+{"M": {"shape": [4, 3], "chunk_rows": 1, "shard_rows": 2, "shard_bytes": [94, 62], "chunk_bytes": 23.0}, "P": {"shape": [8, 3], "chunk_rows": 2, "shard_rows": 4, "shard_bytes": [108, 108], "chunk_bytes": 38.0}}

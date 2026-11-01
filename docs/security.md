@@ -19,11 +19,13 @@ markup.
 
 The custom-scenario worker reads only the page's own browser dataset.
 It sends no scenario to an external service. Matrix dimensions, finite values,
-ids and percentage bounds are checked. Each response for one row of A (the technical
-coefficients) or one column of L (the Leontief inverse) is limited to
-128 KiB while streaming. Other matrix reads refuse a server that ignores Range.
-The worker stops after a two-minute request timeout. The data archive is pinned
-by `data/browser-engine-rows.sha256` in CI and publishing.
+ids and percentage bounds are checked. Every matrix read is a single byte range
+inside a shard whose size the manifest records, and a server that ignores Range
+is refused. Shard indexes must point inside their shard. Each chunk decodes
+into a buffer the size of its row, and its gzip size field and CRC-32 must
+match, so a crafted chunk cannot grow past one row. The worker stops after a two-minute request
+timeout. The data archive is pinned by `data/browser-engine-zarr.sha256` in CI
+and publishing.
 
 ## What `?api=` accepts
 

@@ -14,8 +14,9 @@ What is planned for the next year (to late 2027), in rough order. None of it has
 
 ## Available
 
-- [Browser scenarios](browser-engine.md) use float64 Woodbury updates and bounded matrix reads.
-  CI checks every published scenario against RaMa-Scene at relative 1e-9.
+- [Browser scenarios](browser-engine.md) use float64 Woodbury updates on a float32 Zarr store
+  and read only the rows a scenario needs. CI checks every published scenario against
+  RaMa-Scene at relative 1e-6.
 - The browser reader joins the [agreement table](../brightway-check/README.md).
 
 ## Not planned
