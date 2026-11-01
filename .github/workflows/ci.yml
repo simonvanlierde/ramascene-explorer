@@ -67,6 +67,7 @@ jobs:
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/engine
       - name: fetch the browser scenario data
         env:
           GH_TOKEN: ${{ github.token }}
@@ -80,6 +81,29 @@ jobs:
         env:
           BROWSER_ENGINE_DATA: data/browser-engine
       - run: node brightway-check/browser_check.js data/browser-engine
+
+  engine:
+    name: engine tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: engine
+          save-if: ${{ github.event_name != 'pull_request' }}
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
 
   playwright-version:
     name: playwright version
@@ -141,5 +165,6 @@ jobs:
           tar -xf data/ramascene-browser-engine-zarr.tar -C data
 
       - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/engine
       - run: pnpm build
       - run: pnpm exec playwright test

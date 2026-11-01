@@ -37,6 +37,12 @@ fn finite(values: &[f64]) -> Result<(), Error> {
 /// `delta` is ΔA (r × k), `t` is L[K, R] (k × r) and `x` is X₀[K, :] (k × c); the
 /// result is W (r × c), row-major. A pivot at or below `epsilon · scale · n` is
 /// refused, where the scale includes each row's terms before I − ΔA T cancels.
+///
+/// # Errors
+///
+/// [`Error::Dimensions`] when a length disagrees with `r`, `k` and `c`,
+/// [`Error::NonFinite`] for a NaN or infinite input, and [`Error::Singular`]
+/// when a pivot is refused or the result is not finite.
 pub fn correction(
     delta: &[f64],
     t: &[f64],
@@ -115,8 +121,17 @@ fn solve(
 }
 
 /// out (f × c) += hᵀ z, for `h` (b × f) rows of flow totals and `z` (b × c), all row-major.
+///
+/// # Errors
+///
+/// [`Error::Dimensions`] when a length disagrees with `f` and `c`.
 pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result<(), Error> {
-    if f == 0 || c == 0 || out.len() != f * c || h.len() % f != 0 || z.len() != h.len() / f * c {
+    if f == 0
+        || c == 0
+        || out.len() != f * c
+        || !h.len().is_multiple_of(f)
+        || z.len() != h.len() / f * c
+    {
         return Err(Error::Dimensions);
     }
     let b = h.len() / f;
@@ -151,6 +166,7 @@ mod wasm {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
@@ -209,7 +225,7 @@ mod tests {
     fn cancellation_is_refused_and_inputs_are_checked() {
         // 1 − ΔA·L = 0 for a = 0.092 and a change of 986.95…%
         let l = 1.0 / (1.0 - 0.092);
-        let d = 0.092 * 9.869565217391305;
+        let d = 0.092 * 9.869_565_217_391_305;
         assert_eq!(
             correction(&[d], &[l], &[1.0], 1, 1, 1, 2f64.powi(-23)),
             Err(Error::Singular)
@@ -223,6 +239,28 @@ mod tests {
             correction(&[1.0], &[l], &[1.0], 1, 2, 1, 1e-16),
             Err(Error::Dimensions)
         );
+    }
+
+    #[test]
+    fn solve_pivots_and_refuses_a_singular_matrix() {
+        // a zero first pivot needs a row swap
+        let s = [0.0, 2.0, 1.0, 3.0];
+        let x = solve(
+            MatRef::from_row_major_slice(&s, 2, 2),
+            MatRef::from_row_major_slice(&[4.0, 7.0], 2, 1),
+            1.0,
+            f64::EPSILON,
+        )
+        .unwrap();
+        assert_eq!((x[(0, 0)], x[(1, 0)]), (1.0, 2.0));
+        let s = [1.0, 2.0, 2.0, 4.0];
+        let singular = solve(
+            MatRef::from_row_major_slice(&s, 2, 2),
+            MatRef::from_row_major_slice(&[1.0, 2.0], 2, 1),
+            1.0,
+            f64::EPSILON,
+        );
+        assert_eq!(singular.err(), Some(Error::Singular));
     }
 
     #[test]

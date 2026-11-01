@@ -67,6 +67,9 @@ jobs:
           package-manager-cache: false
 
       - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/engine
+        with:
+          cache: "false"
       - run: pnpm build
 
       - name: pack dist
