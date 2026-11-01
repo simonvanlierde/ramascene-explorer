@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { openEngine } from "../browser-data.js";
 import { localRange } from "../tests/local-range.js";
+import "../tests/engine-wasm.js";
 
 const directory = process.argv[2];
 if (!directory) throw new Error("pass the exported browser data directory");

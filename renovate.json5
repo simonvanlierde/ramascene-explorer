@@ -22,7 +22,7 @@
   lockFileMaintenance: { minimumReleaseAge: null },
 
   // Renovate merges once every check on the branch passes. GitHub's own
-  // auto-merge would wait only for the four checks main requires. Renovate's
+  // auto-merge would wait only for the checks main requires. Renovate's
   // app bypasses main's required review, so its merges need no approval.
   platformAutomerge: false,
 

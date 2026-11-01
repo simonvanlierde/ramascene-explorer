@@ -30,6 +30,8 @@
   --ok: #2f6b4f;
   --focus: #3b6ea5;
   --danger: #b3261e;
+  --on-fill: #fff; /* text on --slate and --danger */
+  --halo: #fff; /* outlines and halos that lift map marks and labels off what is under them */
   --sh: 0 1px 2px rgb(31 42 51 / 6%);
   --pop: 0 10px 30px -10px rgb(31 42 51 / 28%);
   --side: 272px;
@@ -38,6 +40,38 @@
   --top: 48px;
   --sans: "Public Sans", system-ui, sans-serif;
   --serif: "Spectral", Georgia, serif;
+}
+/* The dark world: the same slate, rust and teal on a near-black ground. App.svelte
+   sets data-theme from the header toggle, or from the system setting until the
+   toggle is used; the map's own colours are in flows.js (MAP). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #14191d;
+  --card: #1c2328;
+  --ink: #e3e8ec;
+  --mut: #9ba7b1;
+  --rule: #2f383f;
+  --soft: #242c32;
+  --tint: #2b343b;
+  --tint-hover: #36414a;
+  --control-border: #46525c;
+  --input-border: #7d8a95;
+  --selected-border: #56687a;
+  --selected-fill: #232c33;
+  --rust-tint: #5a3322;
+  --rust-wash: #3a2a22;
+  --notice-fill: #29251f;
+  --notice-border: #4b4235;
+  --slate: #c3d0da;
+  --neg: #7fb0e0;
+  --pos: #e8907f;
+  --ok: #72c49d;
+  --focus: #82b3ec;
+  --danger: #f07c72;
+  --on-fill: #14191d;
+  --halo: #1c2328;
+  --sh: 0 1px 2px rgb(0 0 0 / 30%);
+  --pop: 0 10px 30px -10px rgb(0 0 0 / 60%);
 }
 
 * {
@@ -114,7 +148,7 @@ pre {
   top: 0;
   z-index: 30;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-fill);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-align: center;
@@ -130,7 +164,7 @@ pre {
   padding: 8px 12px;
   border-radius: 8px;
   background: var(--slate);
-  color: #fff;
+  color: var(--on-fill);
   font-weight: 700;
   text-decoration: none;
 }
@@ -187,13 +221,19 @@ pre {
 .brand .by a:hover {
   color: var(--ink);
 }
+/* the theme toggle and the source link stay together, at the right on a phone too */
+.top .icons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
 .pill.gh {
   flex: none;
   justify-content: center;
   width: 28px;
   padding: 0;
 }
-a.pill.gh:hover {
+.pill.gh:hover {
   color: var(--ink);
   background: var(--tint-hover);
 }
@@ -323,7 +363,7 @@ button.pill:hover {
 }
 .seg.big button[aria-pressed="true"] {
   background: var(--slate);
-  color: #fff;
+  color: var(--on-fill);
   box-shadow: none;
 }
 .hint {
@@ -566,10 +606,10 @@ button.pill:hover {
   font-weight: 700;
 }
 .rail .t[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--c) 22%, #fff);
+  background: color-mix(in srgb, var(--c) 22%, var(--card));
 }
 .rail .t[aria-pressed="true"]:hover {
-  background: color-mix(in srgb, var(--c) 36%, #fff);
+  background: color-mix(in srgb, var(--c) 36%, var(--card));
 }
 /* off: a grey swatch and muted text that still reads at AA, not faded opacity */
 .rail .t[aria-pressed="false"] {
@@ -800,7 +840,7 @@ svg.map.zoomed {
   cursor: grab;
 }
 .rg {
-  stroke: #fff;
+  stroke: var(--halo);
   stroke-width: 0.6;
   cursor: pointer;
 }
@@ -817,16 +857,16 @@ svg.map.live .rg {
 }
 .bands path {
   fill-opacity: 0.76;
-  stroke: #fff;
+  stroke: var(--halo);
   stroke-opacity: 0.7;
   stroke-width: 0.6;
   stroke-linejoin: round;
   pointer-events: none;
 }
 .ring {
-  fill: #fff;
+  fill: var(--halo);
   fill-opacity: 0.35;
-  stroke: #fff;
+  stroke: var(--halo);
   stroke-width: 2;
   pointer-events: none;
 }
@@ -834,7 +874,7 @@ svg.map.live .rg {
   font: 600 10.5px var(--sans);
   fill: var(--ink);
   paint-order: stroke;
-  stroke: #fff;
+  stroke: var(--halo);
   stroke-width: 3px;
   stroke-linejoin: round;
   pointer-events: none;
@@ -931,7 +971,7 @@ svg.map.live .rg {
   font-size: 12px;
   color: var(--mut);
   line-height: 1.38;
-  background: rgb(255 255 255 / 80%);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
   border-radius: 6px;
   padding: 4px 6px;
 }
@@ -940,7 +980,7 @@ svg.map.live .rg {
   right: 10px;
   bottom: 10px;
   width: 262px;
-  background: rgb(255 255 255 / 94%);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
   border-radius: 8px;
   box-shadow: 0 1px 4px rgb(31 42 51 / 10%);
   padding: 9px 11px 10px;
@@ -1033,7 +1073,7 @@ svg.map.live .rg {
   margin-left: -7px;
   border-radius: 50%;
   background: var(--slate);
-  border: 2px solid #fff;
+  border: 2px solid var(--card);
   box-shadow: 0 0 0 1px var(--slate);
 }
 .scrub .play {
@@ -1136,7 +1176,7 @@ svg.map.live .rg {
   top: calc(var(--top) + var(--banner-h, 0px));
   right: 0;
   bottom: 0;
-  width: min(520px, 100vw);
+  width: min(640px, calc(100vw - var(--side)));
   background: var(--card);
   border-left: 1px solid var(--rule);
   box-shadow: -18px 0 40px -26px rgb(31 42 51 / 35%);
@@ -1268,7 +1308,7 @@ svg.map.live .rg {
 }
 .sk text.halo {
   paint-order: stroke;
-  stroke: #fff;
+  stroke: var(--halo);
   stroke-width: 3px;
 }
 .sk .lk {
@@ -1563,7 +1603,7 @@ details.more summary {
   margin-top: 12px;
   min-height: 34px;
   background: var(--slate);
-  color: #fff;
+  color: var(--on-fill);
   font-weight: 700;
   border-radius: 8px;
 }
@@ -1861,7 +1901,7 @@ details.more summary {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-    background: rgb(255 255 255 / 96%);
+    background: color-mix(in srgb, var(--card) 96%, transparent);
     border-top: 1px solid var(--rule);
     box-shadow: 0 -8px 24px -16px rgb(31 42 51 / 30%);
   }
@@ -1936,7 +1976,7 @@ details.more summary {
     min-height: 44px;
     padding: 0 16px;
     background: var(--slate);
-    color: #fff;
+    color: var(--on-fill);
     font-weight: 700;
     border-radius: 8px;
   }

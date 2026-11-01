@@ -173,7 +173,8 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
 });
 
-test("Details stays modal while the live panel is on the page", async ({ page, isMobile }) => {
+test("Details stays modal on a phone while the live panel is on the page", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "on a desktop the sidebar stays usable beside Details");
 	await routeJob(page, job);
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	// the panel open in What if…, where its controls are in the tab order

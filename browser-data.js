@@ -1,4 +1,4 @@
-import { gunzip } from "hyparquet-compressors";
+import { decode } from "./engine/pkg/ramascene_engine.js";
 
 // The browser export is a float32 Zarr v3 store (export_browser.py): each array
 // is sharded by producing country, with gzip chunks of whole rows and a shard
@@ -12,40 +12,6 @@ const MAX_RANGE = 1024 ** 2;
 const PARALLEL = 64;
 
 const SHAPES = { A: [9800, 9800], L: [9800, 9800], LC: [9800, 9800], H: [9800, 2205], X: [9800, 49], Y: [9800, 49] };
-
-// Slicing-by-8: table k holds the CRC of byte n followed by k zero bytes, so one
-// step takes 8 bytes. A byte at a time ran at under 100 MB/s, slower than gunzip.
-const CRC_TABLE = new Uint32Array(8 * 256);
-for (let n = 0; n < 256; n++) {
-	let c = n;
-	for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-	CRC_TABLE[n] = c;
-}
-for (let i = 256; i < CRC_TABLE.length; i++)
-	CRC_TABLE[i] = CRC_TABLE[CRC_TABLE[i - 256] & 0xff] ^ (CRC_TABLE[i - 256] >>> 8);
-
-function crc32(bytes) {
-	const T = CRC_TABLE;
-	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-	const end = bytes.byteLength - (bytes.byteLength % 8);
-	let c = 0xffffffff;
-	let i = 0;
-	for (; i < end; i += 8) {
-		const a = view.getUint32(i, true) ^ c;
-		const b = view.getUint32(i + 4, true);
-		c =
-			T[1792 + (a & 0xff)] ^
-			T[1536 + ((a >>> 8) & 0xff)] ^
-			T[1280 + ((a >>> 16) & 0xff)] ^
-			T[1024 + (a >>> 24)] ^
-			T[768 + (b & 0xff)] ^
-			T[512 + ((b >>> 8) & 0xff)] ^
-			T[256 + ((b >>> 16) & 0xff)] ^
-			T[b >>> 24];
-	}
-	for (; i < bytes.byteLength; i++) c = T[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
-	return (c ^ 0xffffffff) >>> 0;
-}
 
 // readRange(shard, start, end) resolves to that byte range of the shard file.
 export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {}) {
@@ -96,23 +62,6 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 		retained += values.byteLength;
 	}
 
-	// The decoder writes into a buffer of the row's size, which bounds memory, but does
-	// not report how much it filled; the gzip trailer's CRC-32 and size catch short data.
-	function decode(bytes) {
-		const length = rows * width * 4;
-		if (bytes.byteLength < 18) throw new Error("invalid matrix chunk");
-		const trailer = new DataView(bytes.buffer, bytes.byteOffset + bytes.byteLength - 8, 8);
-		if (trailer.getUint32(4, true) !== length) throw new Error("invalid matrix chunk");
-		const raw = gunzip(bytes, new Uint8Array(length));
-		if (crc32(raw) !== trailer.getUint32(0, true)) throw new Error("invalid matrix chunk");
-		const values = new Float32Array(raw.buffer);
-		// v * 0 is NaN for NaN and ±Infinity, so one sum checks every value
-		let sum = 0;
-		for (let i = 0; i < values.length; i++) sum += values[i] * 0;
-		if (sum !== 0) throw new Error("invalid matrix values");
-		return values;
-	}
-
 	// One shard's chunks, as single ranges with small gaps merged.
 	async function ranges(shard, chunks) {
 		const entries = await index(shard);
@@ -161,7 +110,8 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 					const bytes = new Uint8Array(await readRange(range.shard, range.start, range.end));
 					if (bytes.byteLength !== range.end - range.start) throw new Error("truncated matrix range");
 					for (const [chunk, offset, size] of range.chunks) {
-						const values = decode(bytes.subarray(offset - range.start, offset - range.start + size));
+						// the kernel checks each chunk's gzip CRC-32 and size, and that every value is finite
+						const values = decode(bytes.subarray(offset - range.start, offset - range.start + size), rows * width * 4);
 						keep(chunk, values);
 						onChunk(chunk, values);
 					}

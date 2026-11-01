@@ -22,7 +22,7 @@ import {
 import { BROWSER_STATUS } from "../browser-results.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Provenance from "./Provenance.svelte";
-import { ui } from "./view.svelte.js";
+import { ui, wide } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause; live: {source, text, rows, job} for a run that is not precomputed, else null
 let { data, meta, sum, whatif, run, text, live } = $props();
@@ -157,6 +157,8 @@ const e = $derived(data.provenance.engine);
 const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer_by_country?.passed === true ? meta.checks.producer_by_country : null);
 </script>
 
+<!-- on a wide screen focus can be in the sidebar; the panel's own handler stops Escape first -->
+<svelte:window onkeydown={(e) => open && e.key === "Escape" && close()} />
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape and the close button are the keyboard path -->
 <div class="scrim" class:on={open} onclick={close}></div>
 <div
@@ -164,7 +166,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 	class:on={open}
 	bind:this={panel}
 	role="dialog"
-	aria-modal="true"
+	aria-modal={!wide.current}
 	aria-labelledby="pan-title"
 	aria-hidden={!open}
 	inert={!open}
@@ -272,7 +274,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 			<p>
 				What we consume connects us to environmental impacts across global supply chains.
 				The map follows those links from final demand, what households, governments and investors buy, to the industries where {w.source}.
-				Its consumption adds up the flows that serve the selected country or region. Its production adds up the flows that start there.
+				Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there.
 			</p>
 			<p>
 				What if… shows how one change in one place ripples through supply chains worldwide.

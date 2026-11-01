@@ -17,7 +17,7 @@ in `live.js`.
 | `region` | a country code from the data | `DE` |
 | `dir` | `in` (consumed by), `out` (released by) | `in` |
 | `sections` | comma-separated section numbers | all sections |
-| `map` | `globe` | the flat map |
+| `map` | `flat` (`globe` is accepted from older links) | the globe |
 | `zoom` | `k` on the globe, `k,lon,lat` on the flat map; `k` above 1 and up to 8 | none |
 | `panel` | `sankey`, `table`, `method` | none |
 | `data` | a relative path to a `.json` file ([security.md](security.md#what-data-accepts)) | `data/results.json` |

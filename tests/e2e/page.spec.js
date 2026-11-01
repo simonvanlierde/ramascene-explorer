@@ -91,20 +91,27 @@ test("the industry rail, country box and direction drive the sentence and the UR
 	await box.press("Enter");
 	await expect(page).toHaveURL(/region=FR/);
 	await expect(page.locator("#headline")).toContainText("France");
-	await page.getByRole("button", { name: "Its production" }).click();
+	await page.getByRole("button", { name: "Production", exact: true }).click();
 	await expect(page).toHaveURL(/dir=out/);
 	await expect(page.locator("#headline")).toContainText("France released");
 });
 
-test("Details opens the Sankey and the table, and Escape closes it", async ({ page }) => {
+test("Details opens the Sankey and the table, and Escape closes it", async ({ page, isMobile }) => {
 	await page.goto(FIXTURE);
 	await ready(page);
 	await page.getByRole("button", { name: /^Details for/ }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog.locator(".sk .lk").first()).toBeVisible();
-	// the panel is modal: Tab cycles inside it, never onto what it covers
-	for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
-	expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")))).toBe(true);
+	if (isMobile) {
+		// on a phone the panel covers the page and is modal: Tab cycles inside it
+		for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
+		expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")))).toBe(true);
+	} else {
+		// beside it, the sidebar stays usable and the panel follows the selection
+		await page.getByRole("button", { name: "Production", exact: true }).click();
+		await expect(dialog).toBeVisible();
+		await expect(page).toHaveURL(/dir=out/);
+	}
 	await page.locator("#tab-table").click();
 	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
 	await expect(page).toHaveURL(/panel=table/);
@@ -248,7 +255,7 @@ test("the globe turns to a country picked in the country box", async ({ page }) 
 });
 
 test("zooming the flat map in on Germany makes room for the band from Italy", async ({ page }) => {
-	await page.goto("");
+	await page.goto("?map=flat");
 	await ready(page);
 	const band = (code) => page.locator(`.bands path[data-region="${code}"]`);
 	await expect(band("IT")).toHaveCount(0);
@@ -265,7 +272,7 @@ test("zooming the flat map in on Germany makes room for the band from Italy", as
 });
 
 test("a zoomed view is kept in the link and opens on the same place", async ({ page }) => {
-	await page.goto("");
+	await page.goto("?map=flat");
 	await ready(page);
 	for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Zoom in" }).click();
 	await expect(page).toHaveURL(/zoom=8,-?[\d.]+,-?[\d.]+/);
@@ -734,4 +741,38 @@ test("the grid card leaves a cell that was never computed for the first computed
 	await expect(page).toHaveURL(/scenario=steel-europe-10/);
 	await expect(pick.getByRole("button", { name: "10%" })).toHaveAttribute("aria-pressed", "true");
 	await expect(pick).not.toContainText("not precomputed");
+});
+
+test("the header toggle switches the theme and the browser keeps the choice", async ({ page, colorScheme }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const root = page.locator("html");
+	const first = colorScheme === "dark" ? "dark" : "light";
+	const other = first === "dark" ? "light" : "dark";
+	await expect(root).toHaveAttribute("data-theme", first);
+	const sea = () => page.locator("svg.map path").first().getAttribute("fill");
+	const before = await sea();
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await expect(root).toHaveAttribute("data-theme", other);
+	expect(await sea()).not.toBe(before);
+	// the controls fade to their new colours; check contrast once they arrive
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+	await expectNoAxeViolations(page);
+	await page.reload();
+	await ready(page);
+	await expect(root).toHaveAttribute("data-theme", other);
+	await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute(
+		"aria-pressed",
+		String(other === "dark"),
+	);
+});
+
+test("Escape closes Details while focus is in the sidebar", async ({ page, isMobile }) => {
+	test.skip(isMobile, "on a phone Details covers the sidebar");
+	await page.goto(FIXTURE);
+	await ready(page);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await page.getByRole("button", { name: "Production", exact: true }).click();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("dialog")).toBeHidden();
 });
