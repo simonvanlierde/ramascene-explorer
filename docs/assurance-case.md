@@ -11,8 +11,8 @@ stored data. The threats are:
 
 1. **A crafted link** whose `?api=` or `?data=` makes the page load data from
    somewhere else, or show it as a real result.
-2. **A swapped data file.** `embodied.parquet` lives on the `data-2011`
-   release, outside git, as does the browser matrix archive.
+2. **A swapped data file.** `embodied.parquet` lives on the `data-2011-r2`
+   release, outside git, and the browser matrix archive on `data-2011`.
 3. **A hijacked dependency or action** that runs in CI or ends up in the
    bundle.
 4. **A file passed off as ours:** a tarball or Parquet file someone says came

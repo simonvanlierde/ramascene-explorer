@@ -98,7 +98,7 @@ uv run python table.py  # rewrites the table above from results/
 The case (functional unit, GHG row, array paths) lives in `case.py`. CI reruns
 `node brightway-check/browser_check.js data/browser-engine` using the exported
 float64 matrices. The browser's modified-coefficient path is checked separately
-on all 153 published scenarios at relative 1e-9. The other routes still need
+on all 155 published scenarios at relative 1e-9. The other routes still need
 the original arrays; CI checks their committed results against this table.
 
 `engine.py` runs in the explorer's environment, as `precompute.py` does.
