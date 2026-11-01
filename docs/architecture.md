@@ -2,7 +2,7 @@
 
 The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. The published site needs no calculation server.
-Opening it with `?api=` connects an optional job API.
+Open it with `?api=` to connect an optional job API.
 
 A worker computes custom scenarios from exported float64 matrices. It starts
 when a reader opens the custom-scenario form. [browser-engine.md](browser-engine.md) describes its data and checks.
@@ -35,7 +35,7 @@ modules next to `index.html`, so `node --test` can test it:
 | `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
-| `browser-engine.js` | float64 Woodbury updates and the small linear solve |
+| `browser-engine.js` | float64 Woodbury updates (a low-rank correction of the baseline inverse) and the small linear solve |
 | `browser-data.js` | matrix loading and output-to-flow aggregation |
 | `browser-results.js` | browser source labels, provenance and result shape |
 
