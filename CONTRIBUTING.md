@@ -7,7 +7,7 @@ vulnerability as [.github/SECURITY.md](.github/SECURITY.md) says, not in an issu
 
 ## Set up
 
-You need Node 24 with pnpm (the version is pinned in `packageManager` in `package.json`),
+Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.json`),
 [uv](https://docs.astral.sh/uv/) for the Python side, and prek for the git hooks
 (`uv tool install prek`, then `prek install`).
 

@@ -41,7 +41,7 @@ These checks do not establish whether a scenario's assumptions are realistic.
 
 ## View
 
-The page is Svelte 5, built with Vite. It needs Node 24 and pnpm. Install once with
+The page is Svelte 5, built with Vite. Use Node 26 and pnpm locally. Install once with
 `pnpm install`, and fetch the flows from the release (or with
 `gh release download data-2011 --pattern embodied.parquet --dir data`):
 
