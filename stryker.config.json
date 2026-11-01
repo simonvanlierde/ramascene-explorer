@@ -6,7 +6,8 @@
 	},
 	"mutate": [
 		"flows.js",
-		"browser-data.js"
+		"browser-data.js",
+		"browser-engine.js"
 	],
 	"coverageAnalysis": "off",
 	"ignorePatterns": [

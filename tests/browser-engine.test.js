@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { plan, scenarioFlows } from "../browser-engine.js";
+import { LIMITS, plan, scenarioFlows } from "../browser-engine.js";
 import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
@@ -140,9 +140,109 @@ test("Woodbury and final demand changes agree with a direct solve, in both forms
 	);
 });
 
+// One product in two countries, so every index that steps by the country count is
+// exercised; tiny() has one country. Y's rows are producers, its columns destination
+// countries, and the flows are X itself, F = 2 rows by C = 2.
+function twoCountries(a, b, c, d, arrays) {
+	const det = (1 - a) * (1 - d) - b * c;
+	const A = [
+		[a, b],
+		[c, d],
+	];
+	const L = [
+		[(1 - d) / det, b / det],
+		[c / det, (1 - a) / det],
+	];
+	const LT = [
+		[L[0][0], L[1][0]],
+		[L[0][1], L[1][1]],
+	];
+	const Y = [
+		[2, 1],
+		[3, 4],
+	];
+	const X = L.map((row) => [0, 1].map((k) => row[0] * Y[0][k] + row[1] * Y[1][k]));
+	const catalog = {
+		products: [{ id: 10, leaves: [0] }],
+		regions: [
+			{ id: 1, leaves: [0] },
+			{ id: 2, leaves: [1] },
+			{ id: 3, leaves: [1, 0, 1] },
+		],
+		consumers: [
+			{ id: 20, leaves: [0] },
+			{ id: 30, final: true, leaves: [0] },
+		],
+	};
+	return {
+		meta: { products: 1, countries: 2, catalog, arrays },
+		baseline: Float64Array.from(X.flat()),
+		read: memory({ A, L, LC: LT, H: LT, X, Y }),
+		Y,
+	};
+}
+
+test("scenarios across two countries agree with a direct solve per destination country", async () => {
+	const at = (over) => ({ product: [10], consumedBy: [20], techChange: [-30], ...over });
+	const cut = at({ originReg: [3], consumedBy: [30], consumedReg: [2], techChange: [-50] });
+	await fc.assert(
+		fc.asyncProperty(
+			fc.array(fc.double({ min: 0.01, max: 0.2, noNaN: true }), { minLength: 4, maxLength: 4 }),
+			fc.constantFrom(viaRows, viaColumns),
+			async ([a, b, c, d], arrays) => {
+				const f = 0.7;
+				const cases = [
+					// country 0 buys less from itself for production in country 1, and country 1's final demand halves
+					[
+						[at({ originReg: [1], consumedReg: [2] }), cut],
+						[
+							[a, b * f],
+							[c, d],
+						],
+						[1, 0.5],
+					],
+					// both countries' rows into country 0's column: the K × K form
+					[
+						[at({ originReg: [3], consumedReg: [1] })],
+						[
+							[a * f, b],
+							[c * f, d],
+						],
+						[1, 1],
+					],
+					// country 1's row into both columns: the R × R form
+					[
+						[at({ originReg: [2], consumedReg: [3] })],
+						[
+							[a, b],
+							[c * f, d * f],
+						],
+						[1, 1],
+					],
+				];
+				for (const [steps, changed, scale] of cases) {
+					const data = twoCountries(a, b, c, d, arrays);
+					const got = await scenarioFlows(data, steps);
+					for (const k of [0, 1]) {
+						const want = direct(changed, [data.Y[0][k] * scale[k], data.Y[1][k] * scale[k]]);
+						close(got[k], want[0]);
+						close(got[2 + k], want[1]);
+					}
+				}
+			},
+		),
+		{ numRuns: 30 },
+	);
+});
+
 test("overlapping edits compose, zero changes return the baseline, and inputs are validated", async () => {
 	const data = tiny(0.1, 0.2, 0.1, 0.1);
 	assert.deepEqual(await scenarioFlows(data, [step({ techChange: [0] })]), data.baseline);
+	// a 0% step asks for no rows of any matrix
+	assert.ok(
+		data.log.every(([, rows]) => rows === 0),
+		JSON.stringify(data.log),
+	);
 	const got = await scenarioFlows(data, [step(), step()]);
 	const want = direct([
 		[0.1, 0.2 * 0.8 ** 2],
@@ -291,4 +391,151 @@ test("technical scenarios start A, L and X reads before waiting for any", async 
 	release.resolve();
 	await output;
 	assert.ok(overlapped, "one matrix waited for another matrix's network reads");
+});
+
+// The smallest LIMITS[name] that plans the steps, with the other limits off. Each
+// cost is a whole number here (n³/3 aside, which cancels in the differences below).
+function need(name, meta, steps) {
+	const saved = { ...LIMITS };
+	try {
+		Object.assign(LIMITS, { work: Infinity, memory: Infinity, download: Infinity });
+		let lo = 0;
+		let hi = 2 ** 40;
+		while (hi - lo > 1) {
+			LIMITS[name] = Math.floor((lo + hi) / 2);
+			try {
+				plan(meta, steps);
+				hi = LIMITS[name];
+			} catch {
+				lo = LIMITS[name];
+			}
+		}
+		// just over the limit is refused, the limit itself is not
+		LIMITS[name] = hi - 1;
+		assert.throws(() => plan(meta, steps), /too broad/);
+		return hi;
+	} finally {
+		Object.assign(LIMITS, saved);
+	}
+}
+
+test("each planner cost term moves its limit by exactly its own size", () => {
+	const C = 49;
+	const F = 2205;
+	const catalog = {
+		products: [
+			{ id: 82, leaves: [5] },
+			{ id: 84, leaves: [7] },
+		],
+		regions: [
+			{ id: 5, leaves: [29, 30, 32, 34, 37, 40, 42, 44] },
+			{ id: 9, leaves: [0] },
+		],
+		consumers: [
+			{ id: 4, leaves: Array.from({ length: 85 }, (_, i) => i + 42) },
+			{ id: 276, final: true, leaves: [0] },
+		],
+	};
+	const sized = (L, LC, H) => ({
+		countries: C,
+		products: 200,
+		catalog,
+		arrays: { A: { chunk_bytes: 10 }, L: { chunk_bytes: L }, LC: { chunk_bytes: LC }, H: { chunk_bytes: H } },
+	});
+	// 8 rows (one product in 8 countries) into 85 columns (one country's manufacturing)
+	const technical = { product: [82], originReg: [5], consumedBy: [4], consumedReg: [9], techChange: [-20] };
+	const [R, K, J] = [8, 85, 8];
+	// download: R rows of A, K rows of L, and J rows of H
+	assert.equal(need("download", sized(1, 1000, 3), [technical]), R * 10 + K * 1 + J * 3);
+	// memory: L[K, J] through its columns holds a second copy while it transposes
+	assert.equal(
+		need("memory", sized(1000, 1, 1), [technical]) - need("memory", sized(1, 1000, 1), [technical]),
+		8 * K * J,
+	);
+	// work: final demand for another 8 rows adds its X₀ update and its H fold
+	const demand = { ...technical, product: [84], consumedBy: [276] };
+	const f = 8;
+	assert.equal(
+		need("work", sized(1, 1000, 1), [technical, demand]) - need("work", sized(1, 1000, 1), [technical]),
+		K * f * C + f * F * C,
+	);
+});
+
+test("the whole work and memory estimates, for R below, equal to and above K", () => {
+	const catalog = {
+		products: [
+			{ id: 82, leaves: [5] },
+			{ id: 84, leaves: [7] },
+			{ id: 85, leaves: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] },
+		],
+		regions: [
+			{ id: 5, leaves: [29, 30, 32, 34, 37, 40, 42, 44] },
+			{ id: 9, leaves: [0] },
+		],
+		consumers: [
+			{ id: 4, leaves: Array.from({ length: 85 }, (_, i) => i + 42) },
+			{ id: 3, leaves: [42, 43] },
+			{ id: 2, leaves: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49] },
+			{ id: 276, final: true, leaves: [0] },
+		],
+	};
+	const meta = { countries: 49, products: 200, catalog };
+	const t = { product: [82], originReg: [5], consumedBy: [4], consumedReg: [9], techChange: [-20] };
+	// Pinned so a change to the estimate is a deliberate one. The first, by hand
+	// (R 8, K 85, J 8, n 8, C 49, F 2,205, L by columns): memory 8 × (2,720 + 1,360 +
+	// 128 + 8,330 + 1,568 + 85 + 392 + 108,045 + 17,640) and work 5,440 + 512/3 +
+	// 3,136 + 33,320 + 864,360, rounded up.
+	const cases = [
+		[[t], 906427, 1122144],
+		[[{ ...t, product: [85], originReg: [9], consumedBy: [2] }], 1091584, 1073880],
+		[[{ ...t, product: [85], consumedBy: [3] }], 8651959, 2411240],
+		[[t, { ...t, product: [84], consumedBy: [276] }], 1804107, 1283552],
+	];
+	for (const [steps, work, bytes] of cases) {
+		assert.equal(need("work", meta, steps), work);
+		assert.equal(need("memory", meta, steps), bytes);
+	}
+});
+
+test("invalid selections are refused with a message that names the problem", () => {
+	const data = tiny(0.1, 0.2, 0.1, 0.1);
+	const meta = data.meta;
+	const refused = [
+		[{ product: [] }, /select at least one id/],
+		[{ product: 10 }, /select at least one id/],
+		[{ product: [999] }, /unknown id 999/],
+		[{ techChange: -20 }, /change must be between -100 and 1000 percent/],
+		[{ techChange: [-20, 5] }, /change must be between/],
+		[{ techChange: [Infinity] }, /change must be between/],
+		[{ techChange: [-100.001] }, /change must be between/],
+		[{ techChange: [1000.001] }, /change must be between/],
+		[{ consumedBy: [] }, /select a consumer/],
+		[{ consumedBy: 21 }, /select a consumer/],
+		[{ consumedBy: [999] }, /unknown consumer 999/],
+		[{ consumedBy: [30, 20] }, /cannot mix final demand and intermediate consumers/],
+	];
+	for (const [over, message] of refused) assert.throws(() => plan(meta, [step(over)]), message, JSON.stringify(over));
+	for (const change of [-100, 1000]) assert.doesNotThrow(() => plan(meta, [step({ techChange: [change] })]));
+	for (const steps of [[], step(), Array(11).fill(step())])
+		assert.throws(() => plan(meta, steps), /a scenario needs 1 to 10 interventions/);
+	assert.doesNotThrow(() => plan(meta, Array(10).fill(step())));
+	// a catalogue leaf must be a whole index below the bound
+	for (const leaf of [-1, 0.5, 2])
+		assert.throws(
+			() => plan({ ...meta, catalog: { ...meta.catalog, products: [{ id: 10, leaves: [leaf] }] } }, [step()]),
+			/invalid catalog indices/,
+		);
+	// repeated and unsorted leaves count once, in order
+	const twice = { ...meta, catalog: { ...meta.catalog, products: [{ id: 10, leaves: [1, 0, 1] }] } };
+	assert.deepEqual(plan(twice, [step()]).rows, [0, 1]);
+	assert.equal(plan(twice, [step()]).edits[0].products, 2);
+	// with a second, unchanged step, a refusal gives only the total, not one edit's size
+	const saved = LIMITS.work;
+	try {
+		LIMITS.work = 0;
+		assert.throws(() => plan(meta, [step()]), /\(1 products × 1 producing countries\)/);
+		assert.throws(() => plan(meta, [step(), step({ techChange: [0] })]), /pairs\. Choose/);
+	} finally {
+		LIMITS.work = saved;
+	}
 });
