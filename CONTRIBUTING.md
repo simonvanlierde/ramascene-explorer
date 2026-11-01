@@ -44,8 +44,10 @@ so `pnpm measure-coverage` counts them.
 ## Dependencies
 
 Add one only when the standard library or an existing dependency can't do the job. CI
-installs from the lockfiles unchanged. The release-age rule is in `pnpm-workspace.yaml` and
-`pyproject.toml`, the update schedule in [renovate.json5](renovate.json5), and the
+installs from the lockfiles unchanged, `engine/Cargo.lock` for the Rust kernel. The
+release-age rule is in `pnpm-workspace.yaml` and `pyproject.toml`; the Rust compiler is pinned
+in `engine/rust-toolchain.toml` and the cargo tools in `.github/workflows/ci.yml`, and
+`engine/deny.toml` checks the crates' advisories and licences. The update schedule in [renovate.json5](renovate.json5), and the
 dependency review in `.github/workflows/hygiene.yml`.
 
 ## Sign off your commits

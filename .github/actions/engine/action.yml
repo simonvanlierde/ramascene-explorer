@@ -7,10 +7,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-      with:
-        toolchain: stable
-        targets: wasm32-unknown-unknown
+    # The pinned version, target and components come from engine/rust-toolchain.toml.
+    - shell: bash
+      working-directory: engine
+      run: rustup toolchain install
+    # Saved off pull requests only: a cache a pull request saves is readable by that
+    # pull request alone, and it pushes main's entries out of the 10 GB per-repo limit.
     - if: inputs.cache == 'true'
       uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       with:

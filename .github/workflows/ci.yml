@@ -93,39 +93,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
-          components: clippy, rustfmt
-      # Saved off pull requests only: a cache a pull request saves is readable by that
-      # pull request alone, and it pushes main's entries out of the 10 GB per-repo limit.
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          workspaces: engine
-          save-if: ${{ github.event_name != 'pull_request' }}
+      # Builds engine/pkg too, which the browser job takes: its Playwright image has
+      # no C linker for build scripts.
+      - uses: ./.github/actions/engine
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
-          tool: cargo-nextest,cargo-deny
+          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2
+          fallback: none
       - run: cargo fmt --check
-      # --locked: the first build fails on a Cargo.lock that is missing or stale.
-      - run: cargo clippy --locked --all-targets -- -D warnings
-      # The JavaScript exports compile only for wasm32.
-      - run: cargo clippy --locked --target wasm32-unknown-unknown -- -D warnings
+      # --locked: the first build fails on a Cargo.lock that is missing or stale. The
+      # JavaScript exports compile only for wasm32, so lint there.
+      - run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
       - run: cargo nextest run --locked
       - run: cargo deny check
-
-  # The browser job's Playwright image has no C linker for build scripts, so
-  # the kernel is built here and handed over.
-  kernel:
-    name: wasm kernel
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/engine
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: engine-pkg
@@ -151,7 +131,7 @@ jobs:
 
   browser:
     name: browser and accessibility tests
-    needs: [playwright-version, kernel]
+    needs: [playwright-version, engine]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # The browsers and their system libraries come with the image, so the job needs

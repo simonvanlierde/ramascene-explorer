@@ -29,6 +29,25 @@
   // Off by default: without it no hook rev in .pre-commit-config.yaml is ever bumped.
   "pre-commit": { enabled: true },
 
+  // Pins Renovate has no manager for: the Rust compiler in engine/rust-toolchain.toml
+  // and the cargo tools CI installs by version.
+  customManagers: [
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^engine\\/rust-toolchain\\.toml$/"],
+      matchStrings: ['channel = "(?<currentValue>\\d+\\.\\d+\\.\\d+)"'],
+      depNameTemplate: "rust",
+      packageNameTemplate: "rust-lang/rust",
+      datasourceTemplate: "github-releases",
+    },
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^\\.github\\/workflows\\/ci\\.yml$/"],
+      matchStrings: ["(?<depName>cargo-nextest|cargo-deny)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      datasourceTemplate: "crate",
+    },
+  ],
+
   packageRules: [
     // brightway-check/ records results from its exact Brightway pins. A rule,
     // not ignorePaths, which would replace the preset's default ignore list.
