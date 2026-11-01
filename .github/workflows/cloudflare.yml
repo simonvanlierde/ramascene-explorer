@@ -163,5 +163,8 @@ jobs:
         run: |
           set -euo pipefail
           pnpm exec wrangler versions deploy "$VERSION@100%" --yes
-          # versions deploy leaves the routes alone; this applies wrangler.jsonc's
+          # versions deploy leaves the routes alone; this applies wrangler.jsonc's.
+          # It uploads no assets but refuses a missing assets.directory, and this job
+          # builds none.
+          mkdir -p site
           pnpm exec wrangler triggers deploy
