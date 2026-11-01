@@ -234,7 +234,10 @@ uses the sparse build and did not benefit in paired measurements. It also reserv
 The pool has at most four threads and leaves one reported CPU core available.
 Hosts without isolation, and devices reporting two cores or fewer, use the existing
 single-thread build. A failed pool startup or its 15-second deadline terminates the
-worker and retries pending requests once in a fresh single-thread worker.
+worker and retries pending requests once in a fresh single-thread worker. So does a
+trap during a threaded calculation, and a calculation still running after 120 seconds:
+a trap in a pool thread leaves the calling thread waiting rather than throwing. A second
+failure on one thread stops the worker, and the page asks for a reload.
 
 The build uses the nightly pinned in `engine/threads/rust-toolchain.toml` because
 WebAssembly atomics require rebuilding Rust's standard library. `pnpm engine` builds

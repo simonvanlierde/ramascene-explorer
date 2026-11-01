@@ -8,6 +8,7 @@ let loaded;
 let engine;
 let compute;
 self.onmessage = async ({ data: { id, base, body, single } }) => {
+	let threaded = false;
 	try {
 		loaded ??= fetchEngine(new URL(base)).catch((e) => {
 			loaded = null;
@@ -47,6 +48,7 @@ self.onmessage = async ({ data: { id, base, body, single } }) => {
 				if (broad && !single) {
 					compute ??= loadKernel();
 					maths = await compute;
+					threaded = true;
 				} else maths = await loadKernel(true);
 			} catch {
 				self.postMessage({ id, retrySingle: true });
@@ -59,8 +61,9 @@ self.onmessage = async ({ data: { id, base, body, single } }) => {
 		}
 	} catch (e) {
 		// A trap (out of memory, or a panic) leaves the kernel's memory held and its state
-		// unknown, so the page stops this worker.
-		if (e instanceof WebAssembly.RuntimeError)
+		// unknown, so the page stops this worker; a threaded run gets one try on one thread.
+		if (e instanceof WebAssembly.RuntimeError && threaded) self.postMessage({ id, retrySingle: true });
+		else if (e instanceof WebAssembly.RuntimeError)
 			self.postMessage({
 				id,
 				fatal: true,

@@ -13,14 +13,7 @@ export function browserClient() {
 			const task = pending.get(id);
 			if (!task) return;
 			if (retrySingle) {
-				if (single) {
-					close();
-					return;
-				}
-				worker.terminate();
-				single = true;
-				start();
-				for (const [waiting, task] of pending) worker.postMessage({ id: waiting, base, body: task.body, single });
+				retryOnOneThread();
 				return;
 			}
 			clearTimeout(task.timeout);
@@ -34,6 +27,21 @@ export function browserClient() {
 		};
 	}
 	start();
+	function retryOnOneThread() {
+		if (single) {
+			close();
+			return;
+		}
+		worker.terminate();
+		single = true;
+		start();
+		for (const [waiting, task] of pending) {
+			// replayed requests get a full deadline on the new worker
+			clearTimeout(task.timeout);
+			task.timeout = task.arm();
+			worker.postMessage({ id: waiting, base, body: task.body, single });
+		}
+	}
 	function close() {
 		stopped = true;
 		worker.terminate();
@@ -49,14 +57,21 @@ export function browserClient() {
 			if (stopped) return Promise.reject(new Error("browser worker stopped; reload to try again"));
 			const id = next++;
 			return new Promise((resolve, reject) => {
-				const parameters = structuredClone(body);
-				const timeout = setTimeout(() => {
-					pending.delete(id);
-					reject(new Error("browser computation timed out; reload to try again"));
-					close();
-				}, 120_000);
-				pending.set(id, { resolve, reject, timeout, body: parameters });
-				worker.postMessage({ id, base, body: parameters, single });
+				const task = { resolve, reject, body: structuredClone(body) };
+				task.arm = () =>
+					setTimeout(() => {
+						// a trap in a pool thread leaves the call waiting, so a hang gets one try on one thread
+						if (!single) {
+							retryOnOneThread();
+							return;
+						}
+						pending.delete(id);
+						reject(new Error("browser computation timed out; reload to try again"));
+						close();
+					}, 120_000);
+				task.timeout = task.arm();
+				pending.set(id, task);
+				worker.postMessage({ id, base, body: task.body, single });
 			});
 		},
 	};

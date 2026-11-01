@@ -69,3 +69,35 @@ test("a failed thread pool is terminated and pending requests retry on one threa
 		await Promise.allSettled([first, second]);
 	}
 });
+
+test("a threaded calculation that hangs retries once on one thread", { timeout: 2000 }, async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const client = browserClient();
+	const pool = FakeWorker.last;
+	const hung = client.request({ n: 1 });
+	t.mock.timers.tick(60_000);
+	const queued = client.request({ n: 2 });
+	// a trap in a pool thread leaves the calling thread waiting instead of throwing
+	t.mock.timers.tick(60_000);
+	const fallback = FakeWorker.last;
+	assert.equal(pool.terminated, true);
+	assert.notEqual(fallback, pool);
+	assert.deepEqual(
+		fallback.sent.map(({ body, single }) => [body, single]),
+		[
+			[{ n: 1 }, true],
+			[{ n: 2 }, true],
+		],
+	);
+	// the replayed request's deadline starts again on the new worker
+	t.mock.timers.tick(60_000);
+	fallback.answer({ id: fallback.sent[0].id, value: 10 });
+	fallback.answer({ id: fallback.sent[1].id, value: 20 });
+	assert.equal(await hung, 10);
+	assert.equal(await queued, 20);
+
+	const again = client.request({ n: 3 });
+	t.mock.timers.tick(120_000);
+	await assert.rejects(again, /timed out/);
+	assert.equal(fallback.terminated, true);
+});
