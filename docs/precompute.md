@@ -9,6 +9,14 @@ engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`. The Zenodo record
 ships only `_v4` files, and `v4` is the file suffix, not the dataset version.
 The matrices are float64.
 
+Terms used below. `A` holds the technical coefficients: the input of each
+product per unit of output of each producing industry. `L = (I − A)⁻¹` is the
+Leontief inverse, `Y` is final demand (what households, governments and
+investment buy), and `B` holds the extensions (the indicators reported) per unit of output. A scenario either
+changes entries of `A` (a technical-coefficient scenario) or changes `Y`
+(a final-demand scenario). The Woodbury update recomputes `L` for a small
+change to `A` without solving the whole system again.
+
 `ENGINE_DIR` is a git checkout of the engine at the commit named below, and
 `DATASETS_DIR` holds the Zenodo `_v4.npy` files.
 
@@ -20,7 +28,7 @@ uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://git
 
 ## The shipped run
 
-I produced the shipped files with branch `split/3-performance` of the fork
+The shipped files come from branch `split/3-performance` of the fork
 <https://github.com/simonvanlierde/ramascene>, commit
 `d9113ca9ad38bc29d2a96392dabf74d70abf830e` (clean tree), the head of pull
 request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is
@@ -35,9 +43,8 @@ Each file's `provenance` block records the engine commit, the dataset
 checksums, the command and the run time. The blocks are identical apart from
 each file's own run timings and peak memory, and the Parquet footer carries
 the same one. They also record the engine repository, branch and commit
-(`provenance.engine`,
-with `label` such as `split/3-performance @ d9113ca`, and `pull_request` when
-`--engine-pr` is given).
+(`provenance.engine`, with `label` such as `split/3-performance @ d9113ca`,
+and `pull_request` when `--engine-pr` is given).
 
 `--engine` must be the top of a git checkout with a commit. The script refuses
 anything else, so no output can claim `exiobase-v3` without naming its engine.
@@ -89,13 +96,13 @@ held to:
 - each region's value matches `B_i ∘ (L · ΣY)` recomputed outside the engine
   and summed over that region's countries (relative 1e-9);
 - the control reproduces the baseline (relative 1e-9);
-- every intervention moves at least one indicator total by more than
+- every scenario moves at least one indicator total by more than
   relative 1e-9, and no cut raises an indicator total. The rise check applies
   only to indicators whose `B` row and `ΣY` have no negative entries. For other
   indicators the script skips it with a warning and records that.
 
-A scenario that fails is recorded under `failed` with its reason. It is not in
-`results` or on the page, but it is never dropped silently. Output that passes
+A scenario that fails is recorded under `failed` with its reason. It does not
+appear in `results` or on the page, and the record keeps it visible. Output that passes
 is marked `data_kind: exiobase-v3`. Beside the JSON, the script writes
 `data/run-log.md`: engine, date, Octave reference count, per-scenario wall
 time, peak RSS and check outcome.
@@ -119,8 +126,8 @@ published scenario, the flows embodied in final demand: what each producer
 country releases, per section, for the final demand of each consumer country.
 A flow is `B_i ∘ (L · Y)` summed over the products of one section, with one
 column of `Y` per consumer country. Sections are the 15 level-2 product
-aggregates of the engine database. Each scenario's flows come
-from its own `Y` and `L`, in the same worker as its other results.
+aggregates of the engine database. Each scenario's flows come from its own `Y`
+and `L`, in the same worker as its other results.
 
 At 52.1 MB the file stays out of git. It is the `embodied.parquet` asset of the
 [`data-2011-r2`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011-r2)
@@ -154,7 +161,7 @@ provenance. `tests/make_fixture_embodied.py` writes the same record for
 Nothing is written unless:
 
 - for every run, the flows summed by producer and world-region aggregate match
-  that run's values in `results.json`, and the world totals match (relative
+  that run's values in `results.json`, and so do the world totals (relative
   1e-9);
 - for the baseline and the five named scenarios, the flows summed by
   producer country match the engine's 49-region values (relative 1e-9);

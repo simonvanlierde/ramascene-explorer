@@ -2,7 +2,9 @@
 
 Switch to What if…, then open Custom scenario.
 Choose a product, its origin, a consuming industry and region, and a percentage
-change. Run scenario computes the result on your device. Choose **Final demand** to change spending. An industry selection changes inputs per unit of monetary output.
+change. Run scenario computes the result on your device. Choose **Final demand**
+to change spending. An industry selection changes inputs per unit of monetary
+output.
 The catalogue records this final-demand category as `Y: Final Consumption`.
 If `?api=` is also present, the job API takes precedence.
 
@@ -12,9 +14,10 @@ precomputed scenario, so reopening it does not reconstruct the custom calculatio
 
 The calculation runs in a worker. It downloads the baseline output, final demand
 and three extension rows once, then downloads each required A row and L column
-as a small, complete Parquet file. These requests do not depend on HTTP range caching for a large object.
-Other matrices still use HTTP range requests; a server that ignores Range is
-refused before a full unexpected matrix is read.
+as a small, complete Parquet file. These requests do not depend on HTTP range
+caching for a large object. Other matrices still use HTTP range requests. The
+reader refuses a server that ignores Range before it reads a full, unexpected
+matrix.
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-9
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
@@ -28,7 +31,7 @@ country. Before reading matrices, the form and the worker estimate dense
 arithmetic and scenario buffers from the catalogue alone. They refuse more than
 100 million update terms or 64 MiB of estimated scenario buffers, which allows
 about 200 changed rows. The form says so before Run, with the row count.
-Choose fewer products or regions when that happens. These limits exclude the
+When the form shows this, choose fewer products or regions. These limits exclude the
 baseline, metadata, decoder temporaries and row caches; they are not a total
 browser memory limit. The [job API](interface.md#job-api) remains available
 for work outside the browser budget.
