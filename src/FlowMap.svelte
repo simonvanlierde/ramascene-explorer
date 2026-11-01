@@ -19,22 +19,19 @@ import {
 	amountShort,
 	amountText,
 	arc,
-	BAND,
 	bandGeometry,
 	bandPartners,
 	changeArm,
 	divBand,
 	divFill,
+	MAP,
 	displayFlowPct,
 	fmt,
-	LAND,
 	pct,
 	placeName,
 	possessive,
-	SEA,
 	SECTION_COLOURS,
 	SECTION_SHORT,
-	SELF,
 	seqScale,
 	share,
 	taperGlyph,
@@ -42,7 +39,7 @@ import {
 	wording,
 } from "../flows.js";
 import { regionForIso, thinTopology } from "../map.js";
-import { reducedMotion, ui } from "./view.svelte.js";
+import { reducedMotion, themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
 
@@ -119,20 +116,21 @@ const sphere = $derived((view, path({ type: "Sphere" })));
 // --- colour -------------------------------------------------------------------
 const hi = $derived(Math.max(...sum.others.map((k) => sum.vals[k]), 1e-12));
 const lo = $derived(hi / 1000);
-const seq = $derived(seqScale(lo, hi));
-const ff = $derived(divFill(extent));
-const fb = $derived(divBand(extent));
+const pal = $derived(MAP[themeName()]);
+const seq = $derived(seqScale(lo, hi, themeName()));
+const ff = $derived(divFill(extent, themeName()));
+const fb = $derived(divBand(extent, themeName()));
 const oneSection = $derived(ui.on.size === 1 ? [...ui.on][0] : null);
 function fillOf(k) {
 	if (whatif) {
 		const p = displayFlowPct(sum, k);
-		return p === null ? LAND : ff(p * ui.s);
+		return p === null ? pal.land : ff(p * ui.s);
 	}
-	if (k === ui.who) return SELF;
-	return sum.vals[k] < lo / 10 ? LAND : seq(sum.vals[k]);
+	if (k === ui.who) return pal.self;
+	return sum.vals[k] < lo / 10 ? pal.land : seq(sum.vals[k]);
 }
 const bandColour = (k) =>
-	whatif ? fb((displayFlowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : BAND;
+	whatif ? fb((displayFlowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : pal.band;
 
 // --- bands and labels -----------------------------------------------------------
 const STEPS = Array.from({ length: 31 }, (_, i) => i / 30);
@@ -526,7 +524,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			onpointerup={up}
 			onpointercancel={up}
 		>
-			<path d={sphere} fill={SEA} stroke={alpha > 0.02 ? "var(--rule)" : "none"} />
+			<path d={sphere} fill={pal.sea} stroke={alpha > 0.02 ? "var(--rule)" : "none"} />
 			<g class="rgs">
 				{#each shapes as s (s.code)}
 					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: mouse shortcut for the country box -->
@@ -665,7 +663,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			</div>
 			<div class="aw">
 				{#each glyphs as g (g)}
-					<svg width="50" height="18" aria-hidden="true"><path d={taperGlyph(g, widthK, 48, ui.dir)} fill={oneSection !== null ? SECTION_COLOURS[oneSection] : BAND} fill-opacity=".76" /></svg>
+					<svg width="50" height="18" aria-hidden="true"><path d={taperGlyph(g, widthK, 48, ui.dir)} fill={oneSection !== null ? SECTION_COLOURS[oneSection] : pal.band} fill-opacity=".76" /></svg>
 					<span class="num">{amountShort(g, ui.indicator)}</span>
 				{/each}
 			</div>

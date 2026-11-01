@@ -327,22 +327,54 @@ export function fitExtent(sum) {
 
 // --- colour ---------------------------------------------------------------------
 
-export const SELF = "#2b3a45";
-export const BAND = "#a8471c";
-export const LAND = "#e8e9e7";
-export const SEA = "#f6f8f9";
-const SEQ = interpolateRgbBasis(["#efe9dc", "#cfd8d3", "#93b1b4", "#4f7d8c"]);
-const DIV_FILL = piecewise(interpolateLab, ["#3d6c96", "#a9c3d9", "#f1f0ec", "#e2b0a5", "#a5493d"]);
-const DIV_BAND = piecewise(interpolateRgb, ["#284f78", "#5b87b0", "#b4b9bd", "#c0675a", "#8b3a31"]);
+// The map's colours per theme: self is the selected country, band the flow bands,
+// land a country with no flow worth showing. The ramps run from faint to strong
+// against each theme's land, so small values fade into the ground in both.
+const theme = (self, band, land, sea, seq, fill, bandRamp) => ({
+	self,
+	band,
+	land,
+	sea,
+	seq: interpolateRgbBasis(seq),
+	fill: piecewise(interpolateLab, fill),
+	bandRamp: piecewise(interpolateRgb, bandRamp),
+});
+export const MAP = {
+	light: theme(
+		"#2b3a45",
+		"#a8471c",
+		"#e8e9e7",
+		"#f6f8f9",
+		["#efe9dc", "#cfd8d3", "#93b1b4", "#4f7d8c"],
+		["#3d6c96", "#a9c3d9", "#f1f0ec", "#e2b0a5", "#a5493d"],
+		["#284f78", "#5b87b0", "#b4b9bd", "#c0675a", "#8b3a31"],
+	),
+	dark: theme(
+		"#e6edf2",
+		"#d9703f",
+		"#2a333a",
+		"#192026",
+		["#3a4441", "#3f5d62", "#5f9196", "#a7d3cc"],
+		["#79acdf", "#3a5872", "#2d343a", "#7a463c", "#ec8673"],
+		["#8bb8e6", "#5b87b0", "#7c858c", "#c9705f", "#f0907c"],
+	),
+};
 
 const clamp01 = (t) => Math.max(0, Math.min(1, t));
-// Log scale from lo to hi on the sand-to-teal ramp.
-export const seqScale = (lo, hi) => (v) => SEQ(clamp01(Math.log(v / lo) / Math.log(hi / lo)));
+// Log scale from lo to hi on the theme's sequential ramp.
+export const seqScale =
+	(lo, hi, t = "light") =>
+	(v) =>
+		MAP[t].seq(clamp01(Math.log(v / lo) / Math.log(hi / lo)));
 // Square-root diverging scale on ±m, so the typical small change still reads
 // next to the run's extremes. Blue is a decrease, red an increase.
-const divScale = (ramp) => (m) => (v) => ramp(0.5 + 0.5 * Math.sign(v) * Math.sqrt(clamp01(Math.abs(v) / m)));
-export const divFill = divScale(DIV_FILL);
-export const divBand = divScale(DIV_BAND);
+const divScale =
+	(key) =>
+	(m, t = "light") =>
+	(v) =>
+		MAP[t][key](0.5 + 0.5 * Math.sign(v) * Math.sqrt(clamp01(Math.abs(v) / m)));
+export const divFill = divScale("fill");
+export const divBand = divScale("bandRamp");
 
 // --- flow bands -------------------------------------------------------------------
 

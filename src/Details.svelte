@@ -157,6 +157,8 @@ const e = $derived(data.provenance.engine);
 const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer_by_country?.passed === true ? meta.checks.producer_by_country : null);
 </script>
 
+<!-- on a wide screen focus can be in the sidebar; the panel's own handler stops Escape first -->
+<svelte:window onkeydown={(e) => open && e.key === "Escape" && close()} />
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape and the close button are the keyboard path -->
 <div class="scrim" class:on={open} onclick={close}></div>
 <div

@@ -742,3 +742,37 @@ test("the grid card leaves a cell that was never computed for the first computed
 	await expect(pick.getByRole("button", { name: "10%" })).toHaveAttribute("aria-pressed", "true");
 	await expect(pick).not.toContainText("not precomputed");
 });
+
+test("the header toggle switches the theme and the browser keeps the choice", async ({ page, colorScheme }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const root = page.locator("html");
+	const first = colorScheme === "dark" ? "dark" : "light";
+	const other = first === "dark" ? "light" : "dark";
+	await expect(root).toHaveAttribute("data-theme", first);
+	const sea = () => page.locator("svg.map path").first().getAttribute("fill");
+	const before = await sea();
+	await page.getByRole("button", { name: "Dark theme" }).click();
+	await expect(root).toHaveAttribute("data-theme", other);
+	expect(await sea()).not.toBe(before);
+	// the controls fade to their new colours; check contrast once they arrive
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+	await expectNoAxeViolations(page);
+	await page.reload();
+	await ready(page);
+	await expect(root).toHaveAttribute("data-theme", other);
+	await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute(
+		"aria-pressed",
+		String(other === "dark"),
+	);
+});
+
+test("Escape closes Details while focus is in the sidebar", async ({ page, isMobile }) => {
+	test.skip(isMobile, "on a phone Details covers the sidebar");
+	await page.goto(FIXTURE);
+	await ready(page);
+	await page.getByRole("button", { name: /^Details for/ }).click();
+	await page.getByRole("button", { name: "Production", exact: true }).click();
+	await page.keyboard.press("Escape");
+	await expect(page.getByRole("dialog")).toBeHidden();
+});

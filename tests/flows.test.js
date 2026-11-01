@@ -13,9 +13,12 @@ import {
 	changeArm,
 	continents,
 	displayChange,
+	divBand,
+	divFill,
 	fitExtent,
 	flowPct,
 	fmt,
+	MAP,
 	niceUp,
 	parseView,
 	pct,
@@ -23,6 +26,7 @@ import {
 	runText,
 	SECTION_SHORT,
 	sankeyLayout,
+	seqScale,
 	share,
 	summarise,
 	theName,
@@ -420,4 +424,13 @@ test("a change below display resolution keeps the map legend neutral", () => {
 	const summary = summarise(meta, base, noise, sel());
 	assert.equal(changeArm(summary), 0);
 	assert.equal(fitExtent(summary), 1);
+});
+
+test("each theme's map ramps run from its own faint end to its strong end", () => {
+	for (const t of ["light", "dark"]) {
+		assert.equal(seqScale(1, 1000, t)(1), MAP[t].seq(0), t);
+		assert.equal(divFill(10, t)(0), MAP[t].fill(0.5), t);
+		assert.equal(divBand(10, t)(-10), MAP[t].bandRamp(0), t);
+	}
+	assert.notEqual(seqScale(1, 1000, "dark")(1), seqScale(1, 1000)(1));
 });

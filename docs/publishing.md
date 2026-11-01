@@ -12,7 +12,7 @@ The page jobs read the synthetic fixtures and the shipped results. CI
 downloads `embodied.parquet` from the `data-2011-r2` release and checks it with
 `sha256sum --check data/embodied.sha256`. In CI the real-data checks fail
 rather than skip when the file is missing. The browser tests run in Chromium
-(light, dark and a phone), Firefox, desktop Safari and an iPhone (WebKit),
+(the light theme, the dark theme and a phone), Firefox, desktop Safari and an iPhone (WebKit),
 with axe checking WCAG 2.2 AA.
 
 The page jobs also download the [browser dataset](browser-engine.md#build-or-download-the-data),
