@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
 import { LIMITS, plan, readKey, scenarioFlows, startReads } from "../browser-engine.js";
+import { correction } from "../engine/pkg/ramascene_engine.js";
 import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
@@ -537,6 +538,41 @@ test("invalid selections are refused with a message that names the problem", () 
 		assert.throws(() => plan(meta, [step(), step({ techChange: [0] })]), /pairs\. Choose/);
 	} finally {
 		LIMITS.work = saved;
+	}
+});
+
+// Shapes off the kernel's 4 × 4 tiles and across its 256-long blocks, in both
+// forms and both builds of the small system. Checks (I − ΔA T) W = ΔA X.
+test("the wasm correction solves its system at awkward shapes", () => {
+	let seed = 7;
+	const random = () => {
+		seed = (seed * 16807) % 2147483647;
+		return seed / 2147483647 - 0.5;
+	};
+	for (const [r, k, c, density] of [
+		[1, 1, 1, 1],
+		[5, 7, 3, 1],
+		[6, 301, 9, 1],
+		[6, 301, 9, 0.1],
+		[302, 7, 5, 1],
+		[301, 263, 6, 1],
+	]) {
+		const delta = Float64Array.from({ length: r * k }, () => (Math.abs(random()) < density / 2 ? random() / k : 0));
+		const t = Float64Array.from({ length: k * r }, () => random() / r);
+		const x = Float64Array.from({ length: k * c }, random);
+		const w = correction(delta, t, x, r, k, c, 1e-7);
+		const dot = (i, j, m, width) => {
+			let sum = 0;
+			for (let q = 0; q < k; q++) sum += delta[i * k + q] * m[q * width + j];
+			return sum;
+		};
+		const dt = Array.from({ length: r * r }, (_, iq) => dot(Math.floor(iq / r), iq % r, t, r));
+		for (let i = 0; i < r; i++)
+			for (let j = 0; j < c; j++) {
+				let lhs = w[i * c + j];
+				for (let q = 0; q < r; q++) lhs -= dt[i * r + q] * w[q * c + j];
+				close(lhs, dot(i, j, x, c));
+			}
 	}
 });
 

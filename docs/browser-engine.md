@@ -106,8 +106,8 @@ rows, one gzip chunk per row, and an index of offsets and sizes at the end of
 the file (the Zarr sharding codec). X and Y are one file each, with one chunk
 per country. The reader fetches a shard's index once, then asks for the chunks
 it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
-request is one range, since GitHub Pages answers a request for several ranges
-with the whole file.
+request is one range, since many static hosts answer a request for several ranges
+with the whole file, and the Worker refuses them.
 
 ## Build or download the data
 
@@ -181,8 +181,12 @@ instead of forcing revalidation. A new dataset gets new matrix URLs; see
 Do not download the entire export to warm a cache. Large, rarely used
 assets should load when needed, as the
 [Chrome runtime-caching guide](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/)
-explains. The WebAssembly kernel does the small system's dense products with faer's
-matrix routines, without wasm SIMD, which measured no faster. It also decodes the
+explains. The WebAssembly kernel does the small system's dense products with its own
+[wasm SIMD](https://github.com/WebAssembly/simd) kernel, and the solve with faer. faer
+has no wasm SIMD path, so building it with SIMD measured no faster; the own kernel took
+manufacturing used by electricity from 2.59 s to 2.14 s. A browser without wasm SIMD
+(before Chrome 91, Firefox 89 or Safari 16.4) cannot load the kernel, so custom
+scenarios fail there and the published ones still work. The kernel also decodes the
 stored chunks, with flate2's zlib-rs backend: about 306 MB/s of output, against about
 150 MB/s for gunzip in JavaScript, which took manufacturing used by electricity from
 3.52 s to 2.60 s. WebAssembly memory grows to the largest scenario run in a
@@ -211,17 +215,17 @@ The [recorded diagnostics](measurements/browser-engine-wasm.json) used Node
 
 | Case | Rows × columns | Read | JavaScript | WebAssembly |
 | --- | ---: | ---: | ---: | ---: |
-| one product in one country | 1 × 1 | 0.09 MB | 12 ms | 11 ms |
-| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 70 ms |
-| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 362 ms |
-| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 125 ms |
-| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 1.07 s |
-| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 2.60 s |
-| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 813 ms |
+| one product in one country | 1 × 1 | 0.09 MB | 12 ms | 10 ms |
+| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 61 ms |
+| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 356 ms |
+| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 102 ms |
+| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 880 ms |
+| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 2.14 s |
+| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 753 ms |
 
 The WebAssembly column also gains from 64 parallel ranges per array and the
 faster chunk check, which the JavaScript record predates. Peak memory of the
-largest case rose from 484 MB to 497 MB, because the kernel holds its own copies
+largest case rose from 484 MB to 523 MB, because the kernel holds its own copies
 of ΔA and L[K, R].
 
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
