@@ -1,0 +1,5 @@
+rules:
+  # actionlint 1.7.12 rejects the `$/` form this audit asks for; the local
+  # engine action comes from the repo's own checkout either way.
+  self-repository:
+    disable: true
