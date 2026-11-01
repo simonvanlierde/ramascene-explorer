@@ -80,9 +80,11 @@ The lists are nested: each industry section holds its divisions, and each divisi
 the world holds its continents, and each continent its countries. A list of more than ten items
 has a search button next to its label. A search keeps the matches and the groups they belong to.
 
-The browser calculation handles about 200 changed supply rows, where a row is one product from one
-producing country. Manufacturing from every country is 85 × 49 = 4,165 rows, too many: the card says so
-before you run it. Choose a narrower product or fewer producing countries, or use the job API.
+The browser calculation has [download, memory and arithmetic budgets](browser-engine.md). A row is
+one product from one producing country. Manufacturing from every country used by electricity
+(85 × 49 = 4,165 rows) fits, and takes several seconds; every product from every country does not,
+and the card says so before you run it. Choose a narrower product or fewer producing countries, or
+use the job API.
 
 For an industry, the percentage changes selected input requirements per unit of output.
 For **Final demand**, it changes spending on the selected product and origin.

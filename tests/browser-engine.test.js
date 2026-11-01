@@ -211,10 +211,11 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 		scenarioFlows(data, [broad]),
 		/too broad to compute in the browser: it changes 1,600 supply rows \(200 products × 8 producing countries\)/,
 	);
-	// several interventions: the total only, no single product × country count
+	// several interventions: the total only, no single product × country count, and a
+	// row changed both as an input and in final demand counts once
 	await assert.rejects(
 		scenarioFlows(data, [{ ...broad, product: [82], consumedBy: [final.id] }, broad]),
-		/1,608 supply rows\./,
+		/1,600 supply rows\./,
 	);
 	// the form runs the same check on the catalogue alone
 	assert.throws(() => plan(meta, [broad]), /too broad/);
