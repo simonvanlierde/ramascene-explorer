@@ -11,3 +11,5 @@ data/ramascene-browser-engine*.tar
 .stryker-tmp/
 reports/
 .env
+engine/target/
+engine/pkg/

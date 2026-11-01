@@ -1,0 +1,4 @@
+# rustup installs the wasm target on first use, so the worker's build needs no manual step.
+[toolchain]
+channel = "stable"
+targets = ["wasm32-unknown-unknown"]

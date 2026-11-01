@@ -1,0 +1,21 @@
+[package]
+name = "ramascene-engine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "The browser scenario maths: the small Woodbury system and the flow fold"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+faer = { version = "0.24", default-features = false, features = ["std", "linalg"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.129"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
