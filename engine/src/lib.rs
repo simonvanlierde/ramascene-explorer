@@ -1,4 +1,5 @@
-//! The browser scenario maths: the small Woodbury system and the flow fold.
+//! The browser scenario maths: the small Woodbury system and the flow fold, and
+//! the decoding of the store's gzip chunks.
 //!
 //! Matrices arrive as row-major `f64` slices, as the JavaScript worker holds them.
 //! See `scenarioFlows` in browser-engine.js for how the pieces are gathered.
@@ -7,7 +8,7 @@ use faer::linalg::matmul::matmul;
 use faer::linalg::solvers::Solve;
 use faer::{Accum, Mat, MatMut, MatRef, Par};
 
-/// Why a scenario was refused.
+/// Why a scenario or a stored chunk was refused.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     /// A slice's length disagrees with the dimensions given.
@@ -16,6 +17,10 @@ pub enum Error {
     NonFinite,
     /// A pivot is too small for float32 data, or the result is not finite.
     Singular,
+    /// A chunk is not valid gzip, fails its CRC-32, or has the wrong size.
+    Chunk,
+    /// A decoded chunk holds NaN or an infinity.
+    ChunkValues,
 }
 
 impl std::fmt::Display for Error {
@@ -24,6 +29,8 @@ impl std::fmt::Display for Error {
             Self::Dimensions => "invalid solve dimensions",
             Self::NonFinite => "the solve needs finite numbers",
             Self::Singular => "singular or ill-conditioned scenario",
+            Self::Chunk => "invalid matrix chunk",
+            Self::ChunkValues => "invalid matrix values",
         })
     }
 }
@@ -215,7 +222,41 @@ pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result
     Ok(())
 }
 
-/// The exports browser-engine.js calls, with errors as JavaScript exceptions.
+/// One gzip chunk of the store as `length` bytes of little-endian float32.
+///
+/// The gzip trailer's CRC-32 and size are checked, and decoding stops one byte past
+/// `length`, so any chunk, valid or not, holds at most about twice `length` bytes.
+///
+/// # Errors
+///
+/// [`Error::Chunk`] for invalid gzip, a failed check or the wrong size, and
+/// [`Error::ChunkValues`] for a NaN or infinite value.
+pub fn decode(bytes: &[u8], length: usize) -> Result<Vec<f32>, Error> {
+    use std::io::Read;
+    if !length.is_multiple_of(4) {
+        return Err(Error::Chunk);
+    }
+    let mut raw = Vec::with_capacity(length);
+    let mut gz = flate2::bufread::GzDecoder::new(bytes).take(length as u64 + 1);
+    gz.read_to_end(&mut raw).map_err(|_| Error::Chunk)?;
+    // the shard index gives each chunk's exact size, so nothing may follow its gzip data
+    if raw.len() != length || !gz.into_inner().into_inner().is_empty() {
+        return Err(Error::Chunk);
+    }
+    let values: Vec<f32> = raw
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect();
+    if values.iter().all(|v| v.is_finite()) {
+        Ok(values)
+    } else {
+        Err(Error::ChunkValues)
+    }
+}
+
+/// The exports browser-engine.js and browser-data.js call, with errors as JavaScript exceptions.
 #[cfg(target_arch = "wasm32")]
 pub mod wasm {
     use wasm_bindgen::prelude::*;
@@ -236,6 +277,16 @@ pub mod wasm {
         epsilon: f64,
     ) -> Result<Vec<f64>, JsError> {
         super::correction(delta, t, x, r, k, c, epsilon).map_err(|e| JsError::new(&e.to_string()))
+    }
+
+    /// [`super::decode`] for JavaScript.
+    ///
+    /// # Errors
+    ///
+    /// As [`super::decode`], with the message as a JavaScript `Error`.
+    #[wasm_bindgen]
+    pub fn decode(bytes: &[u8], length: usize) -> Result<Vec<f32>, JsError> {
+        super::decode(bytes, length).map_err(|e| JsError::new(&e.to_string()))
     }
 
     /// [`super::fold`] for JavaScript; `out` is updated in place.
@@ -460,5 +511,42 @@ mod tests {
         fold(&mut out, &h, &z, 3, 2).unwrap();
         assert_eq!(out, [13.0, 17.0, 14.5, 18.0, 16.0, 19.0]);
         assert_eq!(fold(&mut out, &h, &z[..3], 3, 2), Err(Error::Dimensions));
+    }
+
+    fn gzip(values: &[f32]) -> Vec<u8> {
+        use std::io::Write;
+        let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        for v in values {
+            e.write_all(&v.to_le_bytes()).unwrap();
+        }
+        e.finish().unwrap()
+    }
+
+    #[test]
+    fn decode_checks_size_crc_and_values() {
+        let chunk = gzip(&[1.5, -2.5, 0.0]);
+        assert_eq!(decode(&chunk, 12), Ok(vec![1.5, -2.5, 0.0]));
+        // a row longer or shorter than asked for, and a length that is not whole floats
+        assert_eq!(decode(&chunk, 8), Err(Error::Chunk));
+        assert_eq!(decode(&chunk, 16), Err(Error::Chunk));
+        assert_eq!(decode(&chunk, 11), Err(Error::Chunk));
+        // the trailer holds CRC-32 then size; flip one bit of the CRC
+        let mut bad = chunk.clone();
+        let at = bad.len() - 8;
+        bad[at] ^= 1;
+        assert_eq!(decode(&bad, 12), Err(Error::Chunk));
+        assert_eq!(decode(&chunk[..chunk.len() - 4], 12), Err(Error::Chunk));
+        assert_eq!(decode(b"not gzip", 12), Err(Error::Chunk));
+        // the shard index gives each chunk's exact size: nothing may follow the gzip data
+        let mut longer = chunk.clone();
+        longer.push(0);
+        assert_eq!(decode(&longer, 12), Err(Error::Chunk));
+        assert_eq!(
+            decode(&[chunk.clone(), chunk.clone()].concat(), 12),
+            Err(Error::Chunk)
+        );
+        for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            assert_eq!(decode(&gzip(&[1.0, v]), 8), Err(Error::ChunkValues));
+        }
     }
 }
