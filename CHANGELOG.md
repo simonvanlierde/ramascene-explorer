@@ -51,6 +51,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Running a custom scenario while the form was still downloading another selection's data held
+  both at once, which could pass the memory budget on a phone. Run now stops the other download
+  first ([browser-engine.md](docs/browser-engine.md)).
 - The browser's [memory check](docs/browser-engine.md) counts the matrix copies used during
   a custom calculation. Mixed scenarios that exceed the working-memory budget are refused before downloading matrices.
 - A selection too broad for the browser, such as every product used by electricity, now says

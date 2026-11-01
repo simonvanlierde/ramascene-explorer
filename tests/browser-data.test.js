@@ -57,6 +57,28 @@ test("neighbouring chunks share one range, cached chunks need none, and failures
 	await assert.rejects(read(chunks, [0.5]), /invalid matrix row/);
 });
 
+test("an aborted read stops its chunk downloads but keeps the shared shard index", async () => {
+	const signals = [];
+	const calls = [];
+	const readRange = async (shard, start, end, signal) => {
+		calls.push([shard, start, end]);
+		signals.push(signal);
+		signal?.throwIfAborted();
+		return shards[shard].buffer.slice(shards[shard].byteOffset + start, shards[shard].byteOffset + end);
+	};
+	const chunks = arrayReader(info, readRange);
+	const controller = new AbortController();
+	controller.abort();
+	await assert.rejects(
+		chunks([0, 1], () => {}, controller.signal),
+		{ name: "AbortError" },
+	);
+	// the index went out without the signal, so another read can still use it
+	assert.deepEqual(signals, [undefined, controller.signal]);
+	assert.deepEqual((await read(chunks, [0])).get(0), f32([1.25, -0.125, 0]));
+	assert.equal(calls.length, 3);
+});
+
 test("the chunk cache is bounded by bytes and evicts the oldest chunk", async () => {
 	const { calls, readRange } = fixture();
 	for (const cacheBytes of [-1, NaN, Infinity]) assert.throws(() => arrayReader(info, readRange, { cacheBytes }));

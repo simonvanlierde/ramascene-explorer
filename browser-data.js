@@ -84,8 +84,9 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 		return { out, empty };
 	}
 
-	// Calls onChunk(chunk, values) once per requested chunk, in any order.
-	return async function chunks(list, onChunk) {
+	// Calls onChunk(chunk, values) once per requested chunk, in any order. An abort
+	// stops the chunk downloads; shard indexes are shared between reads, so they finish.
+	return async function chunks(list, onChunk, signal) {
 		const byShard = new Map();
 		for (const chunk of new Set(list)) {
 			if (!Number.isInteger(chunk) || chunk < 0 || chunk * rows >= height) throw new Error("invalid matrix row");
@@ -107,7 +108,7 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 		async function worker() {
 			try {
 				for (let range = queue.shift(); range; range = queue.shift()) {
-					const bytes = new Uint8Array(await readRange(range.shard, range.start, range.end));
+					const bytes = new Uint8Array(await readRange(range.shard, range.start, range.end, signal));
 					if (bytes.byteLength !== range.end - range.start) throw new Error("truncated matrix range");
 					for (const [chunk, offset, size] of range.chunks) {
 						// the kernel checks each chunk's gzip CRC-32 and size, and that every value is finite
@@ -147,7 +148,7 @@ export function matrixReader(info, readRange, options) {
 	const chunks = arrayReader(info, readRange, options);
 	const [height, width] = info.shape;
 	const step = info.chunk_rows;
-	return async function read(rows, columns) {
+	return async function read(rows, columns, signal) {
 		if (columns && !columns.every((c) => Number.isInteger(c) && c >= 0 && c < width))
 			throw new Error("invalid matrix column");
 		const w = columns ? columns.length : width;
@@ -159,13 +160,17 @@ export function matrixReader(info, readRange, options) {
 			if (!wanted.has(chunk)) wanted.set(chunk, []);
 			wanted.get(chunk).push([r, i]);
 		});
-		await chunks([...wanted.keys()], (chunk, values) => {
-			for (const [r, i] of wanted.get(chunk)) {
-				const at = (r - chunk * step) * width;
-				if (!columns) out.set(values.subarray(at, at + width), i * w);
-				else for (let j = 0; j < w; j++) out[i * w + j] = values[at + columns[j]];
-			}
-		});
+		await chunks(
+			[...wanted.keys()],
+			(chunk, values) => {
+				for (const [r, i] of wanted.get(chunk)) {
+					const at = (r - chunk * step) * width;
+					if (!columns) out.set(values.subarray(at, at + width), i * w);
+					else for (let j = 0; j < w; j++) out[i * w + j] = values[at + columns[j]];
+				}
+			},
+			signal,
+		);
 		return out;
 	};
 }
@@ -190,14 +195,16 @@ export function openEngine(meta, readRange) {
 	const readers = {};
 	for (const [name, shape] of Object.entries(SHAPES)) {
 		if (!validArray(meta.arrays?.[name], shape)) throw new Error(`invalid ${name} matrix manifest`);
-		readers[name] = matrixReader(meta.arrays[name], (shard, start, end) => readRange(name, shard, start, end));
+		readers[name] = matrixReader(meta.arrays[name], (shard, start, end, signal) =>
+			readRange(name, shard, start, end, signal),
+		);
 	}
 	const baseline = Float64Array.from(meta.baseline_flows);
 	if (!baseline.every(Number.isFinite)) throw new Error("invalid baseline flows");
 
-	async function read(name, rows, columns) {
+	async function read(name, rows, columns, signal) {
 		if (!readers[name]) throw new Error(`unknown matrix ${name}`);
-		return readers[name](rows, columns);
+		return readers[name](rows, columns, signal);
 	}
 	return { meta, baseline, read };
 }
@@ -211,15 +218,15 @@ export async function fetchEngine(base) {
 	const response = await fetch(new URL("manifest-v3.json", base), { cache: "no-cache" });
 	if (!response.ok) throw new Error(`browser dataset: ${response.status}`);
 	const meta = await response.json();
-	return openEngine(meta, (name, shard, start, end) =>
-		fetchRange(new URL(shardPath(meta, name, shard), base), start, end, meta.arrays[name].shard_bytes[shard]),
+	return openEngine(meta, (name, shard, start, end, signal) =>
+		fetchRange(new URL(shardPath(meta, name, shard), base), start, end, meta.arrays[name].shard_bytes[shard], signal),
 	);
 }
 
-export async function fetchRange(url, start, end, byteLength) {
+export async function fetchRange(url, start, end, byteLength, signal) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
-	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` } });
+	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
 	if (response.status === 404) {
 		await response.body?.cancel();
 		// The manifest names the store by its hash, so a 404 means a newer deploy.

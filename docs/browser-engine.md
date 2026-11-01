@@ -21,7 +21,9 @@ changed row, and the matching rows of baseline output X and final demand Y.
 While the form is open, those downloads start half a second after the selection
 last changed, so Run waits only for what is still loading. A new percentage reads the
 same rows, so it starts nothing new. One selection downloads at a time; while it does,
-only the newest waits, so quick changes waste at most one download.
+only the newest waits, so quick changes waste at most one download. Run on a
+selection other than the one downloading stops that download first, so the two
+never share the memory budget.
 
 While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
 stops the worker and starts a fresh one. A worker that runs out of memory, or passes

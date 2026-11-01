@@ -9,7 +9,10 @@ const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs
 
 // Reads rows (and some columns) of in-memory matrices, as the store reader does.
 function memory(matrices, log = []) {
-	return async (name, rows, columns) => {
+	return async (name, rows, columns, signal) => {
+		// the store reader's signature: a column list or nothing, then the signal
+		assert.ok(columns === undefined || Array.isArray(columns), `${name} columns`);
+		assert.ok(signal === undefined || signal instanceof AbortSignal, `${name} signal`);
 		log.push([name, rows.length]);
 		const m = matrices[name];
 		const cols = columns ?? m[0].map((_, j) => j);
@@ -587,6 +590,8 @@ test("reads started before Run serve a run with the same slices, and only that r
 	const before = data.log.length;
 	assert.deepEqual(await scenarioFlows(data, [step()], ahead), want);
 	assert.equal(data.log.length, before, "the run read nothing more");
+	// a signal reaches every read in its own place
+	await Promise.all(Object.values(startReads(data, plan(data.meta, [step()]), new AbortController().signal)));
 	// a different selection ignores them and reads its own
 	const other = await scenarioFlows(data, [step({ consumedBy: [20] })], ahead);
 	assert.ok(data.log.length > before);

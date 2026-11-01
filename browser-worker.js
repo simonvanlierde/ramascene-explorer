@@ -12,15 +12,14 @@ const load = (base) =>
 		loaded = null;
 		throw e;
 	}));
-// the reader decodes with the kernel, so no read starts before it loads; a failed load is
-// tried again on the next message
-const ready = () =>
+// the store's chunks decode in the kernel, so reads need it too; a failed load is tried again
+const kernelLoad = () =>
 	(engine ??= init().catch((e) => {
 		engine = null;
 		throw e;
 	}));
 
-// Reads started for the selection the form shows, before Run: {key, reads}. One
+// Reads started for the selection the form shows, before Run: {key, reads, stop}. One
 // prefetch downloads at a time; while it does, only the newest selection waits.
 let ahead = null;
 let waiting = null;
@@ -30,17 +29,18 @@ async function prefetch(base, steps) {
 	if (prefetching) return;
 	prefetching = true;
 	try {
-		const [data] = await Promise.all([load(base), ready()]);
+		const [data] = await Promise.all([load(base), kernelLoad()]);
 		while (waiting) {
 			const planned = plan(data.meta, waiting);
 			waiting = null;
 			const key = readKey(planned);
 			if (ahead?.key === key) continue;
-			const current = { key, reads: startReads(data, planned) };
-			ahead = current;
-			const settled = await Promise.allSettled(Object.values(current.reads));
-			// a failed read is not kept: Run reads it again
-			if (ahead === current && settled.some((r) => r.status === "rejected")) ahead = null;
+			const controller = new AbortController();
+			ahead = { key, reads: startReads(data, planned, controller.signal), stop: () => controller.abort() };
+			const started = ahead;
+			const settled = await Promise.allSettled(Object.values(started.reads));
+			// failed reads would fail the run that takes them: Run reads afresh instead
+			if (ahead === started && settled.some((r) => r.status === "rejected")) ahead = null;
 		}
 	} catch {
 		// a selection the form will refuse, or a failed load: Run reports either
@@ -55,9 +55,9 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	let threaded = false;
 	try {
 		const loading = load(base);
-		// the kernel loads alongside the data; this message keeps its own promise, since a
-		// failure resets engine before a later await could see it
-		const kernel = ready();
+		// the kernel loads alongside the data; this message keeps its own load, since a
+		// failure resets engine before a later await could see null
+		const kernel = kernelLoad();
 		kernel.catch(() => {});
 		const data = await loading;
 		// the form checks a selection's size with these before sending it
@@ -91,8 +91,14 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 				self.postMessage({ id, retrySingle: true });
 				return;
 			}
-			const used = ahead;
+			let used = ahead;
 			ahead = null;
+			if (used && used.key !== readKey(plan(data.meta, body.model_details))) {
+				// another selection's reads beside this run's could pass the memory budget together
+				used.stop();
+				await Promise.allSettled(Object.values(used.reads));
+				used = null;
+			}
 			const flows = await scenarioFlows(data, body.model_details, used, maths);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
 			value.threads = maths.thread_count();
