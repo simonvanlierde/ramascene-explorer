@@ -96,14 +96,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
           components: clippy, rustfmt
+      # Saved off pull requests only: a cache a pull request saves is readable by that
+      # pull request alone, and it pushes main's entries out of the 10 GB per-repo limit.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: engine
           save-if: ${{ github.event_name != 'pull_request' }}
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-nextest,cargo-deny
       - run: cargo fmt --check
+      # --locked: the first build fails on a Cargo.lock that is missing or stale.
       - run: cargo clippy --locked --all-targets -- -D warnings
-      - run: cargo test --locked
+      # The JavaScript exports compile only for wasm32.
+      - run: cargo clippy --locked --target wasm32-unknown-unknown -- -D warnings
+      - run: cargo nextest run --locked
+      - run: cargo deny check
 
   playwright-version:
     name: playwright version

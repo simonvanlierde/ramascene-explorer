@@ -20,12 +20,29 @@ opt-level = 3
 lto = true
 codegen-units = 1
 
+# Clippy has no user-wide config: lint levels take effect only from this table.
 [lints.rust]
 unsafe_code = "forbid"
+# `pub` on an item nothing outside the crate can reach; use pub(crate).
+unreachable_pub = "warn"
+missing_docs = "warn"
 
 [lints.clippy]
+# Priority -1 so the single-lint levels below override the group.
 pedantic = { level = "warn", priority = -1 }
+# Restriction picks, off by default: each one flags a shortcut that should not
+# reach main. clippy.toml allows unwrap, expect and dbg! in tests.
+allow_attributes_without_reason = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
 unwrap_used = "warn"
+expect_used = "warn"
+# A library reports through its return values, never the caller's terminal.
+print_stdout = "warn"
+print_stderr = "warn"
+# Pedantic's noisiest: it wants #[must_use] on nearly every function.
+must_use_candidate = "allow"
 # The code follows the maths: R, K, C, ΔA, T, W.
 many_single_char_names = "allow"
 # Matrix sizes are at most 9,800, far below f64's 2^53.

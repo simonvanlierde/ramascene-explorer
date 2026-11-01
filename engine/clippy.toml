@@ -1,0 +1,5 @@
+# Lint levels live in Cargo.toml's [lints] table; this file only tunes lints.
+# No MSRV: only the stable toolchain in CI builds the kernel.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-dbg-in-tests = true

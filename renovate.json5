@@ -47,6 +47,12 @@
       matchUpdateTypes: ["minor", "patch", "pin", "digest"],
       automerge: true,
     },
+    // engine/ pins wasm-bindgen exactly: wasm-bindgen-cli must match it, and the
+    // local CLI is shared with other repos, so a person bumps both together.
+    {
+      matchPackageNames: ["wasm-bindgen"],
+      automerge: false,
+    },
     // precompute.py imports the RaMa-Scene engine, which runs on Django 5.
     {
       matchPackageNames: ["django"],

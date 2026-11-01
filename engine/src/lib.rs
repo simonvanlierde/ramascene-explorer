@@ -7,10 +7,14 @@ use faer::linalg::matmul::matmul;
 use faer::linalg::solvers::Solve;
 use faer::{Accum, Mat, MatMut, MatRef, Par};
 
+/// Why a scenario was refused.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
+    /// A slice's length disagrees with the dimensions given.
     Dimensions,
+    /// An input holds NaN or an infinity.
     NonFinite,
+    /// A pivot is too small for float32 data, or the result is not finite.
     Singular,
 }
 
@@ -219,10 +223,16 @@ pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result
     Ok(())
 }
 
+/// The exports browser-engine.js calls, with errors as JavaScript exceptions.
 #[cfg(target_arch = "wasm32")]
-mod wasm {
+pub mod wasm {
     use wasm_bindgen::prelude::*;
 
+    /// [`super::correction`] for JavaScript.
+    ///
+    /// # Errors
+    ///
+    /// As [`super::correction`], with the message as a JavaScript `Error`.
     #[wasm_bindgen]
     pub fn correction(
         delta: &[f64],
@@ -236,6 +246,11 @@ mod wasm {
         super::correction(delta, t, x, r, k, c, epsilon).map_err(|e| JsError::new(&e.to_string()))
     }
 
+    /// [`super::fold`] for JavaScript; `out` is updated in place.
+    ///
+    /// # Errors
+    ///
+    /// As [`super::fold`], with the message as a JavaScript `Error`.
     #[wasm_bindgen]
     pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result<(), JsError> {
         super::fold(out, h, z, f, c).map_err(|e| JsError::new(&e.to_string()))
@@ -243,7 +258,6 @@ mod wasm {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
