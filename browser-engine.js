@@ -88,15 +88,16 @@ export function plan(meta, steps) {
 	const byRows = !R || K * size("L") <= J.length * size("LC");
 	const download = R * size("A") + (R ? (byRows ? K * size("L") : J.length * size("LC")) : 0) + J.length * size("H");
 	// Reserve all working copies: ΔA and T, each also copied into the kernel, with S
-	// and its LU there; X₀[K,:] and its kernel copy; final demand; the L transpose; and
-	// the first H batch while later batches load.
+	// and its LU there; X₀[K,:] and its kernel copy; the solve's right side, solution,
+	// row-swap scratch and W, with W's copy back to JavaScript; final demand; the L
+	// transpose; and the first H batch while later batches load.
 	const memory =
 		8 *
 		(4 * R * K +
 			(byRows ? 1 : 2) * K * J.length +
 			2 * n * n +
 			2 * K * C +
-			(R <= K ? 2 * R : K + R) * C +
+			(R <= K ? 4 * R : 2 * K + 3 * R) * C +
 			Math.max(R, K) +
 			2 * finals.length * C +
 			J.length * C +
