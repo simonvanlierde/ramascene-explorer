@@ -24,8 +24,8 @@ route is rerun in these jobs.
 The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
-`pages.yml` publishes to <https://simonvanlierde.com/ramascene-explorer/>
-only when started by hand (Actions → pages → Run workflow), and only from
+`pages.yml` publishes the GitHub Pages copy, kept as the fallback while production
+settles on [Cloudflare](#cloudflare). It runs only when started by hand (Actions → pages → Run workflow), and only from
 `main`. Before you run it, commit the precompute output. The workflow ships the
 bundled page and fonts, the map geometry, `results.json`, `embodied.parquet`
 and the browser dataset. Both release downloads are pinned by their checksums.
@@ -84,8 +84,8 @@ a snapshot, not a gate.
 `wrangler.jsonc` describes one Worker, `ramascene-explorer`, on the routes
 `simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
 `pnpm build:cloudflare` builds into `site/ramascene-explorer/`, so the assets sit under that
-prefix and the domain's other pages stay on GitHub Pages. The routes take effect once the domain's DNS records are proxied through
-Cloudflare; until then GitHub Pages serves the site at the same address.
+prefix. The domain's DNS records are proxied through Cloudflare, so these routes take
+production, and the domain's other pages still come from GitHub Pages through the proxy.
 
 `cloudflare.yml` deploys it on every push to `main`. Each pull request from this
 repository uploads a version without deploying it, with the alias `pr-<number>`. Its
@@ -142,15 +142,10 @@ node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another t
 Pass a preview's version URL instead to check a pull request's deployment.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
 
-To switch production from GitHub Pages:
-
-1. Run the check against a pull request's preview URL.
-2. In Cloudflare, set SSL/TLS to Full, not Full (strict): GitHub's certificate renewal can
-   fail behind the proxy. Do this before the next step. With Flexible, Cloudflare asks
-   GitHub Pages over HTTP, Pages redirects to HTTPS, and every page on the domain loops.
-3. Proxy the simonvanlierde.com DNS records.
-4. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
-5. Remove `pages.yml` once production has served a few days.
+SSL/TLS on the zone stays Full, not Full (strict): GitHub's certificate renewal can fail
+behind the proxy. With Flexible, Cloudflare asks GitHub Pages over HTTP, Pages redirects
+to HTTPS, and every page on the domain loops. Remove `pages.yml` once production has
+served a few days.
 
 To roll back a bad production deploy, run `pnpm exec wrangler rollback` and pick the last
 good version; it needs no rebuild. Before `pages.yml` is gone, switching the DNS records

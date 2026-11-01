@@ -17,6 +17,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The site is served from Cloudflare at the same address, with the headers browsers need
+  for shared memory ([publishing.md](docs/publishing.md#cloudflare)).
 - The map opens on the globe; `map=flat` in the link opens the flat map
   ([interface.md](docs/interface.md)).
 - On a wide screen the sidebar stays usable while Details is open, and Details is wider.

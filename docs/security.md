@@ -5,8 +5,9 @@ This page covers the technical surface. To report a vulnerability, follow
 
 ## A static site
 
-The published page is files on GitHub Pages, with no server code, database or
-login, and it stores nothing. Without `?api=` it fetches only its own files
+The published page is static files, served by a Cloudflare Worker that only answers
+byte ranges ([publishing.md](publishing.md#cloudflare)). There is no database or login,
+and it stores nothing. Without `?api=` it fetches only its own files
 ([page.md](page.md#live-scenarios-optional)). How those files are built and
 checked is in [publishing.md](publishing.md).
 
@@ -18,7 +19,7 @@ through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
 The `<meta>` policy covers the page, not the custom-scenario worker: a worker
-takes its policy from its own response, and GitHub Pages sends none. The worker
+takes its policy from its own response, and the Worker sends none. The worker
 compiles the WebAssembly kernel, so a Content-Security-Policy header served for
 the whole site (for example from a host's `_headers` file) needs
 `'wasm-unsafe-eval'` in `script-src` for `browser-worker`'s script. Leave it out
