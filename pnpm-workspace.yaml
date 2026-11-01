@@ -5,3 +5,7 @@ overrides:
   # typed-rest-client (via Stryker) pins qs 6.15.1, which has three advisories
   # (GHSA-4mjr-xmp4-gh2g, GHSA-q8mj-m7cp-5q26, GHSA-x5fp-wj9c-mxmx). Drop once it moves.
   qs: ">=6.16.0"
+# Both packages use binaries from optional dependencies; no install script is needed.
+allowBuilds:
+  esbuild: false
+  workerd: false
