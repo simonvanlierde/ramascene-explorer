@@ -11,7 +11,7 @@ import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";
 import Sidebar from "./Sidebar.svelte";
 import Strip from "./Strip.svelte";
-import { reducedMotion, ui } from "./view.svelte.js";
+import { reducedMotion, ui, wide } from "./view.svelte.js";
 
 const search = location.search;
 const dataPath = dataUrl(search);
@@ -230,7 +230,7 @@ $effect(() => {
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
 			<h1>RaMa-Scene Explorer</h1>
-			<span class="by">by <a href="https://github.com/simonvanlierde">Simon van Lierde</a></span>
+			<span class="by">by <a href="https://simonvanlierde.com">Simon van Lierde</a></span>
 		</div>
 		<div class="rt" id="status">
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
@@ -255,7 +255,7 @@ $effect(() => {
 	</header>
 
 	{#if ready}
-		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null}>
+		<Sidebar {data} {meta} {sum} {whatif} {live} {loadingRun} {setMode} {setRun} {retry} {sheet} onclose={closeSheet} inert={ui.panel !== null && !wide.current}>
 			{#snippet custom()}{@render livePanel()}{/snippet}
 		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
