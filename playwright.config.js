@@ -1,9 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // The tests run against the built site, served by vite preview (which also
-// serves the synthetic fixtures the build leaves out). The page has one light
-// palette; the dark project checks that a dark-preferring browser still gets it
-// with full contrast. Firefox, desktop Safari and iPhone run on Playwright's
+// serves the synthetic fixtures the build leaves out). A dark-preferring browser
+// gets the dark theme, so the dark project runs every check, axe's contrast
+// included, on that palette. Firefox, desktop Safari and iPhone run on Playwright's
 // Firefox and WebKit builds, so the page is checked in all three engines.
 export default defineConfig({
 	testDir: "tests/e2e",

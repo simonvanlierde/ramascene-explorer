@@ -12,12 +12,19 @@ follow [Semantic Versioning](https://semver.org/).
   Europe buys 20% less construction work ([scenarios.md](docs/scenarios.md#featured-scenarios)).
   The map flows for all 155 runs are on the new `data-2011-r2` release.
 - A [documentation index](docs/README.md) by reader: the results, the method, contributing.
+- A dark theme. It follows the system setting until you use the toggle in the header, and
+  the browser keeps your choice ([page.md](docs/page.md#theme)).
 
 ### Changed
 
 - Dense custom scenarios can use up to four browser threads on a host that enables shared
   memory ([browser threads](docs/browser-engine.md#browser-threads)).
 
+- The map opens on the globe; `map=flat` in the link opens the flat map
+  ([interface.md](docs/interface.md)).
+- On a wide screen the sidebar stays usable while Details is open, and Details is wider.
+  Escape closes it from anywhere on the page.
+- The direction buttons read **Consumption** and **Production**.
 - What if… opens on three featured scenarios: coal power in China, steel in Asia-Pacific and
   construction demand in Europe. The three original interventions still open from their links.
 - The README is a short introduction; the development steps moved to [develop.md](docs/develop.md),

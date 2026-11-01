@@ -10,8 +10,8 @@ The map starts from final demand: what households, governments and investors buy
 It follows that spending back through every supply chain to the industries that
 produce what is bought, at home and abroad.
 
-- **Its consumption** shows where emissions, employment or extraction occur to supply the selected region's final demand.
-- **Its production** shows whose final demand the production in the selected region serves.
+- **Consumption** shows where emissions, employment or extraction occur to supply the selected region's final demand.
+- **Production** shows whose final demand the production in the selected region serves.
 
 These are supply-chain links, not shipping routes or direct trade between two countries.
 
@@ -22,7 +22,7 @@ A region's fill also counts flows that are too small or too close to draw as a b
 Select an industry section on the rail to look at it alone. Select more sections to combine them.
 Every total follows that selection. The rail's heights show each section's share of the 2011 flows.
 
-Choose **Details** for the same flows as a Sankey diagram or a sortable table.
+Choose **Details** for the same flows as a Sankey diagram or a sortable table. On a wide screen the sidebar stays usable beside it, and the diagram follows the selection.
 The diagram runs from producer to industry to consumer.
 **Download CSV** saves the table at full precision, in its displayed unit.
 The filename records the year, region, indicator, direction, sections and scenario,
@@ -73,7 +73,7 @@ The source data records these in kg CO₂-eq, kilotonnes and thousands of people
 ## Navigate and share
 
 Select a region on the map, or type its name or code in the country selector.
-Switch between **Flat** and **Globe**. Zoom up to 8× with the zoom buttons, the scroll wheel or a pinch.
+The map opens on the globe; switch between **Globe** and **Flat**. Zoom up to 8× with the zoom buttons, the scroll wheel or a pinch.
 Drag a zoomed flat map to pan it. Drag the globe to turn it.
 On phones (760 px wide or less), scrolling moves the page:
 hold Ctrl or ⌘ to zoom with the wheel. One finger scrolls past the unzoomed flat map.
@@ -147,3 +147,8 @@ The map uses Natural Earth outlines. Malta is too small for this geometry and ap
 The five “Rest of …” regions combine their Natural Earth countries, as `REST_OF` in `map.js` lists them.
 Those boundaries can differ from EXIOBASE's country groups at the edges.
 See the [geometry source and processing](architecture.md#map-geometry).
+
+## Theme
+
+The page follows your system's light or dark setting. The sun or moon button in the header
+switches between them, and this browser keeps your choice.
