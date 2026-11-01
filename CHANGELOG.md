@@ -38,8 +38,9 @@ follow [Semantic Versioning](https://semver.org/).
   so manufacturing used by electricity in every country, or one region's whole final demand,
   now computes on the device. Results match every published scenario within relative 1e-6.
 - Broad custom scenarios compute faster: the small system, the flow sums and decoding the data
-  run in WebAssembly, so manufacturing used by electricity in every country takes about 2.6 s
-  instead of 10 s on a desktop ([browser-engine.md](docs/browser-engine.md#measure-a-change)).
+  run in WebAssembly with SIMD, so manufacturing used by electricity in every country takes about
+  2.1 s instead of 10 s on a desktop ([browser-engine.md](docs/browser-engine.md#measure-a-change)).
+  Custom scenarios need Chrome or Firefox from 2021, or Safari 16.4.
 
 ### Fixed
 
