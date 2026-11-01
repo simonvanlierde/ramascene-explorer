@@ -1,0 +1,3 @@
+# The wasm wrappers only forward; the Node tests reach them through engine/pkg.
+# The R × R and K × K forms give the same W, so the choice only changes the time.
+exclude_re = ["wasm::", "replace <= with > in correction"]

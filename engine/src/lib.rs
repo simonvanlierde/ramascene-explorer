@@ -263,6 +263,85 @@ mod tests {
         assert_eq!(singular.err(), Some(Error::Singular));
     }
 
+    // A pivot p after cancellation, with the terms before it near 2: refused at or
+    // below epsilon · 2 · n, so 1.5ε (n = 1) and 3ε (n = 2) fail and 2.5ε, 5ε pass.
+    #[test]
+    fn the_threshold_uses_the_scale_before_cancellation() {
+        let eps = 2f64.powi(-23);
+        let one = |p: f64| correction(&[(1.0 - p) / 2.0], &[2.0], &[1.0], 1, 1, 1, eps);
+        assert_eq!(one(1.5 * eps), Err(Error::Singular));
+        assert!(one(2.5 * eps).is_ok());
+        // the K × K form: two rows into one column
+        let wide = |p: f64| {
+            correction(
+                &[(1.0 - p) / 4.0, (1.0 - p) / 4.0],
+                &[2.0, 2.0],
+                &[1.0],
+                2,
+                1,
+                1,
+                eps,
+            )
+        };
+        assert_eq!(wide(1.5 * eps), Err(Error::Singular));
+        assert!(wide(2.5 * eps).is_ok());
+        // n = 2: S = diag(1, p)
+        let two = |p: f64| {
+            correction(
+                &[0.0, 0.0, 0.0, (1.0 - p) / 2.0],
+                &[0.0, 0.0, 0.0, 2.0],
+                &[1.0, 1.0],
+                2,
+                2,
+                1,
+                eps,
+            )
+        };
+        assert_eq!(two(3.0 * eps), Err(Error::Singular));
+        assert!(two(5.0 * eps).is_ok());
+    }
+
+    #[test]
+    fn each_length_is_checked() {
+        let ok = correction(&[0.1; 4], &[0.1; 4], &[1.0; 4], 2, 2, 2, 1e-16);
+        assert!(ok.is_ok());
+        for (d, t, x, r, k, c) in [
+            (3, 4, 4, 2, 2, 2),
+            (4, 3, 4, 2, 2, 2),
+            (4, 4, 3, 2, 2, 2),
+            (4, 4, 1, 2, 2, 2),
+            (0, 0, 4, 0, 2, 2),
+            (0, 0, 4, 2, 0, 2),
+            (4, 4, 0, 2, 2, 0),
+        ] {
+            let got = correction(&vec![0.1; d], &vec![0.1; t], &vec![1.0; x], r, k, c, 1e-16);
+            assert_eq!(got, Err(Error::Dimensions), "{d} {t} {x} {r} {k} {c}");
+        }
+        let mut out = vec![0.0; 6];
+        let h = [1.0; 4];
+        assert!(fold(&mut out, &h, &[1.0; 6], 2, 3).is_ok());
+        assert_eq!(fold(&mut out, &h, &[1.0; 5], 2, 3), Err(Error::Dimensions));
+        assert_eq!(
+            fold(&mut out, &h[..3], &[1.0; 6], 2, 3),
+            Err(Error::Dimensions)
+        );
+        assert_eq!(
+            fold(&mut out[..5], &h, &[1.0; 6], 2, 3),
+            Err(Error::Dimensions)
+        );
+        assert_eq!(fold(&mut [], &[], &[], 0, 3), Err(Error::Dimensions));
+        assert_eq!(fold(&mut [], &[], &[], 2, 0), Err(Error::Dimensions));
+    }
+
+    #[test]
+    fn errors_read_as_the_page_shows_them() {
+        assert_eq!(
+            Error::Singular.to_string(),
+            "singular or ill-conditioned scenario"
+        );
+        assert_eq!(Error::Dimensions.to_string(), "invalid solve dimensions");
+    }
+
     #[test]
     fn fold_adds_h_transposed_times_z() {
         // h: 2 rows of 3 flow totals, z: 2 rows of 2 consumers
