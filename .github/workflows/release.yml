@@ -3,7 +3,7 @@ name: release
 # Build provenance for what a release ships, so anyone can check a file came
 # from this repository's workflow. How to verify: docs/assurance-case.md, C4.
 #
-# - A published v* release: builds dist/ as pages.yml does, packs it as a
+# - A published v* release: builds dist/ with cloudflare.yml's data checks, packs it as a
 #   tarball, attests it and uploads the tarball, its SHA256SUMS and the Sigstore
 #   bundle to the release. It runs on the release being published, the same
 #   event Zenodo archives, so a tag pushed without a release attests nothing.
@@ -39,7 +39,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The same checks and build as pages.yml.
+      # The same data checks as cloudflare.yml.
       - name: check the data
         run: |
           set -euo pipefail
