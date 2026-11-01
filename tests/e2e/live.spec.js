@@ -95,10 +95,10 @@ test("the live panel runs one intervention and labels the result live", async ({
 	expect(posted).toEqual({ label: "custom scenario", model_details: job.scenario.model_details });
 
 	await expect(page.locator("#live-label")).toHaveText("Results are computed by the job API.");
-	await expect(page.locator("#live-headline")).toHaveText(
+	await expect(page.locator("#live-job-headline")).toHaveText(
 		"Summed over all regions, greenhouse gases would change by −10 Mt CO₂-eq (−0.67%) against the job’s own baseline of 1,500 Mt CO₂-eq.",
 	);
-	await expect(page.locator("#live-table tbody tr").first()).toContainText("−10 Mt CO₂-eq");
+	await expect(page.locator("#live-job-table tbody tr").first()).toContainText("−10 Mt CO₂-eq");
 	await expect(page.locator("#live-provenance")).toContainText("computed by the job API");
 	await expectNoAxeViolations(page);
 });
@@ -327,7 +327,7 @@ test("without the 2011 flows the live panel still runs a job", async ({ page }) 
 	await page.locator("#live-open").click();
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Its flows are not on the map");
-	await expect(page.locator("#live-table tbody tr").first()).toContainText("Europe");
+	await expect(page.locator("#live-job-table tbody tr").first()).toContainText("Europe");
 	await expectNoAxeViolations(page);
 });
 

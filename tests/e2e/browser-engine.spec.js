@@ -32,7 +32,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator(".ph")).toContainText("It does not include this custom result.");
 	// the totals by region are in Details, not in the sidebar
 	await expect(page.locator(".pan #live-table tbody tr")).toHaveCount(49);
-	await expect(page.locator("#side #live-table")).toHaveCount(0);
+	await expect(page.locator("#side .live-totals")).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	expect(external).toEqual([]);
 	expect(matrixBytes).toBeGreaterThan(0);
@@ -128,4 +128,8 @@ test("a selection too broad for the browser says so before Run, and search narro
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
 		.analyze();
 	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+	// a parent picked from the narrowed list stays picked
+	const europe = await page.locator("#live-origin option", { hasText: "Europe" }).getAttribute("value");
+	await page.locator("#live-origin").selectOption(europe);
+	await expect(page.locator("#live-origin")).toHaveValue(europe);
 });

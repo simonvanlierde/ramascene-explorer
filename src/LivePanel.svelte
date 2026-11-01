@@ -79,7 +79,8 @@ const tooBroad = $derived.by(() => {
 		plan({ catalog, ...catalog.size }, body(-20).model_details);
 		return "";
 	} catch (e) {
-		return `This selection is ${e.message}`;
+		// other errors surface on Run
+		return e.message.startsWith("too broad") ? `This selection is ${e.message}` : "";
 	}
 });
 
@@ -200,7 +201,7 @@ async function submit(event) {
 		<!-- a job the map cannot draw stays here; a mapped run's totals are in Details -->
 		{#if job && !mapped}
 			<div id="live-result">
-				<LiveTotals {job} {browser} />
+				<LiveTotals {job} {browser} ids="live-job" />
 				<details>
 					<summary>Provenance ({browser ? "browser computation" : "live job"})</summary>
 					<dl id="live-provenance">
