@@ -10,6 +10,7 @@ repos:
       - id: check-yaml
         args: [--allow-multiple-documents]  # pnpm 12 writes its own pin as a first document in pnpm-lock.yaml
       - id: end-of-file-fixer
+        exclude: ^tests/fixture-store/  # zarr-python's output, byte for byte
       - id: mixed-line-ending
       - id: trailing-whitespace
         exclude: ^fonts/OFL\.txt$  # the licence text stays byte-for-byte as issued
