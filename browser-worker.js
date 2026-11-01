@@ -11,8 +11,13 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 			loaded = null;
 			throw e;
 		});
-		engine ??= init();
-		const [data] = await Promise.all([loaded, engine]);
+		// the kernel loads alongside the data, and a failed load is tried again on the next message
+		engine ??= init().catch((e) => {
+			engine = null;
+			throw e;
+		});
+		engine.catch(() => {});
+		const data = await loaded;
 		// the form checks a selection's size with these before sending it
 		if (!body)
 			self.postMessage({
@@ -29,6 +34,7 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 				},
 			});
 		else {
+			await engine;
 			const start = performance.now();
 			const flows = await scenarioFlows(data, body.model_details);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);

@@ -66,6 +66,26 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 		await page.screenshot({ path: info.outputPath("browser-form.png"), fullPage: true });
 });
 
+test("a failed kernel download leaves the form usable and Run loads it again", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	test.setTimeout(90_000);
+	let attempts = 0;
+	await page.route("**/*.wasm", (route) => {
+		attempts++;
+		if (attempts === 1) return route.fulfill({ status: 503, body: "unavailable" });
+		return route.continue();
+	});
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	// the catalogue needs no kernel
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	expect(attempts).toBe(2);
+});
+
 test("a negligible custom change stays readable without claiming a hotspot", async ({ page, isMobile }, info) => {
 	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);

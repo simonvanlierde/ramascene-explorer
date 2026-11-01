@@ -87,14 +87,15 @@ export function plan(meta, steps) {
 	// L[K, J] from K rows of L or J columns, whichever is less to fetch.
 	const byRows = !R || K * size("L") <= J.length * size("LC");
 	const download = R * size("A") + (R ? (byRows ? K * size("L") : J.length * size("LC")) : 0) + J.length * size("H");
-	// Reserve all working copies, including T, the solve's copies, final demand,
-	// the L transpose, and the first H batch while later batches load.
+	// Reserve all working copies: ΔA and T, each also copied into the kernel, with S
+	// and its LU there; X₀[K,:] and its kernel copy; final demand; the L transpose; and
+	// the first H batch while later batches load.
 	const memory =
 		8 *
-		(3 * R * K +
+		(4 * R * K +
 			(byRows ? 1 : 2) * K * J.length +
 			2 * n * n +
-			K * C +
+			2 * K * C +
 			(R <= K ? 2 * R : K + R) * C +
 			Math.max(R, K) +
 			2 * finals.length * C +
@@ -116,6 +117,28 @@ export function plan(meta, steps) {
 // solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
 // The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
 // flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
+// ΔA = A' − A on the selected rows and columns, in place, so no copy of A stays
+// alive. Each step scales a block of rows × columns; masks find the steps per cell.
+function change(a, technical, rows, columns) {
+	const K = columns.length;
+	const rowAt = new Map(rows.map((r, i) => [r, i]));
+	const columnAt = new Map(columns.map((c, i) => [c, i]));
+	const masks = technical.map((s) => {
+		const inRow = new Uint8Array(rows.length);
+		const inColumn = new Uint8Array(K);
+		for (const r of s.rows) inRow[rowAt.get(r)] = 1;
+		for (const c of s.columns) inColumn[columnAt.get(c)] = 1;
+		return { factor: s.factor, inRow, inColumn };
+	});
+	for (let r = 0; r < rows.length; r++)
+		for (let k = 0; k < K; k++) {
+			let f = 1;
+			for (const m of masks) if (m.inRow[r] && m.inColumn[k]) f *= m.factor;
+			a[r * K + k] *= f - 1;
+		}
+	return a;
+}
+
 export async function scenarioFlows(data, steps) {
 	const { meta, baseline, read } = data;
 	const C = meta.countries;
@@ -147,12 +170,7 @@ export async function scenarioFlows(data, steps) {
 		for (let c = 0; c < C; c++) Z[position.get(r) * C + c] = demand[i * C + c] - before[i * C + c];
 	if (R) {
 		const [original, l, x] = await technicalReads;
-		const delta = Float64Array.from(original);
-		const rowAt = new Map(rows.map((r, i) => [r, i]));
-		const columnAt = new Map(columns.map((c, i) => [c, i]));
-		for (const s of technical)
-			for (const r of s.rows) for (const c of s.columns) delta[rowAt.get(r) * K + columnAt.get(c)] *= s.factor;
-		for (let i = 0; i < delta.length; i++) delta[i] -= original[i];
+		const delta = change(original, technical, rows, columns);
 		// X₀[K,:] includes the final-demand changes.
 		for (const r of finals) {
 			const j = position.get(r);

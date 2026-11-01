@@ -11,4 +11,6 @@ if [ "$have" != "$want" ]; then
 	exit 1
 fi
 cargo build --locked --release --target wasm32-unknown-unknown
-wasm-bindgen --target web --no-typescript --out-dir pkg target/wasm32-unknown-unknown/release/ramascene_engine.wasm
+# CARGO_TARGET_DIR or build.target-dir can move the output away from engine/target.
+target=$(cargo metadata --format-version 1 --no-deps | sed 's/.*"target_directory":"\([^"]*\)".*/\1/')
+wasm-bindgen --target web --no-typescript --out-dir pkg "$target/wasm32-unknown-unknown/release/ramascene_engine.wasm"
