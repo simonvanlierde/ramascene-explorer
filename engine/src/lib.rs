@@ -8,6 +8,8 @@ use faer::linalg::matmul::matmul;
 use faer::linalg::solvers::Solve;
 use faer::{Accum, Mat, MatMut, MatRef, Par};
 
+mod dense;
+
 /// Why a scenario or a stored chunk was refused.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
@@ -80,15 +82,20 @@ pub fn correction(
     } else {
         // S = I − T ΔA (k × k), W = ΔA S⁻¹ X
         let scale = max_row_scale(t, r, &abs_row_sums(delta, k));
-        let delta = MatRef::from_row_major_slice(delta, r, k);
-        let t = MatRef::from_row_major_slice(t, k, r);
         let x = MatRef::from_row_major_slice(x, k, c);
-        let mut s = Mat::<f64>::identity(k, k);
-        matmul(&mut s, Accum::Add, t, delta, -1.0, Par::Seq);
-        let v = solve(s.as_ref(), x, scale, epsilon)?;
-        let mut w = Mat::<f64>::zeros(r, c);
-        matmul(&mut w, Accum::Replace, delta, &v, 1.0, Par::Seq);
-        w
+        let mut s = vec![0.0; k * k];
+        for i in 0..k {
+            s[i * k + i] = 1.0;
+        }
+        dense::product(&mut s, t, delta, k, r, k, -1.0);
+        let v = solve(MatRef::from_row_major_slice(&s, k, k), x, scale, epsilon)?;
+        let v: Vec<f64> = (0..k)
+            .flat_map(|i| (0..c).map(move |j| (i, j)))
+            .map(|(i, j)| v[(i, j)])
+            .collect();
+        let mut w = vec![0.0; r * c];
+        dense::product(&mut w, delta, &v, r, k, c, 1.0);
+        Mat::from_fn(r, c, |i, j| w[i * c + j])
     };
     let out: Vec<f64> = (0..r)
         .flat_map(|i| (0..c).map(move |j| (i, j)))
@@ -121,7 +128,7 @@ fn prefer_dense(delta: &[f64]) -> bool {
 // S = I − ΔA T (r × r) and ΔA X (r × c), row-major, and the largest row scale
 // before I − ΔA T cancels. A scenario's rows of A are often mostly zero: then each
 // nonzero adds a contiguous row of T and of X. Above about one nonzero in five,
-// faer's dense products are faster.
+// the dense products are faster.
 fn small_system(
     delta: &[f64],
     t: &[f64],
@@ -137,23 +144,8 @@ fn small_system(
     let mut s = vec![0.0; r * r];
     let mut rhs = vec![0.0; r * c];
     if dense {
-        let d = MatRef::from_row_major_slice(delta, r, k);
-        matmul(
-            MatMut::from_row_major_slice_mut(&mut s, r, r),
-            Accum::Replace,
-            d,
-            MatRef::from_row_major_slice(t, k, r),
-            -1.0,
-            Par::Seq,
-        );
-        matmul(
-            MatMut::from_row_major_slice_mut(&mut rhs, r, c),
-            Accum::Replace,
-            d,
-            MatRef::from_row_major_slice(x, k, c),
-            1.0,
-            Par::Seq,
-        );
+        dense::product(&mut s, delta, t, r, k, r, -1.0);
+        dense::product(&mut rhs, delta, x, r, k, c, 1.0);
     } else {
         for (d_row, (s_row, rhs_row)) in delta
             .chunks_exact(k)
@@ -163,12 +155,8 @@ fn small_system(
                 if v == 0.0 {
                     continue;
                 }
-                for (sq, tq) in s_row.iter_mut().zip(t_rows[j]) {
-                    *sq -= v * tq;
-                }
-                for (rq, xq) in rhs_row.iter_mut().zip(x_rows[j]) {
-                    *rq += v * xq;
-                }
+                add_scaled(s_row, -v, t_rows[j]);
+                add_scaled(rhs_row, v, x_rows[j]);
             }
         }
     }
@@ -176,6 +164,15 @@ fn small_system(
         s[i * r + i] += 1.0;
     }
     (s, rhs, scale)
+}
+
+// out += v · row. A call of its own so V8 optimises it during the first scenario;
+// see `tile` in dense.rs.
+#[inline(never)]
+fn add_scaled(out: &mut [f64], v: f64, row: &[f64]) {
+    for (o, q) in out.iter_mut().zip(row) {
+        *o += v * q;
+    }
 }
 
 // Partial-pivot LU, refusing a pivot that float32 data cannot tell apart from zero.

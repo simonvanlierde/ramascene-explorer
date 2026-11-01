@@ -6,7 +6,7 @@
   "sources": {
     "browser-data.js": "d91fb9da1a9e2e8ca6953e1b6daf36021bd31277c0676f514d3f9cc754fb0f02",
     "browser-engine.js": "111000eb94ac4aa9701550cb01a9eb5c44c942a3a364f3ac1bde3d5f24019193",
-    "engine/src/lib.rs": "220381da3cf31a4a24bdc6c7624fcde63768077188c9ee8074c59ca02b080a99"
+    "engine/src/lib.rs": "9b21f6dda05922e99af74b492a130e2f841a8a0745e1842447a66860488afa3f"
   },
   "summary": [
     {
@@ -17,11 +17,11 @@
       "flowColumns": 1,
       "lByRows": true,
       "download": 51079.79010204081,
-      "firstMs": 10.515403999999997,
-      "repeatMs": 2.2541609999999963,
+      "firstMs": 9.652912,
+      "repeatMs": 2.9765220000000028,
       "firstBytes": 89882,
       "firstReads": 8,
-      "peakRssBytes": 81768448
+      "peakRssBytes": 80543744
     },
     {
       "workload": "default",
@@ -31,11 +31,11 @@
       "flowColumns": 49,
       "lByRows": true,
       "download": 2014762.9565306124,
-      "firstMs": 70.19689,
-      "repeatMs": 4.543216000000001,
+      "firstMs": 61.450178,
+      "repeatMs": 4.4372530000000125,
       "firstBytes": 4327075,
       "firstReads": 264,
-      "peakRssBytes": 97431552
+      "peakRssBytes": 97603584
     },
     {
       "workload": "steel to all of Europe",
@@ -45,11 +45,11 @@
       "flowColumns": 49,
       "lByRows": false,
       "download": 2582395.12,
-      "firstMs": 124.78352799999999,
-      "repeatMs": 26.605198,
+      "firstMs": 101.70300200000001,
+      "repeatMs": 23.76139999999998,
       "firstBytes": 5019193,
       "firstReads": 298,
-      "peakRssBytes": 141742080
+      "peakRssBytes": 137089024
     },
     {
       "workload": "electricity to manufacturing",
@@ -59,11 +59,11 @@
       "flowColumns": 1078,
       "lByRows": false,
       "download": 56812692.64000001,
-      "firstMs": 1065.8009909999998,
-      "repeatMs": 642.4926290000001,
+      "firstMs": 879.76631,
+      "repeatMs": 636.3146730000001,
       "firstBytes": 43238896,
       "firstReads": 301,
-      "peakRssBytes": 463441920
+      "peakRssBytes": 467959808
     },
     {
       "workload": "manufacturing to electricity",
@@ -73,11 +73,11 @@
       "flowColumns": 4165,
       "lByRows": true,
       "download": 124105617.34,
-      "firstMs": 2603.8573850000002,
-      "repeatMs": 2360.172691,
+      "firstMs": 2141.1219,
+      "repeatMs": 1848.931223,
       "firstBytes": 134876595,
       "firstReads": 359,
-      "peakRssBytes": 497025024
+      "peakRssBytes": 523481088
     },
     {
       "workload": "China final demand",
@@ -87,11 +87,11 @@
       "flowColumns": 9800,
       "lByRows": true,
       "download": 63905982,
-      "firstMs": 812.686048,
-      "repeatMs": 746.8128249999999,
+      "firstMs": 752.8276860000001,
+      "repeatMs": 690.5828260000001,
       "firstBytes": 65041993,
       "firstReads": 161,
-      "peakRssBytes": 220880896
+      "peakRssBytes": 220110848
     },
     {
       "workload": "default",
@@ -101,11 +101,11 @@
       "flowColumns": 49,
       "lByRows": true,
       "download": 2014762.9565306124,
-      "firstMs": 361.934191,
-      "repeatMs": 5.611195000000009,
+      "firstMs": 355.929796,
+      "repeatMs": 5.186716999999987,
       "firstBytes": 4327075,
       "firstReads": 264,
-      "peakRssBytes": 106684416
+      "peakRssBytes": 106536960
     }
   ],
   "results": [
@@ -122,23 +122,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 10.515403999999997,
+          "ms": 9.652912,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 2.2541609999999963,
+          "ms": 2.9765220000000028,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 81698816,
+      "peakRssBytes": 82255872,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -154,23 +154,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 10.955556000000001,
+          "ms": 8.549776000000001,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 1.7856250000000031,
+          "ms": 1.643259999999998,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 81924096,
+      "peakRssBytes": 80265216,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -186,23 +186,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 11.081369000000002,
+          "ms": 10.775927000000003,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 1.6312380000000033,
+          "ms": 4.147801000000001,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 81809408,
+      "peakRssBytes": 79093760,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -218,23 +218,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 10.141148999999999,
+          "ms": 7.23077,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 3.4058449999999993,
+          "ms": 1.762551000000002,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 79880192,
+      "peakRssBytes": 82104320,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -250,23 +250,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 7.160654000000001,
+          "ms": 10.196393,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 4.784419999999997,
+          "ms": 3.528895999999996,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 81768448,
+      "peakRssBytes": 80543744,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -282,23 +282,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 64.543063,
+          "ms": 61.450178,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.557859000000008,
+          "ms": 3.81083000000001,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 101289984,
+      "peakRssBytes": 97316864,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -314,23 +314,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 70.19689,
+          "ms": 61.094013,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.300696000000002,
+          "ms": 4.4372530000000125,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 96710656,
+      "peakRssBytes": 100995072,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -346,23 +346,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 68.795331,
+          "ms": 61.732308,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.369659999999996,
+          "ms": 4.2144289999999955,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 97431552,
+      "peakRssBytes": 96616448,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -378,23 +378,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 73.92030199999999,
+          "ms": 67.477391,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.543216000000001,
+          "ms": 4.784501000000006,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 102543360,
+      "peakRssBytes": 98721792,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -410,23 +410,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 92.00166899999999,
+          "ms": 59.741761,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 6.742327999999986,
+          "ms": 4.448990999999992,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 96817152,
+      "peakRssBytes": 97603584,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -442,23 +442,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 124.78352799999999,
+          "ms": 101.382259,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 26.621399999999994,
+          "ms": 24.187434999999994,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 144056320,
+      "peakRssBytes": 137089024,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -474,23 +474,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 125.784731,
+          "ms": 111.132047,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 24.916514000000006,
+          "ms": 22.37093999999999,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 136724480,
+      "peakRssBytes": 136630272,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -506,23 +506,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 121.624664,
+          "ms": 101.70300200000001,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 26.605198,
+          "ms": 23.76139999999998,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 142094336,
+      "peakRssBytes": 139649024,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -538,23 +538,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 133.764359,
+          "ms": 97.34410700000001,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 26.932826000000006,
+          "ms": 23.836411999999996,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 141742080,
+      "peakRssBytes": 140955648,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -570,23 +570,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 109.23142000000001,
+          "ms": 102.277601,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 25.297004000000015,
+          "ms": 23.531481000000014,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 137891840,
+      "peakRssBytes": 135602176,
       "load": [
-        3.38,
-        3.26,
-        5.67
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -602,23 +602,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1067.473181,
+          "ms": 892.3761049999999,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 631.479957,
+          "ms": 637.2271740000001,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 456515584,
+      "peakRssBytes": 459096064,
       "load": [
-        3.43,
-        3.28,
-        5.66
+        1.12,
+        1.29,
+        1.92
       ]
     },
     {
@@ -634,23 +634,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1065.8009909999998,
+          "ms": 864.4479289999999,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 643.1990840000001,
+          "ms": 640.0400399999999,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 474980352,
+      "peakRssBytes": 467959808,
       "load": [
-        3.43,
-        3.28,
-        5.66
+        1.19,
+        1.3,
+        1.92
       ]
     },
     {
@@ -666,23 +666,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1045.4110540000001,
+          "ms": 872.16778,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 637.6270559999998,
+          "ms": 636.3146730000001,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 469843968,
+      "peakRssBytes": 471097344,
       "load": [
-        3.43,
-        3.28,
-        5.66
+        1.19,
+        1.3,
+        1.92
       ]
     },
     {
@@ -698,23 +698,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1046.985605,
+          "ms": 881.3022470000001,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 642.4926290000001,
+          "ms": 625.6852719999999,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 459264000,
+      "peakRssBytes": 445345792,
       "load": [
-        3.56,
-        3.31,
-        5.65
+        1.19,
+        1.3,
+        1.92
       ]
     },
     {
@@ -730,23 +730,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1071.393894,
+          "ms": 879.76631,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 645.997523,
+          "ms": 635.5810490000001,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 463441920,
+      "peakRssBytes": 468795392,
       "load": [
-        3.56,
-        3.31,
-        5.65
+        1.18,
+        1.29,
+        1.92
       ]
     },
     {
@@ -762,23 +762,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 2590.4703000000004,
+          "ms": 2141.1219,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 2360.172691,
+          "ms": 1853.0068620000002,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 494374912,
+      "peakRssBytes": 499515392,
       "load": [
-        3.67,
-        3.33,
-        5.65
+        1.18,
+        1.29,
+        1.92
       ]
     },
     {
@@ -794,23 +794,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 2637.9353880000003,
+          "ms": 2126.6252019999997,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 2350.1958439999994,
+          "ms": 1844.1097139999997,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 497025024,
+      "peakRssBytes": 500850688,
       "load": [
-        3.78,
-        3.36,
-        5.64
+        1.33,
+        1.32,
+        1.92
       ]
     },
     {
@@ -826,23 +826,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 2603.8573850000002,
+          "ms": 2120.595051,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 2361.311285,
+          "ms": 1854.7402190000003,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 479797248,
+      "peakRssBytes": 534478848,
       "load": [
-        4.04,
-        3.42,
-        5.65
+        1.3,
+        1.32,
+        1.92
       ]
     },
     {
@@ -858,23 +858,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 2627.0291700000002,
+          "ms": 2145.219001,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 2377.711531,
+          "ms": 1848.931223,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 527761408,
+      "peakRssBytes": 523481088,
       "load": [
-        4.19,
-        3.47,
-        5.65
+        1.27,
+        1.31,
+        1.91
       ]
     },
     {
@@ -890,23 +890,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 2580.179983,
+          "ms": 2147.727782,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 2345.8469040000004,
+          "ms": 1829.5713759999999,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 511926272,
+      "peakRssBytes": 525074432,
       "load": [
-        4.42,
-        3.52,
-        5.66
+        1.25,
+        1.3,
+        1.91
       ]
     },
     {
@@ -922,23 +922,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 794.377773,
+          "ms": 749.5908619999999,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 725.660262,
+          "ms": 688.6244389999999,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 222756864,
+      "peakRssBytes": 220160000,
       "load": [
-        4.42,
-        3.52,
-        5.66
+        1.25,
+        1.3,
+        1.91
       ]
     },
     {
@@ -954,23 +954,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 813.8148640000001,
+          "ms": 770.056549,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 753.670738,
+          "ms": 695.919854,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 216031232,
+      "peakRssBytes": 219181056,
       "load": [
-        4.55,
-        3.57,
-        5.66
+        1.25,
+        1.3,
+        1.91
       ]
     },
     {
@@ -986,23 +986,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 812.686048,
+          "ms": 758.290765,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 738.451321,
+          "ms": 690.5828260000001,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 217845760,
+      "peakRssBytes": 218386432,
       "load": [
-        4.55,
-        3.57,
-        5.66
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1018,23 +1018,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 845.3853780000001,
+          "ms": 752.8276860000001,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 751.1197460000001,
+          "ms": 691.886114,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 220880896,
+      "peakRssBytes": 220110848,
       "load": [
-        4.55,
-        3.57,
-        5.66
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1050,23 +1050,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 810.543267,
+          "ms": 751.965637,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 746.8128249999999,
+          "ms": 684.8229150000001,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 220897280,
+      "peakRssBytes": 221999104,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1082,23 +1082,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 361.934191,
+          "ms": 361.971341,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 5.719581000000005,
+          "ms": 5.090093000000024,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 106684416,
+      "peakRssBytes": 106487808,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1114,23 +1114,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 365.968331,
+          "ms": 353.449786,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 5.680951999999991,
+          "ms": 5.225678000000016,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 106651648,
+      "peakRssBytes": 106553344,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1146,23 +1146,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 367.753479,
+          "ms": 354.533786,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 5.356291999999996,
+          "ms": 4.096827000000019,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 109981696,
+      "peakRssBytes": 98185216,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.23,
+        1.3,
+        1.9
       ]
     },
     {
@@ -1178,23 +1178,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 354.318004,
+          "ms": 361.42184199999997,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 5.489621999999997,
+          "ms": 5.186716999999987,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 98336768,
+      "peakRssBytes": 106536960,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.13,
+        1.28,
+        1.89
       ]
     },
     {
@@ -1210,23 +1210,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 353.264292,
+          "ms": 355.929796,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 5.611195000000009,
+          "ms": 5.321983999999986,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 110133248,
+      "peakRssBytes": 110305280,
       "load": [
-        4.66,
-        3.61,
-        5.67
+        1.13,
+        1.28,
+        1.89
       ]
     }
   ]
