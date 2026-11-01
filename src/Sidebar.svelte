@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, FEATURED, runText, theName, wording } from "../flows.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording } from "../flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -17,31 +17,27 @@ $effect(() => {
 
 // svelte-ignore state_referenced_locally
 const NAMED = FEATURED.filter((id) => meta.runs.includes(id));
-const KIND = {
-	"vehicle-demand-europe": "Final demand",
-	// first use of the term on the page, so it carries its gloss
-	"construction-demand-europe": "Final demand: what households, governments and investors buy",
-	"coal-power-china": "Electricity use",
-};
 const grid = $derived(data.grid);
 const firstGrid = $derived.by(() => meta.runs.find((r) => data.scenarios.find((s) => s.id === r)?.grid));
 
 // the grid's three pickers, remembered while a named run is shown
 // svelte-ignore state_referenced_locally
 let gridPick = $state(pickerState(data, data.scenarios.find((s) => s.id === ui.run)?.grid ? ui.run : firstGrid));
-// the grid card stays checked while its pickers are in use, also on the grid cell the list features
-let gridOpen = $state(false);
-const onGrid = $derived(!!data.scenarios.find((s) => s.id === ui.run)?.grid && (gridOpen || !NAMED.includes(ui.run)));
+// the run the grid card or its pickers last chose: the grid card stays checked on it,
+// also on the grid cell the list features
+let gridRun = $state(null);
+const onGrid = $derived(!!data.scenarios.find((s) => s.id === ui.run)?.grid && (gridRun === ui.run || !NAMED.includes(ui.run)));
 // the checked card; null for a run outside the list (an original intervention, opened by link)
 const current = $derived(onGrid ? "grid" : NAMED.includes(ui.run) ? ui.run : null);
 const gridTarget = $derived(lookupGrid(data, gridPick));
 const gridMissing = $derived(onGrid && !meta.runs.includes(gridTarget.id));
 
 function pickGrid(key, value) {
-	gridOpen = true;
 	gridPick = { ...gridPick, [key]: value };
 	const t = lookupGrid(data, gridPick);
-	if (meta.runs.includes(t.id)) setRun(t.id);
+	if (!meta.runs.includes(t.id)) return;
+	gridRun = t.id;
+	setRun(t.id);
 }
 
 // world change of a run, all sections, from the run's continental totals
@@ -90,14 +86,15 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(live.source.status) : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : `${RUN_KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
 function chooseRun(v) {
-	gridOpen = v === "grid";
+	gridRun = null;
 	if (v !== "grid") return setRun(v);
 	// a picked cell that was never computed: show the first one, and point the pickers at it
 	if (!meta.runs.includes(gridTarget.id)) gridPick = pickerState(data, firstGrid);
-	setRun(lookupGrid(data, gridPick).id);
+	gridRun = lookupGrid(data, gridPick).id;
+	setRun(gridRun);
 }
 
 const directionHint = $derived(
@@ -153,7 +150,7 @@ const directionHint = $derived(
 						{#if v === "grid"}
 							<span><b>Material efficiency, one product</b><small>{grid?.products.length ?? 0} products × 5 regions × {grid?.cuts.length ?? 0} cuts</small></span>
 						{:else}
-							<span><b>{capitalise(runText(data, v))}</b><small>{KIND[v] ?? "Material efficiency"} · {worldChange(v)}</small></span>
+							<span><b>{capitalise(runText(data, v))}</b><small>{RUN_KIND[v] ?? "Material efficiency"} · {worldChange(v)}</small></span>
 						{/if}
 					</button>
 				{/each}

@@ -33,6 +33,8 @@ follow [Semantic Versioning](https://semver.org/).
   how many product–country pairs it changes and what to narrow, before Run, instead of failing with
   "select at most 2000 changed rows". The check counts each pair once and uses the change you typed,
   so a 0% change no longer blocks Run.
+- Choosing the material-efficiency card after picking a combination that was never computed
+  now points its pickers at the run it shows, instead of at the missing one.
 
 ## [0.5.0] - 2026-11-01
 
