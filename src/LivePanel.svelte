@@ -48,6 +48,9 @@ let message = $state("");
 let failed = $state(false);
 let unreachable = $state(false);
 let running = $state(false);
+let elapsed = $state(0);
+// set by Cancel, so the stopped run's error stays quiet
+let cancelled = false;
 let job = $state.raw(null);
 // false while the panel shows a finished job the map could not draw
 let mapped = $state(true);
@@ -91,10 +94,11 @@ function say(text, bad = false) {
 	onnews?.(text, bad);
 }
 
-function connect() {
+// quiet: after a failed run, keep its message while a fresh worker starts
+function connect({ quiet = false } = {}) {
 	const attempt = ++connection;
 	unreachable = false;
-	say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
+	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
 	const connecting = browser
 		? import("../browser-client.js").then(({ browserClient }) => {
 			if (attempt !== connection) return null;
@@ -107,7 +111,7 @@ function connect() {
 		(c) => {
 			if (attempt !== connection) return;
 			catalog = c;
-			say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
+			if (!quiet) say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
 		},
 		(e) => {
 			if (attempt !== connection) return;
@@ -120,6 +124,34 @@ if (!browser) {
 	connected = true;
 	connect();
 }
+// While the form is open, the worker starts reading the selection it shows, so Run
+// waits only for what is left. Sent once per change, half a second after the last.
+let sent = "";
+$effect(() => {
+	if (!browser || !open || !catalog || running || tooBroad) return;
+	let scenario;
+	try {
+		scenario = body(change);
+	} catch {
+		return;
+	}
+	const text = JSON.stringify(scenario.model_details);
+	if (text === sent) return;
+	const timer = setTimeout(() => {
+		sent = text;
+		client?.prefetch(scenario);
+	}, 500);
+	return () => clearTimeout(timer);
+});
+
+// Stops a browser run: a fresh worker replaces the busy one.
+function cancel() {
+	cancelled = true;
+	sent = "";
+	connect();
+	document.getElementById("live-run")?.focus();
+}
+
 // Try again goes as soon as it is pressed: focus the card's own button instead
 function retryConnect() {
 	connect();
@@ -138,6 +170,10 @@ async function submit(event) {
 		return;
 	}
 	running = true;
+	cancelled = false;
+	elapsed = 0;
+	const started = performance.now();
+	const tick = setInterval(() => (elapsed = (performance.now() - started) / 1000), 100);
 	say(browser ? "Computing the scenario in this browser…" : "Sending the scenario…");
 	try {
 		const submitted = browser ? null : await fetchJson(`${api}/jobs`, {
@@ -162,8 +198,15 @@ async function submit(event) {
 		}
 		say(text);
 	} catch (e) {
+		if (cancelled) return;
 		say(`${browser ? "Scenario" : "Job"} failed: ${e.message}`, true);
+		// a trap or a timeout stopped the worker: start a fresh one for the next Run
+		if (browser && client?.stopped) {
+			sent = "";
+			connect({ quiet: true });
+		}
 	} finally {
+		clearInterval(tick);
 		running = false;
 	}
 }
@@ -197,6 +240,13 @@ async function submit(event) {
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
+			{#if running}
+				<p class="hint live-elapsed">
+					<!-- the status line announces the start and the result; the count is for sighted readers -->
+					<span aria-hidden="true">{elapsed.toFixed(1)} s</span>
+					{#if browser}<button type="button" class="chipb" id="live-cancel" onclick={cancel}>Cancel</button>{/if}
+				</p>
+			{/if}
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->
 		{#if open}{@render state()}{/if}

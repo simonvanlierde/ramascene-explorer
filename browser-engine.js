@@ -140,29 +140,45 @@ function change(a, technical, rows, columns) {
 // solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
 // The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
 // flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
-export async function scenarioFlows(data, steps) {
-	const { meta, baseline, read } = data;
+// What a plan reads; two plans with the same key read the same slices.
+export const readKey = ({ rows, columns, finals, J, byRows }) => JSON.stringify([rows, columns, finals, J, byRows]);
+
+// Starts every read a plan needs, so their round trips overlap. The arrays come back
+// fresh and scenarioFlows changes them in place, so one set of reads serves one run.
+export function startReads({ read }, { rows, columns, finals, J, byRows }) {
+	const K = columns.length;
+	const reads = {
+		technical: rows.length
+			? Promise.all([
+					read("A", rows, columns),
+					byRows ? read("L", columns, J) : read("LC", J, columns).then((lc) => transpose(lc, J.length, K)),
+					read("X", columns),
+				])
+			: null,
+		firstH: read("H", J.slice(0, H_BATCH)),
+		demand: read("Y", finals),
+	};
+	// A failure surfaces where each read is awaited, not as an unhandled rejection.
+	for (const pending of Object.values(reads)) pending?.catch(() => {});
+	return reads;
+}
+
+// ahead: {key, reads} started before Run for the selection the form showed (readKey,
+// startReads); used when this run's plan reads the same slices.
+export async function scenarioFlows(data, steps, ahead = null) {
+	const { meta, baseline } = data;
 	const C = meta.countries;
-	const { edits, technical, rows, columns, finals, J, byRows } = plan(meta, steps);
+	const planned = plan(meta, steps);
+	const { edits, technical, rows, columns, finals, J } = planned;
 	const R = rows.length;
 	const K = columns.length;
 	const out = Float64Array.from(baseline);
 	const F = out.length / C;
 	const position = new Map(J.map((j, i) => [j, i]));
 	const Z = new Float64Array(J.length * C);
-	// Every read starts now, so their round trips overlap.
 	const W = J.length;
-	const technicalReads = R
-		? Promise.all([
-				read("A", rows, columns),
-				byRows ? read("L", columns, J) : read("LC", J, columns).then((lc) => transpose(lc, W, K)),
-				read("X", columns),
-			])
-		: null;
-	const firstH = read("H", J.slice(0, H_BATCH));
-	// A failure surfaces where each read is awaited, not as an unhandled rejection.
-	for (const pending of [technicalReads, firstH]) pending?.catch(() => {});
-	const demand = await read("Y", finals);
+	const reads = ahead?.key === readKey(planned) ? ahead.reads : startReads(data, planned);
+	const demand = await reads.demand;
 	const before = Float64Array.from(demand);
 	const finalAt = new Map(finals.map((r, i) => [r, i]));
 	for (const s of edits.filter((s) => s.final))
@@ -170,7 +186,7 @@ export async function scenarioFlows(data, steps) {
 	for (const [r, i] of finalAt)
 		for (let c = 0; c < C; c++) Z[position.get(r) * C + c] = demand[i * C + c] - before[i * C + c];
 	if (R) {
-		const [original, l, x] = await technicalReads;
+		const [original, l, x] = await reads.technical;
 		const delta = change(original, technical, rows, columns);
 		// X₀[K,:] includes the final-demand changes.
 		for (const r of finals) {
@@ -191,7 +207,7 @@ export async function scenarioFlows(data, steps) {
 	}
 	for (let start = 0; start < J.length; start += H_BATCH) {
 		const batch = J.slice(start, start + H_BATCH);
-		const h = await (start ? read("H", batch) : firstH);
+		const h = await (start ? data.read("H", batch) : reads.firstH);
 		fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 	}
 	if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
