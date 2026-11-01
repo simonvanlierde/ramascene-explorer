@@ -90,7 +90,10 @@ production, and the domain's other pages still come from GitHub Pages through th
 `cloudflare.yml` deploys it on every push to `main`. Each run first uploads a version
 without serving it, then runs `hosting/check.js` against that version's preview URL in
 the Playwright image. On `main`, only a version that passes the check goes on the
-production routes. Each pull request from this repository stops after the check, with the
+production routes. Each pull request from this repository stops after the check, which
+runs in Chromium only (`CHECK_BROWSERS`); the run on `main` uses Chromium, Firefox and
+WebKit, because each engine replays all 155 scenarios through the Worker and the
+requests count toward its daily allowance. The pull request keeps the
 alias `pr-<number>`. Its version URL,
 `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
 shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
