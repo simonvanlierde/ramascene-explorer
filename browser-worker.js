@@ -1,5 +1,5 @@
-import { fetchEngine, outputFlows } from "./browser-data.js";
-import { scenarioOutput } from "./browser-engine.js";
+import { fetchEngine } from "./browser-data.js";
+import { scenarioFlows } from "./browser-engine.js";
 import { browserResult } from "./browser-results.js";
 
 let loaded;
@@ -14,12 +14,20 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 		if (!body)
 			self.postMessage({
 				id,
-				value: { ...data.meta.catalog, size: { products: data.meta.products, countries: data.meta.countries } },
+				value: {
+					...data.meta.catalog,
+					size: {
+						products: data.meta.products,
+						countries: data.meta.countries,
+						arrays: Object.fromEntries(
+							Object.entries(data.meta.arrays).map(([name, v]) => [name, { chunk_bytes: v.chunk_bytes }]),
+						),
+					},
+				},
 			});
 		else {
 			const start = performance.now();
-			const output = await scenarioOutput(data, body.model_details);
-			const flows = outputFlows(data, output);
+			const flows = await scenarioFlows(data, body.model_details);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
 		}

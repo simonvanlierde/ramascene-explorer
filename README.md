@@ -133,7 +133,7 @@ the Zenodo record publishes under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 The result files hold scenario totals and flows. The optional
 [browser export](docs/browser-engine.md) also includes matrices and derived
-multipliers. All these data files are shared under CC BY 4.0. Reuse them with
+flow totals. All these data files are shared under CC BY 4.0. Reuse them with
 credit to EXIOBASE v3.3.sm and its authors, as above, and say what was changed.
 
 The fonts are Public Sans and Spectral, under the SIL Open Font License 1.1,

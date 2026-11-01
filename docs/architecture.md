@@ -4,7 +4,7 @@ The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. The published site needs no calculation server.
 Opening it with `?api=` connects an optional job API.
 
-A worker computes custom scenarios from exported float64 matrices. It starts
+A worker computes custom scenarios from exported float32 matrices, in float64 arithmetic. It starts
 when a reader opens the custom-scenario form. [browser-engine.md](browser-engine.md) describes its data and checks.
 
 ```text
@@ -35,8 +35,8 @@ modules next to `index.html`, so `node --test` can test it:
 | `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
-| `browser-engine.js` | float64 Woodbury updates and the small linear solve |
-| `browser-data.js` | matrix loading and output-to-flow aggregation |
+| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates, the small linear solve |
+| `browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
 | `browser-results.js` | browser source labels, provenance and result shape |
 
 `browser-client.js` sends requests to `browser-worker.js`, which loads the data

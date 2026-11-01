@@ -72,9 +72,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-rows.tar --dir data
-          sha256sum --check data/browser-engine-rows.sha256
-          tar -xf data/ramascene-browser-engine-rows.tar -C data
+          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-zarr.tar --dir data
+          sha256sum --check data/browser-engine-zarr.sha256
+          tar -xf data/ramascene-browser-engine-zarr.tar -C data
       - run: pnpm exec biome ci .
       - run: pnpm test
         env:
@@ -135,10 +135,10 @@ jobs:
           curl -fsSL --retry 3 --output data/embodied.parquet \
             "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/embodied.parquet"
           sha256sum --check data/embodied.sha256
-          curl -fsSL --retry 3 --output data/ramascene-browser-engine-rows.tar \
-            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/ramascene-browser-engine-rows.tar"
-          sha256sum --check data/browser-engine-rows.sha256
-          tar -xf data/ramascene-browser-engine-rows.tar -C data
+          curl -fsSL --retry 3 --output data/ramascene-browser-engine-zarr.tar \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/ramascene-browser-engine-zarr.tar"
+          sha256sum --check data/browser-engine-zarr.sha256
+          tar -xf data/ramascene-browser-engine-zarr.tar -C data
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

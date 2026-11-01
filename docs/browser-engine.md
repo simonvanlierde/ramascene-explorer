@@ -10,12 +10,13 @@ The result lights the map, sentence, world-region totals and Details. Its label 
 "computed in this browser". The shared link keeps the last
 precomputed scenario, so reopening it does not reconstruct the custom calculation.
 
-The calculation runs in a worker. It downloads the baseline output, final demand
-and three extension rows once, then downloads each required A row and L column
-as a small, complete Parquet file. These requests do not depend on HTTP range caching for a large object.
-Other matrices still use HTTP range requests; a server that ignores Range is
-refused before a full unexpected matrix is read.
-The 153 published scenarios match RaMa-Scene's shipped results at relative 1e-9
+The calculation runs in a worker. When the form opens, it downloads the
+manifest: the catalogue, the baseline flows and the store's layout. A scenario
+then downloads only the rows it needs: the changed rows of A, the part of L that
+links the changed rows to their consumers, one row of flow totals for each
+changed row, and the matching rows of baseline output X and final demand Y.
+
+The 153 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
 The model has the same scope as the [published scenarios](scenarios.md): changes
@@ -23,85 +24,109 @@ to the 2011 economy, without forecasts, substitution or rebound. It accepts up
 to ten interventions. Broad changes and singular systems are refused with an
 error instead of returning a result.
 
-The work grows with the changed rows: one row is one product from one producing
-country. Before reading matrices, the form and the worker estimate dense
-arithmetic and scenario buffers from the catalogue alone. They refuse more than
-100 million update terms or 64 MiB of estimated scenario buffers, which allows
-about 200 changed rows. The form says so before Run, with the row count.
-Choose fewer products or regions when that happens. These limits exclude the
-baseline, metadata, decoder temporaries and row caches; they are not a total
-browser memory limit. The [job API](interface.md#job-api) remains available
-for work outside the browser budget.
+The work grows with the changed rows (R: one product from one producing
+country) and the consuming columns they feed (K: one industry in one consuming
+country). Before reading matrices, the form and the worker estimate three costs
+from the catalogue and the manifest alone, and refuse a scenario that would:
 
-The worker keeps at most 16 MiB of completed rows per matrix, or 32 MiB for A
-and L together. Least recently used rows are evicted. A repeated selection can
-therefore require another read after other selections fill the cache. No more
-than 64 selected matrix rows decode at once. A and L rows load together in
-batches of 32 per matrix, so one matrix does not wait for the other. Initial X
-and Y decoding also uses bounded batches.
+- download more than 160 MiB,
+- hold more than 256 MiB of float64 working arrays, or
+- need more than 10 billion multiply-adds, counted as if every coefficient were nonzero.
+
+The form says so before Run, with the row count. Manufacturing used by
+electricity in every country (4,165 rows into 1,078 columns) and one country's
+whole final demand (9,800 rows) both fit. Every product from every country, or
+Europe's manufacturing feeding every European industry, does not: choose fewer
+products or regions. The [job API](interface.md#job-api) remains available for
+work outside the browser budget. The budgets exclude the baseline, metadata and
+decoder buffers; they are not a total browser memory limit.
+
+A broad scenario can take several seconds on a desktop, and longer on a phone:
+see [the measurements](#measure-a-change). The worker keeps at most 16 MiB of
+decoded rows per array, least recently used first out, so a repeated selection
+may read some rows again.
 
 ## Data and method
 
 The input is EXIOBASE v3.3.sm (2011) by Franco Donati and Arjan de Koning,
 [doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196), under
 CC BY 4.0. The exported matrices and baseline flows have the same licence.
-The export uses float64 throughout; the existing precomputed map file stays float32.
 
-For `A′ = A + U D Vᵀ`, with R and C selecting the changed rows and columns,
-the worker computes:
+For `A′ = A + ΔA`, with R the changed rows and K their consuming columns, the
+worker computes
 
 ```text
-X₀ = L Y′
-S = I − D L[C, R]
-X′ = X₀ + L[:, R] solve(S, D X₀[C, :])
+X₀ = X + L[:, F] ΔY[F, :]            (F: rows whose final demand changes)
+W  = (I − ΔA L[K, R])⁻¹ ΔA X₀[K, :]   or, the same, ΔA (I − L[K, R] ΔA)⁻¹ X₀[K, :]
+X′ = X₀ + L[:, R] W
 ```
 
-The version 2 export stores A rows and L columns as 19,600 separate Parquet
-files, with one logical row in each file. The reader downloads a complete file
-for each selected row and refuses row responses larger than 128 KiB.
-It groups 128 logical rows of X and Y per Parquet row group, since both matrices
-load in full. M and B keep separate row groups for their logical rows.
-It also stores `M = B L` and the three selected B rows. Final-demand
-changes update X₀ from the affected L columns. Overlapping interventions
-multiply the selected coefficients in order. The page groups `B × X′` into
-the same producer × industry section × consumer layout as the precomputed flows.
+It solves whichever system is smaller, R × R or K × K, in float64. The page
+draws flows `G X′`, where G sums each indicator over the products of a section
+in each producing country. With `H = (G L)ᵀ`, precomputed, the new flows are
+the baseline flows plus `H[J]ᵀ Z`, where J is R and F together and Z holds W and
+ΔY. So the worker never needs whole columns of L, only H's rows, of 2,205 values
+each (3 indicators × 49 producers × 15 sections). Overlapping interventions
+multiply the selected coefficients in order.
+
+The store is [Zarr v3](https://zarr-specs.readthedocs.io/en/latest/v3/core/index.html),
+written by zarr-python, so any Zarr v3 reader can open it:
+
+| Array | Shape | Size | Read as |
+| --- | --- | ---: | --- |
+| `A` | 9,800 × 9,800 | 155 MB | the changed rows, at the consuming columns |
+| `L` | 9,800 × 9,800 | 282 MB | rows K, at columns J |
+| `LC` (L's columns) | 9,800 × 9,800 | 297 MB | columns J, at rows K |
+| `H` | 9,800 × 2,205 | 64 MB | rows J |
+| `X`, `Y` | 9,800 × 49 | 2.6 MB | rows K and F |
+
+Values are float32 with gzip. Storing float32 moves the 153 published
+scenarios by at most 5.5e-9 relative; the arithmetic is float64 throughout.
+L is stored twice so the reader can take `L[K, J]` from K rows or J columns,
+whichever is less to download: the Europe steel scenarios change 49 rows that
+feed 6,400 columns. A system whose pivot falls below float32 precision,
+relative to its scale, is refused as singular.
+
+Each array except X and Y is sharded by producing country: one file per 200
+rows, one gzip chunk per row, and an index of offsets and sizes at the end of
+the file (the Zarr sharding codec). X and Y are one file each, with one chunk
+per country. The reader fetches a shard's index once, then asks for the chunks
+it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
+request is one range, since GitHub Pages answers a request for several ranges
+with the whole file.
 
 ## Build or download the data
 
 From the explorer, with the RaMa-Scene arrays and its label database available:
 
 ```sh
-OPENBLAS_NUM_THREADS=1 uv run python export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
+OPENBLAS_NUM_THREADS=8 uv run python export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
 ```
 
 Use a new output directory. The export refuses an existing manifest. It checks
-the input hashes against the published dataset, then checks
-the baseline residual of `(I − A) X = Y` at relative 1e-9 before writing.
-The manifest records matrix dimensions, byte sizes and content hashes. For A
-and L, the hash is SHA-256 of the concatenated binary SHA-256 digests of each
-row file, in ascending row order. Row paths use that aggregate hash, for example
-`A-<hash>/0.parquet`. The other matrix filenames include their individual file
-hashes. Changed data therefore gets different URLs without a large per-row
-index in the manifest. The reader refuses the earlier version 1 layout. Version 2 uses
-`manifest-v2.json`, so a cached version 1 manifest cannot reach the new reader.
+the input hashes against the published dataset, checks the baseline residual of
+`(I − A) X = Y` at relative 1e-9, and checks that H reproduces the baseline flows,
+before writing. The store directory is named `store-<hash>`, where the hash
+covers every file's path and SHA-256, and `manifest-v3.json` names it. Changed
+data therefore gets different URLs. The reader refuses the earlier row layouts,
+and version 3 uses a new manifest name, so a cached older manifest cannot reach
+the new reader. The export takes about 10 s with 8 threads.
 
-The row export is a separate `data-2011` release asset, about 936 MB including
-archive framing. The earlier `ramascene-browser-engine.tar` and `ramascene-browser-engine-grouped.tar`
-remain available for reproducing measurements of the earlier layouts.
-Move any existing `data/browser-engine` directory aside before extraction, so
-the build contains only the selected export.
+The store is a separate `data-2011` release asset, 766 MB. The earlier
+`ramascene-browser-engine*.tar` assets remain for the older layouts. Move any
+existing `data/browser-engine` directory aside before extraction, so the build
+contains only the selected export.
 
 ```sh
-gh release download data-2011 --repo simonvanlierde/ramascene-explorer --pattern ramascene-browser-engine-rows.tar --dir data
-sha256sum --check data/browser-engine-rows.sha256
-tar -xf data/ramascene-browser-engine-rows.tar -C data
+gh release download data-2011 --repo simonvanlierde/ramascene-explorer --pattern ramascene-browser-engine-zarr.tar --dir data
+sha256sum --check data/browser-engine-zarr.sha256
+tar -xf data/ramascene-browser-engine-zarr.tar -C data
 ```
 
 The build includes the data when present. CI and publishing download and verify
-the archive. The full site is about 974 MB; the Pages build refuses 1 GB or more.
-The browser fetches only the data needed for a calculation, rather than this
-whole export. The desktop and phone smoke test bounds that transfer at 50 MB
-for the default steel scenario.
+the archive. The Pages build refuses a site of 1 GB or more. The browser fetches
+only the data a calculation needs. The desktop and phone smoke test bounds that
+transfer at 50 MB for the default steel scenario.
 
 ## Check the calculations
 
@@ -112,15 +137,16 @@ CI=1 pnpm exec playwright test tests/e2e/browser-engine.spec.js
 ```
 
 The first command checks all 153 scenarios against `data/results.json` at relative
-1e-9. The second checks the agreement table's Dutch cement footprint. The browser
-test checks the worker, map, source label, retry and absence of external requests.
+1e-6. The second checks the agreement table's Dutch cement footprint, from H, at
+relative 1e-6. The browser test checks the worker, map, source label, retry and
+absence of external requests.
 
 ## What to precompute
 
 The page uses a hybrid approach. The 153 published scenarios and their map flows
 are computed ahead of time. Browsing them never runs the browser solver. The
-custom route also reuses the precomputed inverse L, baseline X, extension B and
-baseline flows. It solves only the small system for the selected changes.
+custom route also reuses the precomputed inverse L, its flow totals H, baseline X
+and baseline flows. It solves only the small system for the selected changes.
 
 Final-demand changes are linear when A is fixed: a weighted combination of
 precomputed response columns gives the exact answer. Coefficient changes alter
@@ -129,10 +155,8 @@ Precomputing every product, region, consumer and percentage combination would
 grow with all those choices. Keep common published results ahead of time and
 compute bounded custom combinations from the reusable matrices.
 
-Decode numeric columns directly into typed arrays. Avoid creating an object or
-array for every scalar. This follows the columnar approach described in
-[Apache Arrow's Parquet performance guide](https://arrow.apache.org/blog/2022/12/26/querying-parquet-with-millisecond-latency/).
-Keep calculation in a worker so the page can respond while it runs, as explained
+Decode chunks directly into typed arrays. Avoid creating an object or array
+for every scalar. Keep calculation in a worker so the page can respond while it runs, as explained
 in [web.dev's worker guide](https://web.dev/articles/off-main-thread).
 
 The matrix URLs include content hashes. Requests use normal HTTP caching
@@ -141,54 +165,40 @@ instead of forcing revalidation. A new dataset gets new matrix URLs; see
 Do not download the entire export to warm a cache. Large, rarely used
 assets should load when needed, as the
 [Chrome runtime-caching guide](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/)
-explains. Persistent browser storage, WebAssembly and GPU kernels need a measured
-bottleneck before they justify another runtime or storage lifecycle here.
-
-The [row-layout diagnostics](measurements/browser-engine-rows.json) compare this
-layout with `0cb782a` in seven interleaved pairs per case, using local files on
-a shared machine. For the default case, median first calculation and flow
-aggregation changed from 363 ms to 211 ms, selected-row reads from 8.49 MB to
-6.10 MB, and peak process RSS from 239 MB to 160 MB. Numerical results matched.
-These measurements do not include CDN cache misses; a deployed cold-cache
-comparison is needed before claiming a network latency improvement.
+explains. In the broad scenarios the time goes to the small system's dense
+products, not to reading or decoding: gunzip runs at about 150 MB/s. A compiled
+core would speed up that part; persistent browser storage and GPU kernels have
+no measured bottleneck to justify them.
 
 ## Measure a change
 
-With the prepared export present, compare against a committed implementation:
+With the prepared export present:
 
 ```sh
-taskset -c 30,31 node measure-browser-engine.js 0cb782a docs/measurements/browser-engine-rows.json /path/to/grouped/browser-engine /path/to/rows/browser-engine
+taskset -c 30,31 node measure-browser-engine.js docs/measurements/browser-engine-zarr.json
 ```
 
 Choose CPUs available on the measurement machine. On macOS, omit `taskset`.
-The last two arguments select the grouped and row exports. Without them,
-both implementations use `data/browser-engine`; a layout comparison requires
-separate exports that match each implementation.
-The script runs seven interleaved pairs in fresh Node processes for a one-product
-case, the default 49-row scenario, and an 85-row manufacturing scenario. A fourth
-case adds 150 ms of synthetic latency per read to the default scenario. It
-records initialization, first and repeated calculation plus flow aggregation,
-read bytes, peak RSS, source and manifest hashes, and host load. Files use the warm OS cache.
-It measures the numerical/data path, not browser painting or network latency.
-The [recorded diagnostics](measurements/browser-engine.json) came from a shared
-machine; use them to locate costs, not to promise phone or network performance.
+The script runs five fresh Node processes per case, each with a first and a
+repeated calculation including flow aggregation, and records read bytes and
+requests, peak RSS and host load. One case adds 150 ms of synthetic latency per
+read. Files come from the warm OS cache, so it measures the numerical and data
+path, not browser painting or a CDN.
 
-The earlier grouped-layout measurement, before separate row files, used Node
-26.9.0 on an i9-14900KF, pinned to CPUs 30–31 on a shared host on 2026-11-01. It
-gave these default-case medians. The comparison includes the code changes since
-`bd8b71e` and the grouped X/Y export:
+The [recorded diagnostics](measurements/browser-engine-zarr.json) used Node
+26.9.0 on an i9-14900KF, pinned to CPUs 30–31 on a shared machine, on
+2026-11-01. Medians of the first calculation:
 
-| Measurement | Before | After | Change |
+| Case | Rows × columns | Read | Time |
 | --- | ---: | ---: | ---: |
-| Data initialization | 1.21 s | 162 ms | −87% |
-| First calculation and flow aggregation | 509 ms | 380 ms | −25% |
-| Repeated calculation and flow aggregation | 69.0 ms | 48.7 ms | −29% |
-| Peak process RSS | 373 MB | 236 MB | −37% |
-| First calculation, 150 ms synthetic read delay | 1.40 s | 1.27 s | −10% |
+| one product in one country | 1 × 1 | 0.09 MB | 12 ms |
+| default steel scenario | 49 × 32 | 4.33 MB | 116 ms |
+| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms |
+| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms |
+| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s |
+| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s |
+| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s |
 
-The one-product first calculation increased from 167 ms to 188 ms. Its combined
-initialization and first calculation decreased from 1.39 s to 349 ms. The 85-row
-case improved from 813 ms to 551 ms. Results matched between implementations;
-the separate parity test checks all 153 published scenarios. The raw record
-includes every sample, ranges can be derived from it, and each implementation's
-source hashes identify the measured code.
+With the earlier [row layout](measurements/browser-engine-rows.json), the
+default scenario took 211 ms locally and 1.27 s with 150 ms latency. Use these numbers to locate costs, not to promise
+phone or network performance.
