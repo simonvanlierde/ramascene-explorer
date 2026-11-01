@@ -1,10 +1,12 @@
 import { fetchEngine } from "./browser-data.js";
 import { plan, readKey, scenarioFlows, startReads } from "./browser-engine.js";
+import { loadKernel, useThreads } from "./browser-kernel.js";
 import { browserResult } from "./browser-results.js";
 import init from "./engine/pkg/ramascene_engine.js";
 
 let loaded;
 let engine;
+let compute;
 const load = (base) =>
 	(loaded ??= fetchEngine(new URL(base)).catch((e) => {
 		loaded = null;
@@ -38,8 +40,9 @@ async function prefetch(base, steps) {
 	}
 }
 
-self.onmessage = async ({ data: { id, base, body, ahead: steps } }) => {
+self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	if (steps) return prefetch(base, steps);
+	let threaded = false;
 	try {
 		const loading = load(base);
 		// the kernel loads alongside the data, and a failed load is tried again on the next message
@@ -69,16 +72,31 @@ self.onmessage = async ({ data: { id, base, body, ahead: steps } }) => {
 		else {
 			await kernel;
 			const start = performance.now();
+			// Diagnostics can force either build; the client leaves single unset until fallback.
+			const broad = useThreads(plan(data.meta, body.model_details), single === false);
+			let maths;
+			try {
+				if (broad && !single) {
+					compute ??= loadKernel();
+					maths = await compute;
+					threaded = true;
+				} else maths = await loadKernel(true);
+			} catch {
+				self.postMessage({ id, retrySingle: true });
+				return;
+			}
 			const used = ahead;
 			ahead = null;
-			const flows = await scenarioFlows(data, body.model_details, used);
+			const flows = await scenarioFlows(data, body.model_details, used, maths);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
+			value.threads = maths.thread_count();
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
 		}
 	} catch (e) {
 		// A trap (out of memory, or a panic) leaves the kernel's memory held and its state
-		// unknown, so the page stops this worker.
-		if (e instanceof WebAssembly.RuntimeError)
+		// unknown, so the page stops this worker; a threaded run gets one try on one thread.
+		if (e instanceof WebAssembly.RuntimeError && threaded) self.postMessage({ id, retrySingle: true });
+		else if (e instanceof WebAssembly.RuntimeError)
 			self.postMessage({
 				id,
 				fatal: true,

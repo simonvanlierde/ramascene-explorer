@@ -77,7 +77,8 @@ file whose `data_kind` is not `exiobase-v3` gets the red synthetic-data banner.
 The [Cloudflare deployment](publishing.md#cloudflare) and its pull-request previews send
 `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. The browser can then use shared memory;
-the current kernel still uses one thread. The app keeps its existing meta CSP.
+the [threaded kernel](browser-engine.md#browser-threads) uses it for broad dense calculations.
+The app keeps its existing meta CSP.
 
 The hosting Worker exposes only the pinned Parquet object for GET and HEAD.
 It never accepts uploads or exposes arbitrary R2 keys. Zarr store reads use the

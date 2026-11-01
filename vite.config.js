@@ -32,6 +32,7 @@ const staticFiles = {
 export default defineConfig({
 	// relative, so the build works under the GitHub Pages subpath and from any file server
 	base: "./",
+	worker: { format: "es" },
 	plugins: [svelte(), staticFiles],
 	// source maps only for pnpm measure-coverage, so the published build stays as it is
 	build: { outDir: "dist", sourcemap: !!process.env.COVERAGE },

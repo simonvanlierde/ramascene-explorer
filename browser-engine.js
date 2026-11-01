@@ -110,7 +110,7 @@ export function plan(meta, steps) {
 			`too broad to compute in the browser: it changes ${J.length.toLocaleString("en")} product–country pairs${detail}. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it.`,
 		);
 	}
-	return { edits, technical, rows, columns, finals, J, byRows, download };
+	return { edits, technical, rows, columns, finals, J, byRows, download, memory };
 }
 
 // ΔA = A' − A on the selected rows and columns, in place, so no copy of A stays
@@ -165,7 +165,7 @@ export function startReads({ read }, { rows, columns, finals, J, byRows }) {
 
 // ahead: {key, reads} started before Run for the selection the form showed (readKey,
 // startReads); used when this run's plan reads the same slices.
-export async function scenarioFlows(data, steps, ahead = null) {
+export async function scenarioFlows(data, steps, ahead = null, kernel = { correction, fold }) {
 	const { meta, baseline } = data;
 	const C = meta.countries;
 	const planned = plan(meta, steps);
@@ -199,7 +199,7 @@ export async function scenarioFlows(data, steps, ahead = null) {
 		// T = L[K,R], K × R
 		const T = new Float64Array(K * R);
 		for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) T[k * R + r] = l[k * W + position.get(rows[r])];
-		const w = correction(delta, T, x, R, K, C, STORED_EPSILON);
+		const w = kernel.correction(delta, T, x, R, K, C, STORED_EPSILON);
 		for (let r = 0; r < R; r++) {
 			const j = position.get(rows[r]);
 			for (let c = 0; c < C; c++) Z[j * C + c] += w[r * C + c];
@@ -208,7 +208,7 @@ export async function scenarioFlows(data, steps, ahead = null) {
 	for (let start = 0; start < J.length; start += H_BATCH) {
 		const batch = J.slice(start, start + H_BATCH);
 		const h = await (start ? data.read("H", batch) : reads.firstH);
-		fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
+		kernel.fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 	}
 	if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
 	return out;

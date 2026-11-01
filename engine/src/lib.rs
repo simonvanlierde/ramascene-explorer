@@ -4,11 +4,81 @@
 //! Matrices arrive as row-major `f64` slices, as the JavaScript worker holds them.
 //! See `scenarioFlows` in browser-engine.js for how the pieces are gathered.
 
-use faer::linalg::matmul::matmul;
+use faer::linalg::matmul::matmul as faer_matmul;
 use faer::linalg::solvers::Solve;
 use faer::{Accum, Mat, MatMut, MatRef, Par};
 
 mod dense;
+
+fn threads() -> usize {
+    #[cfg(feature = "threads")]
+    {
+        rayon::current_num_threads()
+    }
+    #[cfg(not(feature = "threads"))]
+    {
+        1
+    }
+}
+
+fn matmul(
+    out: MatMut<'_, f64>,
+    accum: Accum,
+    lhs: MatRef<'_, f64>,
+    rhs: MatRef<'_, f64>,
+    alpha: f64,
+) {
+    multiply(out, accum, lhs, rhs, alpha, threads());
+}
+
+// Split output rows, keeping each dot product and the input matrices unchanged.
+fn multiply(
+    out: MatMut<'_, f64>,
+    accum: Accum,
+    lhs: MatRef<'_, f64>,
+    rhs: MatRef<'_, f64>,
+    alpha: f64,
+    count: usize,
+) {
+    #[cfg(feature = "threads")]
+    if count > 1
+        && lhs.nrows() >= 32
+        && lhs
+            .nrows()
+            .saturating_mul(lhs.ncols())
+            .saturating_mul(rhs.ncols())
+            >= 1_000_000
+    {
+        let mid = lhs.nrows() / 2;
+        let (top, bottom) = out.split_at_row_mut(mid);
+        let (a, b) = lhs.split_at_row(mid);
+        rayon::join(
+            || multiply(top, accum, a, rhs, alpha, count / 2),
+            || multiply(bottom, accum, b, rhs, alpha, count - count / 2),
+        );
+        return;
+    }
+    #[cfg(not(feature = "threads"))]
+    let _ = count;
+    faer_matmul(out, accum, lhs, rhs, alpha, Par::Seq);
+}
+
+// dense::product with its output rows split over the pool, in the same bounds as multiply.
+fn product(out: &mut [f64], a: &[f64], b: &[f64], m: usize, p: usize, n: usize, alpha: f64) {
+    #[cfg(feature = "threads")]
+    {
+        let count = threads();
+        if count > 1 && m >= 32 && m.saturating_mul(p).saturating_mul(n) >= 1_000_000 {
+            use rayon::prelude::*;
+            let rows = m.div_ceil(count);
+            out.par_chunks_mut(rows * n)
+                .zip(a.par_chunks(rows * p))
+                .for_each(|(out, a)| dense::product(out, a, b, a.len() / p, p, n, alpha));
+            return;
+        }
+    }
+    dense::product(out, a, b, m, p, n, alpha);
+}
 
 /// Why a scenario or a stored chunk was refused.
 #[derive(Debug, PartialEq, Eq)]
@@ -87,14 +157,14 @@ pub fn correction(
         for i in 0..k {
             s[i * k + i] = 1.0;
         }
-        dense::product(&mut s, t, delta, k, r, k, -1.0);
+        product(&mut s, t, delta, k, r, k, -1.0);
         let v = solve(MatRef::from_row_major_slice(&s, k, k), x, scale, epsilon)?;
         let v: Vec<f64> = (0..k)
             .flat_map(|i| (0..c).map(move |j| (i, j)))
             .map(|(i, j)| v[(i, j)])
             .collect();
         let mut w = vec![0.0; r * c];
-        dense::product(&mut w, delta, &v, r, k, c, 1.0);
+        product(&mut w, delta, &v, r, k, c, 1.0);
         Mat::from_fn(r, c, |i, j| w[i * c + j])
     };
     let out: Vec<f64> = (0..r)
@@ -144,8 +214,8 @@ fn small_system(
     let mut s = vec![0.0; r * r];
     let mut rhs = vec![0.0; r * c];
     if dense {
-        dense::product(&mut s, delta, t, r, k, r, -1.0);
-        dense::product(&mut rhs, delta, x, r, k, c, 1.0);
+        product(&mut s, delta, t, r, k, r, -1.0);
+        product(&mut rhs, delta, x, r, k, c, 1.0);
     } else {
         for (d_row, (s_row, rhs_row)) in delta
             .chunks_exact(k)
@@ -215,7 +285,7 @@ pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result
     let h = MatRef::from_row_major_slice(h, b, f);
     let z = MatRef::from_row_major_slice(z, b, c);
     let out = MatMut::from_row_major_slice_mut(out, f, c);
-    matmul(out, Accum::Add, h.transpose(), z, 1.0, Par::Seq);
+    matmul(out, Accum::Add, h.transpose(), z, 1.0);
     Ok(())
 }
 
@@ -256,6 +326,14 @@ pub fn decode(bytes: &[u8], length: usize) -> Result<Vec<f32>, Error> {
 /// The exports browser-engine.js and browser-data.js call, with errors as JavaScript exceptions.
 #[cfg(target_arch = "wasm32")]
 pub mod wasm {
+    #[cfg(feature = "threads")]
+    pub use wasm_bindgen_rayon::init_thread_pool;
+
+    /// Number of threads available to the numerical kernel.
+    #[wasm_bindgen::prelude::wasm_bindgen]
+    pub fn thread_count() -> usize {
+        super::threads()
+    }
     use wasm_bindgen::prelude::*;
 
     /// [`super::correction`] for JavaScript.
@@ -545,5 +623,62 @@ mod tests {
         for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
             assert_eq!(decode(&gzip(&[1.0, v]), 8), Err(Error::ChunkValues));
         }
+    }
+    #[test]
+    fn split_products_match_direct_dot_products() {
+        let (m, k, n) = (65, 257, 63);
+        let a: Vec<f64> = (0..m * k).map(|i| (i as f64 * 0.7).sin()).collect();
+        let b: Vec<f64> = (0..k * n).map(|i| (i as f64 * 0.3).cos()).collect();
+        for accum in [Accum::Replace, Accum::Add] {
+            for count in [1, 3, 4] {
+                let mut out = Mat::<f64>::from_fn(m, n, |_, _| 7.0);
+                multiply(
+                    out.as_mut(),
+                    accum,
+                    MatRef::from_row_major_slice(&a, m, k),
+                    MatRef::from_row_major_slice(&b, k, n),
+                    -0.25,
+                    count,
+                );
+                for i in 0..m {
+                    for j in 0..n {
+                        let dot: f64 = (0..k).map(|q| a[i * k + q] * b[q * n + j]).sum();
+                        let base = if matches!(accum, Accum::Add) {
+                            7.0
+                        } else {
+                            0.0
+                        };
+                        close(out[(i, j)], base - 0.25 * dot);
+                    }
+                }
+            }
+        }
+    }
+    #[cfg(feature = "threads")]
+    #[test]
+    fn split_dense_products_match_one_call() {
+        let (m, p, n) = (65, 257, 63);
+        let a: Vec<f64> = (0..m * p).map(|i| (i as f64 * 0.7).sin()).collect();
+        let b: Vec<f64> = (0..p * n).map(|i| (i as f64 * 0.3).cos()).collect();
+        let mut want = vec![7.0; m * n];
+        dense::product(&mut want, &a, &b, m, p, n, -0.25);
+        for count in [3, 4] {
+            let pool = rayon::ThreadPoolBuilder::new()
+                .num_threads(count)
+                .build()
+                .unwrap();
+            let mut out = vec![7.0; m * n];
+            pool.install(|| product(&mut out, &a, &b, m, p, n, -0.25));
+            assert_eq!(out, want);
+        }
+    }
+    #[cfg(feature = "threads")]
+    #[test]
+    fn thread_count_uses_the_active_pool() {
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(3)
+            .build()
+            .unwrap();
+        pool.install(|| assert_eq!(threads(), 3));
     }
 }

@@ -1,5 +1,5 @@
 name: build the wasm kernel
-description: Installs Rust and wasm-bindgen, then builds engine/ into engine/pkg.
+description: Installs Rust and wasm-bindgen, then builds the single-thread and shared-memory kernels.
 inputs:
   cache:
     description: Restore and save the Cargo cache; off for releases.

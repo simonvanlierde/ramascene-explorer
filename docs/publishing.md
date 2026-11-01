@@ -97,8 +97,8 @@ shows on the pull request as the `cloudflare` environment's deployment. Preview 
 `X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
 forks get no secrets, so they get no preview.
 
-The site sends COOP and COEP headers so browsers can use shared memory. The current kernel
-still uses one thread; hosting alone does not make calculations multithreaded.
+The site sends COOP and COEP headers so browsers can use shared memory. Broad dense
+calculations can use the [threaded kernel](browser-engine.md#browser-threads).
 Paths in `_headers` and `run_worker_first` are public paths, so they carry the prefix,
 and the Worker drops `BASE_PATH` before it matches the data paths.
 

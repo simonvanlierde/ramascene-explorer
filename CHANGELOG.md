@@ -17,6 +17,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Dense custom scenarios can use up to four browser threads on a host that enables shared
+  memory ([browser threads](docs/browser-engine.md#browser-threads)).
 - The site is served from Cloudflare at the same address, with the headers browsers need
   for shared memory ([publishing.md](docs/publishing.md#cloudflare)).
 - A custom scenario in the browser starts downloading its data while you set it up, so Run

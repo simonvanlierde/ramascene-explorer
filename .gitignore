@@ -16,3 +16,5 @@ engine/target/
 engine/pkg/
 .wrangler/
 .dev.vars
+engine/pkg-threads/
+engine/mutants.out*/

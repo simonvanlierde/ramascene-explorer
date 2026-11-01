@@ -9,8 +9,9 @@ Use Node 26 and pnpm. Install once with `pnpm install`. The custom-scenario kern
 in `engine/` is Rust built to WebAssembly: with [rustup](https://rustup.rs/) and
 `wasm-bindgen-cli` at the version of the `wasm-bindgen` crate in `engine/Cargo.lock`
 (`cargo install wasm-bindgen-cli --version <that version> --locked`), run
-`pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/`,
-which `pnpm dev`, `pnpm build` and `pnpm test` import. The map flows are a release
+`pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/` and `engine/pkg-threads/`, which `pnpm dev`, `pnpm build` and `pnpm test` import. The threaded build installs
+the pinned nightly and `rust-src` declared in `engine/threads/rust-toolchain.toml`.
+It rebuilds the standard library with WebAssembly atomics. The map flows are a release
 asset, not in git, so fetch them into `data/`:
 
 ```sh
@@ -64,7 +65,7 @@ uv run pytest --engine="$ENGINE_DIR"   # adds checks that need the engine and EX
 pnpm test                              # the page logic, with the coverage floor
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
-(cd engine && cargo fmt --check && cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings && cargo nextest run && cargo deny check)  # the Rust kernel, as CI runs it
+(cd engine && cargo fmt --check && cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings && cargo clippy --locked --features threads --all-targets -- -D warnings && RAYON_NUM_THREADS=4 cargo nextest run --locked --features threads && cargo deny check)  # the Rust kernel, as CI runs it
 ```
 
 Write `--engine=PATH` with the `=`. Without it, pytest takes the path as its

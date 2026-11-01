@@ -1,0 +1,198 @@
+{
+  "date": "2026-11-01T18:29:04.837Z",
+  "cpu": "Intel(R) Core(TM) i9-14900KF",
+  "affinity": "0-23",
+  "limits": [
+    1,
+    4,
+    8,
+    16
+  ],
+  "container": "mcr.microsoft.com/playwright:v1.64.1-noble",
+  "browser": "chromium-1248",
+  "method": "one unrecorded warm-up pair per case, then paired fresh Chromium process trees; cold and repeated scenario including reads, alternating order, RSS sampled every 25 ms and includes repeated shared mappings",
+  "samples": [
+    {
+      "pair": 0,
+      "name": "manufacturing to electricity",
+      "single": true,
+      "threads": 1,
+      "cold_s": 2.2868700000047686,
+      "warm_s": 1.792330000013113,
+      "peak_tree_rss_kib": 1071560
+    },
+    {
+      "pair": 0,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 4,
+      "cold_s": 1.6388800000250339,
+      "warm_s": 1.676155000001192,
+      "peak_tree_rss_kib": 1101228
+    },
+    {
+      "pair": 0,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 8,
+      "cold_s": 20.966379999995233,
+      "warm_s": 2.171414999991655,
+      "peak_tree_rss_kib": 1038724
+    },
+    {
+      "pair": 0,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 16,
+      "cold_s": 4.483824999988079,
+      "warm_s": 1.922860000014305,
+      "peak_tree_rss_kib": 1076388
+    },
+    {
+      "pair": 1,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 16,
+      "cold_s": 2.4175150000154972,
+      "warm_s": 1.1431400000154972,
+      "peak_tree_rss_kib": 1123340
+    },
+    {
+      "pair": 1,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 8,
+      "cold_s": 1.7161649999916553,
+      "warm_s": 1.253080000013113,
+      "peak_tree_rss_kib": 1083584
+    },
+    {
+      "pair": 1,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 4,
+      "cold_s": 1.8791399999856948,
+      "warm_s": 1.278044999986887,
+      "peak_tree_rss_kib": 1073504
+    },
+    {
+      "pair": 1,
+      "name": "manufacturing to electricity",
+      "single": true,
+      "threads": 1,
+      "cold_s": 2.290184999972582,
+      "warm_s": 20.87847999998927,
+      "peak_tree_rss_kib": 1067820
+    },
+    {
+      "pair": 2,
+      "name": "manufacturing to electricity",
+      "single": true,
+      "threads": 1,
+      "cold_s": 46.610870000004766,
+      "warm_s": 2.3428199999928476,
+      "peak_tree_rss_kib": 986016
+    },
+    {
+      "pair": 2,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 4,
+      "cold_s": 7.586455000013113,
+      "warm_s": 3.189594999998808,
+      "peak_tree_rss_kib": 1038188
+    },
+    {
+      "pair": 2,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 8,
+      "cold_s": 9.114854999989271,
+      "warm_s": 1.9682450000047684,
+      "peak_tree_rss_kib": 1034556
+    },
+    {
+      "pair": 2,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 16,
+      "cold_s": 4.414185000002385,
+      "warm_s": 1.2140200000107289,
+      "peak_tree_rss_kib": 1112048
+    },
+    {
+      "pair": 3,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 16,
+      "cold_s": 1.541354999989271,
+      "warm_s": 1.1092549999952317,
+      "peak_tree_rss_kib": 1090340
+    },
+    {
+      "pair": 3,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 8,
+      "cold_s": 1.6071800000071526,
+      "warm_s": 1.1846099999845028,
+      "peak_tree_rss_kib": 1089244
+    },
+    {
+      "pair": 3,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 4,
+      "cold_s": 1.7619449999928474,
+      "warm_s": 1.1893499999940396,
+      "peak_tree_rss_kib": 1072940
+    },
+    {
+      "pair": 3,
+      "name": "manufacturing to electricity",
+      "single": true,
+      "threads": 1,
+      "cold_s": 2.178340000003576,
+      "warm_s": 1.7677750000059604,
+      "peak_tree_rss_kib": 1075632
+    },
+    {
+      "pair": 4,
+      "name": "manufacturing to electricity",
+      "single": true,
+      "threads": 1,
+      "cold_s": 2.162625,
+      "warm_s": 1.76075,
+      "peak_tree_rss_kib": 1094744
+    },
+    {
+      "pair": 4,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 4,
+      "cold_s": 1.6341050000190736,
+      "warm_s": 1.1943899999856948,
+      "peak_tree_rss_kib": 1082804
+    },
+    {
+      "pair": 4,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 8,
+      "cold_s": 1.5744249999821187,
+      "warm_s": 1.1572150000035764,
+      "peak_tree_rss_kib": 1085984
+    },
+    {
+      "pair": 4,
+      "name": "manufacturing to electricity",
+      "single": false,
+      "threads": 16,
+      "cold_s": 1.5528199999928474,
+      "warm_s": 1.2006049999892712,
+      "peak_tree_rss_kib": 1131412
+    }
+  ],
+  "host_isolation": "CPU affinity only; quiet helper rejected combined CPUs 0-23; shared host processes remained active",
+  "thread_override": "benchmark-only response interception; shipped cap remains four"
+}
