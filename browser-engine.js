@@ -99,15 +99,18 @@ export function plan(meta, steps) {
 	const columns = [...new Set(technical.flatMap((s) => s.columns))].sort((a, b) => a - b);
 	const R = rows.length;
 	const K = columns.length;
-	const finalRows = new Set(edits.filter((s) => s.final).flatMap((s) => s.rows)).size;
+	const finalSet = new Set(edits.filter((s) => s.final).flatMap((s) => s.rows));
+	const finalRows = finalSet.size;
 	// Bound dense arithmetic and scenario buffers.
 	const work = R * R * K + R ** 3 / 3 + R * C * (N + K) + finalRows * N * C;
 	const bytes = 8 * (R * N + 2 * R * K + 2 * R * R + 3 * R * C + N * C + 2 * ROW_BATCH * N);
 	if (work > 100_000_000 || bytes > 64 * 1024 ** 2) {
 		const one = steps.length === 1 && edits.length === 1;
 		const size = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
+		// a row edited both as an input and in final demand is one pair
+		const pairs = new Set([...rows, ...finalSet]).size;
 		throw new Error(
-			`too broad to compute in the browser: it changes ${(R + finalRows).toLocaleString("en")} supply rows${size}. Choose a narrower product or fewer producing countries.`,
+			`too broad to compute in the browser: it changes ${pairs.toLocaleString("en")} product–country pairs${size}, and the browser handles about 200. Choose a narrower product or fewer producing countries.`,
 		);
 	}
 	return { edits, technical, rows, columns, finalRows };
