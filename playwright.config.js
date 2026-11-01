@@ -8,6 +8,8 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
 	testDir: "tests/e2e",
 	forbidOnly: !!process.env.CI,
+	// CI runners have 4 CPUs; Playwright's default of half the cores left them idle
+	workers: process.env.CI ? 4 : undefined,
 	reporter: process.env.CI ? "github" : "list",
 	use: { baseURL: "http://127.0.0.1:4180/" },
 	webServer: {
