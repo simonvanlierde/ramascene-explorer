@@ -17,6 +17,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The site is served from Cloudflare at the same address, with the headers browsers need
+  for shared memory ([publishing.md](docs/publishing.md#cloudflare)).
 - A custom scenario in the browser starts downloading its data while you set it up, so Run
   waits less, and a running one shows its time and a Cancel button
   ([browser-engine.md](docs/browser-engine.md)).

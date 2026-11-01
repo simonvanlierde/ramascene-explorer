@@ -13,7 +13,7 @@ RaMa-Scene engine + EXIOBASE matrices
         v
 data/results.json        data/embodied.parquet  (release asset)
         |                        |
-        +--- GitHub Pages -------+
+        +--- Cloudflare ---------+
                    |  fetch + HTTP range requests
                    v
               the page (Svelte, in the browser)

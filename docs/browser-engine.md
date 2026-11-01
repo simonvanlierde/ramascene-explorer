@@ -106,8 +106,8 @@ rows, one gzip chunk per row, and an index of offsets and sizes at the end of
 the file (the Zarr sharding codec). X and Y are one file each, with one chunk
 per country. The reader fetches a shard's index once, then asks for the chunks
 it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
-request is one range, since GitHub Pages answers a request for several ranges
-with the whole file.
+request is one range, since many static hosts answer a request for several ranges
+with the whole file, and the Worker refuses them.
 
 ## Build or download the data
 
