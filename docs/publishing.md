@@ -16,7 +16,7 @@ rather than skip when the file is missing. The browser tests run in Chromium
 with axe checking WCAG 2.2 AA.
 
 The page jobs also download the [browser dataset](browser-engine.md#build-or-download-the-data),
-verify `data/browser-engine-rows.sha256`, and rerun all 155 scenarios at relative 1e-9
+verify `data/browser-engine-rows.sha256`, and rerun every published scenario at relative 1e-9
 with `BROWSER_ENGINE_DATA=data/browser-engine`. The browser smoke test uses the
 real export. The other agreement routes use committed results; only the browser
 route is rerun in these jobs.

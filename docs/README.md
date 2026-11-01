@@ -27,3 +27,8 @@ For people changing the code.
 - [CI and releases](publishing.md): the workflows, publishing and how to check a release file.
 - [Security](security.md): what the page and the job API accept.
 - [Governance](../GOVERNANCE.md), [code of conduct](../CODE_OF_CONDUCT.md) and [roadmap](roadmap.md).
+
+## Project
+
+- [Changelog](../CHANGELOG.md): what changed in each release.
+- [Security policy](../.github/SECURITY.md): how to report a vulnerability.

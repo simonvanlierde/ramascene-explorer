@@ -136,11 +136,7 @@ and `L`, in the same worker as its other results.
 At 52.1 MB the file stays out of git. It is the `embodied.parquet` asset of the
 [`data-2011-r2`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011-r2)
 release, and the Pages build downloads it from there and checks its SHA-256.
-To get it locally:
-
-```sh
-gh release download data-2011-r2 --pattern embodied.parquet --dir data
-```
+[develop.md](develop.md#view) shows how to download it.
 
 The file is long format, one row group per run: `run`, `indicator` (global
 id), `producer`, `section`, `consumer` (0-based, in engine order) and `value`.

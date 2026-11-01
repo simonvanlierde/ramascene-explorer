@@ -19,6 +19,9 @@ What if… lists these three first, in this order.
 | `steel-asia-pacific-20` | Coefficient of basic iron and steel (all origins) into every industry in Asia-Pacific, −20%; a cell of the [grid](#material-efficiency-grid) | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
 | `construction-demand-europe` | Final demand in European regions for construction work produced in all regions, −20% | `Modelling.model_final_demand` (Y), stored L |
 
+A Woodbury update recomputes `L` for a small change to `A` without solving the
+whole system again ([the terms](precompute.md) are defined there).
+
 "Every industry" is the engine database's 15 industry sections (`consumedBy` 1–15),
 which together hold all 200 industries.
 
