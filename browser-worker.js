@@ -10,7 +10,12 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 			throw e;
 		});
 		const data = await loaded;
-		if (!body) self.postMessage({ id, value: data.meta.catalog });
+		// the form checks a selection's size with these before sending it
+		if (!body)
+			self.postMessage({
+				id,
+				value: { ...data.meta.catalog, size: { products: data.meta.products, countries: data.meta.countries } },
+			});
 		else {
 			const start = performance.now();
 			const output = await scenarioOutput(data, body.model_details);

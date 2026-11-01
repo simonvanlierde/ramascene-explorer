@@ -4,8 +4,8 @@ The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. The published site needs no calculation server.
 Opening it with `?api=` connects an optional job API.
 
-With `?compute=1`, a worker computes custom scenarios from exported float64
-matrices. [browser-engine.md](browser-engine.md) describes its data and checks.
+A worker computes custom scenarios from exported float64 matrices. It starts
+when a reader opens the custom-scenario form. [browser-engine.md](browser-engine.md) describes its data and checks.
 
 ```text
 RaMa-Scene engine + EXIOBASE matrices

@@ -5,8 +5,8 @@ import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-// live: {source, text, rows} while a run that is not precomputed is shown, else null
-// custom: a snippet for the run list's last card (the live panel with ?api=); retry reloads a run that failed
+// live: {source, text, rows, job} while a run that is not precomputed is shown, else null
+// custom: a snippet for the run list's last card (the custom-scenario panel); retry reloads a run that failed
 let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom } = $props();
 
 let done = $state();
@@ -76,9 +76,9 @@ function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
-// a job arriving folds the list to show it
+// a job arriving, or opening the custom form, folds the list
 $effect(() => {
-	if (live) showRuns = false;
+	if (live || ui.custom) showRuns = false;
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(

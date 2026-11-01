@@ -17,7 +17,7 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
-`?compute=1` enables a worker that reads only the page's own browser dataset.
+The custom-scenario worker reads only the page's own browser dataset.
 It sends no scenario to an external service. Matrix dimensions, finite values,
 ids and percentage bounds are checked. Each A/L row response is limited to
 128 KiB while streaming. Other matrix reads refuse a server that ignores Range.

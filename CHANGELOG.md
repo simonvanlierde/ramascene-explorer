@@ -6,6 +6,20 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The custom-scenario card is always in What if…; `?compute=1` is no longer needed. The page
+  loads the browser data when the card opens ([page.md](docs/page.md#custom-scenarios)).
+- The custom-scenario lists are nested by section and region, sorted by name, and searchable
+  ([page.md](docs/page.md#custom-scenarios)).
+- A custom result's totals by region moved from the sidebar to Details → Method.
+
+### Fixed
+
+- A selection too broad for the browser, such as all manufacturing used by electricity, now says
+  how many rows it changes and what to narrow, before Run, instead of failing with
+  "select at most 2000 changed rows".
+
 ## [0.5.0] - 2026-11-01
 
 ### Added

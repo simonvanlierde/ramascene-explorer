@@ -13,6 +13,7 @@ export const ui = $state({
 	zoom: null, // null, or [k] on the globe, [k, lon, lat] (the view's centre) on the flat map
 	panel: null, // null | "sankey" | "table" | "method"
 	s: 1, // scrubber: 0 is the 2011 baseline, 1 the run
+	custom: false, // the custom-scenario form is open
 });
 
 export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;

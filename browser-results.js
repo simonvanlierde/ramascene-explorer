@@ -22,7 +22,7 @@ export function browserRun(job, meta, text) {
 	return {
 		run: `browser-${job.id}`,
 		...liveFlows(job, meta),
-		live: { source: BROWSER_SOURCE, text, rows: browserProvenance(job) },
+		live: { source: BROWSER_SOURCE, text, rows: browserProvenance(job), job },
 	};
 }
 

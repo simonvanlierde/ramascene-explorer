@@ -7,6 +7,8 @@ import {
 	apiUrl,
 	CHANGE_RANGE,
 	catalogName,
+	catalogTree,
+	filterTree,
 	ignoredApi,
 	jobRun,
 	LIVE_STATUS,
@@ -136,9 +138,9 @@ test("polling stops at a final status", async () => {
 	assert.deepEqual(seen, ["queued", "running", "succeeded"]);
 });
 
-test("without ?api= the page is unchanged: panel absent, panel code loaded only on demand", () => {
+test("the custom panel's code loads on demand, and only it contacts the job API", () => {
 	const app = readFileSync(new URL("../src/App.svelte", import.meta.url), "utf8");
-	assert.match(app, /\{#if api\}\{#await import\("\.\/LivePanel\.svelte"\)/);
+	assert.match(app, /\{#await import\("\.\/LivePanel\.svelte"\)/);
 	assert.doesNotMatch(app, /import LivePanel|id="live"/);
 	// The panel component is the only place that fetches from the API.
 	assert.doesNotMatch(readFileSync(new URL("../live.js", import.meta.url), "utf8"), /fetch\(/);
@@ -244,4 +246,47 @@ test("liveFlows: every producer, section and consumer lands in its own cell", ()
 	assert.deepEqual([...delta], baseline.slice(12));
 	// indicator 5, producer B, section u, consumer A: on the wire ((1·2 + 1)·3 + 2)·2 + 0 = 22
 	assert.equal(base[at(meta, 0, 1, 2, 0)], 22);
+});
+
+// The catalogue's order: each level in turn, as RaMa-Scene's tables list it.
+const products = [
+	{ id: 1, name: "Total", leaves: [0, 1, 2, 3] },
+	{ id: 2, name: "Manufacturing", leaves: [1, 2, 3] },
+	{ id: 3, name: "Fishing", leaves: [0] },
+	{ id: 4, name: "Manufacture of basic metals", leaves: [2, 3] },
+	{ id: 5, name: "Fishing, fish farms", leaves: [0] },
+	{ id: 6, name: "Fish and other fishing products", leaves: [0] },
+	{ id: 7, name: "Textiles", leaves: [1] },
+	{ id: 8, name: "Iron and steel", leaves: [2] },
+	{ id: 9, name: "Aluminium", leaves: [3] },
+];
+const outline = (tree) => tree.map((n) => `${"-".repeat(n.depth)}${n.item.id}`);
+
+test("catalogTree nests each level under its parent and sorts siblings by name", () => {
+	// Fishing's section, division and product hold the same leaf: the later one is the child
+	assert.deepEqual(outline(catalogTree(products)), ["1", "-3", "--5", "---6", "-2", "--4", "---9", "---8", "--7"]);
+	const consumers = [{ id: 276, name: "Y: Final Consumption", final: true, leaves: [0] }, ...products.slice(1, 3)];
+	assert.deepEqual(outline(catalogTree(consumers)), ["276", "3", "2"]);
+	// the job API's catalogue has no leaves: its order, flat
+	assert.deepEqual(
+		outline(
+			catalogTree([
+				{ id: 2, name: "B" },
+				{ id: 1, name: "A" },
+			]),
+		),
+		["2", "1"],
+	);
+});
+
+test("filterTree keeps the matches and their parents, and marks the matches", () => {
+	const tree = catalogTree(products);
+	assert.equal(filterTree(tree, "  "), tree);
+	const steel = filterTree(tree, "STEEL");
+	assert.deepEqual(outline(steel), ["1", "-2", "--4", "---8"]);
+	assert.deepEqual(
+		steel.filter((n) => n.match).map((n) => n.item.id),
+		[8],
+	);
+	assert.deepEqual(filterTree(tree, "nothing like this"), []);
 });

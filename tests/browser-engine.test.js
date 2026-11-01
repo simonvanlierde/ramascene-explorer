@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { scenarioOutput, solve } from "../browser-engine.js";
+import { plan, scenarioOutput, solve } from "../browser-engine.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
 
@@ -139,10 +139,19 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 	};
 	const broad = { product: [1], originReg: [5], consumedBy: [4], consumedReg: [1], techChange: [-20] };
 	const final = meta.catalog.consumers.find((c) => c.final);
-	for (const steps of [[broad], [{ ...broad, product: [82], consumedBy: [final.id] }, broad]]) {
-		await assert.rejects(scenarioOutput(data, steps), /browser work budget/);
-		assert.equal(reads, 0);
-	}
+	await assert.rejects(
+		scenarioOutput(data, [broad]),
+		/too broad to compute in the browser: it changes 1,600 supply rows \(200 products × 8 producing countries\)/,
+	);
+	// several interventions: the total only, no single product × country count
+	await assert.rejects(
+		scenarioOutput(data, [{ ...broad, product: [82], consumedBy: [final.id] }, broad]),
+		/1,608 supply rows\./,
+	);
+	// the form runs the same check on the catalogue alone
+	assert.throws(() => plan(meta, [broad]), /too broad/);
+	assert.equal(plan(meta, [{ ...broad, product: [82] }]).rows.length, 8);
+	assert.equal(reads, 0);
 });
 
 test("matrix reads stay bounded and grow linearly across selection sizes", async () => {

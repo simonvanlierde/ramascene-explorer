@@ -71,16 +71,24 @@ Links from the first version still open their published scenario.
 
 ## Custom scenarios
 
-With [`?compute=1`](browser-engine.md), the page calculates a custom scenario on your device.
-With `?api=<origin>`, it sends the scenario to a job API instead.
-If both are present, the job API takes precedence.
-Both modes add a **Custom scenario** card under What if…; on phones it is in the selection sheet.
-Without either parameter, the page loads only the published results and interface files.
+What if… ends with a **Custom scenario** card; on phones it is in the selection sheet.
+Open it to [calculate a scenario on your device](browser-engine.md). With `?api=<origin>`,
+the page sends the scenario to a job API instead.
+The page loads the browser data only when you open the card.
+
+The lists are nested: each industry section holds its divisions, and each division its products;
+the world holds its continents, and each continent its countries. A list of more than ten items
+has a search button next to its label. A search keeps the matches and the groups they belong to.
+
+The browser calculation handles about 200 changed supply rows, where a row is one product from one
+producing country. Manufacturing from every country is 85 × 49 = 4,165 rows, too many: the card says so
+before you run it. Choose a narrower product or fewer producing countries, or use the job API.
 
 For an industry, the percentage changes selected input requirements per unit of output.
 For **Final demand**, it changes spending on the selected product and origin.
 The resulting total use is calculated by the model; it is not fixed to that percentage.
 A completed custom scenario replaces the map's scenario while keeping its own baseline and provenance.
+Details → Method lists its totals by producing region.
 Choose a published scenario to return to the stored results.
 
 ## Live scenarios (optional)

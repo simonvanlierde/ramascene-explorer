@@ -1,6 +1,6 @@
 # Compute a scenario in the browser
 
-Open the page with `?compute=1`, switch to What if…, then open Custom scenario.
+Switch to What if…, then open Custom scenario.
 Choose a product, its origin, a consuming industry and region, and a percentage
 change. Run scenario computes the result on your device. Choose **Final demand** to change spending. An industry selection changes inputs per unit of monetary output.
 The catalogue records this final-demand category as `Y: Final Consumption`.
@@ -20,13 +20,14 @@ in CI. That checks the implementation, not a custom scenario's assumptions.
 
 The model has the same scope as the [published scenarios](scenarios.md): changes
 to the 2011 economy, without forecasts, substitution or rebound. It accepts up
-to ten interventions. Each scenario can change up to 2,000 technical-coefficient
-rows and 2,000 final-demand rows. Broader changes and singular systems are
-refused with an error instead of returning a result.
+to ten interventions. Broad changes and singular systems are refused with an
+error instead of returning a result.
 
-A smaller selection can also exceed the browser work budget. Before reading
-matrices, the worker estimates dense arithmetic and scenario buffers. It refuses
-more than 100 million update terms or 64 MiB of estimated scenario buffers.
+The work grows with the changed rows: one row is one product from one producing
+country. Before reading matrices, the form and the worker estimate dense
+arithmetic and scenario buffers from the catalogue alone. They refuse more than
+100 million update terms or 64 MiB of estimated scenario buffers, which allows
+about 200 changed rows. The form says so before Run, with the row count.
 Choose fewer products or regions when that happens. These limits exclude the
 baseline, metadata, decoder temporaries and row caches; they are not a total
 browser memory limit. The [job API](interface.md#job-api) remains available
