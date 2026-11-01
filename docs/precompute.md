@@ -15,7 +15,7 @@ The matrices are float64.
 ```sh
 # the command data/results.json records, verbatim
 uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
-# subsets: --scenarios original|grid, --limit N
+# subsets: --scenarios named|grid, --limit N
 ```
 
 ## The shipped run
@@ -25,11 +25,11 @@ I produced the shipped files with branch `split/3-performance` of the fork
 `d9113ca9ad38bc29d2a96392dabf74d70abf830e` (clean tree), the head of pull
 request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is
 stacked on #73 (the Django 5.2 upgrade). `data/run-log.md` logs that run, and
-`data/precompute-time.txt` holds its `/usr/bin/time -v` output: 153 scenarios
-with the embodied flows, 1 min 32 s wall time and 1.64 GB (1.53 GiB)
+`data/precompute-time.txt` holds its `/usr/bin/time -v` output: 155 scenarios
+with the embodied flows, 1 min 59 s wall time and 1.64 GB (1.53 GiB)
 maximum RSS, under `nice -n 10` with BLAS capped at 8 threads on a 32-core
-machine. The same run without `--out-embodied` took 1 min 16 s and left every
-value in the three JSON files exactly as it was (`compare_data.py`, identical values).
+machine (2026-11-01). The 153 scenarios that the previous run (2026-10-14) also
+had kept every value exactly (`compare_data.py`, identical values).
 
 Each file's `provenance` block records the engine commit, the dataset
 checksums, the command and the run time. The blocks are identical apart from
@@ -57,9 +57,9 @@ solver, so the engine picks one:
   solves from those factors.
 
 Each run records the class of the `L` the engine returned (`runs.<id>.solver`),
-and `provenance.run.solvers` counts them. In the shipped run, all 152
+and `provenance.run.solvers` counts them. In the shipped run, all 153
 technical-coefficient scenarios and the control took the Woodbury update, and
-the final-demand scenario used the stored `L`. No run factorized `(I − A)`.
+the two final-demand scenarios used the stored `L`. No run factorized `(I − A)`.
 
 ## Memory
 
@@ -122,13 +122,13 @@ column of `Y` per consumer country. Sections are the 15 level-2 product
 aggregates of the engine database. Each scenario's flows come
 from its own `Y` and `L`, in the same worker as its other results.
 
-At 51.5 MB the file stays out of git. It is the `embodied.parquet` asset of the
-[`data-2011`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011)
+At 52.1 MB the file stays out of git. It is the `embodied.parquet` asset of the
+[`data-2011-r2`](https://github.com/simonvanlierde/ramascene-explorer/releases/tag/data-2011-r2)
 release, and the Pages build downloads it from there and checks its SHA-256.
 To get it locally:
 
 ```sh
-gh release download data-2011 --pattern embodied.parquet --dir data
+gh release download data-2011-r2 --pattern embodied.parquet --dir data
 ```
 
 The file is long format, one row group per run: `run`, `indicator` (global
@@ -137,7 +137,7 @@ The baseline row group holds absolute values. Every other row group holds the
 change, scenario minus baseline. A cell that is exactly 0 is left out, so a
 missing row means no flow or no change. The values are float32 with
 byte-stream-split encoding and snappy compression, so a browser can read the
-footer and one run over HTTP range requests (about 0.33 MB per run, of 51.5
+footer and one run over HTTP range requests (about 0.33 MB per run, of 52.1
 MB). The footer's `ramascene` key holds JSON: country and section names, the
 world-region aggregates, units, the run ids in row-group order, the checks and
 the same provenance as the other files.
@@ -156,7 +156,7 @@ Nothing is written unless:
 - for every run, the flows summed by producer and world-region aggregate match
   that run's values in `results.json`, and the world totals match (relative
   1e-9);
-- for the baseline and the three original interventions, the flows summed by
+- for the baseline and the five named scenarios, the flows summed by
   producer country match the engine's 49-region values (relative 1e-9);
 - the float32 values sum to within relative 1e-6 of the float64 ones, per
   producer and in total, relative to the run's total or total change. The
@@ -171,8 +171,8 @@ shipped run none rose, the largest difference in the first two checks was
 The precompute still writes and checks two detail files:
 
 - `data/regions.json` (`--out-regions`): the 49-region values of the baseline
-  and the three original interventions. They match B·L·ΣY (relative 1e-9).
-- `data/flows.json` (`--out-flows`): each original intervention's change by
+  and the five named scenarios. They match B·L·ΣY (relative 1e-9).
+- `data/flows.json` (`--out-flows`): each named scenario's change by
   sector and region, 15 × 49 cells. The sectors sum to each region and the
   flows to the total (relative 1e-12).
 

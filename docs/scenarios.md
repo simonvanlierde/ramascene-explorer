@@ -1,12 +1,31 @@
 # What each scenario changes
 
-The scenarios ask how a specified change would affect the 2011 economy.
-They change spending or inputs per unit of output, with prices and all other coefficients fixed.
-A 20% reduction in an input coefficient means 20% less input per unit of monetary output.
-The change in total material use is a result of the model, not a preset reduction.
+Each scenario asks how one change would have affected the 2011 economy.
+It changes spending on a product, or the input of a product per unit of output.
+Prices and all other coefficients stay fixed, and no substitution, price or rebound effect is modelled.
+A 20% cut in an input coefficient means 20% less of that input per unit of monetary output.
+The resulting change in total use is a model result, not a preset cut.
 
-Each scenario contains one RaMa-Scene `model_details` intervention, stored exactly in the output. `ramascene/modelling.py` scales the selected cells by
-`1 + techChange/100`. No substitution, price or rebound effect is modelled.
+Each scenario is one RaMa-Scene `model_details` intervention, stored exactly in the output.
+`ramascene/modelling.py` scales the selected cells by `1 + techChange/100`.
+
+## Featured scenarios
+
+What if… lists these three first, in this order.
+
+| id | What it changes | Engine path |
+| --- | --- | --- |
+| `coal-power-china` | Coefficient of electricity by coal produced in China into every industry in China, −20% | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
+| `steel-asia-pacific-20` | Coefficient of basic iron and steel (all origins) into every industry in Asia-Pacific, −20%; a cell of the [grid](#material-efficiency-grid) | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
+| `construction-demand-europe` | Final demand in European regions for construction work produced in all regions, −20% | `Modelling.model_final_demand` (Y), stored L |
+
+"Every industry" is the engine database's 15 industry sections (`consumedBy` 1–15),
+which together hold all 200 industries.
+
+## The original interventions
+
+The three interventions the first version of the page published. They still open
+from a link, such as `?scenario=cement-in-construction`, but What if… no longer lists them.
 
 | id | What it changes | Engine path |
 | --- | --- | --- |
@@ -14,20 +33,20 @@ Each scenario contains one RaMa-Scene `model_details` intervention, stored exact
 | `steel-in-vehicles-europe` | Coefficient of basic iron and steel (all origins) into motor-vehicle manufacturing in European regions, −20% | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
 | `cement-in-construction` | Coefficient of cement, lime and plaster (all origins) into construction work in all regions, −20% | `Modelling.model_intermediates` (A), then a Woodbury update of the stored L |
 
-The demand scenario changes monetary final demand, not the number of vehicles bought.
+The two final-demand scenarios change monetary final demand, not the number of
+vehicles bought or buildings built.
 
 "European regions" is the `Europe` aggregate of the engine database: EU28 plus
 Russia, Switzerland, Norway and Rest of Europe.
 
 ## Material-efficiency grid
 
-150 more scenarios of one shape, defined as data in `precompute.py`
+150 scenarios of one shape, `steel-asia-pacific-20` above included, defined as data in `precompute.py`
 (`GRID_PRODUCTS`, `GRID_REGIONS`, `GRID_CUTS`, `grid_scenarios()`). Each one
 scales the technical coefficient of one product, from all regions, into
 **every industry of one world region** by the cut. Nothing else changes.
 It is `cement-in-construction` with the consuming side widened from one
-industry to the engine database's 15 industry sections (`consumedBy` 1–15,
-whose leaves are all 200 industries).
+industry to the engine database's 15 industry sections.
 
 | axis | values (engine database ids) |
 | --- | --- |

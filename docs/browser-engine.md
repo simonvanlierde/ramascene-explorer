@@ -15,7 +15,7 @@ and three extension rows once, then downloads each required A row and L column
 as a small, complete Parquet file. These requests do not depend on HTTP range caching for a large object.
 Other matrices still use HTTP range requests; a server that ignores Range is
 refused before a full unexpected matrix is read.
-The 153 published scenarios match RaMa-Scene's shipped results at relative 1e-9
+The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-9
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
 The model has the same scope as the [published scenarios](scenarios.md): changes
@@ -111,13 +111,13 @@ node brightway-check/browser_check.js data/browser-engine
 CI=1 pnpm exec playwright test tests/e2e/browser-engine.spec.js
 ```
 
-The first command checks all 153 scenarios against `data/results.json` at relative
+The first command checks all 155 scenarios against `data/results.json` at relative
 1e-9. The second checks the agreement table's Dutch cement footprint. The browser
 test checks the worker, map, source label, retry and absence of external requests.
 
 ## What to precompute
 
-The page uses a hybrid approach. The 153 published scenarios and their map flows
+The page uses a hybrid approach. The 155 published scenarios and their map flows
 are computed ahead of time. Browsing them never runs the browser solver. The
 custom route also reuses the precomputed inverse L, baseline X, extension B and
 baseline flows. It solves only the small system for the selected changes.
@@ -189,6 +189,6 @@ gave these default-case medians. The comparison includes the code changes since
 The one-product first calculation increased from 167 ms to 188 ms. Its combined
 initialization and first calculation decreased from 1.39 s to 349 ms. The 85-row
 case improved from 813 ms to 551 ms. Results matched between implementations;
-the separate parity test checks all 153 published scenarios. The raw record
+the separate parity test checks all 155 published scenarios. The raw record
 includes every sample, ranges can be derived from it, and each implementation's
 source hashes identify the measured code.

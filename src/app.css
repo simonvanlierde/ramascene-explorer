@@ -1482,6 +1482,10 @@ details.more summary {
 #live .hint {
   margin-top: 5px;
 }
+/* kept in the page, empty, so its later message is announced; no gap while empty */
+#live-broad:empty {
+  margin: 0;
+}
 #live .hint.bad {
   color: var(--danger);
 }

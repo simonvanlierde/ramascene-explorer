@@ -9,7 +9,7 @@ abstract: >-
   EXIOBASE v3.3.sm data for 2011. It maps where greenhouse-gas emissions,
   employment and metal-ore extraction occur across 49 countries and regions,
   grouped into 15 industry sections. Readers can trace a footprint, inspect
-  its flows and compare 153 published scenarios. Custom scenarios can run in
+  its flows and compare 155 published scenarios. Custom scenarios can run in
   the browser or through an optional RaMa-Scene job API. The model changes
   monetary final demand or inputs per unit of output, with prices and other
   coefficients fixed. The results describe the 2011 economy, not forecasts.

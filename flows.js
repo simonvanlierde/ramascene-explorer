@@ -206,11 +206,16 @@ export function amountShort(v, id) {
 
 // --- runs ---------------------------------------------------------------------
 
+// The runs What if… lists first, in order; What if… opens on the first.
+export const FEATURED = ["coal-power-china", "steel-asia-pacific-20", "construction-demand-europe"];
+
 // Plain-language "if …" clause for each run, as the sentence uses it.
 const NAMED = {
 	"vehicle-demand-europe": "European final demand for European-made motor vehicles fell by 20%",
 	"steel-in-vehicles-europe": "European vehicle makers required 20% less steel per unit of output",
 	"cement-in-construction": "construction required 20% less cement per unit of output worldwide",
+	"coal-power-china": "industry in China required 20% less Chinese coal power per unit of output",
+	"construction-demand-europe": "European final demand for construction work fell by 20%",
 };
 const PLACE = { "Middle-East": "the Middle East", America: "the Americas" };
 export function runText(data, id) {
@@ -552,7 +557,7 @@ export function parseView(search, { runs, indicators, codes }) {
 	return {
 		// a bare ?scenario= is a link from the first version, which always showed a run
 		mode: q.get("mode") === "whatif" || (q.get("mode") === null && named.includes(scenario)) ? "whatif" : "flows",
-		run: named.includes(scenario) ? scenario : named[0],
+		run: named.includes(scenario) ? scenario : (FEATURED.find((r) => named.includes(r)) ?? named[0]),
 		indicator: indicators.includes(indicator) ? indicator : indicators[0],
 		who: Math.max(0, codes.indexOf(codes.includes(region) ? region : "DE")),
 		dir: q.get("dir") === "out" ? "out" : "in",

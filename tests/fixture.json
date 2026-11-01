@@ -277,6 +277,111 @@
      ]
     }
    ]
+  },
+  {
+   "id": "coal-power-china",
+   "label": "Chinese coal power input to Chinese industry −20%",
+   "description": "Technical coefficient of electricity by coal produced in China into every industry in China (the 15 industry sections of the engine database), scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      204
+     ],
+     "originReg": [
+      37
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      37
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "steel-asia-pacific-20",
+   "label": "Basic iron and steel input to all industries in Asia-Pacific −20%",
+   "description": "Technical coefficient of basic iron and steel and of ferro-alloys and first products thereof (from all regions) into every industry in Asia-Pacific (the 15 industry sections of the engine database), scaled by −20%.",
+   "grid": {
+    "product": "steel",
+    "region": "asia-pacific",
+    "cut": -20
+   },
+   "model_details": [
+    {
+     "product": [
+      180
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+     ],
+     "consumedReg": [
+      5
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
+  },
+  {
+   "id": "construction-demand-europe",
+   "label": "Final demand for construction work in Europe −20%",
+   "description": "Final demand in European regions for construction work produced in all regions, scaled by −20%.",
+   "model_details": [
+    {
+     "product": [
+      226
+     ],
+     "originReg": [
+      1
+     ],
+     "consumedBy": [
+      276
+     ],
+     "consumedReg": [
+      2
+     ],
+     "techChange": [
+      -20
+     ]
+    }
+   ]
   }
  ],
  "results": {
@@ -463,6 +568,75 @@
     "Asia-Pacific": 1748000.0,
     "Africa": 396000.0
    }
+  },
+  "coal-power-china": {
+   "5": {
+    "Europe": 4022100000000.0,
+    "Middle-East": 1863900000000.0,
+    "America": 8044200000000.0,
+    "Asia-Pacific": 15892200000000.0,
+    "Africa": 1275300000000.0
+   },
+   "3": {
+    "Europe": 259870.0,
+    "Middle-East": 59970.0,
+    "America": 289855.0,
+    "Asia-Pacific": 2098950.0,
+    "Africa": 419790.0
+   },
+   "7": {
+    "Europe": 309783.0,
+    "Middle-East": 19986.0,
+    "America": 1099230.0,
+    "Asia-Pacific": 1898670.0,
+    "Africa": 399720.0
+   }
+  },
+  "steel-asia-pacific-20": {
+   "5": {
+    "Europe": 4042600000000.0,
+    "Middle-East": 1873400000000.0,
+    "America": 8085200000000.0,
+    "Asia-Pacific": 15973200000000.0,
+    "Africa": 1281800000000.0
+   },
+   "3": {
+    "Europe": 259090.0,
+    "Middle-East": 59790.0,
+    "America": 288985.0,
+    "Asia-Pacific": 2092650.0,
+    "Africa": 418530.0
+   },
+   "7": {
+    "Europe": 288300.0,
+    "Middle-East": 18600.0,
+    "America": 1023000.0,
+    "Asia-Pacific": 1767000.0,
+    "Africa": 372000.0
+   }
+  },
+  "construction-demand-europe": {
+   "5": {
+    "Europe": 4081960000000.0,
+    "Middle-East": 1891640000000.0,
+    "America": 8163920000000.0,
+    "Asia-Pacific": 16128720000000.0,
+    "Africa": 1294280000000.0
+   },
+   "3": {
+    "Europe": 259064.0,
+    "Middle-East": 59784.0,
+    "America": 288956.0,
+    "Asia-Pacific": 2092440.0,
+    "Africa": 418488.0
+   },
+   "7": {
+    "Europe": 309008.0,
+    "Middle-East": 19936.0,
+    "America": 1096480.0,
+    "Asia-Pacific": 1893920.0,
+    "Africa": 398720.0
+   }
   }
  },
  "checks": {
@@ -541,8 +715,8 @@
   },
   "embodied": {
    "file": "fixture-embodied.parquet",
-   "bytes": 111985,
-   "sha256": "ed1e66d7be929562c81c6860dd43f620093a8e077ab408022b5bfdcbbdc47ff1"
+   "bytes": 155194,
+   "sha256": "29cd056d097e0b88f0c4dee13f9cfae8066dc1c262ffe4a9fd6f2698a3dd2a8e"
   }
  },
  "failed": [
@@ -757,6 +931,24 @@
   "steel-america-50": {
    "status": "failed",
    "wall_s": 9.0
+  },
+  "coal-power-china": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "steel-asia-pacific-20": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
+  },
+  "construction-demand-europe": {
+   "status": "passed",
+   "wall_s": 9.0,
+   "engine_s": 8.5,
+   "peak_rss_bytes": 1650000000
   }
  }
 }

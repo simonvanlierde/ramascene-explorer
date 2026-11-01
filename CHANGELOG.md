@@ -6,8 +6,21 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Two published scenarios: industry in China uses 20% less coal power, and final demand in
+  Europe buys 20% less construction work ([scenarios.md](docs/scenarios.md#featured-scenarios)).
+  The map flows for all 155 runs are on the new `data-2011-r2` release.
+- A [documentation index](docs/README.md) by reader: the results, the method, contributing.
+
 ### Changed
 
+- What if… opens on three featured scenarios: coal power in China, steel in Asia-Pacific and
+  construction demand in Europe. The three original interventions still open from their links.
+- The README is a short introduction; the development steps moved to [develop.md](docs/develop.md),
+  with the README's View, Build, Data, Test and Benchmark sections.
+- The page says "scenario" instead of "intervention", and Details → Method opens with a plain
+  explanation of what the map and the scenarios show.
 - The custom-scenario card is always in What if…; `?compute=1` is no longer needed. The page
   loads the browser data when the card opens ([page.md](docs/page.md#custom-scenarios)).
 - The custom-scenario lists are nested by section and region, sorted by name, and searchable
@@ -17,8 +30,9 @@ follow [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - A selection too broad for the browser, such as all manufacturing used by electricity, now says
-  how many rows it changes and what to narrow, before Run, instead of failing with
-  "select at most 2000 changed rows".
+  how many product–country pairs it changes and what to narrow, before Run, instead of failing with
+  "select at most 2000 changed rows". The check counts each pair once and uses the change you typed,
+  so a 0% change no longer blocks Run.
 
 ## [0.5.0] - 2026-11-01
 

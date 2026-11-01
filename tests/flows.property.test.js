@@ -3,7 +3,7 @@ import { test } from "node:test";
 import fc from "fast-check";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../embodied.js";
-import { continents, flowsCsv, niceUp, parseView, SECTION_SHORT, summarise, viewSearch } from "../flows.js";
+import { continents, FEATURED, flowsCsv, niceUp, parseView, SECTION_SHORT, summarise, viewSearch } from "../flows.js";
 
 // Stryker pins the seed so a mutant is killed or not the same way on every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });
@@ -57,8 +57,8 @@ test("parseView reads back what viewSearch wrote", () => {
 			view.chain((v) => indicatorsFor(v).map((indicators) => [v, indicators])),
 			([v, indicators]) => {
 				const got = parseView(viewSearch(v, codes), { runs: meta.runs, indicators, codes });
-				// a flows view does not name its run, so it reads back as the default one
-				assert.deepEqual(got, { ...v, run: v.mode === "whatif" ? v.run : named[0] });
+				// a flows view does not name its run, so it reads back as the first featured one
+				assert.deepEqual(got, { ...v, run: v.mode === "whatif" ? v.run : FEATURED[0] });
 			},
 		),
 	);

@@ -218,7 +218,7 @@ test("the view round-trips through the query string, old links included", () => 
 	assert.equal(meta.country_codes[old.who], "FR");
 	// anything unknown falls back
 	const bad = parseView("?scenario=nope&indicator=99&region=XX&sections=99,a&panel=x", opts);
-	assert.equal(bad.run, meta.runs[1]);
+	assert.equal(bad.run, "coal-power-china"); // the first featured run
 	assert.equal(bad.indicator, 5);
 	assert.equal(bad.on.size, 15);
 	assert.equal(bad.panel, null);

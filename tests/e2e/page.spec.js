@@ -55,27 +55,25 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page).toHaveURL(/mode=whatif/);
-	await expect(page).toHaveURL(/scenario=cement-in-construction/);
-	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
-	);
+	await expect(page).toHaveURL(/scenario=construction-demand-europe/);
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
 	// the run list folds to the chosen run, and stays folded after a reload
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 	await page.reload();
 	await ready(page);
 	await openSelection(page);
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
-	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await expect(page.getByRole("radio", { name: /construction required/i })).toHaveAttribute("aria-checked", "true");
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.getByRole("radio", { name: /construction work fell/i })).toHaveAttribute("aria-checked", "true");
 });
 
 test("the industry rail, country box and direction drive the sentence and the URL", async ({ page }) => {
@@ -397,7 +395,7 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.route("**/*.parquet", (route) => route.abort());
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
 	// read out once, from the map's legend, also while a phone's sheet is closed
@@ -405,16 +403,12 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.unroute("**/*.parquet");
 	await page.getByRole("button", { name: "Try again" }).first().click();
 	expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
-	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
-	);
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
-	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /construction required/i }).click();
-	await expect(page.locator("#headline")).toContainText(
-		"construction required 20% less cement per unit of output worldwide",
-	);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 });
 
 test("a page whose 2011 flows fail to load says so instead of loading for ever", async ({ page }) => {
@@ -472,9 +466,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await expect(
-		page.getByRole("radio", { name: /European final demand for European-made motor vehicles/i }),
-	).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("radio", { name: /Chinese coal power/i })).toHaveAttribute("aria-checked", "true");
 	await expect(page.locator("#headline")).toContainText("would have");
 	// every request made between the two clicks is A's: hold them until B is shown
 	let hold = false;
@@ -495,22 +487,22 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 		await route.continue();
 	});
 	hold = true;
-	await page.getByRole("radio", { name: /European vehicle makers/i }).click();
+	await page.getByRole("radio", { name: /Asia-Pacific required 20% less basic iron/i }).click();
 	await started;
 	hold = false;
 	// picking a run folds the list: open it again for the second pick
-	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /construction required/i }).click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	const headline = page.locator("#headline");
-	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
+	await expect(headline).toContainText("European final demand for construction work fell by 20%");
 	expect(held).toBeGreaterThan(0);
 	// let A's request finish and the page settle: B must stay
 	release();
 	await page.waitForTimeout(800);
-	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
-	await expect(headline).not.toContainText("European vehicle makers");
+	await expect(headline).toContainText("European final demand for construction work fell by 20%");
+	await expect(headline).not.toContainText("Asia-Pacific");
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
-		"Construction required 20% less cement per unit of output worldwide",
+		"European final demand for construction work fell by 20%",
 	);
 });
 
@@ -686,5 +678,45 @@ test("the grid's pickers fold with their own Done, named apart from the sheet's"
 	expect(await page.getByRole("button", { name: "Done", exact: true }).count()).toBeLessThanOrEqual(1);
 	await page.getByRole("button", { name: "Done picking the product, region and cut" }).click();
 	await expect(page.locator(".gridpick")).toHaveCount(0);
-	await expect(page.getByRole("button", { name: "Change the intervention" })).toBeFocused();
+	await expect(page.getByRole("button", { name: "Change the scenario" })).toBeFocused();
+});
+
+test("the grid pickers stay open on the grid cell the list also features", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("radio", { name: /one product/i }).click();
+	const pick = page.locator(".gridpick");
+	await pick.getByRole("button", { name: /Asia Pacific/ }).click();
+	await pick.getByRole("button", { name: "20%" }).click();
+	await expect(pick).toBeVisible();
+	await expect(page.getByRole("radio", { name: /one product/i })).toHaveAttribute("aria-checked", "true");
+	await pick.getByRole("button", { name: /Africa/ }).click();
+	await expect(pick).toBeVisible();
+	await expect(page).toHaveURL(/scenario=steel-africa-20/);
+});
+
+test("a link to the featured grid cell checks its card, and the grid card opens the pickers", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=steel-asia-pacific-20`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	const steel = page.getByRole("radio", { name: /Asia-Pacific required 20% less basic iron/i });
+	await expect(steel).toHaveAttribute("aria-checked", "true");
+	await page.getByRole("radio", { name: /one product/i }).click();
+	await expect(page.locator(".gridpick")).toBeVisible();
+	await expect(steel).toHaveAttribute("aria-checked", "false");
+});
+
+test("a run outside the list checks no card, and the arrows move from the focused card", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator('#run-list [aria-checked="true"]')).toHaveCount(0);
+	await expect(page.locator('#run-list [tabindex="0"]')).toHaveCount(1);
+	await page.locator('#run-list [tabindex="0"]').focus();
+	await page.keyboard.press("ArrowUp");
+	await expect(page.locator('#run-list [data-v="grid"]')).toHaveAttribute("aria-checked", "true");
+	await expect(page.locator('#run-list [data-v="grid"]')).toBeFocused();
 });

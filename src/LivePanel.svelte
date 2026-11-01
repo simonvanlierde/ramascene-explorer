@@ -41,7 +41,8 @@ async function fetchJson(url, init) {
 
 // The explorer's steel-into-vehicles scenario, preselected so one click reproduces it.
 let pick = $state({ product: "180", origin: "1", consumer: "198", consumedReg: "2" });
-let changeInput;
+// the form's change as typed, so the too-broad check plans what Run would send
+let change = $state("-20");
 let catalog = $state.raw(null);
 let message = $state("");
 let failed = $state(false);
@@ -76,7 +77,7 @@ const body = (techChange) =>
 const tooBroad = $derived.by(() => {
 	if (!browser || !catalog) return "";
 	try {
-		plan({ catalog, ...catalog.size }, body(-20).model_details);
+		plan({ catalog, ...catalog.size }, body(change).model_details);
 		return "";
 	} catch (e) {
 		// other errors surface on Run
@@ -131,7 +132,7 @@ async function submit(event) {
 	if (running) return;
 	let scenario;
 	try {
-		scenario = body(changeInput.value);
+		scenario = body(change);
 	} catch (e) {
 		say(e.message, true);
 		return;
@@ -183,7 +184,7 @@ async function submit(event) {
 	<div id="live-body" class="live-body" hidden={!open}>
 		<!-- the card already says where a browser run is computed -->
 		{#if !browser}<p class="live-label" id="live-label">Results are {status}.</p>{/if}
-		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
+		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One change to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
 			<Picker id="live-product" label="Product" tree={trees.products} bind:value={pick.product} />
@@ -191,9 +192,10 @@ async function submit(event) {
 			<Picker id="live-consumer" label="Used by" tree={trees.consumers} bind:value={pick.consumer} />
 			<Picker id="live-consumed-reg" label="Used in" tree={trees.regions} bind:value={pick.consumedReg} />
 			<label for="live-change">Input or demand change, %</label>
-			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
+			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value={change} required aria-describedby="live-change-h" oninput={(e) => (change = e.currentTarget.value)} />
 			<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>
-			{#if tooBroad}<p class="hint bad" id="live-broad">{tooBroad}</p>{/if}
+			<!-- always present, so a screen reader announces the message as it comes and goes -->
+			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->
