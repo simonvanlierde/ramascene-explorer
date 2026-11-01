@@ -680,3 +680,43 @@ test("the grid's pickers fold with their own Done, named apart from the sheet's"
 	await expect(page.locator(".gridpick")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Change the scenario" })).toBeFocused();
 });
+
+test("the grid pickers stay open on the grid cell the list also features", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("radio", { name: /one product/i }).click();
+	const pick = page.locator(".gridpick");
+	await pick.getByRole("button", { name: /Asia Pacific/ }).click();
+	await pick.getByRole("button", { name: "20%" }).click();
+	await expect(pick).toBeVisible();
+	await expect(page.getByRole("radio", { name: /one product/i })).toHaveAttribute("aria-checked", "true");
+	await pick.getByRole("button", { name: /Africa/ }).click();
+	await expect(pick).toBeVisible();
+	await expect(page).toHaveURL(/scenario=steel-africa-20/);
+});
+
+test("a link to the featured grid cell checks its card, and the grid card opens the pickers", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=steel-asia-pacific-20`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	const steel = page.getByRole("radio", { name: /Asia-Pacific required 20% less basic iron/i });
+	await expect(steel).toHaveAttribute("aria-checked", "true");
+	await page.getByRole("radio", { name: /one product/i }).click();
+	await expect(page.locator(".gridpick")).toBeVisible();
+	await expect(steel).toHaveAttribute("aria-checked", "false");
+});
+
+test("a run outside the list checks no card, and the arrows move from the focused card", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator('#run-list [aria-checked="true"]')).toHaveCount(0);
+	await expect(page.locator('#run-list [tabindex="0"]')).toHaveCount(1);
+	await page.locator('#run-list [tabindex="0"]').focus();
+	await page.keyboard.press("ArrowUp");
+	await expect(page.locator('#run-list [data-v="grid"]')).toHaveAttribute("aria-checked", "true");
+	await expect(page.locator('#run-list [data-v="grid"]')).toBeFocused();
+});

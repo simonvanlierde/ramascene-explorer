@@ -29,12 +29,16 @@ const firstGrid = $derived.by(() => meta.runs.find((r) => data.scenarios.find((s
 // the grid's three pickers, remembered while a named run is shown
 // svelte-ignore state_referenced_locally
 let gridPick = $state(pickerState(data, data.scenarios.find((s) => s.id === ui.run)?.grid ? ui.run : firstGrid));
-// a run outside the list (an original intervention, opened by link) checks no card
-const onGrid = $derived(!NAMED.includes(ui.run) && !!data.scenarios.find((s) => s.id === ui.run)?.grid);
+// the grid card stays checked while its pickers are in use, also on the grid cell the list features
+let gridOpen = $state(false);
+const onGrid = $derived(!!data.scenarios.find((s) => s.id === ui.run)?.grid && (gridOpen || !NAMED.includes(ui.run)));
+// the checked card; null for a run outside the list (an original intervention, opened by link)
+const current = $derived(onGrid ? "grid" : NAMED.includes(ui.run) ? ui.run : null);
 const gridTarget = $derived(lookupGrid(data, gridPick));
 const gridMissing = $derived(onGrid && !meta.runs.includes(gridTarget.id));
 
 function pickGrid(key, value) {
+	gridOpen = true;
 	gridPick = { ...gridPick, [key]: value };
 	const t = lookupGrid(data, gridPick);
 	if (meta.runs.includes(t.id)) setRun(t.id);
@@ -51,11 +55,11 @@ function worldChange(id) {
 }
 
 // radio group: arrow keys move and select, as native radios do
-function radioKeys(e, list, current, choose) {
+function radioKeys(e, list, choose) {
 	const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
 	if (!d) return;
 	e.preventDefault();
-	const next = list[(list.indexOf(current) + d + list.length) % list.length];
+	const next = list[(list.indexOf(e.currentTarget.dataset.v) + d + list.length) % list.length];
 	choose(next);
 	e.currentTarget.parentElement.querySelector(`[data-v="${next}"]`)?.focus();
 }
@@ -88,7 +92,13 @@ const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run))
 const chosenSub = $derived(
 	live ? capitalise(live.source.status) : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
-const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
+function chooseRun(v) {
+	gridOpen = v === "grid";
+	if (v !== "grid") return setRun(v);
+	// a picked cell that was never computed: show the first one, and point the pickers at it
+	if (!meta.runs.includes(gridTarget.id)) gridPick = pickerState(data, firstGrid);
+	setRun(lookupGrid(data, gridPick).id);
+}
 
 const directionHint = $derived(
 	ui.dir === "in"
@@ -128,17 +138,16 @@ const directionHint = $derived(
 			{:else}
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
 				{#each runOptions as v (v)}
-					{@const checked = v === "grid" ? onGrid : ui.run === v}
-					{@const none = !onGrid && !NAMED.includes(ui.run)}
+					{@const checked = v === current}
 					<button
 						type="button"
 						class="run"
 						role="radio"
 						data-v={v}
 						aria-checked={checked}
-						tabindex={checked || (none && v === runOptions[0]) ? 0 : -1}
+						tabindex={checked || (current === null && v === runOptions[0]) ? 0 : -1}
 						onclick={() => pickRun(v)}
-						onkeydown={(e) => radioKeys(e, runOptions, onGrid ? "grid" : ui.run, chooseRun)}
+						onkeydown={(e) => radioKeys(e, runOptions, chooseRun)}
 					>
 						<span class="dot"></span>
 						{#if v === "grid"}
