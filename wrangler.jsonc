@@ -1,18 +1,32 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ramascene-explorer-staging",
+  // The live site: simonvanlierde.com/ramascene-explorer. The domain's other pages stay on
+  // GitHub Pages. Pull requests upload versions of this Worker with a preview alias; their
+  // version URLs on workers.dev serve the same paths (docs/publishing.md#cloudflare).
+  "name": "ramascene-explorer",
   "main": "hosting/worker.js",
   "compatibility_date": "2026-10-13",
-  "workers_dev": true,
-  "preview_urls": false,
+  "workers_dev": false,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "simonvanlierde.com/ramascene-explorer", "zone_name": "simonvanlierde.com" },
+    { "pattern": "simonvanlierde.com/ramascene-explorer/*", "zone_name": "simonvanlierde.com" }
+  ],
+  // Assets keep their dist/ layout; base_path puts them under the prefix, and
+  // run_worker_first, _headers and the Worker's own paths use the public path.
   "assets": {
     "directory": "dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/data/embodied.parquet", "/data/browser-engine/store-*/*"],
+    "base_path": "/ramascene-explorer",
+    "run_worker_first": [
+      "/ramascene-explorer/data/embodied.parquet",
+      "/ramascene-explorer/data/browser-engine/store-*/*"
+    ],
     "not_found_handling": "none"
   },
   "r2_buckets": [
     { "binding": "EMBODIED", "bucket_name": "ramascene-explorer-data" }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "vars": { "BASE_PATH": "/ramascene-explorer" }
 }

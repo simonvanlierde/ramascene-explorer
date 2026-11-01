@@ -3,7 +3,6 @@
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Resource-Policy: same-origin
   X-Content-Type-Options: nosniff
-  X-Robots-Tag: noindex
 
-/data/browser-engine/:store/*
+/ramascene-explorer/data/browser-engine/:store/*
   Cache-Control: public, max-age=31536000, immutable

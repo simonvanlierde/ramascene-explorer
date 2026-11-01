@@ -53,3 +53,57 @@ test("the bucket is read-only and only the published file is reachable", async (
 	});
 	assert.equal(res.status, 404);
 });
+
+test("under the production prefix only the prefixed data paths reach the data", async () => {
+	const prod = { ...env, BASE_PATH: "/ramascene-explorer" };
+	const at = (path) =>
+		worker.fetch(new Request(`https://example.test${path}`, { headers: { Range: "bytes=0-3" } }), prod);
+	const res = await at("/ramascene-explorer/data/embodied.parquet");
+	assert.equal(res.status, 206);
+	assert.equal(await res.text(), "PAR1");
+	for (const path of [
+		"/data/embodied.parquet",
+		"/ramascene-explorer-x/data/embodied.parquet",
+		"/ramascene-explorerdata/embodied.parquet",
+	])
+		assert.equal((await at(path)).status, 404, path);
+});
+
+test("a range against an older ETag gets the whole current file", async () => {
+	const stale = await request({ Range: "bytes=0-1", "If-Range": '"older"' });
+	assert.equal(stale.status, 200);
+	assert.equal(await stale.text(), "PAR1data");
+	const current = await request({ Range: "bytes=0-1", "If-Range": '"fixture"' });
+	assert.equal(current.status, 206);
+	assert.equal(await current.text(), "PA");
+});
+
+test("shard reads share one cache entry whatever the query string", async () => {
+	const stored = new Map();
+	const fetched = [];
+	globalThis.caches = {
+		default: {
+			async match(req) {
+				return stored.get(req.url)?.clone();
+			},
+			async put(req, res) {
+				stored.set(req.url, res);
+			},
+		},
+	};
+	const shardEnv = {
+		ASSETS: {
+			async fetch(req) {
+				fetched.push(req.url);
+				return new Response("shard");
+			},
+		},
+	};
+	const path = `/data/browser-engine/store-${"a".repeat(64)}/A/c/0/0`;
+	for (const query of ["", "?x=1", "?x=2"])
+		assert.equal((await worker.fetch(new Request(`https://example.test${path}${query}`), shardEnv)).status, 200);
+	assert.deepEqual(fetched, [`https://example.test${path}`]);
+	const post = await worker.fetch(new Request(`https://example.test${path}`, { method: "POST" }), shardEnv);
+	assert.equal(post.status, 405);
+	delete globalThis.caches;
+});

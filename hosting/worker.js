@@ -5,13 +5,14 @@ const key = `embodied/${results.provenance.embodied.sha256}.parquet`;
 
 // Cache API range reads slice a complete cached response without buffering it in JS.
 async function shard(request, env) {
-	if (!["GET", "HEAD"].includes(request.method))
-		return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
 	const cache = caches.default;
-	const read = request.method === "HEAD" ? new Request(request.url) : request;
+	// the key drops the query string, so ?x=N cannot force a whole-shard fetch per request
+	const url = new URL(request.url);
+	url.search = "";
+	const whole = new Request(url);
+	const read = request.method === "HEAD" ? whole : new Request(url, { headers: request.headers });
 	const hit = await cache.match(read);
 	if (hit) return request.method === "HEAD" ? new Response(null, hit) : hit;
-	const whole = new Request(request.url);
 	const response = await env.ASSETS.fetch(whole);
 	if (response.status !== 200) return response;
 	await cache.put(whole, response);
@@ -22,10 +23,15 @@ async function shard(request, env) {
 
 export default {
 	async fetch(request, env) {
-		if (/^\/data\/browser-engine\/store-[a-f0-9]{64}\//.test(new URL(request.url).pathname)) return shard(request, env);
-		if (new URL(request.url).pathname !== "/data/embodied.parquet") return new Response(null, { status: 404 });
+		// the site lives under BASE_PATH (wrangler.jsonc); unset, it is at the root
+		const base = env.BASE_PATH ?? "";
+		const { pathname } = new URL(request.url);
+		const path = pathname.startsWith(`${base}/`) ? pathname.slice(base.length) : "";
+		const isShard = /^\/data\/browser-engine\/store-[a-f0-9]{64}\//.test(path);
+		if (!isShard && path !== "/data/embodied.parquet") return new Response(null, { status: 404 });
 		if (!["GET", "HEAD"].includes(request.method))
 			return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
+		if (isShard) return shard(request, env);
 		const object = await env.EMBODIED.head(key);
 		if (!object) return new Response("Published data is missing", { status: 404 });
 		const headers = new Headers({
@@ -39,7 +45,10 @@ export default {
 		});
 		let start = 0;
 		let end = object.size - 1;
-		const range = request.method === "GET" ? request.headers.get("Range") : null;
+		// a range against an older ETag would mix two files' bytes, so it gets the whole file
+		const ifRange = request.headers.get("If-Range");
+		const fresh = ifRange === null || ifRange === object.httpEtag;
+		const range = request.method === "GET" && fresh ? request.headers.get("Range") : null;
 		if (range !== null) {
 			const match = /^bytes=(\d*)-(\d*)$/.exec(range);
 			if (match && (match[1] || match[2])) {
