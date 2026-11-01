@@ -76,6 +76,8 @@ function selection(meta, step) {
 		throw new Error("cannot mix final demand and intermediate consumers");
 	const indices = (regions, products) => regions.flatMap((r) => products.map((p) => r * meta.products + p));
 	return {
+		products: products.length,
+		origins: origins.length,
 		rows: indices(origins, products),
 		columns: final ? destinations : indices(destinations, expand(catalog.consumers, step.consumedBy, meta.products)),
 		final,
@@ -83,12 +85,12 @@ function selection(meta, step) {
 	};
 }
 
-// X' = L' Y', country-major products by consuming country, as a flat array.
-// For A' = A + U D Vᵀ: L'Y' = LY' + L[:,R](I-D L[C,R])⁻¹ D(LY')[C,:].
-export async function scenarioOutput(data, steps) {
+// The selected edits and their sizes. Throws before any matrix read when the
+// dense update would exceed the browser's work budget, so the form can check a
+// selection with the catalogue alone (meta: {catalog, products, countries}).
+export function plan(meta, steps) {
 	if (!Array.isArray(steps) || !steps.length || steps.length > 10)
 		throw new Error("a scenario needs 1 to 10 interventions");
-	const { meta } = data;
 	const C = meta.countries;
 	const N = C * meta.products;
 	const edits = steps.map((step) => selection(meta, step)).filter((s) => s.factor !== 1);
@@ -98,12 +100,28 @@ export async function scenarioOutput(data, steps) {
 	const R = rows.length;
 	const K = columns.length;
 	const finalRows = new Set(edits.filter((s) => s.final).flatMap((s) => s.rows)).size;
-	if (R > 2000 || finalRows > 2000) throw new Error("select at most 2000 changed rows");
-	// Bound dense arithmetic and scenario buffers before any matrix read.
+	// Bound dense arithmetic and scenario buffers.
 	const work = R * R * K + R ** 3 / 3 + R * C * (N + K) + finalRows * N * C;
 	const bytes = 8 * (R * N + 2 * R * K + 2 * R * R + 3 * R * C + N * C + 2 * ROW_BATCH * N);
-	if (work > 100_000_000 || bytes > 64 * 1024 ** 2)
-		throw new Error("selection exceeds the browser work budget; choose fewer products or regions");
+	if (work > 100_000_000 || bytes > 64 * 1024 ** 2) {
+		const one = steps.length === 1 && edits.length === 1;
+		const size = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
+		throw new Error(
+			`too broad to compute in the browser: it changes ${(R + finalRows).toLocaleString("en")} supply rows${size}. Choose a narrower product or fewer producing countries.`,
+		);
+	}
+	return { edits, technical, rows, columns, finalRows };
+}
+
+// X' = L' Y', country-major products by consuming country, as a flat array.
+// For A' = A + U D Vᵀ: L'Y' = LY' + L[:,R](I-D L[C,R])⁻¹ D(LY')[C,:].
+export async function scenarioOutput(data, steps) {
+	const { meta } = data;
+	const C = meta.countries;
+	const N = C * meta.products;
+	const { edits, technical, rows, columns } = plan(meta, steps);
+	const R = rows.length;
+	const K = columns.length;
 	const output = new Float64Array(N * C);
 	if (data.X.length !== N || data.X.some((row) => row.length !== C)) throw new Error("invalid baseline output");
 	for (let i = 0; i < N; i++) output.set(data.X[i], i * C);

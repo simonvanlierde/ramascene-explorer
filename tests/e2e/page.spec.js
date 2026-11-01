@@ -65,13 +65,13 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
 	// the run list folds to the chosen run, and stays folded after a reload
-	await expect(page.locator(".run.chosen")).toContainText(
+	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
 		"Construction required 20% less cement per unit of output worldwide",
 	);
 	await page.reload();
 	await ready(page);
 	await openSelection(page);
-	await expect(page.locator(".run.chosen")).toContainText(
+	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
 		"Construction required 20% less cement per unit of output worldwide",
 	);
 	await page.getByRole("button", { name: "Change the intervention" }).click();
@@ -509,7 +509,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await page.waitForTimeout(800);
 	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
 	await expect(headline).not.toContainText("European vehicle makers");
-	await expect(page.locator(".run.chosen")).toContainText(
+	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
 		"Construction required 20% less cement per unit of output worldwide",
 	);
 });

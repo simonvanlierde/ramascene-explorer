@@ -5,7 +5,7 @@ import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
 
-// live: {source, text, rows} while a run that is not precomputed is shown, else null
+// live: {source, text, rows, job} while a run that is not precomputed is shown, else null
 // custom: a snippet for the run list's last card (the live panel with ?api=); retry reloads a run that failed
 let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom } = $props();
 

@@ -16,9 +16,8 @@ import { reducedMotion, ui } from "./view.svelte.js";
 const search = location.search;
 const dataPath = dataUrl(search);
 const ignored = ignoredData(search);
-// The custom form loads only with ?api= or ?compute=1.
+// The custom form computes in the browser, or on the job API with ?api=.
 const api = apiUrl(search);
-const compute = new URLSearchParams(search).get("compute") === "1" && !api;
 const refusedApi = ignoredApi(search);
 
 let data = $state.raw(null);
@@ -29,8 +28,8 @@ let base = $state.raw(null);
 // {run, base, delta, live?}: the run on screen, as dense arrays in meta's layout; the next one may
 // still be loading. Every flow source hands the page this shape, so the map, Strip and Details never
 // know where a run came from. base is the baseline the run is a change against. A run that is not
-// precomputed adds live: {source, text, rows}: its source's wording ({status, heading, note}), its
-// "if …" clause and its provenance rows.
+// precomputed adds live: {source, text, rows, job}: its source's wording ({status, heading, note}), its
+// "if …" clause, its provenance rows and the finished job.
 let shown = $state.raw(null);
 let loadingRun = $state("");
 let ready = $state(false);
@@ -214,15 +213,15 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert" bind:offsetHeight={bannerH}>{flag.text}</div>
 {/if}
 
-{#if api || compute}
-	<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
-	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
-{/if}
+<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
+<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
 
 <!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
 {#snippet livePanel()}
-	{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
-	{#if compute}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel browser={true} onflows={(job, text) => showLive(job, text, true)} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
+	{#await import("./LivePanel.svelte") then { default: LivePanel }}
+		{#if api}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />
+		{:else}<LivePanel browser={true} onflows={(job, text) => showLive(job, text, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+	{/await}
 {/snippet}
 
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>

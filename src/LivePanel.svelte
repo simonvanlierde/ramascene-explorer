@@ -1,15 +1,12 @@
 <script>
-// Custom form for ?api= or ?compute=1. This component alone contacts the job
+// Custom form: computes in the browser, or on the job API with ?api=. This component alone contacts the job
 // API; its text is never rendered as markup.
-import { compare } from "../explorer.js";
 import { onDestroy } from "svelte";
 import { BROWSER_STATUS, browserProvenance } from "../browser-results.js";
-import { amountText, displayChange, pct, wording } from "../flows.js";
 import {
-	catalogName,
 	CHANGE_RANGE,
+	catalogTree,
 	LIVE_STATUS,
-	liveData,
 	liveProvenance,
 	liveText,
 	minus,
@@ -17,6 +14,9 @@ import {
 	unreachableMessage,
 	waitForJob,
 } from "../live.js";
+import { plan } from "../browser-engine.js";
+import LiveTotals from "./LiveTotals.svelte";
+import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
 
 // onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
@@ -47,15 +47,40 @@ let message = $state("");
 let failed = $state(false);
 let unreachable = $state(false);
 let running = $state(false);
-let data = $state.raw(null);
 let job = $state.raw(null);
-let indicators = $state.raw([]);
-let indicatorId = $state("");
+// false while the panel shows a finished job the map could not draw
+let mapped = $state(true);
 
 // the change the job API accepts: GET /catalog says, or its known range
 const range = $derived(catalog?.tech_change_percent ?? CHANGE_RANGE);
-// the form folds into one card under the run list until it is opened
+// the form folds into one card under the run list until it is opened, and
+// the browser data loads on the first open, not with the page
 let open = $state(false);
+let connected = false;
+function toggle() {
+	open = !open;
+	if (open && !connected) {
+		connected = true;
+		connect();
+	}
+}
+const trees = $derived({
+	products: catalogTree(catalog?.products),
+	regions: catalogTree(catalog?.regions),
+	consumers: catalogTree(catalog?.consumers),
+});
+const body = (techChange) =>
+	scenarioBody({ product: pick.product, originReg: pick.origin, consumedBy: pick.consumer, consumedReg: pick.consumedReg, techChange }, range);
+// a browser selection too large to compute, said before Run
+const tooBroad = $derived.by(() => {
+	if (!browser || !catalog) return "";
+	try {
+		plan({ catalog, ...catalog.size }, body(-20).model_details);
+		return "";
+	} catch (e) {
+		return `This selection is ${e.message}`;
+	}
+});
 
 function say(text, bad = false) {
 	message = text;
@@ -88,46 +113,23 @@ function connect() {
 		},
 	);
 }
-connect();
+if (!browser) {
+	connected = true;
+	connect();
+}
 // Try again goes as soon as it is pressed: focus the card's own button instead
 function retryConnect() {
 	connect();
 	document.getElementById("live-open")?.focus();
 }
 
-// Signed amount and percentage in the page's units; a zero baseline has no percentage.
-const signedText = (v, id) => (v > 0 ? "+" : "") + amountText(v, id);
-const pctText = (p) => (p === null ? "—" : pct(p));
-
-const view = $derived.by(() => {
-	if (!data) return null;
-	const id = Number(indicatorId);
-	const w = wording(id);
-	const rows = compare(data, { scenario: "live", indicator: indicatorId }, w.factor);
-	const baseTotal = rows.reduce((s, r) => s + r.baseline, 0);
-	const deltaTotal = displayChange(rows.reduce((s, r) => s + r.delta, 0), baseTotal);
-	const share = pctText(baseTotal ? (100 * deltaTotal) / baseTotal : null);
-	return {
-		id,
-		rows,
-		headline: `Summed over all regions, ${w.noun} would change by ${signedText(deltaTotal, id)} (${share}) against ${browser ? "its baseline" : "the job’s own baseline"} of ${amountText(baseTotal, id)}.`,
-		provenance: browser ? browserProvenance(job) : liveProvenance(job, api),
-	};
-});
-
 async function submit(event) {
 	event.preventDefault();
 	// Run stays focusable while a job runs (aria-disabled), so a second press lands here
 	if (running) return;
-	let body;
+	let scenario;
 	try {
-		body = scenarioBody({
-			product: pick.product,
-			originReg: pick.origin,
-			consumedBy: pick.consumer,
-			consumedReg: pick.consumedReg,
-			techChange: changeInput.value,
-		}, range);
+		scenario = body(changeInput.value);
 	} catch (e) {
 		say(e.message, true);
 		return;
@@ -138,25 +140,20 @@ async function submit(event) {
 		const submitted = browser ? null : await fetchJson(`${api}/jobs`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(body),
+			body: JSON.stringify(scenario),
 		});
-		const done = browser ? await client.request(body) : await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
+		const done = browser ? await client.request(scenario) : await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
 			onUpdate: (j) => say(`Job ${j.id}: ${j.status}…`),
 		});
 		if (done.status === "failed") throw new Error(done.error);
-		const d = liveData(done, status);
-		// the indicator list comes from the first job and stays
-		if (!indicators.length) {
-			indicators = d.indicators;
-			indicatorId = String(indicators[0].id);
-		}
 		job = done;
-		data = d;
+		mapped = false;
 		const duration = done.duration_s < 0.1 ? "less than 0.1" : done.duration_s.toFixed(1);
 		let text = browser ? `Computed in this browser in ${duration} s.` : `Job ${done.id} finished in ${duration} s.`;
 		try {
-			if (onflows?.(done, liveText(done, catalog)))
-				text += ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map.";
+			mapped = onflows?.(done, liveText(done, catalog)) === true;
+			if (mapped)
+				text += `${ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map."} Details → Method lists the totals by region.`;
 		} catch (e) {
 			text += ` Its flows are not on the map: ${e.message}`;
 		}
@@ -175,75 +172,44 @@ async function submit(event) {
 	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={retryConnect}>Try again</button>{/if}
 {/snippet}
 
-{#snippet options(items)}
-	{#each items ?? [] as item (item.id)}<option value={String(item.id)} title={item.name}>{catalogName(item)}</option>{/each}
-{/snippet}
-
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
 		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : "Calculated by the job API"}</small></span>
-		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={() => (open = !open)}>{open ? "Close" : "Set up"}</button>
+		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={toggle}>{open ? "Close" : "Set up"}</button>
 	</div>
 	{#if !open}{@render state()}{/if}
 	<div id="live-body" class="live-body" hidden={!open}>
-		<p class="live-label" id="live-label">Results are {status}.</p>
-		<p class="hint">{browser ? "One intervention on the 2011 economy, calculated on this device. The page downloads the data it needs. The result uses the same baseline as the published scenarios; no scenario is sent to a job server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
+		<!-- the card already says where a browser run is computed -->
+		{#if !browser}<p class="live-label" id="live-label">Results are {status}.</p>{/if}
+		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
-			<label for="live-product">Product</label>
-			<select id="live-product" required disabled={!catalog} bind:value={pick.product}>{@render options(catalog?.products)}</select>
-			<label for="live-origin">Produced in</label>
-			<select id="live-origin" required disabled={!catalog} bind:value={pick.origin}>{@render options(catalog?.regions)}</select>
-			<label for="live-consumer">Used by</label>
-			<select id="live-consumer" required disabled={!catalog} bind:value={pick.consumer}>{@render options(catalog?.consumers)}</select>
-			<label for="live-consumed-reg">Used in</label>
-			<select id="live-consumed-reg" required disabled={!catalog} bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select>
+			<Picker id="live-product" label="Product" tree={trees.products} bind:value={pick.product} />
+			<Picker id="live-origin" label="Produced in" tree={trees.regions} bind:value={pick.origin} />
+			<Picker id="live-consumer" label="Used by" tree={trees.consumers} bind:value={pick.consumer} />
+			<Picker id="live-consumed-reg" label="Used in" tree={trees.regions} bind:value={pick.consumedReg} />
 			<label for="live-change">Input or demand change, %</label>
 			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
-			<small class="fh" id="live-change-h">For an industry, change inputs per unit of output. For final demand, change spending. Negative values reduce the selected quantity. Range: {minus(range.min)} to +{range.max}%.</small>
-			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
+			<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>
+			{#if tooBroad}<p class="hint bad" id="live-broad">{tooBroad}</p>{/if}
+			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->
 		{#if open}{@render state()}{/if}
-		<div id="live-result" hidden={!view}>
-			{#if view}
-				<p class="headline" id="live-headline">{view.headline}</p>
-				{#if indicators.length > 1}
-					<label for="live-indicator">Indicator</label>
-					<select id="live-indicator" bind:value={indicatorId}>
-						{#each indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
-					</select>
-				{/if}
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex: horizontal table scrolling needs keyboard focus -->
-				<div class="table-wrap" tabindex="0" role="region" aria-label={browser ? "The browser scenario’s totals by region" : "The job’s totals by region"}>
-					<table id="live-table">
-						<thead><tr>
-							{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
-						</tr></thead>
-						<tbody>
-							{#each view.rows as r (r.region)}
-								{@const change = displayChange(r.delta, r.baseline)}
-								<tr>
-									<th scope="row">{r.region}</th>
-									<td>{amountText(r.baseline, view.id)}</td>
-									<td>{amountText(r.scenario, view.id)}</td>
-									<td>{signedText(change, view.id)}</td>
-									<td>{pctText(r.baseline ? (100 * change) / r.baseline : null)}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+		<!-- a job the map cannot draw stays here; a mapped run's totals are in Details -->
+		{#if job && !mapped}
+			<div id="live-result">
+				<LiveTotals {job} {browser} />
 				<details>
 					<summary>Provenance ({browser ? "browser computation" : "live job"})</summary>
 					<dl id="live-provenance">
-						{#each view.provenance as [k, v]}
+						{#each browser ? browserProvenance(job) : liveProvenance(job, api) as [k, v]}
 							<dt>{k}</dt>
 							<dd>{#if k === "Scenario parameters"}<pre>{v}</pre>{:else}{v}{/if}</dd>
 						{/each}
 					</dl>
 				</details>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	</div>
 </section>

@@ -19,10 +19,12 @@ import {
 	theName,
 	wording,
 } from "../flows.js";
+import { BROWSER_STATUS } from "../browser-results.js";
+import LiveTotals from "./LiveTotals.svelte";
 import Provenance from "./Provenance.svelte";
 import { ui } from "./view.svelte.js";
 
-// text: the shown run's "if …" clause; live: {source, text, rows} for a run that is not precomputed, else null
+// text: the shown run's "if …" clause; live: {source, text, rows, job} for a run that is not precomputed, else null
 let { data, meta, sum, whatif, run, text, live } = $props();
 
 const TABS = [
@@ -287,6 +289,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 			<section class="part" aria-labelledby="live-provenance-heading">
 				<h2 id="live-provenance-heading">{live.source.heading}</h2>
 				<p>{live.source.note}</p>
+				<LiveTotals job={live.job} browser={live.source.status === BROWSER_STATUS} indicator={ui.indicator} />
 				<dl id="live-run-provenance">
 					{#each live.rows as [term, desc]}
 						<dt>{term}</dt>

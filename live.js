@@ -124,6 +124,57 @@ export function catalogName(item) {
 	);
 }
 
+// The catalogue lists each level in turn (sections, divisions, then products;
+// world, continents, then countries). Nest each item under the smallest earlier
+// item holding all its leaves (on a tie, the later, deeper one) and sort
+// siblings by name, Final demand first. Without leaves (the job API's
+// catalogue), keep its order, flat.
+export function catalogTree(items = []) {
+	if (!items.every((v) => Array.isArray(v.leaves))) return items.map((item) => ({ item, depth: 0, parent: null }));
+	const sets = items.map((v) => new Set(v.leaves));
+	const parent = items.map((v, i) => {
+		let best = -1;
+		if (!v.final)
+			for (let j = 0; j < i; j++)
+				if (
+					!items[j].final &&
+					sets[j].size >= v.leaves.length &&
+					(best < 0 || sets[j].size <= sets[best].size) &&
+					v.leaves.every((l) => sets[j].has(l))
+				)
+					best = j;
+		return best;
+	});
+	const children = items.map(() => []);
+	const roots = [];
+	for (const [i, p] of parent.entries()) (p < 0 ? roots : children[p]).push(i);
+	const order = (a, b) =>
+		Number(items[b].final === true) - Number(items[a].final === true) ||
+		catalogName(items[a]).localeCompare(catalogName(items[b]), "en");
+	const out = [];
+	const walk = (i, depth) => {
+		out.push({ item: items[i], depth, parent: parent[i] < 0 ? null : items[parent[i]].id });
+		for (const c of children[i].sort(order)) walk(c, depth + 1);
+	};
+	for (const r of roots.sort(order)) walk(r, 0);
+	return out;
+}
+
+// The items whose short or full name contains the query, with their ancestors
+// for context; match marks the items that matched themselves.
+export function filterTree(tree, query) {
+	const q = query.trim().toLowerCase();
+	if (!q) return tree;
+	const byId = new Map(tree.map((n) => [n.item.id, n]));
+	const matched = new Set(
+		tree.filter((n) => `${catalogName(n.item)} ${n.item.name}`.toLowerCase().includes(q)).map((n) => n.item.id),
+	);
+	const keep = new Set();
+	for (const id of matched)
+		for (let n = byId.get(id); n && !keep.has(n.item.id); n = byId.get(n.parent)) keep.add(n.item.id);
+	return tree.filter((n) => keep.has(n.item.id)).map((n) => ({ ...n, match: matched.has(n.item.id) }));
+}
+
 // The form submits one intervention. Its description retains both regional scopes.
 export function liveText(job, catalog) {
 	const step = job.scenario.model_details[0];
@@ -198,7 +249,11 @@ const JOB_SOURCE = {
 export function jobRun(job, meta, apiOrigin, text) {
 	const flows = liveFlows(job, meta);
 	if (!flows) return null;
-	return { run: `live-${job.id}`, ...flows, live: { source: JOB_SOURCE, text, rows: liveProvenance(job, apiOrigin) } };
+	return {
+		run: `live-${job.id}`,
+		...flows,
+		live: { source: JOB_SOURCE, text, rows: liveProvenance(job, apiOrigin), job },
+	};
 }
 
 // Poll GET /jobs/{id} until it leaves queued/running. fetchJson is injected for tests.
