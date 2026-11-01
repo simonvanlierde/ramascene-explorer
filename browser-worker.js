@@ -43,6 +43,15 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
 		}
 	} catch (e) {
-		self.postMessage({ id, error: e.message });
+		// A trap (out of memory, or a panic) leaves the kernel's memory held and its state
+		// unknown, so the page stops this worker.
+		if (e instanceof WebAssembly.RuntimeError)
+			self.postMessage({
+				id,
+				fatal: true,
+				error:
+					"the calculation stopped in this browser, likely out of memory; reload the page to try again, or choose a narrower selection",
+			});
+		else self.postMessage({ id, error: e.message });
 	}
 };

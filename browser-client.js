@@ -4,13 +4,14 @@ export function browserClient() {
 	let next = 0;
 	let stopped = false;
 	const base = new URL("data/browser-engine/", document.baseURI).href;
-	worker.onmessage = ({ data: { id, value, error } }) => {
+	worker.onmessage = ({ data: { id, value, error, fatal } }) => {
 		const task = pending.get(id);
 		if (!task) return;
 		clearTimeout(task.timeout);
 		pending.delete(id);
 		if (error) task.reject(new Error(error));
 		else task.resolve(value);
+		if (fatal) close();
 	};
 	function close() {
 		stopped = true;
