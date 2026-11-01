@@ -113,13 +113,18 @@ def fake_engine(
     return engine
 
 
+# The three original interventions: one final-demand and two coefficient scenarios, which the
+# failure tests below pick apart by name.
+ORIGINAL = precompute.SCENARIOS[:3]
+
+
 def run(engine):
-    return precompute.compute(engine, precompute.SCENARIOS, INDICATORS)
+    return precompute.compute(engine, ORIGINAL, INDICATORS)
 
 
 def test_grid_is_baseline_plus_every_scenario_by_indicator_by_region():
     computed = run(fake_engine())
-    assert list(computed["results"]) == ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
+    assert list(computed["results"]) == ["baseline", *(s["id"] for s in ORIGINAL)]
     for by_indicator in computed["results"].values():
         assert list(by_indicator) == ["1", "2"]
         for by_region in by_indicator.values():
@@ -137,7 +142,7 @@ def test_scenarios_run_one_at_a_time_and_release_the_previous_matrices():
 
 def test_run_records_carry_status_and_timing():
     computed = run(fake_engine())
-    assert set(computed["runs"]) == {*(s["id"] for s in precompute.SCENARIOS), "zero_change_control"}
+    assert set(computed["runs"]) == {*(s["id"] for s in ORIGINAL), "zero_change_control"}
     for name, r in computed["runs"].items():
         assert r["engine_s"] >= 0 and r["wall_s"] >= 0, name
         assert r.get("status") == ("passed" if name != "zero_change_control" else None)
@@ -280,7 +285,7 @@ def test_zero_change_control_uses_the_modified_A_path():
 
 
 def test_interventions_change_the_result():
-    results = run(fake_engine())["results"]
+    results = precompute.compute(fake_engine(), precompute.SCENARIOS, INDICATORS)["results"]
     for scenario in precompute.SCENARIOS:
         assert results[scenario["id"]] != results["baseline"], scenario["id"]
 
@@ -335,7 +340,7 @@ def test_document_carries_status_scenarios_verbatim_and_provenance():
     assert doc["regions"] == REGIONS
     assert doc["indicators"] == INDICATOR_META
     assert doc["scenarios"][0]["id"] == "baseline"
-    assert doc["scenarios"][1:] == precompute.SCENARIOS
+    assert doc["scenarios"][1:] == ORIGINAL
     assert doc["grid"] == precompute.GRID
     assert doc["failed"] == []
     p = doc["provenance"]
@@ -452,9 +457,11 @@ def test_page_fixture_is_synthetic_and_shaped_like_real_output():
     assert set(fixture["provenance"]["dataset"]) == set(PROVENANCE["dataset"])
     assert set(fixture["checks"]) == set(doc["checks"])
     ids = [s["id"] for s in fixture["scenarios"]]
-    assert ids[:4] == ["baseline", *(s["id"] for s in precompute.SCENARIOS)]
+    named = [s["id"] for s in precompute.SCENARIOS]
+    assert ids[0] == "baseline" and set(named) <= set(ids)
     grid_ids = {s["id"] for s in precompute.grid_scenarios()}
-    assert ids[4:] and set(ids[4:]) <= grid_ids  # a few grid cells, so the page pickers are exercised
+    others = set(ids) - {"baseline", *named}
+    assert others and others <= grid_ids  # a few grid cells, so the page pickers are exercised
     assert set(fixture["results"]) == set(ids)
     assert fixture["failed"] and {f["id"] for f in fixture["failed"]} <= grid_ids - set(ids)
     assert fixture["grid"] == precompute.GRID
@@ -525,7 +532,7 @@ def test_cli_refuses_to_write_when_the_engine_checkout_moves_during_the_run(tmp_
                 "--out",
                 str(out),
                 "--scenarios",
-                "original",
+                "named",
             ]
         )
     assert exit_info.value.code != 0

@@ -13,11 +13,11 @@ Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.jso
 
 ```sh
 pnpm install
-gh release download data-2011 --pattern embodied.parquet --dir data
+gh release download data-2011-r2 --pattern embodied.parquet --dir data
 pnpm dev
 ```
 
-[README.md](README.md#view) has the full steps, including the `curl` form of the download.
+[docs/develop.md](docs/develop.md#view) has the full steps, including the `curl` form of the download.
 
 ## Run the checks before you push
 
@@ -51,8 +51,8 @@ dependency review in `.github/workflows/hygiene.yml`.
 Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
 change or have the right to submit it under the MIT license: the
 [Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
-adds it; `git rebase --signoff upstream/main` (the branch you started from) adds it to commits you already made. The `dco`
-workflow fails a pull request from a fork with a commit that lacks it. Pull requests from a branch in this repository skip it.
+adds it. `git rebase --signoff upstream/main` (the branch you started from) adds it to commits you already made.
+The `dco` workflow fails a pull request from a fork if a commit lacks it. Pull requests from a branch in this repository skip it.
 
 ## Who maintains this
 

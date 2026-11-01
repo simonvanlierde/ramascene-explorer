@@ -197,7 +197,7 @@ def test_cli_records_the_parquet_files_size_and_hash_in_results(tmp_path, monkey
         precompute, "collect_provenance", lambda e, d, argv: {**PROVENANCE, "engine": precompute.engine_revision(e)}
     )
     argv = ["--run", "--engine", str(engine_dir), "--data", str(tmp_path), "--out", str(out)]
-    precompute.main([*argv, "--scenarios", "original", "--out-embodied", str(parquet)])
+    precompute.main([*argv, "--scenarios", "named", "--out-embodied", str(parquet)])
     record = json.loads(out.read_text())["provenance"]["embodied"]
     assert record == {"file": "e.pq", "bytes": parquet.stat().st_size, "sha256": precompute.sha256(parquet)}
     # the footer's provenance is the run's, without the record of the file it sits in

@@ -185,6 +185,7 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 			products: [
 				{ id: 1, leaves: Array.from({ length: 200 }, (_, i) => i) },
 				{ id: 82, leaves: [5] },
+				{ id: 83, leaves: [5, 6] },
 			],
 			regions: [
 				{ id: 1, leaves: Array.from({ length: 49 }, (_, i) => i) },
@@ -209,13 +210,18 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 	const final = meta.catalog.consumers.find((c) => c.final);
 	await assert.rejects(
 		scenarioFlows(data, [broad]),
-		/too broad to compute in the browser: it changes 1,600 supply rows \(200 products × 8 producing countries\)/,
+		/too broad to compute in the browser: it changes 1,600 product–country pairs \(200 products × 8 producing countries\)\. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it\./,
 	);
-	// several interventions: the total only, no single product × country count, and a
-	// row changed both as an input and in final demand counts once
+	// several interventions: the total only, no single product × country count; product 82's
+	// 8 rows are inside the broad selection, changed as an input and in final demand: counted once
 	await assert.rejects(
 		scenarioFlows(data, [{ ...broad, product: [82], consumedBy: [final.id] }, broad]),
-		/1,600 supply rows\./,
+		/1,600 product–country pairs\. Choose/,
+	);
+	// final demand for product 82 from every country: 41 pairs outside the broad selection
+	await assert.rejects(
+		scenarioFlows(data, [{ ...broad, product: [82], originReg: [1], consumedBy: [final.id] }, broad]),
+		/1,641 product–country pairs\. Choose/,
 	);
 	// the form runs the same check on the catalogue alone
 	assert.throws(() => plan(meta, [broad]), /too broad/);

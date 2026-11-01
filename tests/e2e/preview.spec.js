@@ -24,6 +24,6 @@ test("without JavaScript the page says so and links the README and data", async 
 	await expect(page.locator("noscript p")).toBeVisible();
 	await expect(page.getByRole("link", { name: "README on GitHub" })).toBeVisible();
 	await expect(page.getByRole("link", { name: "data/results.json" })).toHaveAttribute("href", "data/results.json");
-	await expect(page.getByRole("link", { name: "data-2011 release" })).toBeVisible();
+	await expect(page.getByRole("link", { name: "data-2011-r2 release" })).toBeVisible();
 	await context.close();
 });

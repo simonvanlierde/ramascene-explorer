@@ -2,7 +2,9 @@
 
 Switch to What if…, then open Custom scenario.
 Choose a product, its origin, a consuming industry and region, and a percentage
-change. Run scenario computes the result on your device. Choose **Final demand** to change spending. An industry selection changes inputs per unit of monetary output.
+change. Run scenario computes the result on your device. Choose **Final demand**
+to change spending. An industry selection changes inputs per unit of monetary
+output.
 The catalogue records this final-demand category as `Y: Final Consumption`.
 If `?api=` is also present, the job API takes precedence.
 
@@ -16,7 +18,7 @@ then downloads only the rows it needs: the changed rows of A, the part of L that
 links the changed rows to their consumers, one row of flow totals for each
 changed row, and the matching rows of baseline output X and final demand Y.
 
-The 153 published scenarios match RaMa-Scene's shipped results at relative 1e-6
+The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.
 
 The model has the same scope as the [published scenarios](scenarios.md): changes
@@ -24,8 +26,8 @@ to the 2011 economy, without forecasts, substitution or rebound. It accepts up
 to ten interventions. Broad changes and singular systems are refused with an
 error instead of returning a result.
 
-The work grows with the changed rows (R: one product from one producing
-country) and the consuming columns they feed (K: one industry in one consuming
+The work grows with the changed product–country pairs (R: one product from one
+producing country, a row of A) and the consuming columns they feed (K: one industry in one consuming
 country). Before reading matrices, the form and the worker estimate three costs
 from the catalogue and the manifest alone, and refuse a scenario that would:
 
@@ -33,11 +35,11 @@ from the catalogue and the manifest alone, and refuse a scenario that would:
 - hold more than 256 MiB of float64 working arrays, or
 - need more than 10 billion multiply-adds, counted as if every coefficient were nonzero.
 
-The form says so before Run, with the row count. Manufacturing used by
-electricity in every country (4,165 rows into 1,078 columns) and one country's
-whole final demand (9,800 rows) both fit. Every product from every country, or
-Europe's manufacturing feeding every European industry, does not: choose fewer
-products or regions. The [job API](interface.md#job-api) remains available for
+The form says so before Run, with the pair count. Manufacturing used by
+electricity in every country (4,165 pairs into 1,078 columns) and one country's
+whole final demand (9,800 pairs) both fit. Every product from every country, or
+Europe's manufacturing feeding every European industry, does not: choose a narrower
+product, fewer producing countries, or fewer industries or regions that use it. The [job API](interface.md#job-api) remains available for
 work outside the browser budget. The budgets exclude the baseline, metadata and
 decoder buffers; they are not a total browser memory limit.
 
@@ -136,14 +138,14 @@ node brightway-check/browser_check.js data/browser-engine
 CI=1 pnpm exec playwright test tests/e2e/browser-engine.spec.js
 ```
 
-The first command checks all 153 scenarios against `data/results.json` at relative
+The first command checks all 155 scenarios against `data/results.json` at relative
 1e-6. The second checks the agreement table's Dutch cement footprint, from H, at
 relative 1e-6. The browser test checks the worker, map, source label, retry and
 absence of external requests.
 
 ## What to precompute
 
-The page uses a hybrid approach. The 153 published scenarios and their map flows
+The page uses a hybrid approach. The published scenarios and their map flows
 are computed ahead of time. Browsing them never runs the browser solver. The
 custom route also reuses the precomputed inverse L, its flow totals H, baseline X
 and baseline flows. It solves only the small system for the selected changes.

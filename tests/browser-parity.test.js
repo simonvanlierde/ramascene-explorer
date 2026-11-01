@@ -6,7 +6,7 @@ import { scenarioFlows } from "../browser-engine.js";
 import { localRange } from "./local-range.js";
 
 const directory = process.env.BROWSER_ENGINE_DATA;
-test("all 153 browser scenarios match the shipped engine results at relative 1e-6", {
+test("all 155 browser scenarios match the shipped engine results at relative 1e-6", {
 	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async () => {
 	assert.ok(existsSync(`${directory}/manifest-v3.json`));
@@ -26,7 +26,7 @@ test("all 153 browser scenarios match the shipped engine results at relative 1e-
 	);
 	const reference = JSON.parse(readFileSync(new URL("../data/results.json", import.meta.url), "utf8"));
 	const scenarios = reference.scenarios.filter((s) => s.id !== "baseline");
-	assert.equal(scenarios.length, 153);
+	assert.equal(scenarios.length, 155);
 	const baseline = { id: "baseline", model_details: [{ ...scenarios[0].model_details[0], techChange: [0] }] };
 	let worst = 0;
 	for (const scenario of [baseline, ...scenarios]) {

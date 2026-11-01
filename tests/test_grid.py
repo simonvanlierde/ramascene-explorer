@@ -86,10 +86,16 @@ def test_consumed_by_is_the_fifteen_industry_sections():
     assert precompute.FINAL_CONSUMPTION not in precompute.INDUSTRY_SECTIONS
 
 
-def test_all_scenarios_are_the_three_originals_then_the_grid_with_unique_ids():
+def test_all_scenarios_are_the_named_ones_then_the_grid_with_unique_ids():
     ids = [s["id"] for s in precompute.ALL_SCENARIOS]
-    assert ids[:3] == ["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"]
-    assert ids[3:] == list(BY_ID) and len(set(ids)) == 153
+    assert ids[:5] == [
+        "vehicle-demand-europe",
+        "steel-in-vehicles-europe",
+        "cement-in-construction",
+        "coal-power-china",
+        "construction-demand-europe",
+    ]
+    assert ids[5:] == list(BY_ID) and len(set(ids)) == 155
     assert precompute.SCENARIO_SETS["all"]() == precompute.ALL_SCENARIOS
     assert precompute.SCENARIO_SETS["grid"]() == GRID
 
@@ -140,7 +146,7 @@ def test_shipped_provenance_names_the_engine_and_the_run(shipped):
     assert p["engine"]["label"] == f"{p['engine']['branch']} @ {p['engine']['commit'][:7]}"
     assert p["engine"]["dirty"] is False
     r = p["run"]
-    assert r["scenarios_run"] == r["passed"] + r["failed"] == 153
+    assert r["scenarios_run"] == r["passed"] + r["failed"] == 155
     assert r["octave_reference_files"] == 4 and r["octave_reference_values"] == 122
     assert r["peak_rss_bytes"]["max"] <= p["peak_rss_bytes"]
     assert (RESULTS.parent / "run-log.md").exists()

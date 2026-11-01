@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, runText, theName, wording } from "../flows.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording } from "../flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -16,24 +16,28 @@ $effect(() => {
 });
 
 // svelte-ignore state_referenced_locally
-const NAMED = ["vehicle-demand-europe", "steel-in-vehicles-europe", "cement-in-construction"].filter((id) =>
-	meta.runs.includes(id),
-);
-const KIND = { "vehicle-demand-europe": "Final demand" };
+const NAMED = FEATURED.filter((id) => meta.runs.includes(id));
 const grid = $derived(data.grid);
 const firstGrid = $derived.by(() => meta.runs.find((r) => data.scenarios.find((s) => s.id === r)?.grid));
 
 // the grid's three pickers, remembered while a named run is shown
 // svelte-ignore state_referenced_locally
 let gridPick = $state(pickerState(data, data.scenarios.find((s) => s.id === ui.run)?.grid ? ui.run : firstGrid));
-const onGrid = $derived(!NAMED.includes(ui.run));
+// the run the grid card or its pickers last chose: the grid card stays checked on it,
+// also on the grid cell the list features
+let gridRun = $state(null);
+const onGrid = $derived(!!data.scenarios.find((s) => s.id === ui.run)?.grid && (gridRun === ui.run || !NAMED.includes(ui.run)));
+// the checked card; null for a run outside the list (an original intervention, opened by link)
+const current = $derived(onGrid ? "grid" : NAMED.includes(ui.run) ? ui.run : null);
 const gridTarget = $derived(lookupGrid(data, gridPick));
 const gridMissing = $derived(onGrid && !meta.runs.includes(gridTarget.id));
 
 function pickGrid(key, value) {
 	gridPick = { ...gridPick, [key]: value };
 	const t = lookupGrid(data, gridPick);
-	if (meta.runs.includes(t.id)) setRun(t.id);
+	if (!meta.runs.includes(t.id)) return;
+	gridRun = t.id;
+	setRun(t.id);
 }
 
 // world change of a run, all sections, from the run's continental totals
@@ -47,11 +51,11 @@ function worldChange(id) {
 }
 
 // radio group: arrow keys move and select, as native radios do
-function radioKeys(e, list, current, choose) {
+function radioKeys(e, list, choose) {
 	const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
 	if (!d) return;
 	e.preventDefault();
-	const next = list[(list.indexOf(current) + d + list.length) % list.length];
+	const next = list[(list.indexOf(e.currentTarget.dataset.v) + d + list.length) % list.length];
 	choose(next);
 	e.currentTarget.parentElement.querySelector(`[data-v="${next}"]`)?.focus();
 }
@@ -82,9 +86,16 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(live.source.status) : `${KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : `${RUN_KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
-const chooseRun = (v) => (v === "grid" ? (gridTarget.id && meta.runs.includes(gridTarget.id) ? setRun(gridTarget.id) : setRun(firstGrid)) : setRun(v));
+function chooseRun(v) {
+	gridRun = null;
+	if (v !== "grid") return setRun(v);
+	// a picked cell that was never computed: show the first one, and point the pickers at it
+	if (!meta.runs.includes(gridTarget.id)) gridPick = pickerState(data, firstGrid);
+	gridRun = lookupGrid(data, gridPick).id;
+	setRun(gridRun);
+}
 
 const directionHint = $derived(
 	ui.dir === "in"
@@ -115,31 +126,31 @@ const directionHint = $derived(
 			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 		</div>
 		{#if ui.mode === "whatif"}
-			<div class="lab sub"><span id="run-l">Intervention</span><small>{meta.runs.length - 1} published scenarios</small></div>
+			<div class="lab sub"><span id="run-l">Scenario</span><small>{meta.runs.length - 1} published scenarios</small></div>
 			{#if !showRuns}
 				<div class="run chosen">
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
-					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the intervention" onclick={() => (showRuns = true)}>Change</button>
+					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the scenario" onclick={() => (showRuns = true)}>Change</button>
 				</div>
 			{:else}
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
 				{#each runOptions as v (v)}
-					{@const checked = v === "grid" ? onGrid : ui.run === v}
+					{@const checked = v === current}
 					<button
 						type="button"
 						class="run"
 						role="radio"
 						data-v={v}
 						aria-checked={checked}
-						tabindex={checked ? 0 : -1}
+						tabindex={checked || (current === null && v === runOptions[0]) ? 0 : -1}
 						onclick={() => pickRun(v)}
-						onkeydown={(e) => radioKeys(e, runOptions, onGrid ? "grid" : ui.run, chooseRun)}
+						onkeydown={(e) => radioKeys(e, runOptions, chooseRun)}
 					>
 						<span class="dot"></span>
 						{#if v === "grid"}
 							<span><b>Material efficiency, one product</b><small>{grid?.products.length ?? 0} products × 5 regions × {grid?.cuts.length ?? 0} cuts</small></span>
 						{:else}
-							<span><b>{capitalise(runText(data, v))}</b><small>{KIND[v] ?? "Material efficiency"} · {worldChange(v)}</small></span>
+							<span><b>{capitalise(runText(data, v))}</b><small>{RUN_KIND[v] ?? "Material efficiency"} · {worldChange(v)}</small></span>
 						{/if}
 					</button>
 				{/each}

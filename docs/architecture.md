@@ -2,7 +2,7 @@
 
 The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. The published site needs no calculation server.
-Opening it with `?api=` connects an optional job API.
+Open it with `?api=` to connect an optional job API.
 
 A worker computes custom scenarios from exported float32 matrices, in float64 arithmetic. It starts
 when a reader opens the custom-scenario form. [browser-engine.md](browser-engine.md) describes its data and checks.
@@ -22,7 +22,7 @@ data/results.json        data/embodied.parquet  (release asset)
               job API (ramascene-jobs), optional
 ```
 
-Each part has its own page; the README's Docs list links them all.
+Each part has its own page; [the docs index](README.md) links them all.
 
 `index.html` loads `src/main.js`, which mounts `src/App.svelte`. The Svelte
 files in `src/` draw the view. The logic that needs no browser lives in plain
@@ -35,7 +35,7 @@ modules next to `index.html`, so `node --test` can test it:
 | `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `map.js` | which map country belongs to which region |
 | `live.js` | the optional job API: origin check, request body, result reshaping |
-| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates, the small linear solve |
+| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse), the small linear solve |
 | `browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
 | `browser-results.js` | browser source labels, provenance and result shape |
 

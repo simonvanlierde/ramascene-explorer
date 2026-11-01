@@ -5,7 +5,7 @@ export const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
 	pill: "Browser method",
 	heading: "Custom calculation",
-	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates on matrices stored as float32. All 153 published scenarios match RaMa-Scene within relative 1e-6. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
+	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates on matrices stored as float32. All published scenarios match RaMa-Scene within relative 1e-6. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
 };
 
 export function browserProvenance(job) {

@@ -127,7 +127,7 @@ export function plan(meta, steps) {
 		const one = steps.length === 1 && edits.length === 1;
 		const detail = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
 		throw new Error(
-			`too broad to compute in the browser: it changes ${J.length.toLocaleString("en")} supply rows${detail}. Choose a narrower product or fewer producing countries.`,
+			`too broad to compute in the browser: it changes ${J.length.toLocaleString("en")} product–country pairs${detail}. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it.`,
 		);
 	}
 	return { edits, technical, rows, columns, finals, J, byRows, download };
