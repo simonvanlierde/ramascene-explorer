@@ -111,8 +111,10 @@ which returns exact byte ranges from complete cached shards. A cold cache fetche
 a complete shard internally; the browser receives only the requested range.
 These reads and the Parquet reads invoke the Worker and count toward its request
 allowance. Other static files are served directly. Each Parquet range request
-uses one R2 HEAD and one GET (two Class B operations); uploading the file uses
-one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
+uses one R2 GET (one Class B operation). A HEAD request, a range the Worker refuses
+and a request with `If-Range` read the object's size and ETag first, one more Class B
+operation. When R2 or the cache fails, the Worker answers 503 with `Retry-After`.
+Uploading the file uses one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
 
 Set up once:
 
