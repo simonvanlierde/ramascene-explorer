@@ -191,6 +191,7 @@ jobs:
       - name: check Cloudflare range reads and isolation
         run: |
           set -euo pipefail
+          pnpm build:cloudflare
           key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
           pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
           node node_modules/wrangler/bin/wrangler.js dev --port 4191 --ip 127.0.0.1 --local > /tmp/cloudflare.log 2>&1 &

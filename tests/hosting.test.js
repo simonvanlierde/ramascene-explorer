@@ -3,14 +3,26 @@ import { test } from "node:test";
 import worker from "../hosting/worker.js";
 
 const bytes = new TextEncoder().encode("PAR1data");
+const calls = [];
+// Follows R2: a range object is clamped to the end, and one that starts at or past it throws.
 const env = {
 	EMBODIED: {
 		async head() {
+			calls.push("head");
 			return { size: bytes.length, httpEtag: '"fixture"' };
 		},
-		async get(key, { range }) {
+		async get(key, { range } = {}) {
+			calls.push("get");
 			assert.match(key, /^embodied\/[a-f0-9]{64}\.parquet$/);
-			return { body: bytes.slice(range.offset, range.offset + range.length) };
+			const size = bytes.length;
+			let offset = range?.offset ?? 0;
+			let length = range?.length ?? size - offset;
+			if (range?.suffix !== undefined) {
+				length = Math.min(range.suffix, size);
+				offset = size - length;
+			}
+			if (offset >= size) throw new Error("get: The requested range is not satisfiable (10039)");
+			return { size, httpEtag: '"fixture"', body: bytes.slice(offset, offset + length) };
 		},
 	},
 };
@@ -49,7 +61,7 @@ test("the bucket is read-only and only the published file is reachable", async (
 	assert.equal((await request({}, "POST")).status, 405);
 	assert.equal((await request({}, "GET", "/private.parquet")).status, 404);
 	const res = await worker.fetch(new Request("https://example.test/data/embodied.parquet"), {
-		EMBODIED: { head: async () => null },
+		EMBODIED: { head: async () => null, get: async () => null },
 	});
 	assert.equal(res.status, 404);
 });
@@ -106,4 +118,52 @@ test("shard reads share one cache entry whatever the query string", async () => 
 	const post = await worker.fetch(new Request(`https://example.test${path}`, { method: "POST" }), shardEnv);
 	assert.equal(post.status, 405);
 	delete globalThis.caches;
+});
+
+test("a Parquet range costs one R2 read", async () => {
+	calls.length = 0;
+	assert.equal((await request({ Range: "bytes=0-1" })).status, 206);
+	assert.equal((await request()).status, 200);
+	assert.deepEqual(calls, ["get", "get"]);
+});
+
+test("a failing R2 read asks the browser to retry", async () => {
+	const down = async () => {
+		throw new Error("R2 unavailable");
+	};
+	for (const EMBODIED of [
+		{ head: down, get: down },
+		{ ...env.EMBODIED, get: down },
+	]) {
+		const res = await worker.fetch(
+			new Request("https://example.test/data/embodied.parquet", { headers: { Range: "bytes=0-1" } }),
+			{ EMBODIED },
+		);
+		assert.equal(res.status, 503);
+		assert.equal(res.headers.get("Retry-After"), "5");
+	}
+});
+
+test("a range in another unit is ignored and the unit name is case-insensitive", async () => {
+	const other = await request({ Range: "items=0-1" });
+	assert.equal(other.status, 200);
+	assert.equal(await other.text(), "PAR1data");
+	const upper = await request({ Range: "Bytes=0-1" });
+	assert.equal(upper.status, 206);
+	assert.equal(await upper.text(), "PA");
+});
+
+test("no range is satisfiable in an empty file", async () => {
+	const empty = {
+		EMBODIED: {
+			head: async () => ({ size: 0, httpEtag: '"empty"' }),
+			get: async () => ({ size: 0, httpEtag: '"empty"', body: new Response("").body }),
+		},
+	};
+	const res = await worker.fetch(
+		new Request("https://example.test/data/embodied.parquet", { headers: { Range: "bytes=-5" } }),
+		empty,
+	);
+	assert.equal(res.status, 416);
+	assert.equal(res.headers.get("Content-Range"), "bytes */0");
 });
