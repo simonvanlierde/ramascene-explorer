@@ -203,6 +203,9 @@ The [recorded diagnostics](measurements/browser-engine-zarr.json) used Node
 | manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s |
 | China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s |
 
+The 150 ms row predates 64 parallel ranges per array; re-timed afterwards, the
+same case took about 415 ms.
+
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
 used a paired method, so compare them with care. Use these numbers to locate
 costs, not to promise phone or network performance.
