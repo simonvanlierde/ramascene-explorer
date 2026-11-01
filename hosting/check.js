@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { chromium, expect, firefox, webkit } from "@playwright/test";
 
 const base = process.argv[2];
-if (!base) throw new Error("Usage: node hosting/check.js https://your-staging-host/");
+if (!base) throw new Error("Usage: node hosting/check.js https://simonvanlierde.com/ramascene-explorer/");
 const url = (path) => new URL(path, base);
 const home = await fetch(url(""));
 assert.equal(home.status, 200);

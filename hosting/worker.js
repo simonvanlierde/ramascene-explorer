@@ -22,7 +22,7 @@ async function shard(request, env) {
 
 export default {
 	async fetch(request, env) {
-		// production serves the site under BASE_PATH (wrangler.jsonc); staging at the root
+		// the site lives under BASE_PATH (wrangler.jsonc); unset, it is at the root
 		const base = env.BASE_PATH ?? "";
 		const { pathname } = new URL(request.url);
 		const path = pathname.startsWith(`${base}/`) ? pathname.slice(base.length) : "";

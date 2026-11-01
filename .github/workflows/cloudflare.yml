@@ -1,28 +1,32 @@
 name: cloudflare
 
+# Production deploys from main; each pull request from this repository uploads a
+# version with a preview alias, served on workers.dev (docs/publishing.md#cloudflare).
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
-    inputs:
-      target:
-        description: Where to deploy
-        type: choice
-        options: [staging, production]
-        default: staging
 
 permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-${{ inputs.target }}
-  cancel-in-progress: false
+  # one production deploy at a time; a newer push to a pull request replaces its upload
+  group: cloudflare-${{ github.event.pull_request.number || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    name: build and deploy ${{ inputs.target }}
-    # Run workflow offers every branch; only main publishes. The environment allows
-    # main only too, and holds the token, so no other job can read it.
-    if: github.ref == 'refs/heads/main'
-    environment: cloudflare
+  deploy:
+    name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+    # Forks get no secrets, so their pull requests get no preview. Run workflow offers
+    # every branch; only main publishes production.
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+      || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
+    environment:
+      name: cloudflare
+      url: ${{ steps.publish.outputs.url }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -64,21 +68,27 @@ jobs:
       - uses: ./.github/actions/engine
       - run: pnpm build
 
-      - name: publish ${{ inputs.target }}
+      - name: publish
+        id: publish
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          TARGET: ${{ inputs.target }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Set the CLOUDFLARE_API_TOKEN secret on the cloudflare environment"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Set the CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
           key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
           pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote
-          if [ "$TARGET" = production ]; then
-            pnpm exec wrangler deploy --env production
-          else
-            # staging stays out of search results; production is indexed like the Pages site
+          if [ "$EVENT" = pull_request ]; then
+            # previews stay out of search results; each version keeps its own _headers
             printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
+            pnpm exec wrangler versions upload --preview-alias "pr-$PR" | tee "$RUNNER_TEMP/upload.log"
+            url=$(grep -oE "https://pr-$PR-[a-z0-9.-]+\.workers\.dev" "$RUNNER_TEMP/upload.log" | head -1)
+            test -n "$url" || { echo "No preview URL in the upload output"; exit 1; }
+            echo "url=$url/ramascene-explorer/" >> "$GITHUB_OUTPUT"
+          else
             pnpm exec wrangler deploy
+            echo "url=https://simonvanlierde.com/ramascene-explorer/" >> "$GITHUB_OUTPUT"
           fi

@@ -81,20 +81,23 @@ a snapshot, not a gate.
 
 ## Cloudflare
 
-`wrangler.jsonc` describes two Workers that serve the same build:
+`wrangler.jsonc` describes one Worker, `ramascene-explorer`, on the routes
+`simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
+`assets.base_path` serves `dist/` under that prefix, so the domain's other pages stay on
+GitHub Pages. The routes take effect once the domain's DNS records are proxied through
+Cloudflare; until then GitHub Pages serves the site at the same address.
 
-- **Staging**, `ramascene-explorer-staging` on `workers.dev`, at the root. Its pages also
-  send `X-Robots-Tag: noindex`, which the deploy adds to `_headers`.
-- **Production**, `ramascene-explorer` (`--env production`), on the routes
-  `simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
-  `assets.base_path` serves `dist/` under that prefix, so the domain's other pages stay on
-  GitHub Pages. The routes take effect once the domain's DNS records are proxied through
-  Cloudflare; until then GitHub Pages serves the site at the same address.
+`cloudflare.yml` deploys it on every push to `main`. Each pull request from this
+repository uploads a version without deploying it, with the alias `pr-<number>`. Its
+version URL, `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
+shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
+`X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
+forks get no secrets, so they get no preview.
 
-Both send COOP and COEP headers so browsers can use shared memory. The current kernel
+The site sends COOP and COEP headers so browsers can use shared memory. The current kernel
 still uses one thread; hosting alone does not make calculations multithreaded.
-Paths in `_headers` and `run_worker_first` are public paths, so production's carry the
-prefix, and the Worker drops `BASE_PATH` before it matches the data paths.
+Paths in `_headers` and `run_worker_first` are public paths, so they carry the prefix,
+and the Worker drops `BASE_PATH` before it matches the data paths.
 
 The app, fonts, maps and browser dataset ship as static assets. The Parquet file
 exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
@@ -111,42 +114,35 @@ allowance. Other static files are served directly. Each Parquet range request
 uses one R2 HEAD and one GET (two Class B operations); uploading the file uses
 one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
 
-To deploy staging from a prepared checkout:
+Set up once:
 
-1. Run `pnpm exec wrangler login` and select the Cloudflare account.
-2. Enable R2 in that account. Run `pnpm exec wrangler r2 bucket create ramascene-explorer-data` once.
-3. Build the kernel with `engine/build.sh`. Run `pnpm build` with the verified release data present.
-4. Upload the pinned object, then deploy:
+1. Enable R2 in the Cloudflare account and create the bucket:
+   `pnpm exec wrangler r2 bucket create ramascene-explorer-data`.
+2. Create a `cloudflare` GitHub environment with the secret `CLOUDFLARE_API_TOKEN`, and set
+   the repository variable `CLOUDFLARE_ACCOUNT_ID`. The environment allows every branch,
+   because pull requests deploy previews. Scope the token to the account with Workers
+   Scripts Write and Workers R2 Storage Write, and to the simonvanlierde.com zone with
+   Workers Routes Write. Local OAuth login does not configure GitHub Actions.
 
-   ```sh
-   key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
-   pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote
-   pnpm exec wrangler deploy
-   ```
+Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
+local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
+covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
+isolation, the map and a custom calculation in Chromium, Firefox and WebKit. To run it
+yourself, build the kernel and the site, then:
 
-5. Run `node hosting/check.js https://<staging-host>/` with Playwright's browsers installed.
-   It checks HEAD and exact ranges for both data sources, immutable shard caching,
-   cross-origin isolation, the map and a custom calculation in Chromium, Firefox and WebKit.
+```sh
+key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
+pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
+pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local
+node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another terminal
+```
 
-`cloudflare.yml` deploys by hand from `main`, to staging or production, after the bucket
-exists. Put `CLOUDFLARE_API_TOKEN` on the `cloudflare` GitHub environment, which allows
-`main` only, and set the repository variable `CLOUDFLARE_ACCOUNT_ID`. Scope the token to
-the account with Workers Scripts Write and Workers R2 Storage Write, and to the
-simonvanlierde.com zone with Workers Routes Write for the production routes. Local OAuth login does not configure GitHub Actions.
-Release files are checksum-verified before upload. CI runs the same browser check
-against the local Workers runtime with a local R2 object; it needs no Cloudflare credentials.
-
-For a local check, upload with `--local` instead of `--remote`, then start
-`pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local`.
-Run `node hosting/check.js http://127.0.0.1:4191/` in another terminal.
+Pass a preview's version URL instead to check a pull request's deployment.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
-To check production locally, add `--env production` to the upload and to `wrangler dev`,
-and run the check against `http://127.0.0.1:4191/ramascene-explorer/`.
-Do not switch the production domain until the check also passes on the deployed staging URL.
 
 To switch production from GitHub Pages:
 
-1. Deploy staging and run the check on its URL, then deploy production.
+1. Run the check against a pull request's preview URL.
 2. In Cloudflare, proxy the simonvanlierde.com DNS records and set SSL/TLS to Full, not
    Full (strict): GitHub's certificate renewal can fail behind the proxy.
 3. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
