@@ -185,7 +185,7 @@ async function submit(event) {
 	<div id="live-body" class="live-body" hidden={!open}>
 		<!-- the card already says where a browser run is computed -->
 		{#if !browser}<p class="live-label" id="live-label">Results are {status}.</p>{/if}
-		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
+		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One change to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
 			<Picker id="live-product" label="Product" tree={trees.products} bind:value={pick.product} />

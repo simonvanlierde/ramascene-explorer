@@ -62,10 +62,10 @@ const checks = $derived.by(() => {
 			verified,
 			`${regionValues.toLocaleString("en")} world-region totals (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} world regions), recomputed outside the engine from indicator intensities (B), supply-chain requirements (L) and final demand (ΣY), match within relative 1e-9.`,
 		],
-		[control.passed, "A 0% intervention through the same modified-coefficient path reproduces the baseline."],
+		[control.passed, "A 0% scenario through the same modified-coefficient path reproduces the baseline."],
 		[
 			directionOk,
-			"Every published intervention changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
+			"Every published scenario changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
 				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")}).` : "."),
 		],
 	];

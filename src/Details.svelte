@@ -270,14 +270,19 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<section class="part" aria-labelledby="meaning-heading">
 			<h2 id="meaning-heading">What the numbers mean</h2>
 			<p>
-				The map traces supply chains from final demand to the industries where {w.source}.
-				Final demand includes household spending, government spending and investment.
-				Consumption adds the flows serving the selected country or region. Production adds the flows originating there.
+				What we consume connects us to environmental impacts across global supply chains.
+				The map follows those links from final demand, what households, governments and investors buy, to the industries where {w.source}.
+				Its consumption adds up the flows that serve the selected country or region. Its production adds up the flows that start there.
 			</p>
 			<p>
-				RaMa-Scene calculates these links with a demand-pull Leontief input–output model using {data.provenance.dataset.name} for {data.base_year}.
-				What if… changes spending or input requirements per unit of output, then recalculates the supply chain.
-				Prices and all unselected coefficients stay fixed. The model includes no substitution or rebound response. These are scenarios for the 2011 economy, not forecasts.
+				What if… shows how one change in one place ripples through supply chains worldwide.
+				A scenario changes the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain.
+				Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound.
+				These are scenarios for the 2011 economy, not forecasts.
+			</p>
+			<p>
+				Method: RaMa-Scene calculates these links with a demand-pull Leontief input–output model, using {data.provenance.dataset.name} for {data.base_year}.
+				A scenario scales the selected technical coefficients or final demand, then solves the model again.
 			</p>
 			<p>
 				GHG means greenhouse-gas emissions, measured in megatonnes of CO₂-equivalent. Metal ores are measured in megatonnes extracted.

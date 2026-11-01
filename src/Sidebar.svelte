@@ -19,7 +19,8 @@ $effect(() => {
 const NAMED = FEATURED.filter((id) => meta.runs.includes(id));
 const KIND = {
 	"vehicle-demand-europe": "Final demand",
-	"construction-demand-europe": "Final demand",
+	// first use of the term on the page, so it carries its gloss
+	"construction-demand-europe": "Final demand: what households, governments and investors buy",
 	"coal-power-china": "Electricity use",
 };
 const grid = $derived(data.grid);
@@ -118,11 +119,11 @@ const directionHint = $derived(
 			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 		</div>
 		{#if ui.mode === "whatif"}
-			<div class="lab sub"><span id="run-l">Intervention</span><small>{meta.runs.length - 1} published scenarios</small></div>
+			<div class="lab sub"><span id="run-l">Scenario</span><small>{meta.runs.length - 1} published scenarios</small></div>
 			{#if !showRuns}
 				<div class="run chosen">
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
-					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the intervention" onclick={() => (showRuns = true)}>Change</button>
+					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the scenario" onclick={() => (showRuns = true)}>Change</button>
 				</div>
 			{:else}
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">

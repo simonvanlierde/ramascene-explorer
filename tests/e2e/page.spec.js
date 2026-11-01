@@ -74,7 +74,7 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(
 		"European final demand for construction work fell by 20%",
 	);
-	await page.getByRole("button", { name: "Change the intervention" }).click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await expect(page.getByRole("radio", { name: /construction work fell/i })).toHaveAttribute("aria-checked", "true");
 });
 
@@ -410,7 +410,7 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	);
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
-	await page.getByRole("button", { name: "Change the intervention" }).click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page.locator("#headline")).toContainText(
 		"European final demand for construction work fell by 20%",
@@ -499,7 +499,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await started;
 	hold = false;
 	// picking a run folds the list: open it again for the second pick
-	await page.getByRole("button", { name: "Change the intervention" }).click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	const headline = page.locator("#headline");
 	await expect(headline).toContainText("European final demand for construction work fell by 20%");
@@ -686,5 +686,5 @@ test("the grid's pickers fold with their own Done, named apart from the sheet's"
 	expect(await page.getByRole("button", { name: "Done", exact: true }).count()).toBeLessThanOrEqual(1);
 	await page.getByRole("button", { name: "Done picking the product, region and cut" }).click();
 	await expect(page.locator(".gridpick")).toHaveCount(0);
-	await expect(page.getByRole("button", { name: "Change the intervention" })).toBeFocused();
+	await expect(page.getByRole("button", { name: "Change the scenario" })).toBeFocused();
 });

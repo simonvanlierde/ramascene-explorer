@@ -22,7 +22,7 @@ data/results.json        data/embodied.parquet  (release asset)
               job API (ramascene-jobs), optional
 ```
 
-Each part has its own page; the README's Docs list links them all.
+Each part has its own page; [the docs index](README.md) links them all.
 
 `index.html` loads `src/main.js`, which mounts `src/App.svelte`. The Svelte
 files in `src/` draw the view. The logic that needs no browser lives in plain

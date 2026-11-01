@@ -43,7 +43,7 @@ const view = $derived.by(() => {
 <div class="table-wrap" tabindex="0" role="region" aria-label={browser ? "The browser scenario’s totals by region" : "The job’s totals by region"}>
 	<table id="{ids}-table">
 		<thead><tr>
-			{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
+			{#each ["Region", "Baseline", "Scenario", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
 		</tr></thead>
 		<tbody>
 			{#each view.rows as r (r.region)}
