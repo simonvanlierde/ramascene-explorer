@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { LIMITS, plan, scenarioFlows } from "../browser-engine.js";
+import { LIMITS, plan, readKey, scenarioFlows, startReads } from "../browser-engine.js";
 import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
@@ -538,4 +538,21 @@ test("invalid selections are refused with a message that names the problem", () 
 	} finally {
 		LIMITS.work = saved;
 	}
+});
+
+test("reads started before Run serve a run with the same slices, and only that run", async () => {
+	const data = tiny(0.1, 0.2, 0.1, 0.1);
+	const want = await scenarioFlows(data, [step()]);
+	// another percentage of the same selection reads the same slices
+	const ahead = {
+		key: readKey(plan(data.meta, [step({ techChange: [-50] })])),
+		reads: startReads(data, plan(data.meta, [step()])),
+	};
+	const before = data.log.length;
+	assert.deepEqual(await scenarioFlows(data, [step()], ahead), want);
+	assert.equal(data.log.length, before, "the run read nothing more");
+	// a different selection ignores them and reads its own
+	const other = await scenarioFlows(data, [step({ consumedBy: [20] })], ahead);
+	assert.ok(data.log.length > before);
+	assert.ok(other.every(Number.isFinite));
 });
