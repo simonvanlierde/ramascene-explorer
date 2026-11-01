@@ -4,11 +4,10 @@ import "@fontsource/public-sans/latin-600.css";
 import "@fontsource/public-sans/latin-700.css";
 import "@fontsource/spectral/latin-400.css";
 import "@fontsource/spectral/latin-600.css";
-import { BAND, SELF } from "../flows.js";
 import App from "./App.svelte";
 import "./app.css";
+import { applyTheme } from "./view.svelte.js";
 
-// one source for the colours the map and the interface share
-document.documentElement.style.setProperty("--self", SELF);
-document.documentElement.style.setProperty("--acc", BAND);
+// before the first render, so a dark page never flashes light
+applyTheme();
 mount(App, { target: document.body });

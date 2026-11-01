@@ -147,3 +147,8 @@ The map uses Natural Earth outlines. Malta is too small for this geometry and ap
 The five “Rest of …” regions combine their Natural Earth countries, as `REST_OF` in `map.js` lists them.
 Those boundaries can differ from EXIOBASE's country groups at the edges.
 See the [geometry source and processing](architecture.md#map-geometry).
+
+## Theme
+
+The page follows your system's light or dark setting. The sun or moon button in the header
+switches between them, and this browser keeps your choice.
