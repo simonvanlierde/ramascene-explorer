@@ -9,14 +9,14 @@ Both test steps fail below a line-coverage floor: `fail_under` in
 script in `package.json` for the JS modules (not the Svelte files).
 
 The page jobs read the synthetic fixtures and the shipped results. CI
-downloads `embodied.parquet` from the `data-2011` release and checks it with
+downloads `embodied.parquet` from the `data-2011-r2` release and checks it with
 `sha256sum --check data/embodied.sha256`. In CI the real-data checks fail
 rather than skip when the file is missing. The browser tests run in Chromium
 (light, dark and a phone), Firefox, desktop Safari and an iPhone (WebKit),
 with axe checking WCAG 2.2 AA.
 
 The page jobs also download the [browser dataset](browser-engine.md#build-or-download-the-data),
-verify `data/browser-engine-rows.sha256`, and rerun all 153 scenarios at relative 1e-9
+verify `data/browser-engine-rows.sha256`, and rerun all 155 scenarios at relative 1e-9
 with `BROWSER_ENGINE_DATA=data/browser-engine`. The browser smoke test uses the
 real export. The other agreement routes use committed results; only the browser
 route is rerun in these jobs.
@@ -44,7 +44,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanl
 
 `release.yml` attests what a release ships: the `dist` tarball with its
 `SHA256SUMS` when a `v*` release is published, and `embodied.parquet` on
-`data-2011` when run by hand from `main`. To check a downloaded file:
+`data-2011-r2` when run by hand from `main`. To check a downloaded file:
 
 ```sh
 gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-workflow simonvanlierde/ramascene-explorer/.github/workflows/release.yml
