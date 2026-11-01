@@ -3,7 +3,8 @@
 ## URL parameters
 
 The URL stores filters and published scenarios. It does not store custom results;
-a shared link opens the last published scenario with the current filters. A missing or out-of-range value falls back to its default, and defaults
+a shared link opens the last published scenario with the current filters.
+A missing or out-of-range value falls back to its default. Defaults
 are left out of the link. `data`, `api` and `compute` survive when the page rewrites it.
 Code: `parseView` and `viewSearch` in `flows.js`, `data` in `explorer.js`, `api`
 in `live.js`.

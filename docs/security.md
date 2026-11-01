@@ -19,7 +19,8 @@ markup.
 
 The custom-scenario worker reads only the page's own browser dataset.
 It sends no scenario to an external service. Matrix dimensions, finite values,
-ids and percentage bounds are checked. Each A/L row response is limited to
+ids and percentage bounds are checked. Each response for one row of A (the technical
+coefficients) or one column of L (the Leontief inverse) is limited to
 128 KiB while streaming. Other matrix reads refuse a server that ignores Range.
 The worker stops after a two-minute request timeout. The data archive is pinned
 by `data/browser-engine-rows.sha256` in CI and publishing.
