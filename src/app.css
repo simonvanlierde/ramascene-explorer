@@ -1136,7 +1136,7 @@ svg.map.live .rg {
   top: calc(var(--top) + var(--banner-h, 0px));
   right: 0;
   bottom: 0;
-  width: min(520px, 100vw);
+  width: min(640px, calc(100vw - var(--side)));
   background: var(--card);
   border-left: 1px solid var(--rule);
   box-shadow: -18px 0 40px -26px rgb(31 42 51 / 35%);
