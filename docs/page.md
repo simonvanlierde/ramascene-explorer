@@ -1,128 +1,113 @@
-# The page
+# Read the map
 
-The page reads `data/results.json` (scenarios, continental totals, checks and
-provenance) and the embodied flows ([precompute.md](precompute.md#embodied-flows)).
-It shows one question at a time:
+Choose a country or region, trace its consumption footprint, then try a published scenario.
+The map links final demand to production across global supply chains using EXIOBASE v3.3.sm for 2011.
+Final demand includes household spending, government spending and investment.
 
-- **Flows, 2011.** A sentence names the selected country's footprint (or what
-  it releases), and its country and indicator are controls you can change.
-  The map draws the largest flows as tapered bands, thin where a flow leaves
-  and wide where it arrives. It fills each region by the size of its flow
-  with the selected country. The map is flat (Equal Earth) or a globe.
-  - Partners within 5° of great circle (about 550 km) get no band on either
-    map; the fill shows them.
-  - Further partners get a band where it fits outside the collar, the circle
-    where the bands meet the selected country. Zooming in makes room for more:
-    for Germany, Italy's band appears once you zoom in on the flat map.
-  - The wheel, a trackpad pinch or a two-finger pinch zooms the map, up to
-    8×, and the + and − buttons zoom toward the selected country; once zoomed,
-    a reset button returns to the whole map. The zoom goes into the link
-    (`zoom`). On the zoomed flat map a drag pans; on the globe it turns the
-    globe. In the phone layout (760 px wide and less), where the page scrolls,
-    the wheel scrolls the page and zooms only with Ctrl or ⌘ held; one finger
-    still scrolls the page past the unzoomed flat map, and the zoom buttons sit
-    at the map's bottom left. Flow labels never go under the map's controls or
-    legend.
-  - On the globe, a band from a partner over the horizon starts at the edge.
-- **Industry rail.** One tab per section, its height the section's share of
-  the selection. A click isolates one section, and further clicks add or
-  remove sections. Every number on the page follows the selection, in both
-  modes.
-- **What if…** The bands keep their 2011 width and take the run's % change as
-  their colour. The colour scale is square-root and fitted to the flows on
-  screen: 90% of the larger flows fall inside it, and the rest take the end
-  colour. A scrubber runs from the 2011 baseline to the run and replays on
-  every switch. Five cards show the change released in each continent.
-- **Details.** A Sankey (released in → industry → consumed in), the same
-  flows as a sortable table, and the method with every check.
-  - Download CSV saves the table's rows at full precision, in the table's
-    unit. The file name states the basis: year, region, indicator,
-    direction, sections, run, and "synthetic" for test data.
-  - Copy link copies the current view's URL.
+## Follow a footprint
 
-On load the page fetches `data/results.json`, then reads the Parquet footer
-by range request, using the size recorded in `provenance.embodied.bytes`.
-Without that record (an older `results.json`), or when no footer is found at
-that size, it sends a HEAD request first to ask the server for the size. Then
-it reads the baseline row group and draws the map. The default What if… run
-loads when the browser is idle. Each run is fetched once, on demand.
+**Its consumption** shows where emissions, employment or extraction occur to supply the selected region's final demand.
+**Its production** shows which regions' final demand is served by production located there.
+These are supply-chain links, not shipping routes or direct bilateral trade.
 
-The selection lives in the query string
-([interface.md](interface.md#url-parameters)), so every view can be shared;
-links from the first version (`?scenario=&indicator=&region=`) still open
-their run.
+The headline reports the selected total. Bands show the largest flows;
+a band widens toward its destination. Region fills include flows too small or too close to draw as bands.
+Select an industry section to isolate it. Select more sections to combine them.
+Every total follows that selection. The rail's heights show each section's share of the baseline flows.
 
-The five "Rest of …" regions merge their Natural Earth countries (see
-`REST_OF` in `map.js`); EXIOBASE's own concordance may differ at the edges.
+Choose **Details** for the same flows as a Sankey diagram or sortable table.
+The diagram follows producer → industry → consumer.
+**Download CSV** saves the table at full precision, in its displayed unit.
+Its filename records the year, region, indicator, direction, sections and scenario;
+synthetic data is also marked in the filename.
 
-The page shows GHG emissions and metal-ore extraction in megatonnes (the data
-holds kg CO2 eq and kt), and employment in jobs (the data holds thousands of
-persons).
+## Compare a scenario
 
-## First-load size
+Open **What if…** and select a published intervention.
+The [scenario guide](scenarios.md) explains the exact quantity and geographic scope of each change.
+The bands retain their baseline width. Their colour shows percentage change from the 2011 baseline.
+The five world-region summaries show where that change occurs.
+The scrubber moves between baseline and scenario and replays when the scenario changes.
 
-A cold first load of the live page, up to the default What if… run, transfers
-about 0.98 MB (980,407 bytes, headers included) and unpacks to 1.65 MB. Data is
-0.80 MB of that: `results.json` (77 KB gzipped), the map geometry (28 KB) and
-three range requests into `embodied.parquet` (the footer, 131 KB; the
-baseline, 342 KB; the default run, 222 KB). The rest is fonts (89 KB), the
-script (81 KB), CSS (6 KB) and HTML (2 KB). Measured on 2026-10-26, median of
-three loads with the cache off:
+The colour scale adjusts to the flows on screen and uses a square-root transformation.
+It contains 90% of the larger flows; more extreme changes use the end colour.
+Compare the printed percentages when comparing different selections, since their colour scales can differ.
 
-```sh
-pnpm measure-load [url] [runs]
-```
+These are changes to the 2011 economy, not forecasts.
+Prices and unselected input requirements stay fixed. The model includes no substitution or rebound response.
+A reduction in an indicator is a calculation result; its desirability depends on the indicator and context.
 
-## Map geometry
+## Units and calculation checks
 
-`geo/countries-110m.topo.json` is Natural Earth 1:110m Admin 0 – Countries,
-**v5.1.2** (public domain), from
-`nvkelso/natural-earth-vector` tag `v5.1.2`, `geojson/ne_110m_admin_0_countries.geojson`
-(sha256 `6866c877…c977f`). I kept only the properties `iso` (`ISO_A2_EH`;
-Somaliland as `SO`, N. Cyprus `null`) and `name`, dropped Antarctica and the
-French Southern Lands, and converted it with `geo2topo -q 1e4`
-(topojson-server 3.0.1).
-Malta is below the 1:110m threshold and appears only in the table.
+- **GHG:** greenhouse-gas emissions, in megatonnes of CO₂-equivalent (Mt CO₂-eq).
+- **Metal ores:** extraction in megatonnes (Mt).
+- **Employment:** people employed attributed to demand, labelled “jobs”. It does not measure full-time equivalents or net job creation.
+
+The source data records these in kg CO₂-eq, kt and thousands of persons, respectively.
+**Details → Method** explains the model and numerical checks.
+**Checks passed** means those calculation checks passed, not that a scenario has been empirically validated.
+
+## Navigate and share
+
+Select a region on the map or type its name or code in the country selector.
+Switch between **Flat** and **Globe**. Use the zoom buttons, scroll or pinch to zoom up to 8×.
+Drag a zoomed flat map to pan; drag the globe to turn it.
+On phones (760 px wide or less), ordinary scrolling moves the page;
+hold Ctrl or ⌘ to zoom with the wheel. One finger scrolls past the unzoomed flat map.
+**Reset zoom** returns to the whole map.
+
+Nearby partners within 5° (about 550 km) have no band; their fill still shows the flow.
+Other bands appear when they fit outside the collar around the selected region.
+Zooming can reveal more bands. A globe flow from beyond the horizon starts at the edge.
+Labels avoid the map controls and legend.
+
+**Copy link** shares filters, map position and the selected published scenario.
+A custom result is not stored in the URL: its link opens the last published scenario with the current filters.
+See the [URL parameter reference](interface.md#url-parameters).
+Links from the first version still open their published scenario.
+
+## Custom scenarios
+
+With [`?compute=1`](browser-engine.md), the page calculates a custom scenario on your device.
+With `?api=<origin>`, it sends the scenario to a job API instead.
+If both are present, the job API takes precedence.
+Both modes add a **Custom scenario** card under What if…; on phones it is in the selection sheet.
+Without either parameter, the page loads only the published results and interface files.
+
+For an industry, the percentage changes selected input requirements per unit of output.
+For **Final demand**, it changes spending on the selected product and origin.
+The resulting total use is calculated by the model; it is not fixed to that percentage.
+A completed custom scenario replaces the map's scenario while keeping its own baseline and provenance.
+Choose a published scenario to return to the stored results.
 
 ## Live scenarios (optional)
 
-With `?api=<origin>` What if… adds a "Custom scenario" card under the run list
-(in the selection sheet on a phone). Its form sends one intervention (product,
-origin region, consuming sector, consuming region, change in %) to the
-RaMa-Scene job API (`ramascene-jobs`) and polls for the result. The change is
-held to the range the job API states in `GET /catalog` (`tech_change_percent`,
-−100 to +1000). When nothing answers, the card says so and offers Try again. The
-result is compared with the baseline computed in the same job and labelled
-"computed live by the job API, not precomputed", with its own provenance: engine
-commit, dataset, the job's duration and peak memory.
+The job API form sends one intervention and polls for its result.
+The allowed change comes from `GET /catalog` (−100% to +1000% if no range is supplied).
+If the API cannot be reached, the panel offers **Try again**; published scenarios remain available.
+The result is labelled “computed by the job API”. Its provenance records the API origin,
+engine commit, dataset, duration and peak memory. Check the origin before relying on its results.
+The published scenarios' checks do not cover that custom run.
 
-When the job API returns the job's embodied flows (`ramascene-jobs` does from
-its flows release on), the page also shows them as the run in What if…: the
-map, the continent strip, the sentence and Details draw the job's flows against
-the job's own baseline, the same way they draw a precomputed run. A job that
-finishes while Flows is shown waits in What if… until the reader goes back. The status
-line then reads "computed live by the job API, not precomputed", the trust pill
-reads "Live job: not checked" instead of Verified, and Details → Method lists
-the job's provenance above the precomputed checks, which do not cover it. The flows must have the precomputed file's layout (the same 49
-countries, 15 sections and three indicators); a job without them, or with
-another layout, stays in the panel only.
-
-A live run never enters the page's link: the link keeps the last precomputed
-run, so a shared view never points at a job its reader cannot reach. Picking a
-precomputed run in the sidebar replaces the live one.
-
-Without `?api=` the panel stays hidden and its code is not loaded. The page
-then fetches only its own files: `data/results.json`, `data/embodied.parquet`,
-the map geometry and the fonts.
-
-What `?api=` accepts is in [security.md](security.md#what-api-accepts), and
-the calls the page makes are in [interface.md](interface.md#job-api).
+A job with embodied flows can update the map only if its layout matches:
+49 countries and regions, 15 industry sections and three indicators in the expected order.
+A result with no flows or a different layout stays in the panel.
+A job completed in **Flows, 2011** waits in **What if…**.
+The [API reference](interface.md#job-api) and [security guide](security.md#what-api-accepts) describe the contract.
 
 ```sh
-# job API on 127.0.0.1:8020 (see ramascene-jobs), this page on 5173
+# Run the job API on 127.0.0.1:8020, then serve the explorer locally.
 pnpm dev
-# then open http://localhost:5173/?api=http://127.0.0.1:8020
+# Open http://localhost:5173/?api=http://127.0.0.1:8020
 ```
 
-The stylesheet (`src/app.css`) names the interface colours as variables; the
-data colours live in `flows.js`, next to the scales that use them.
+## First-load size
+
+See [loading measurements](architecture.md#first-load-size) for transfer sizes and the command to measure a load.
+
+## Map geometry
+
+The map uses Natural Earth outlines. Malta is too small for this geometry and appears only in the table.
+The five “Rest of …” regions combine their Natural Earth countries using `REST_OF` in `map.js`.
+Those geographic boundaries can differ from EXIOBASE's concordance at the edges.
+See the [geometry source and processing](architecture.md#map-geometry).

@@ -115,7 +115,7 @@ const directionHint = $derived(
 			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 		</div>
 		{#if ui.mode === "whatif"}
-			<div class="lab sub"><span id="run-l">Intervention</span><small>{meta.runs.length - 1} precomputed runs</small></div>
+			<div class="lab sub"><span id="run-l">Intervention</span><small>{meta.runs.length - 1} published scenarios</small></div>
 			{#if !showRuns}
 				<div class="run chosen">
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
@@ -147,7 +147,7 @@ const directionHint = $derived(
 			{/if}
 			{#if onGrid && grid && showRuns}
 				<div class="gridpick">
-					<label for="g-product">Product used less</label>
+					<label for="g-product">Input product</label>
 					<select id="g-product" value={gridPick.scenario} onchange={(e) => pickGrid("scenario", e.currentTarget.value)}>
 						{#each grid.products as p (p.slug)}<option value="grid:{p.slug}">{p.short}</option>{/each}
 					</select>
@@ -183,7 +183,7 @@ const directionHint = $derived(
 	</div>
 
 	<div class="grp">
-		<div class="lab"><span id="cty-l">Country</span><small>{meta.countries.length} regions</small></div>
+		<div class="lab"><span id="cty-l">Country or region</span><small>{meta.countries.length} regions</small></div>
 		<CountryBox {meta} labelledby="cty-l" />
 	</div>
 

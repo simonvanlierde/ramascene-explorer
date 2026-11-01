@@ -28,7 +28,7 @@ In scope:
 
 - The page: `index.html`, the scripts beside it, and how it reads the `?data=` and
   `?api=` parameters.
-- `precompute.py` and `compare_data.py`.
+- `precompute.py`, `compare_data.py` and the browser calculation and data reader modules.
 - The workflows in `.github/workflows/`, including the Pages deploy, which publishes
   only from `main`.
 

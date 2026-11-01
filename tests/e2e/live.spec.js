@@ -94,14 +94,12 @@ test("the live panel runs one intervention and labels the result live", async ({
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	expect(posted).toEqual({ label: "custom scenario", model_details: job.scenario.model_details });
 
-	await expect(page.locator("#live-label")).toHaveText(
-		"Results in this panel are computed live by the job API, not precomputed.",
-	);
+	await expect(page.locator("#live-label")).toHaveText("Results are computed by the job API.");
 	await expect(page.locator("#live-headline")).toHaveText(
 		"Summed over all regions, greenhouse gases would change by −10.0 Mt CO₂-eq (−0.67%) against the job’s own baseline of 1,500 Mt CO₂-eq.",
 	);
 	await expect(page.locator("#live-table tbody tr").first()).toContainText("−10.0 Mt CO₂-eq");
-	await expect(page.locator("#live-provenance")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#live-provenance")).toContainText("computed by the job API");
 	await expectNoAxeViolations(page);
 });
 
@@ -151,9 +149,9 @@ test("a live job's flows light the map, labelled live", async ({ page }) => {
 
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
 	await expect(page.locator(".bands path")).toHaveCount(1);
-	await expect(page.locator("#status .basis")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
 	await expect(page.locator("#headline")).toContainText(
-		"if Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe,",
+		"if Manufacture of motor vehicles in Africa required 20% less motor vehicles from Europe per unit of output:",
 	);
 	await page.locator(".sel-chip button").first().click();
 	await page.locator("#tab-method").click();
@@ -171,7 +169,7 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 	await openLive(page);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
-	await expect(page.locator("#status .basis")).toContainText("precomputed, not a forecast");
+	await expect(page.locator("#status .basis")).toContainText("Published scenarios · not forecasts");
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
 });
 
@@ -201,22 +199,22 @@ test("Details stays modal while the live panel is on the page", async ({ page, i
 	}
 });
 
-test("a live run is never shown as Verified", async ({ page }) => {
+test("a live run never inherits the published calculation checks", async ({ page }) => {
 	await routeJob(page, flowsJob());
-	// the shipped data passes every check, so the page starts Verified
+	// the shipped data passes every check, so the page starts with checks passed
 	await page.goto(`?api=${API}`);
 	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
 	await page.locator("#live-run").click();
-	await expect(page.locator("#status .basis")).toContainText("computed live by the job API, not precomputed");
+	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
 	await expect(page.locator("#status .pill.ok")).toHaveCount(0);
 	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
 	await expect(page.locator(".pf .vf")).toHaveCount(0);
 	await page.keyboard.press("Escape");
-	// back to a precomputed run: Verified again
+	// back to a precomputed run: checks passed again
 	await page.getByRole("button", { name: "Flows, 2011" }).first().click();
 	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
 });
@@ -237,7 +235,7 @@ test("the change field holds to the job API's range", async ({ page }) => {
 	const change = page.locator("#live-change");
 	await expect(change).toHaveAttribute("min", "-50");
 	await expect(change).toHaveAttribute("max", "50");
-	await expect(page.locator("#live-change-h")).toHaveText("From −50 to +50");
+	await expect(page.locator("#live-change-h")).toContainText("Range: −50 to +50%.");
 	await change.fill("-60");
 	await page.locator("#live-run").click();
 	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);

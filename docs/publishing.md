@@ -15,16 +15,23 @@ rather than skip when the file is missing. The browser tests run in Chromium
 (light, dark and a phone), Firefox, desktop Safari and an iPhone (WebKit),
 with axe checking WCAG 2.2 AA.
 
+The page jobs also download the [browser dataset](browser-engine.md#build-or-download-the-data),
+verify `data/browser-engine.sha256`, and rerun all 153 scenarios at relative 1e-9
+with `BROWSER_ENGINE_DATA=data/browser-engine`. The browser smoke test uses the
+real export. The other agreement routes use committed results; only the browser
+route is rerun in these jobs.
+
 The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
 `pages.yml` publishes to <https://simonvanlierde.com/ramascene-explorer/>
 only when started by hand (Actions → pages → Run workflow), and only from
 `main`. Before you run it, commit the precompute output. The workflow ships the
-bundled page and fonts, the map geometry, `results.json` and `embodied.parquet`
-(downloaded from the release and checked against `data/embodied.sha256`), and nothing
-else. It stops if `data/results.json` is missing or isn't marked
+bundled page and fonts, the map geometry, `results.json`, `embodied.parquet`
+and the browser dataset. Both release downloads are pinned by their checksums.
+It stops if `data/results.json` is missing or isn't marked
 `data_kind: exiobase-v3`, so the synthetic fixture can never go out.
+The build also refuses a site of 1 GB or more.
 
 To check that Pages serves range requests, ask for two bytes. The answer
 must be `206`:

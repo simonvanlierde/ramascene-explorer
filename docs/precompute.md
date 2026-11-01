@@ -26,11 +26,10 @@ I produced the shipped files with branch `split/3-performance` of the fork
 request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is
 stacked on #73 (the Django 5.2 upgrade). `data/run-log.md` logs that run, and
 `data/precompute-time.txt` holds its `/usr/bin/time -v` output: 153 scenarios
-with the embodied flows, 1 min 32 s wall, 1,602,340 KiB (1.64 GB, 1.53 GiB)
+with the embodied flows, 1 min 32 s wall time and 1.64 GB (1.53 GiB)
 maximum RSS, under `nice -n 10` with BLAS capped at 8 threads on a 32-core
 machine. The same run without `--out-embodied` took 1 min 16 s and left every
-value in the three JSON files exactly as it was (`compare_data.py`, largest
-relative difference 0).
+value in the three JSON files exactly as it was (`compare_data.py`, identical values).
 
 Each file's `provenance` block records the engine commit, the dataset
 checksums, the command and the run time. The blocks are identical apart from
@@ -77,7 +76,7 @@ wall time and peak RSS (`ru_maxrss`) are that process's own.
 Before any solve, the script checks that the engine reproduces the four Octave
 reference files shipped with RaMa-Scene (routes two and four; value added and
 GHG). It stops if it does not. It then runs the baseline, each scenario, and a
-0% control through the modified-A path. With the PR #74 engine the control is a
+0% control through the modified-A path. With the shipped engine the control is a
 Woodbury update with a zero change. That returns the stored `L` exactly, so the
 control does not exercise the factorization path.
 
@@ -140,7 +139,7 @@ missing row means no flow or no change. The values are float32 with
 byte-stream-split encoding and snappy compression, so a browser can read the
 footer and one run over HTTP range requests (about 0.33 MB per run, of 51.5
 MB). The footer's `ramascene` key holds JSON: country and section names, the
-continental aggregates, units, the run ids in row-group order, the checks and
+world-region aggregates, units, the run ids in row-group order, the checks and
 the same provenance as the other files.
 
 `results.json` records the file under `provenance.embodied`: its name, size in
@@ -154,7 +153,7 @@ provenance. `tests/make_fixture_embodied.py` writes the same record for
 
 Nothing is written unless:
 
-- for every run, the flows summed by producer and continental aggregate match
+- for every run, the flows summed by producer and world-region aggregate match
   that run's values in `results.json`, and the world totals match (relative
   1e-9);
 - for the baseline and the three original interventions, the flows summed by

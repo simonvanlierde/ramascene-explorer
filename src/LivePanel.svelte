@@ -1,9 +1,12 @@
 <script>
-// Optional live panel, imported only with a valid ?api=. The only code that
-// fetches from the job API. Everything from the API is rendered as text, never as markup.
+// Custom form for ?api= or ?compute=1. This component alone contacts the job
+// API; its text is never rendered as markup.
 import { compare } from "../explorer.js";
+import { onDestroy } from "svelte";
+import { BROWSER_STATUS, browserProvenance } from "../browser-results.js";
 import { amountText, pct, wording } from "../flows.js";
 import {
+	catalogName,
 	CHANGE_RANGE,
 	LIVE_STATUS,
 	liveData,
@@ -18,7 +21,11 @@ import { ui } from "./view.svelte.js";
 
 // onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
 // onnews(text, alert): every status message, for a live region outside the selection sheet
-let { api, onflows, onnews } = $props();
+let { api, browser = false, onflows, onnews } = $props();
+let client;
+let connection = 0;
+onDestroy(() => { connection++; client?.close(); });
+const status = $derived(browser ? BROWSER_STATUS : LIVE_STATUS);
 
 async function fetchJson(url, init) {
 	const response = await fetch(url, { cache: "no-store", ...init });
@@ -57,16 +64,27 @@ function say(text, bad = false) {
 }
 
 function connect() {
+	const attempt = ++connection;
 	unreachable = false;
-	say(`Connecting to ${api}…`);
-	fetchJson(`${api}/catalog`).then(
+	say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
+	const connecting = browser
+		? import("../browser-client.js").then(({ browserClient }) => {
+			if (attempt !== connection) return null;
+			client?.close();
+			client = browserClient();
+			return client.request();
+		})
+		: fetchJson(`${api}/catalog`);
+	connecting.then(
 		(c) => {
+			if (attempt !== connection) return;
 			catalog = c;
-			say(`Connected to ${api}.`);
+			say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
 		},
 		(e) => {
+			if (attempt !== connection) return;
 			unreachable = true;
-			say(unreachableMessage(api, e), true);
+			say(browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
 		},
 	);
 }
@@ -92,8 +110,8 @@ const view = $derived.by(() => {
 	return {
 		id,
 		rows,
-		headline: `Summed over all regions, ${w.noun} would change by ${signedText(deltaTotal, id)} (${share}) against the job’s own baseline of ${amountText(baseTotal, id)}.`,
-		provenance: liveProvenance(job, api),
+		headline: `Summed over all regions, ${w.noun} would change by ${signedText(deltaTotal, id)} (${share}) against ${browser ? "its baseline" : "the job’s own baseline"} of ${amountText(baseTotal, id)}.`,
+		provenance: browser ? browserProvenance(job) : liveProvenance(job, api),
 	};
 });
 
@@ -115,18 +133,18 @@ async function submit(event) {
 		return;
 	}
 	running = true;
-	say("Sending the scenario…");
+	say(browser ? "Computing the scenario in this browser…" : "Sending the scenario…");
 	try {
-		const submitted = await fetchJson(`${api}/jobs`, {
+		const submitted = browser ? null : await fetchJson(`${api}/jobs`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(body),
 		});
-		const done = await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
+		const done = browser ? await client.request(body) : await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
 			onUpdate: (j) => say(`Job ${j.id}: ${j.status}…`),
 		});
 		if (done.status === "failed") throw new Error(done.error);
-		const d = liveData(done);
+		const d = liveData(done, status);
 		// the indicator list comes from the first job and stays
 		if (!indicators.length) {
 			indicators = d.indicators;
@@ -134,7 +152,7 @@ async function submit(event) {
 		}
 		job = done;
 		data = d;
-		let text = `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
+		let text = browser ? `Computed in this browser in ${done.duration_s.toFixed(1)} s.` : `Job ${done.id} finished in ${done.duration_s.toFixed(1)} s.`;
 		try {
 			if (onflows?.(done, liveText(done, catalog)))
 				text += ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map.";
@@ -143,7 +161,7 @@ async function submit(event) {
 		}
 		say(text);
 	} catch (e) {
-		say(`Job failed: ${e.message}`, true);
+		say(`${browser ? "Scenario" : "Job"} failed: ${e.message}`, true);
 	} finally {
 		running = false;
 	}
@@ -157,31 +175,31 @@ async function submit(event) {
 {/snippet}
 
 {#snippet options(items)}
-	{#each items ?? [] as item (item.id)}<option value={String(item.id)}>{item.name}</option>{/each}
+	{#each items ?? [] as item (item.id)}<option value={String(item.id)} title={item.name}>{catalogName(item)}</option>{/each}
 {/snippet}
 
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
-		<span><b id="live-title">Custom scenario</b><small>Computed live by the job API</small></span>
+		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : "Calculated by the job API"}</small></span>
 		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={() => (open = !open)}>{open ? "Close" : "Set up"}</button>
 	</div>
 	{#if !open}{@render state()}{/if}
 	<div id="live-body" class="live-body" hidden={!open}>
-		<p class="live-label" id="live-label">Results in this panel are {LIVE_STATUS}.</p>
-		<p class="hint">One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.</p>
+		<p class="live-label" id="live-label">Results are {status}.</p>
+		<p class="hint">{browser ? "One intervention on the 2011 economy, calculated on this device. The page downloads the data it needs. The result uses the same baseline as the published scenarios; no scenario is sent to a job server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
 			<label for="live-product">Product</label>
 			<select id="live-product" required disabled={!catalog} bind:value={pick.product}>{@render options(catalog?.products)}</select>
 			<label for="live-origin">Produced in</label>
 			<select id="live-origin" required disabled={!catalog} bind:value={pick.origin}>{@render options(catalog?.regions)}</select>
-			<label for="live-consumer">Consumed by</label>
+			<label for="live-consumer">Used by</label>
 			<select id="live-consumer" required disabled={!catalog} bind:value={pick.consumer}>{@render options(catalog?.consumers)}</select>
-			<label for="live-consumed-reg">Consumed in</label>
+			<label for="live-consumed-reg">Used in</label>
 			<select id="live-consumed-reg" required disabled={!catalog} bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select>
-			<label for="live-change">Change, %</label>
+			<label for="live-change">Input or demand change, %</label>
 			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
-			<small class="fh" id="live-change-h">From {minus(range.min)} to +{range.max}</small>
+			<small class="fh" id="live-change-h">For an industry, change inputs per unit of output. For final demand, change spending. Negative values reduce the selected quantity. Range: {minus(range.min)} to +{range.max}%.</small>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->
@@ -195,7 +213,8 @@ async function submit(event) {
 						{#each indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
 					</select>
 				{/if}
-				<div class="table-wrap" tabindex="0" role="region" aria-label="The job’s totals by region">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex: horizontal table scrolling needs keyboard focus -->
+				<div class="table-wrap" tabindex="0" role="region" aria-label={browser ? "The browser scenario’s totals by region" : "The job’s totals by region"}>
 					<table id="live-table">
 						<thead><tr>
 							{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
@@ -214,7 +233,7 @@ async function submit(event) {
 					</table>
 				</div>
 				<details>
-					<summary>Provenance (live job)</summary>
+					<summary>Provenance ({browser ? "browser computation" : "live job"})</summary>
 					<dl id="live-provenance">
 						{#each view.provenance as [k, v]}
 							<dt>{k}</dt>

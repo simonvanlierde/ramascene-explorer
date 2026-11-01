@@ -1,8 +1,8 @@
 # Assurance case
 
-Why the page and its release files can be trusted. This page gives the
-argument; [security.md](security.md) and [publishing.md](publishing.md) hold
-the details it points to.
+This page describes controls against misleading links, changed data files and compromised builds.
+It also records what those controls cannot establish.
+See [security.md](security.md) for URL validation and [publishing.md](publishing.md) for release verification.
 
 ## Threat model
 
@@ -12,7 +12,7 @@ stored data. The threats are:
 1. **A crafted link** whose `?api=` or `?data=` makes the page load data from
    somewhere else, or show it as a real result.
 2. **A swapped data file.** `embodied.parquet` lives on the `data-2011`
-   release, outside git.
+   release, outside git, as does the browser matrix archive.
 3. **A hijacked dependency or action** that runs in CI or ends up in the
    bundle.
 4. **A file passed off as ours:** a tarball or Parquet file someone says came
@@ -27,7 +27,7 @@ good one from a bad one, so it labels a live result with its origin.
 | --- | --- | --- |
 | The URL | `?api=`, `?data=` | whoever wrote the link |
 | A job API | catalog, job results | whoever runs that origin |
-| Release assets | `embodied.parquet`, the `dist` tarball | anyone with write access to releases |
+| Release assets | `embodied.parquet`, the browser matrix archive, the `dist` tarball | anyone with write access to releases |
 | Build and CI | npm and PyPI packages, actions | their publishers |
 
 ## Secure design
@@ -40,6 +40,8 @@ good one from a bad one, so it labels a live result with its origin.
   ignored, and the status line says so. `pages.yml` refuses data not marked
   `exiobase-v3`, and every download of `embodied.parquet` must match the hash
   in `data/embodied.sha256`.
+  The browser archive must match `data/browser-engine.sha256`. Its matrix
+  filenames include their hashes, so deployment cannot silently mix exports.
 - **Small attack surface.** No server, cookies or login. The
   Content-Security-Policy in `index.html` allows scripts and fonts from the
   page's own origin only.
@@ -65,6 +67,8 @@ good one from a bad one, so it labels a live result with its origin.
 ## Limits
 
 - Releases v0.1.0 to v0.3.1 have no attestation.
+- The browser matrix archive is pinned by SHA-256; it has no separate attestation.
+  A software release's attested `dist` tarball includes those matrices.
 - The `embodied.parquet` attestation says this workflow vouched for a file
   with that hash, not that it ran `precompute.py`: the file is built locally.
 - The Pages site is not checked against the release tarball, since Pages may

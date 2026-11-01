@@ -39,19 +39,6 @@ const items = $derived.by(() => {
 			"Dataset",
 			`${d.name} (${(d.creators ?? []).join(", ")}; Zenodo ${d.version}, ${d.published}) · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`,
 		],
-		[
-			"Reference check",
-			`Octave reference (routes two and four; value added and GHG): ${v.passed ? "passed" : "not passed"}, ${v.tolerance}. Route three, shown here, is checked against B·L·ΣY per region (next line).`,
-			!v.passed,
-		],
-		[
-			"Verification",
-			`${regionValues} continental values (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} continents) match B·L·ΣY within relative 1e-9: ${verified ? "yes" : "no"}` +
-				` · 0% control reproduces baseline: ${control.passed ? "yes" : "no"}` +
-				` · every published cut changes the result and raises no indicator total: ${directionOk ? "yes" : "no"}` +
-				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")})` : ""),
-			!(verified && control.passed && directionOk),
-		],
 		["Breakdown", data.breakdown],
 		["Scenario parameters"],
 		["Command"],
@@ -73,12 +60,12 @@ const checks = $derived.by(() => {
 		],
 		[
 			verified,
-			`${regionValues.toLocaleString("en")} continental values (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} continents), recomputed outside the engine as B·L·ΣY, match within relative 1e-9.`,
+			`${regionValues.toLocaleString("en")} world-region totals (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} world regions), recomputed outside the engine from indicator intensities (B), supply-chain requirements (L) and final demand (ΣY), match within relative 1e-9.`,
 		],
 		[control.passed, "A 0% intervention through the same modified-coefficient path reproduces the baseline."],
 		[
 			directionOk,
-			"Every published intervention changes the result, and no cut raises an indicator total" +
+			"Every published intervention changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
 				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")}).` : "."),
 		],
 	];
@@ -88,22 +75,23 @@ const checks = $derived.by(() => {
 </script>
 
 <section class="part" id="verification" aria-labelledby="verification-heading">
-	<h2 id="verification-heading">Verification</h2>
-	<p>The precompute writes nothing unless every check below passes; a scenario that fails one is left off the page with its reason.</p>
+	<h2 id="verification-heading">Calculation checks</h2>
+	<p>These checks test numerical consistency. They do not establish whether a scenario is realistic or desirable. A fall in employment, for example, is a model result rather than a benefit.</p>
+	<p>Reference, baseline and control failures stop publication. Individual scenarios that fail a check are excluded, with the reason recorded below.</p>
 	<ul class="checks" id="checks">
 		{#each checks as [ok, text, verdict]}
 			<li><span class="verdict {ok ? 'pass' : 'fail'}">{verdict}</span> <span>{text}</span></li>
 		{/each}
 	</ul>
 	<details class="more" id="provenance-panel">
-		<summary>Full provenance</summary>
+		<summary>Data and reproduction details</summary>
 		<dl id="provenance">
 			{#each items as [term, text, failed]}
 				<dt>{term}</dt>
 				{#if term === "Failed scenarios"}
 					<dd><span>Excluded from this page, with the recorded reason:</span><pre>{data.failed.map((f) => `${f.id}: ${f.reason}`).join("\n")}</pre></dd>
 				{:else if term === "Scenario parameters"}
-					<dd><span>RaMa-Scene model_details, verbatim (global ids from the engine database; techChange in %):</span><pre>{(scenario.model_details ?? []).map((step) => JSON.stringify(step)).join("\n")}</pre></dd>
+					<dd><span>Exact RaMa-Scene parameters (model_details). IDs refer to the engine catalogue; techChange is a percentage:</span><pre>{(scenario.model_details ?? []).map((step) => JSON.stringify(step)).join("\n")}</pre></dd>
 				{:else if term === "Command"}
 					<dd><code>{p.command}</code></dd>
 				{:else}

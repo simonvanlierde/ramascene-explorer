@@ -122,13 +122,14 @@ function onFocusOut(e) {
 		</p>
 	{:else}
 		<p id="headline" tabindex="-1">
-			In the {year} economy, if <b>{text}</b>,
+			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
-			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope},
+			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}; a change of
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
-			(<span class="n {tone}">{pct(dPct)}</span>),
-			{#if changed}the largest change {out ? w.out.where : w.in.where}
-				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}unchanged by this run{/if}.
+			(<span class="n {tone}">{pct(dPct)}</span>).
+			<span class="scenario-context">
+			{#if changed}The largest change {out ? "was linked to consumption in" : "occurred in"}
+				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}unchanged by this run{/if}.</span>
 		</p>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>

@@ -67,8 +67,19 @@ jobs:
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
+      - name: fetch the browser scenario data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-grouped.tar --dir data
+          sha256sum --check data/browser-engine.sha256
+          tar -xf data/ramascene-browser-engine-grouped.tar -C data
       - run: pnpm exec biome ci .
       - run: pnpm test
+        env:
+          BROWSER_ENGINE_DATA: data/browser-engine
+      - run: node brightway-check/browser_check.js data/browser-engine
 
   playwright-version:
     name: playwright version
@@ -124,6 +135,10 @@ jobs:
           curl -fsSL --retry 3 --output data/embodied.parquet \
             "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/embodied.parquet"
           sha256sum --check data/embodied.sha256
+          curl -fsSL --retry 3 --output data/ramascene-browser-engine-grouped.tar \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/ramascene-browser-engine-grouped.tar"
+          sha256sum --check data/browser-engine.sha256
+          tar -xf data/ramascene-browser-engine-grouped.tar -C data
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

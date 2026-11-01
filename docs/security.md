@@ -17,6 +17,12 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
+`?compute=1` enables a worker that reads only the page's own browser dataset.
+It sends no scenario to an external service. Matrix dimensions, finite values,
+ids and percentage bounds are checked; a server that ignores Range is refused.
+The worker stops after a two-minute request timeout. The data archive is pinned
+by `data/browser-engine.sha256` in CI and publishing.
+
 ## What `?api=` accepts
 
 `apiUrl` in `live.js` turns the value into an origin, or ignores it. It accepts
@@ -41,7 +47,7 @@ the page's layout or hold a value that is not a number.
 A link with `?api=https://other.example` makes the page fetch that origin's
 catalog on load, and send it a job when someone clicks Run. The page cannot
 tell a good job API from a bad one, and a bad one can return wrong numbers.
-So a live result is labelled "computed live by the job API, not precomputed",
+So a live result is labelled "computed by the job API",
 with the API's origin and provenance: check that origin before you trust it.
 A live run never enters the shared link.
 

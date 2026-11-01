@@ -5,6 +5,7 @@ import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
 import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "../flows.js";
 import { apiUrl, ignoredApi, jobRun } from "../live.js";
+import { browserRun } from "../browser-results.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";
@@ -15,9 +16,9 @@ import { reducedMotion, ui } from "./view.svelte.js";
 const search = location.search;
 const dataPath = dataUrl(search);
 const ignored = ignoredData(search);
-// Optional live panel, in What if… under the run list: nothing is imported, and
-// nothing is fetched, without ?api=.
+// The custom form loads only with ?api= or ?compute=1.
 const api = apiUrl(search);
+const compute = new URLSearchParams(search).get("compute") === "1" && !api;
 const refusedApi = ignoredApi(search);
 
 let data = $state.raw(null);
@@ -95,9 +96,9 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
 // A reader who went back to Flows stays there; What if… has the job when they return.
-function showLive(job, text) {
+function showLive(job, text, browser = false) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
-	const next = jobRun(job, meta, api, text);
+	const next = browser ? browserRun(job, meta, text) : jobRun(job, meta, api, text);
 	if (!next) return false;
 	if (ui.mode !== "whatif") {
 		show(next.run, async () => next);
@@ -194,14 +195,14 @@ const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
-// "Verified" only for engine output whose every published run passed every check,
+// Checks passed only for engine output whose every published run passed every check,
 // and never while a run those checks did not cover is on screen
 const verified = $derived(
 	!live && data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true,
 );
 const retry = () => showRun(ui.run);
 
-// the selection lives in the query string, so every view can be shared
+// The URL shares filters and published scenarios; custom results stay in memory.
 $effect(() => {
 	if (!ready) return;
 	const q = viewSearch(ui, meta.country_codes, location.search);
@@ -213,7 +214,7 @@ $effect(() => {
 	<div id="banner" class="banner" role="alert" bind:offsetHeight={bannerH}>{flag.text}</div>
 {/if}
 
-{#if api}
+{#if api || compute}
 	<p class="sr-only" id="live-news" role="status">{news.alert ? "" : news.text}</p>
 	<p class="sr-only" role="alert">{news.alert ? news.text : ""}</p>
 {/if}
@@ -221,6 +222,7 @@ $effect(() => {
 <!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
 {#snippet livePanel()}
 	{#if api}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
+	{#if compute}{#await import("./LivePanel.svelte") then { default: LivePanel }}<LivePanel browser={true} onflows={(job, text) => showLive(job, text, true)} onnews={(text, alert) => (news = { text, alert })} />{/await}{/if}
 {/snippet}
 
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
@@ -235,16 +237,16 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "precomputed, not a forecast"}</span>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
 				{#if live}
 					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
 				{:else if verified}
-					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
+					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Checks passed: view calculation checks and method">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-						Verified
+						Checks passed
 					</button>
 				{:else}
-					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Not verified: {flag?.synthetic ? "test data" : "a check failed"}</button>
+					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Checks unavailable: {flag?.synthetic ? "test data" : "a check failed"}</button>
 				{/if}
 			{/if}
 			<a class="pill gh" href="https://github.com/simonvanlierde/ramascene-explorer" aria-label="Source code on GitHub" title="Source code on GitHub">
