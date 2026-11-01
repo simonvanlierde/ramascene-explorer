@@ -28,10 +28,11 @@ export async function loadKernel(forceSingle = false) {
 	}
 }
 
-// Reserve stacks and runtime space; sparse systems did not benefit in the paired runs.
+// Reserve stacks and runtime space. Sparse systems did not benefit in the paired runs, and on
+// four cores the pool slowed first calculations below 10⁹ multiply-adds (docs/browser-engine.md).
 export function useThreads({ rows, columns, memory }, force = false) {
 	return (
 		memory + 16 * 1024 ** 2 <= LIMITS.memory &&
-		(force || (rows.length > columns.length && rows.length * columns.length ** 2 >= 100_000_000))
+		(force || (rows.length > columns.length && rows.length * columns.length ** 2 >= 1_000_000_000))
 	);
 }

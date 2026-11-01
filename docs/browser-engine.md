@@ -227,7 +227,7 @@ inputs stay shared and all arithmetic stays float64. The LU solve and decoding r
 Small products also remain serial to avoid scheduling overhead.
 
 The worker selects the pool only when there are more changed rows than input columns,
-and the main product needs at least 100 million multiply-adds. The opposite direction
+and the main product needs at least a billion multiply-adds. The opposite direction
 uses the sparse build and did not benefit in paired measurements. It also reserves
 16 MiB within the working-memory budget for stacks and runtime space.
 
@@ -271,6 +271,33 @@ The shared host and local asset server produced slow samples in both modes;
 all five measured pairs remain in the JSON. These are local browser diagnostics,
 not phone or Internet-download timings. Small and sparse cases use the same
 single-thread implementation in both modes.
+
+### Where the pool starts to pay
+
+The [threshold diagnostics](measurements/browser-engine-thread-threshold.json) time six
+dense scenarios from 2×10<sup>7</sup> to 4.8×10<sup>9</sup> multiply-adds, on one thread
+and on a forced pool. Each ran five pairs on CPUs 0–7 of the same i9-14900KF, and five
+more limited to CPUs 0–3 ([four-CPU run](measurements/browser-engine-thread-threshold-4cpu.json)),
+where Chromium reports four cores and the pool gets three threads. Median first calculations,
+including reads and pool startup:
+
+| Multiply-adds | 8 CPUs, one thread | 8 CPUs, four threads | 4 CPUs, one thread | 4 CPUs, three threads |
+| ---: | ---: | ---: | ---: | ---: |
+| 2.0×10<sup>7</sup> | 0.499 s | 0.495 s | 0.647 s | 0.715 s |
+| 5.0×10<sup>7</sup> | 0.448 s | 0.443 s | 0.621 s | 0.638 s |
+| 1.0×10<sup>8</sup> | 0.385 s | 0.400 s | 0.590 s | 0.524 s |
+| 3.4×10<sup>8</sup> | 0.540 s | 0.494 s | 0.687 s | 0.710 s |
+| 1.4×10<sup>9</sup> | 1.39 s | 1.20 s | 1.60 s | 1.50 s |
+| 4.8×10<sup>9</sup> | 2.18 s | 1.62 s | 2.37 s | 2.09 s |
+
+On four CPUs the pool made the first calculation slower in most pairs up to
+3.4×10<sup>8</sup>, and faster in nine of ten pairs from 1.4×10<sup>9</sup>. On eight CPUs
+it saved about 50 ms at 3.4×10<sup>8</sup>. So the pool starts at 10<sup>9</sup>.
+No scenario between 3.4×10<sup>8</sup> and 1.4×10<sup>9</sup> was measured, so the
+crossover lies somewhere in that range. Repeated calculations gained 10–30 ms below
+10<sup>9</sup> on both CPU counts; all samples are in the JSON. Reproduce with
+`bash measure-browser-threads.sh 5 threshold` (add `4cpu` as a third argument under
+`taskset -c 0-3`) through `oss-bench`, as above.
 
 ### Eight and sixteen threads
 

@@ -7,9 +7,13 @@ node node_modules/wrangler/bin/wrangler.js dev --port 4193 --ip 127.0.0.1 --loca
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 for _ in {1..30}; do
-	if curl -fsS http://127.0.0.1:4193/ >/dev/null; then break; fi
+	if curl -fsS http://127.0.0.1:4193/ramascene-explorer/ >/dev/null; then break; fi
 	sleep 1
 done
 output=docs/measurements/browser-engine-threads.json
-if [ -n "${2:-}" ]; then output=docs/measurements/browser-engine-thread-scaling.json; fi
-node measure-browser-threads.js http://127.0.0.1:4193/ "$output" "${1:-3}" "${2:-}"
+if [ "${2:-}" = threshold ]; then
+	output=docs/measurements/browser-engine-thread-threshold${3:+-$3}.json
+elif [ -n "${2:-}" ]; then
+	output=docs/measurements/browser-engine-thread-scaling.json
+fi
+node measure-browser-threads.js http://127.0.0.1:4193/ramascene-explorer/ "$output" "${1:-3}" "${2:-}"

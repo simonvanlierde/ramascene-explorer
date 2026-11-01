@@ -4,30 +4,50 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { chromium } from "@playwright/test";
 
-const origin = process.argv[2] ?? "http://127.0.0.1:4193/";
+const origin = process.argv[2] ?? "http://127.0.0.1:4193/ramascene-explorer/";
 const output = process.argv[3];
 const repetitions = Number(process.argv[4] ?? 3);
-const limits = process.argv[5] ? process.argv[5].split(",").map(Number) : undefined;
+// "threshold" times one thread against a forced pool on dense cases around useThreads' bound
+const threshold = process.argv[5] === "threshold";
+const limits = process.argv[5] && !threshold ? process.argv[5].split(",").map(Number) : undefined;
 if (limits) assert.ok(limits.every((n) => Number.isInteger(n) && n >= 1 && n <= 16));
 const worker = new URL(`assets/${readdirSync("dist/assets").find((f) => /^browser-worker-.*\.js$/.test(f))}`, origin)
 	.href;
-const cases = {
-	default: { product: [180], originReg: [1], consumedBy: [198], consumedReg: [2], techChange: [-20] },
-	"electricity to manufacturing": {
-		product: [6],
-		originReg: [1],
-		consumedBy: [4],
-		consumedReg: [1],
-		techChange: [-20],
-	},
-	"manufacturing to electricity": {
-		product: [5],
-		originReg: [1],
-		consumedBy: [5],
-		consumedReg: [1],
-		techChange: [-20],
-	},
+const dense = (product, originReg, consumedBy, consumedReg) => ({
+	product: [product],
+	originReg: [originReg],
+	consumedBy: [consumedBy],
+	consumedReg: [consumedReg],
+	techChange: [-20],
+});
+// rows × columns² multiply-adds of the main product, from plan()
+const graded = {
+	"2.0e7": dense(16, 1, 7, 2),
+	"5.0e7": dense(17, 1, 11, 1),
+	"1.0e8": dense(48, 2, 9, 1),
+	"3.4e8": dense(48, 1, 1, 2),
+	"1.4e9": dense(5, 1, 1, 2),
+	"4.8e9": dense(5, 1, 5, 1),
 };
+const cases = threshold
+	? graded
+	: {
+			default: { product: [180], originReg: [1], consumedBy: [198], consumedReg: [2], techChange: [-20] },
+			"electricity to manufacturing": {
+				product: [6],
+				originReg: [1],
+				consumedBy: [4],
+				consumedReg: [1],
+				techChange: [-20],
+			},
+			"manufacturing to electricity": {
+				product: [5],
+				originReg: [1],
+				consumedBy: [5],
+				consumedReg: [1],
+				techChange: [-20],
+			},
+		};
 
 // Process-tree RSS includes shared mappings more than once; compare like-for-like browser trees.
 function rss(pid) {
@@ -99,9 +119,10 @@ for (let pair = -1; pair < repetitions; pair++) {
 							w.terminate();
 						}
 					},
-					{ worker, origin, step, single: single ? true : undefined },
+					{ worker, origin, step, single: single ? true : threshold ? false : undefined },
 				);
-				assert.equal(trial.threads, !single && name === "manufacturing to electricity" ? count : 1);
+				if (threshold) assert.ok(single ? trial.threads === 1 : trial.threads > 1, `${name}: ${trial.threads} threads`);
+				else assert.equal(trial.threads, !single && name === "manufacturing to electricity" ? count : 1);
 				if (reference) {
 					const scale = Math.max(...reference.map(Math.abs));
 					const error = Math.max(...trial.flows.map((v, i) => Math.abs(v - reference[i]))) / scale;
@@ -127,6 +148,7 @@ if (output)
 				cpu: cpus()[0].model,
 				affinity: /Cpus_allowed_list:\s+(.+)/.exec(readFileSync("/proc/self/status", "utf8"))?.[1],
 				limits,
+				mode: threshold ? "threshold" : undefined,
 				container: "mcr.microsoft.com/playwright:v1.64.1-noble",
 				browser: chromium.executablePath().split("/").at(-3),
 				method:
