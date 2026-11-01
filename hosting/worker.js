@@ -24,7 +24,7 @@ async function shard(request, env) {
 // One byte range as R2 takes it, or null for a header this Worker refuses (several
 // ranges, reversed, empty or too large). R2 itself would answer those with the whole file.
 function parseRange(header) {
-	const match = /^bytes=(\d*)-(\d*)$/.exec(header);
+	const match = /^bytes=(\d*)-(\d*)$/i.exec(header);
 	if (!match || (!match[1] && !match[2])) return null;
 	const [first, last] = match.slice(1).map((v) => (v ? Number(v) : undefined));
 	if (![first, last].every((v) => v === undefined || Number.isSafeInteger(v))) return null;
@@ -35,6 +35,7 @@ function parseRange(header) {
 
 // The first and last byte a range covers in an object of this size, or null past its end.
 function span(range, size) {
+	if (size === 0) return null;
 	if (range.suffix !== undefined) return [Math.max(0, size - range.suffix), size - 1];
 	if (range.offset >= size) return null;
 	return [range.offset, Math.min(size, range.offset + (range.length ?? size)) - 1];
@@ -43,7 +44,9 @@ function span(range, size) {
 async function parquet(request, env) {
 	const header = request.method === "GET" ? request.headers.get("Range") : null;
 	// undefined: the whole file; null: a range this Worker refuses
-	let range = header === null ? undefined : parseRange(header);
+	// a well-formed range in another unit must be ignored (RFC 9110 §14.2)
+	const otherUnit = header !== null && /^[a-z-]+=/i.test(header) && !/^bytes=/i.test(header);
+	let range = header === null || otherUnit ? undefined : parseRange(header);
 	const ifRange = request.headers.get("If-Range");
 	// A ranged GET is one R2 read; HEAD, a refused range and If-Range need the object first.
 	let object;

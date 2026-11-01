@@ -143,3 +143,27 @@ test("a failing R2 read asks the browser to retry", async () => {
 		assert.equal(res.headers.get("Retry-After"), "5");
 	}
 });
+
+test("a range in another unit is ignored and the unit name is case-insensitive", async () => {
+	const other = await request({ Range: "items=0-1" });
+	assert.equal(other.status, 200);
+	assert.equal(await other.text(), "PAR1data");
+	const upper = await request({ Range: "Bytes=0-1" });
+	assert.equal(upper.status, 206);
+	assert.equal(await upper.text(), "PA");
+});
+
+test("no range is satisfiable in an empty file", async () => {
+	const empty = {
+		EMBODIED: {
+			head: async () => ({ size: 0, httpEtag: '"empty"' }),
+			get: async () => ({ size: 0, httpEtag: '"empty"', body: new Response("").body }),
+		},
+	};
+	const res = await worker.fetch(
+		new Request("https://example.test/data/embodied.parquet", { headers: { Range: "bytes=-5" } }),
+		empty,
+	);
+	assert.equal(res.status, 416);
+	assert.equal(res.headers.get("Content-Range"), "bytes */0");
+});
