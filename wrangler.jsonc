@@ -12,12 +12,11 @@
     { "pattern": "simonvanlierde.com/ramascene-explorer", "zone_name": "simonvanlierde.com" },
     { "pattern": "simonvanlierde.com/ramascene-explorer/*", "zone_name": "simonvanlierde.com" }
   ],
-  // Assets keep their dist/ layout; base_path puts them under the prefix, and
-  // run_worker_first, _headers and the Worker's own paths use the public path.
+  // pnpm build:cloudflare builds into site/ramascene-explorer/, so asset paths are the
+  // public paths, and run_worker_first, _headers and the Worker match those.
   "assets": {
-    "directory": "dist",
+    "directory": "site",
     "binding": "ASSETS",
-    "base_path": "/ramascene-explorer",
     "run_worker_first": [
       "/ramascene-explorer/data/embodied.parquet",
       "/ramascene-explorer/data/browser-engine/store-*/*"
