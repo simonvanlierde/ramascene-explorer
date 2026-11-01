@@ -4,7 +4,7 @@ import { decode } from "./engine/pkg/ramascene_engine.js";
 // is sharded by producing country, with gzip chunks of whole rows and a shard
 // index of (offset, size) uint64 pairs at the end of each shard file.
 const EMPTY = 0xffffffffffffffffn;
-// Each request is one byte range: GitHub Pages answers a multi-range request
+// Each request is one byte range: many static hosts answer a multi-range request
 // with the whole file. Chunks closer than GAP share a request.
 const GAP = 64 * 1024;
 // At most PARALLEL × MAX_RANGE bytes in flight per array.

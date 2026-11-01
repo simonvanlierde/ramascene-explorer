@@ -256,7 +256,7 @@ worker for the next Run.
 The build uses the nightly pinned in `engine/threads/rust-toolchain.toml` because
 WebAssembly atomics require rebuilding Rust's standard library. `pnpm engine` builds
 both variants. Vite bundles the nested module workers; they inherit the host's isolation
-headers. GitHub Pages keeps the single-thread path.
+headers. A host without them keeps the single-thread path.
 
 The paired browser diagnostics are in [browser-engine-threads.json](measurements/browser-engine-threads.json).
 They include cold and repeated scenarios and peak RSS of a fresh Chromium process tree.

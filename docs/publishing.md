@@ -27,16 +27,13 @@ route is rerun in these jobs.
 The pnpm version is pinned once, in `packageManager` in `package.json`; the
 workflows' `pnpm/action-setup` steps read it.
 
-`pages.yml` publishes the GitHub Pages copy, kept as the fallback while production
-settles on [Cloudflare](#cloudflare). It runs only when started by hand (Actions → pages → Run workflow), and only from
-`main`. Before you run it, commit the precompute output. The workflow ships the
-bundled page and fonts, the map geometry, `results.json`, `embodied.parquet`
-and the browser dataset. Both release downloads are pinned by their checksums.
-It stops if `data/results.json` is missing or isn't marked
-`data_kind: exiobase-v3`, so the synthetic fixture can never go out.
-The build also refuses a site of 1 GB or more.
+`cloudflare.yml` publishes the site ([Cloudflare](#cloudflare)). Commit the precompute
+output before you merge it. The workflow ships the bundled page and fonts, the map
+geometry, `results.json`, `embodied.parquet` and the browser dataset. Both release
+downloads are pinned by their checksums. It stops if `data/results.json` is missing or
+isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can never go out.
 
-To check that Pages serves range requests, ask for two bytes. The answer
+To check that the site serves range requests, ask for two bytes. The answer
 must be `206`:
 
 ```sh
@@ -161,9 +158,7 @@ The compatibility date matches the runtime bundled with the pinned Wrangler rele
 
 SSL/TLS on the zone stays Full, not Full (strict): GitHub's certificate renewal can fail
 behind the proxy. With Flexible, Cloudflare asks GitHub Pages over HTTP, Pages redirects
-to HTTPS, and every page on the domain loops. Remove `pages.yml` once production has
-served a few days.
+to HTTPS, and every page on the domain loops.
 
 To roll back a bad production deploy, run `pnpm exec wrangler rollback` and pick the last
-good version; it needs no rebuild. Before `pages.yml` is gone, switching the DNS records
-back to DNS only hands the whole domain back to GitHub Pages.
+good version; it needs no rebuild.

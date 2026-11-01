@@ -14,8 +14,10 @@ RaMa-Scene Explorer has one maintainer: Simon van Lierde
 
 ## If the maintainer is unavailable
 
-A successor can take over the GitHub repository and publish it through GitHub Pages.
-The release and Pages workflows use GitHub's own token.
+A successor can take over the GitHub repository and publish it with their own Cloudflare
+account ([publishing.md](docs/publishing.md#cloudflare)). Any static host that answers byte
+ranges also serves it; without the isolation headers it computes on one thread.
+The release workflow uses GitHub's own token.
 The static site needs no separate calculation server.
 Zenodo ownership and any custom domain need a separate transfer.
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- GitHub Pages sends no headers, so the policy rides here. connect-src allows
+<!-- The host sends no Content-Security-Policy header, so the policy rides here. connect-src allows
      the optional ?api= job API (https, or http on loopback) and Vite's dev socket. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https: http://127.0.0.1:* http://localhost:* ws://localhost:*; base-uri 'none'; object-src 'none'; form-action 'none'">
 <title>RaMa-Scene Explorer</title>

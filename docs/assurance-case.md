@@ -37,7 +37,7 @@ good one from a bad one, so it labels a live result with its origin.
   In `release.yml` the job that runs `pnpm install` cannot sign or upload, and
   the job that signs runs no repository code.
 - **Fail-safe defaults.** `?api=` and `?data=` pass an allow-list or are
-  ignored, and the status line says so. `pages.yml` refuses data not marked
+  ignored, and the status line says so. `cloudflare.yml` refuses data not marked
   `exiobase-v3`, and every download of `embodied.parquet` must match the hash
   in `data/embodied.sha256`.
   The browser archive must match `data/browser-engine-zarr.sha256`. Its store
