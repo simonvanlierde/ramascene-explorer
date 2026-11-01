@@ -31,7 +31,7 @@ country. Before reading matrices, the form and the worker estimate dense
 arithmetic and scenario buffers from the catalogue alone. They refuse more than
 100 million update terms or 64 MiB of estimated scenario buffers, which allows
 about 200 changed rows. The form says so before Run, with the row count.
-When the form shows this, choose fewer products or regions. These limits exclude the
+Then choose fewer products or regions. These limits exclude the
 baseline, metadata, decoder temporaries and row caches; they are not a total
 browser memory limit. The [job API](interface.md#job-api) remains available
 for work outside the browser budget.

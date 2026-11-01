@@ -9,11 +9,15 @@ engine reads them as `$DATASETS_DIR/2011/{A,L,Y,B}_v4.npy`. The Zenodo record
 ships only `_v4` files, and `v4` is the file suffix, not the dataset version.
 The matrices are float64.
 
-Terms used below. `A` holds the technical coefficients: the input of each
-product per unit of output of each producing industry. `L = (I − A)⁻¹` is the
-Leontief inverse, `Y` is final demand (what households, governments and
-investment buy), and `B` holds the extensions (the indicators reported) per unit of output. A scenario either
-changes entries of `A` (a technical-coefficient scenario) or changes `Y`
+Terms used below. The tables are product by product.
+
+- `A` holds the technical coefficients: the input of each product per unit of
+  output of each product.
+- `L = (I − A)⁻¹` is the Leontief inverse.
+- `Y` is final demand: what households, governments and investment buy.
+- `B` holds the extensions: each indicator per unit of output.
+
+A scenario changes entries of `A` (a technical-coefficient scenario) or of `Y`
 (a final-demand scenario). The Woodbury update recomputes `L` for a small
 change to `A` without solving the whole system again.
 
@@ -28,7 +32,7 @@ uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://git
 
 ## The shipped run
 
-The shipped files come from branch `split/3-performance` of the fork
+I produced the shipped files with branch `split/3-performance` of the fork
 <https://github.com/simonvanlierde/ramascene>, commit
 `d9113ca9ad38bc29d2a96392dabf74d70abf830e` (clean tree), the head of pull
 request [#74](https://github.com/CMLPlatform/ramascene/pull/74), which is

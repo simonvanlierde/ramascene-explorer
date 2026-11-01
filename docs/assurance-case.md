@@ -7,7 +7,7 @@ See [security.md](security.md) for URL validation and [publishing.md](publishing
 ## Threat model
 
 The page is static: files on GitHub Pages, with no server code, login or
-stored data. The model considers four threats:
+stored data. It has four threats:
 
 1. **A crafted link** whose `?api=` or `?data=` makes the page load data from
    somewhere else, or show it as a real result.
