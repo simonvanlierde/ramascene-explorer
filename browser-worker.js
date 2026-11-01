@@ -13,7 +13,7 @@ const load = (base) =>
 		throw e;
 	}));
 
-// Reads started for the selection the form shows, before Run: {key, reads}. One
+// Reads started for the selection the form shows, before Run: {key, reads, stop}. One
 // prefetch downloads at a time; while it does, only the newest selection waits.
 let ahead = null;
 let waiting = null;
@@ -29,7 +29,8 @@ async function prefetch(base, steps) {
 			waiting = null;
 			const key = readKey(planned);
 			if (ahead?.key === key) continue;
-			ahead = { key, reads: startReads(data, planned) };
+			const controller = new AbortController();
+			ahead = { key, reads: startReads(data, planned, controller.signal), stop: () => controller.abort() };
 			await Promise.allSettled(Object.values(ahead.reads));
 		}
 	} catch {
@@ -85,8 +86,14 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 				self.postMessage({ id, retrySingle: true });
 				return;
 			}
-			const used = ahead;
+			let used = ahead;
 			ahead = null;
+			if (used && used.key !== readKey(plan(data.meta, body.model_details))) {
+				// another selection's reads beside this run's could pass the memory budget together
+				used.stop();
+				await Promise.allSettled(Object.values(used.reads));
+				used = null;
+			}
 			const flows = await scenarioFlows(data, body.model_details, used, maths);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
 			value.threads = maths.thread_count();

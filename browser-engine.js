@@ -145,18 +145,21 @@ export const readKey = ({ rows, columns, finals, J, byRows }) => JSON.stringify(
 
 // Starts every read a plan needs, so their round trips overlap. The arrays come back
 // fresh and scenarioFlows changes them in place, so one set of reads serves one run.
-export function startReads({ read }, { rows, columns, finals, J, byRows }) {
+// An abort of signal stops their downloads.
+export function startReads({ read }, { rows, columns, finals, J, byRows }, signal) {
 	const K = columns.length;
 	const reads = {
 		technical: rows.length
 			? Promise.all([
-					read("A", rows, columns),
-					byRows ? read("L", columns, J) : read("LC", J, columns).then((lc) => transpose(lc, J.length, K)),
-					read("X", columns),
+					read("A", rows, columns, signal),
+					byRows
+						? read("L", columns, J, signal)
+						: read("LC", J, columns, signal).then((lc) => transpose(lc, J.length, K)),
+					read("X", columns, undefined, signal),
 				])
 			: null,
-		firstH: read("H", J.slice(0, H_BATCH)),
-		demand: read("Y", finals),
+		firstH: read("H", J.slice(0, H_BATCH), undefined, signal),
+		demand: read("Y", finals, undefined, signal),
 	};
 	// A failure surfaces where each read is awaited, not as an unhandled rejection.
 	for (const pending of Object.values(reads)) pending?.catch(() => {});
