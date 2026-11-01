@@ -79,13 +79,22 @@ Svelte lines (1,397 of 1,517); `Sentence.svelte` was lowest at 69.3%. One
 `load.spec.js` test alone covers 50.4%. CI does not run this, so the number is
 a snapshot, not a gate.
 
-## Cloudflare staging
+## Cloudflare
 
-`wrangler.jsonc` deploys a separate `ramascene-explorer-staging` site on
-`workers.dev`. GitHub Pages remains the production host. The staging site sends
-COOP and COEP headers so browsers can use shared memory. The current kernel
+`wrangler.jsonc` describes two Workers that serve the same build:
+
+- **Staging**, `ramascene-explorer-staging` on `workers.dev`, at the root. Its pages also
+  send `X-Robots-Tag: noindex`, which the deploy adds to `_headers`.
+- **Production**, `ramascene-explorer` (`--env production`), on the routes
+  `simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
+  `assets.base_path` serves `dist/` under that prefix, so the domain's other pages stay on
+  GitHub Pages. The routes take effect once the domain's DNS records are proxied through
+  Cloudflare; until then GitHub Pages serves the site at the same address.
+
+Both send COOP and COEP headers so browsers can use shared memory. The current kernel
 still uses one thread; hosting alone does not make calculations multithreaded.
-Staging responses also send `X-Robots-Tag: noindex`.
+Paths in `_headers` and `run_worker_first` are public paths, so production's carry the
+prefix, and the Worker drops `BASE_PATH` before it matches the data paths.
 
 The app, fonts, maps and browser dataset ship as static assets. The Parquet file
 exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
@@ -119,10 +128,11 @@ To deploy staging from a prepared checkout:
    It checks HEAD and exact ranges for both data sources, immutable shard caching,
    cross-origin isolation, the map and a custom calculation in Chromium, Firefox and WebKit.
 
-`cloudflare.yml` provides a manual, main-only deployment after the bucket exists.
-Set the repository secret `CLOUDFLARE_API_TOKEN` and variable `CLOUDFLARE_ACCOUNT_ID`.
-Scope the token to the chosen account with Workers Scripts Write and Workers R2
-Storage Write permissions. Local OAuth login does not configure GitHub Actions.
+`cloudflare.yml` deploys by hand from `main`, to staging or production, after the bucket
+exists. Put `CLOUDFLARE_API_TOKEN` on the `cloudflare` GitHub environment, which allows
+`main` only, and set the repository variable `CLOUDFLARE_ACCOUNT_ID`. Scope the token to
+the account with Workers Scripts Write and Workers R2 Storage Write, and to the
+simonvanlierde.com zone with Workers Routes Write for the production routes. Local OAuth login does not configure GitHub Actions.
 Release files are checksum-verified before upload. CI runs the same browser check
 against the local Workers runtime with a local R2 object; it needs no Cloudflare credentials.
 
@@ -130,4 +140,14 @@ For a local check, upload with `--local` instead of `--remote`, then start
 `pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local`.
 Run `node hosting/check.js http://127.0.0.1:4191/` in another terminal.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
+To check production locally, add `--env production` to the upload and to `wrangler dev`,
+and run the check against `http://127.0.0.1:4191/ramascene-explorer/`.
 Do not switch the production domain until the check also passes on the deployed staging URL.
+
+To switch production from GitHub Pages:
+
+1. Deploy staging and run the check on its URL, then deploy production.
+2. In Cloudflare, proxy the simonvanlierde.com DNS records and set SSL/TLS to Full, not
+   Full (strict): GitHub's certificate renewal can fail behind the proxy.
+3. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
+4. Remove `pages.yml` once production has served a few days.

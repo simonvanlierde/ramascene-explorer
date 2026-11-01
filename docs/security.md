@@ -71,9 +71,9 @@ dots, and no segment is `..`. So `?data=` cannot point at another origin. Any
 other value shows in the status line and the page reads `data/results.json`. A
 file whose `data_kind` is not `exiobase-v3` gets the red synthetic-data banner.
 
-## Cloudflare staging
+## Cloudflare
 
-The separate [staging deployment](publishing.md#cloudflare-staging) sends
+The [Cloudflare deployments](publishing.md#cloudflare), staging and production, send
 `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. The browser can then use shared memory;
 the current kernel still uses one thread. The app keeps its existing meta CSP.
@@ -82,3 +82,5 @@ The hosting Worker exposes only the pinned Parquet object for GET and HEAD.
 It never accepts uploads or exposes arbitrary R2 keys. Zarr store reads use the
 Cache API for byte ranges; all other assets go directly through static hosting.
 R2 credentials stay on Cloudflare or in the deployment environment, never in the browser.
+The deploy token is a secret on the `cloudflare` GitHub environment, which only `main`
+can deploy to, so no other branch or workflow can read it.

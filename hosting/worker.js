@@ -22,8 +22,12 @@ async function shard(request, env) {
 
 export default {
 	async fetch(request, env) {
-		if (/^\/data\/browser-engine\/store-[a-f0-9]{64}\//.test(new URL(request.url).pathname)) return shard(request, env);
-		if (new URL(request.url).pathname !== "/data/embodied.parquet") return new Response(null, { status: 404 });
+		// production serves the site under BASE_PATH (wrangler.jsonc); staging at the root
+		const base = env.BASE_PATH ?? "";
+		const { pathname } = new URL(request.url);
+		const path = pathname.startsWith(`${base}/`) ? pathname.slice(base.length) : "";
+		if (/^\/data\/browser-engine\/store-[a-f0-9]{64}\//.test(path)) return shard(request, env);
+		if (path !== "/data/embodied.parquet") return new Response(null, { status: 404 });
 		if (!["GET", "HEAD"].includes(request.method))
 			return new Response(null, { status: 405, headers: { Allow: "GET, HEAD" } });
 		const object = await env.EMBODIED.head(key);

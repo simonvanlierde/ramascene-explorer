@@ -53,3 +53,18 @@ test("the bucket is read-only and only the published file is reachable", async (
 	});
 	assert.equal(res.status, 404);
 });
+
+test("under the production prefix only the prefixed data paths reach the data", async () => {
+	const prod = { ...env, BASE_PATH: "/ramascene-explorer" };
+	const at = (path) =>
+		worker.fetch(new Request(`https://example.test${path}`, { headers: { Range: "bytes=0-3" } }), prod);
+	const res = await at("/ramascene-explorer/data/embodied.parquet");
+	assert.equal(res.status, 206);
+	assert.equal(await res.text(), "PAR1");
+	for (const path of [
+		"/data/embodied.parquet",
+		"/ramascene-explorer-x/data/embodied.parquet",
+		"/ramascene-explorerdata/embodied.parquet",
+	])
+		assert.equal((await at(path)).status, 404, path);
+});

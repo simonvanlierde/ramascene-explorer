@@ -1,20 +1,28 @@
-name: cloudflare staging
+name: cloudflare
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Where to deploy
+        type: choice
+        options: [staging, production]
+        default: staging
 
 permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-staging
+  group: cloudflare-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
   build:
-    name: build and deploy staging
-    # Run workflow offers every branch; only main publishes.
+    name: build and deploy ${{ inputs.target }}
+    # Run workflow offers every branch; only main publishes. The environment allows
+    # main only too, and holds the token, so no other job can read it.
     if: github.ref == 'refs/heads/main'
+    environment: cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -56,14 +64,21 @@ jobs:
       - uses: ./.github/actions/engine
       - run: pnpm build
 
-      - name: publish staging
+      - name: publish ${{ inputs.target }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          TARGET: ${{ inputs.target }}
         run: |
           set -euo pipefail
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Set the CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Set the CLOUDFLARE_API_TOKEN secret on the cloudflare environment"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Set the CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
           key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
           pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote
-          pnpm exec wrangler deploy
+          if [ "$TARGET" = production ]; then
+            pnpm exec wrangler deploy --env production
+          else
+            # staging stays out of search results; production is indexed like the Pages site
+            printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
+            pnpm exec wrangler deploy
+          fi
