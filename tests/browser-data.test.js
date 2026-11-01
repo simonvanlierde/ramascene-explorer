@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { gzipSync } from "node:zlib";
 import { arrayReader, fetchEngine, fetchRange, matrixReader, openEngine } from "../browser-data.js";
 
 const infos = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
@@ -182,6 +183,179 @@ test("a failed range stops the other requests", async () => {
 	assert.ok(reads <= 64, `${reads} ranges read after the failure`);
 });
 
+// A one-shard array of one-row chunks, three values wide. `chunks` maps a chunk number
+// to [offset, gzip bytes]; the others are empty. Every readRange call is recorded.
+const EMPTY = 0xffffffffffffffffn;
+function synthetic(chunks, { slots = 8, length, index = {}, read } = {}) {
+	const end = length ?? Math.max(...chunks.map(([, [offset, bytes]]) => offset + bytes.length));
+	const body = new Uint8Array(end);
+	const table = new DataView(new ArrayBuffer(16 * slots));
+	for (let i = 0; i < slots; i++) {
+		table.setBigUint64(16 * i, EMPTY, true);
+		table.setBigUint64(16 * i + 8, EMPTY, true);
+	}
+	for (const [slot, [offset, bytes]] of chunks) {
+		body.set(bytes, offset);
+		table.setBigUint64(16 * slot, BigInt(offset), true);
+		table.setBigUint64(16 * slot + 8, BigInt(bytes.length), true);
+	}
+	for (const [slot, [offset, bytes]] of Object.entries(index)) {
+		table.setBigUint64(16 * slot, offset, true);
+		table.setBigUint64(16 * slot + 8, bytes, true);
+	}
+	const shard = Buffer.concat([body, Buffer.from(table.buffer)]);
+	const info = { shape: [slots, 3], chunk_rows: 1, shard_rows: slots, shard_bytes: [shard.length], chunk_bytes: 20 };
+	const calls = [];
+	const readRange = async (_, start, stop) => {
+		calls.push([start, stop]);
+		const bytes = await (read ? read(start, stop, end) : null);
+		const out = shard.buffer.slice(shard.byteOffset + start, shard.byteOffset + stop);
+		return bytes === "short" ? out.slice(0, -1) : out;
+	};
+	return { info, readRange, calls, end };
+}
+
+const ZEROS = gzipSync(new Uint8Array(12));
+const GAP = 64 * 1024;
+
+test("chunks within 64 KiB of each other share a range, farther ones and those past 1 MiB do not", async () => {
+	const L = ZEROS.length;
+	// gaps of exactly 64 KiB, one byte more, and 100 KB
+	const at = [0, L + GAP, 2 * L + 2 * GAP + 1, 3 * L + 3 * GAP + 1 + 100_000 - GAP];
+	const gap = synthetic(at.map((offset, i) => [i, [offset, ZEROS]]));
+	await read(arrayReader(gap.info, gap.readRange), [0, 1, 2, 3]);
+	assert.deepEqual(gap.calls.slice(1), [
+		[0, at[1] + L],
+		[at[2], at[2] + L],
+		[at[3], at[3] + L],
+	]);
+	// 50 KB steps, the 22nd chunk ending exactly at 1 MiB, then one more
+	const step = Array.from({ length: 21 }, (_, i) => i * 50_000);
+	const edge = [...step, 1024 ** 2 - L, 1024 ** 2 - L + 50_000];
+	const big = synthetic(
+		edge.map((offset, i) => [i, [offset, ZEROS]]),
+		{ slots: 32 },
+	);
+	await read(
+		arrayReader(big.info, big.readRange),
+		edge.map((_, i) => i),
+	);
+	assert.deepEqual(big.calls.slice(1), [
+		[0, 1024 ** 2],
+		[edge[22], edge[22] + L],
+	]);
+});
+
+test("chunks listed out of order in the index are fetched in offset order as one range", async () => {
+	const L = ZEROS.length;
+	const shard = synthetic([
+		[0, [1000, ZEROS]],
+		[1, [0, ZEROS]],
+	]);
+	const got = await read(arrayReader(shard.info, shard.readRange), [0, 1]);
+	assert.deepEqual([...got.keys()].sort(), [0, 1]);
+	assert.deepEqual(shard.calls.slice(1), [[0, 1000 + L]]);
+});
+
+test("a range grows to the furthest end when a chunk lies inside the one before", async () => {
+	// B is a whole gzip member inside A's header field, so it ends before A does
+	const inner = ZEROS;
+	const xlen = 10 + inner.length;
+	const head = Buffer.from([0x1f, 0x8b, 8, 4, 0, 0, 0, 0, 0, 3, xlen, 0]);
+	const extra = Buffer.alloc(10);
+	// the decoder reads the field length at this offset
+	extra.writeUInt16LE(xlen, 8);
+	const outer = Buffer.concat([head, extra, inner, ZEROS.subarray(10)]);
+	const shard = synthetic([
+		[0, [0, outer]],
+		[1, [head.length + extra.length, inner]],
+	]);
+	const got = await read(arrayReader(shard.info, shard.readRange), [0, 1]);
+	assert.deepEqual([...got.keys()].sort(), [0, 1]);
+	assert.deepEqual(shard.calls.slice(1), [[0, outer.length]]);
+});
+
+test("up to 64 ranges are in flight at once", async () => {
+	const at = Array.from({ length: 200 }, (_, i) => i * 70_000);
+	const shard = synthetic(
+		at.map((offset, i) => [i, [offset, ZEROS]]),
+		{
+			slots: 200,
+			read: async (start, _, end) => {
+				if (start >= end) return;
+				active++;
+				peak = Math.max(peak, active);
+				await new Promise((resolve) => setTimeout(resolve, 5));
+				active--;
+			},
+		},
+	);
+	let active = 0;
+	let peak = 0;
+	await read(
+		arrayReader(shard.info, shard.readRange),
+		at.map((_, i) => i),
+	);
+	assert.equal(peak, 64);
+});
+
+test("the cache evicts the least recently used chunk, not the oldest one read", async () => {
+	const { calls, readRange } = fixture();
+	// two chunks of 12 bytes fit
+	const chunks = arrayReader(info, readRange, { cacheBytes: 24 });
+	await read(chunks, [0]);
+	await read(chunks, [1]);
+	await read(chunks, [0]);
+	await read(chunks, [3]);
+	const before = calls.length;
+	await read(chunks, [0]);
+	assert.equal(calls.length, before, "the chunk read again last stays");
+	await read(chunks, [1]);
+	assert.ok(calls.length > before, "the chunk not read since is evicted");
+});
+
+test("two reads of one chunk at once count its bytes once", async () => {
+	const { calls, readRange } = fixture();
+	const chunks = arrayReader(info, readRange, { cacheBytes: 24 });
+	await Promise.all([read(chunks, [0]), read(chunks, [0])]);
+	await read(chunks, [1]);
+	const before = calls.length;
+	await read(chunks, [0, 1]);
+	assert.equal(calls.length, before, "both chunks fit the budget");
+});
+
+test("a chunk larger than the cache is returned but not kept", async () => {
+	const { calls, readRange } = fixture();
+	const chunks = arrayReader(info, readRange, { cacheBytes: 8 });
+	assert.deepEqual((await read(chunks, [0])).get(0), f32([1.25, -0.125, 0]));
+	const before = calls.length;
+	await read(chunks, [0]);
+	assert.ok(calls.length > before);
+});
+
+test("chunks with NaN or infinite values are refused", async () => {
+	for (const bad of [NaN, Infinity, -Infinity]) {
+		const chunk = gzipSync(Buffer.from(new Float32Array([1, bad, 2]).buffer));
+		const shard = synthetic([[0, [0, chunk]]]);
+		await assert.rejects(read(arrayReader(shard.info, shard.readRange), [0]), /invalid matrix values/);
+	}
+});
+
+test("a range with fewer bytes than asked for is refused", async () => {
+	const shard = synthetic([[0, [0, ZEROS]]], { read: (start, _stop, end) => (start < end ? "short" : null) });
+	await assert.rejects(read(arrayReader(shard.info, shard.readRange), [0]), /truncated matrix range/);
+});
+
+test("a shard index entry with only one half empty is refused", async () => {
+	for (const entry of [
+		[EMPTY, 5n],
+		[0n, EMPTY],
+	]) {
+		const shard = synthetic([[0, [0, ZEROS]]], { index: { 1: entry } });
+		await assert.rejects(read(arrayReader(shard.info, shard.readRange), [1]), /invalid shard index/);
+	}
+});
+
 test("older and invalid manifests are refused before reading a matrix", () => {
 	const noRead = () => {
 		throw new Error("should not read");
@@ -219,6 +393,11 @@ test("older and invalid manifests are refused before reading a matrix", () => {
 	assert.throws(() => openEngine({ ...meta, arrays: { ...meta.arrays, L: array([9800, 49]) } }, noRead), /L matrix/);
 	const short = { ...array([9800, 9800]), shard_bytes: [4000] };
 	assert.throws(() => openEngine({ ...meta, arrays: { ...meta.arrays, A: short } }, noRead), /A matrix/);
+	// a shard cannot be smaller than its index: 200 pairs of 16 bytes
+	const small = { ...array([9800, 9800]), shard_bytes: Array(49).fill(4000).fill(3199, 7, 8) };
+	assert.throws(() => openEngine({ ...meta, arrays: { ...meta.arrays, A: small } }, noRead), /A matrix/);
+	const exact = { ...array([9800, 9800]), shard_bytes: Array(49).fill(3200) };
+	assert.doesNotThrow(() => openEngine({ ...meta, arrays: { ...meta.arrays, A: exact } }, noRead));
 });
 
 test("the v3 reader avoids an older cached manifest URL", async (t) => {
