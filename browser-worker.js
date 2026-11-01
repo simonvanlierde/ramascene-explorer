@@ -12,6 +12,12 @@ const load = (base) =>
 		loaded = null;
 		throw e;
 	}));
+// the store's chunks decode in the kernel, so reads need it too; a failed load is tried again
+const kernelLoad = () =>
+	(engine ??= init().catch((e) => {
+		engine = null;
+		throw e;
+	}));
 
 // Reads started for the selection the form shows, before Run: {key, reads, stop}. One
 // prefetch downloads at a time; while it does, only the newest selection waits.
@@ -23,7 +29,7 @@ async function prefetch(base, steps) {
 	if (prefetching) return;
 	prefetching = true;
 	try {
-		const data = await load(base);
+		const [data] = await Promise.all([load(base), kernelLoad()]);
 		while (waiting) {
 			const planned = plan(data.meta, waiting);
 			waiting = null;
@@ -31,7 +37,10 @@ async function prefetch(base, steps) {
 			if (ahead?.key === key) continue;
 			const controller = new AbortController();
 			ahead = { key, reads: startReads(data, planned, controller.signal), stop: () => controller.abort() };
-			await Promise.allSettled(Object.values(ahead.reads));
+			const started = ahead;
+			const settled = await Promise.allSettled(Object.values(started.reads));
+			// failed reads would fail the run that takes them: Run reads afresh instead
+			if (ahead === started && settled.some((r) => r.status === "rejected")) ahead = null;
 		}
 	} catch {
 		// a selection the form will refuse, or a failed load: Run reports either
@@ -46,13 +55,9 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	let threaded = false;
 	try {
 		const loading = load(base);
-		// the kernel loads alongside the data, and a failed load is tried again on the next message
-		engine ??= init().catch((e) => {
-			engine = null;
-			throw e;
-		});
-		// this message's own load: a failure resets engine before a later await could see null
-		const kernel = engine;
+		// the kernel loads alongside the data; this message keeps its own load, since a
+		// failure resets engine before a later await could see null
+		const kernel = kernelLoad();
 		kernel.catch(() => {});
 		const data = await loading;
 		// the form checks a selection's size with these before sending it
