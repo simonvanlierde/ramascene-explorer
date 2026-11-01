@@ -1,7 +1,7 @@
 <script>
 // A catalogue select, indented by level. A list of more than ten items gets a
 // search button that opens a box narrowing the options to the matches and their parents.
-import { tick } from "svelte";
+import { tick, untrack } from "svelte";
 import { catalogName, filterTree } from "../live.js";
 
 // tree: catalogTree(items); value: the picked item's id, as a string
@@ -11,10 +11,13 @@ let query = $state("");
 let box = $state();
 const shown = $derived(filterTree(tree, query));
 const none = $derived(query.trim() !== "" && !shown.length);
-// a search picks its first match, unless the picked item matches too
+// a new query picks its first match, unless the picked item matches too;
+// value is untracked so a parent picked from the narrowed list stays picked
 $effect(() => {
 	const first = shown.find((n) => n.match);
-	if (first && !shown.some((n) => n.match && String(n.item.id) === value)) value = String(first.item.id);
+	untrack(() => {
+		if (first && !shown.some((n) => n.match && String(n.item.id) === value)) value = String(first.item.id);
+	});
 });
 async function toggle() {
 	searching = !searching;

@@ -6,8 +6,9 @@ import { BROWSER_STATUS } from "../browser-results.js";
 import { amountText, displayChange, pct, wording } from "../flows.js";
 import { LIVE_STATUS, liveData } from "../live.js";
 
-// indicator: the page's indicator; without it, the table has its own select
-let { job, browser = false, indicator = null } = $props();
+// indicator: the page's indicator; without it, the table has its own select.
+// ids: prefix for element ids, distinct per place, since both places can show at once
+let { job, browser = false, indicator = null, ids = "live" } = $props();
 const data = $derived(liveData(job, browser ? BROWSER_STATUS : LIVE_STATUS));
 // svelte-ignore state_referenced_locally
 let own = $state(String(data.indicators[0].id));
@@ -31,16 +32,16 @@ const view = $derived.by(() => {
 </script>
 
 <div class="live-totals">
-<p class="headline" id="live-headline">{view.headline}</p>
+<p class="headline" id="{ids}-headline">{view.headline}</p>
 {#if indicator === null && data.indicators.length > 1}
-	<label for="live-indicator">Indicator</label>
-	<select id="live-indicator" bind:value={own}>
+	<label for="{ids}-indicator">Indicator</label>
+	<select id="{ids}-indicator" bind:value={own}>
 		{#each data.indicators as i (i.id)}<option value={String(i.id)}>{`${wording(i.id).label} (${wording(i.id).unit})`}</option>{/each}
 	</select>
 {/if}
 <!-- svelte-ignore a11y_no_noninteractive_tabindex: horizontal table scrolling needs keyboard focus -->
 <div class="table-wrap" tabindex="0" role="region" aria-label={browser ? "The browser scenario’s totals by region" : "The job’s totals by region"}>
-	<table id="live-table">
+	<table id="{ids}-table">
 		<thead><tr>
 			{#each ["Region", "Baseline", "Intervention", "Change", "Change %"] as h}<th scope="col">{h}</th>{/each}
 		</tr></thead>
