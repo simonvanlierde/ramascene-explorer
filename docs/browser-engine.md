@@ -25,12 +25,14 @@ to the 2011 economy, without forecasts, substitution or rebound. It accepts up
 to ten interventions. Broad changes and singular systems are refused with an
 error instead of returning a result.
 
-The work grows with the changed rows: one row is one product from one producing
-country. Before reading matrices, the form and the worker estimate dense
-arithmetic and scenario buffers from the catalogue alone. They refuse more than
-100 million update terms or 64 MiB of estimated scenario buffers, which allows
-about 200 changed rows. The form says so before Run, with the row count.
-Then choose fewer products or regions. These limits exclude the
+The work grows with the changed product–country pairs (one product from one
+producing country, a row of A) and with the industries that use them. Before
+reading matrices, the form and the worker estimate dense arithmetic and scenario
+buffers from the catalogue alone. They refuse more than 100 million update terms
+or 64 MiB of estimated scenario buffers. That allows up to about 200 pairs, fewer
+when many industries use the product. The form says so before Run, with the pair
+count. Then choose a narrower product, fewer producing countries, or fewer
+industries or regions that use it. These limits exclude the
 baseline, metadata, decoder temporaries and row caches; they are not a total
 browser memory limit. The [job API](interface.md#job-api) remains available
 for work outside the browser budget.
@@ -38,8 +40,8 @@ for work outside the browser budget.
 The worker keeps at most 16 MiB of completed rows per matrix, or 32 MiB for A
 and L together. Least recently used rows are evicted. A repeated selection can
 therefore require another read after other selections fill the cache. No more
-than 64 selected matrix rows decode at once. A and L rows load together in
-batches of 32 per matrix, so one matrix does not wait for the other. Initial X
+than 64 selected matrix rows decode at once. A rows and L columns load together
+in batches of 32 per matrix, so one matrix does not wait for the other. Initial X
 and Y decoding also uses bounded batches.
 
 ## Data and method
