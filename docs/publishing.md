@@ -78,3 +78,78 @@ test ran that code. On 2026-10-27 the browser tests covered 92.1% of the
 Svelte lines (1,397 of 1,517); `Sentence.svelte` was lowest at 69.3%. One
 `load.spec.js` test alone covers 50.4%. CI does not run this, so the number is
 a snapshot, not a gate.
+
+## Cloudflare
+
+`wrangler.jsonc` describes one Worker, `ramascene-explorer`, on the routes
+`simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
+`assets.base_path` serves `dist/` under that prefix, so the domain's other pages stay on
+GitHub Pages. The routes take effect once the domain's DNS records are proxied through
+Cloudflare; until then GitHub Pages serves the site at the same address.
+
+`cloudflare.yml` deploys it on every push to `main`. Each pull request from this
+repository uploads a version without deploying it, with the alias `pr-<number>`. Its
+version URL, `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
+shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
+`X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
+forks get no secrets, so they get no preview.
+
+The site sends COOP and COEP headers so browsers can use shared memory. The current kernel
+still uses one thread; hosting alone does not make calculations multithreaded.
+Paths in `_headers` and `run_worker_first` are public paths, so they carry the prefix,
+and the Worker drops `BASE_PATH` before it matches the data paths.
+
+The app, fonts, maps and browser dataset ship as static assets. The Parquet file
+exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
+The Worker streams it from the `ramascene-explorer-data` R2 bucket at the same
+`data/embodied.parquet` URL. Its R2 key includes the checksum from `results.json`,
+so an older deployment keeps reading its own dataset.
+
+The local Workers asset server returns whole files for range requests.
+The Worker therefore routes Zarr store reads through Cloudflare's Cache API,
+which returns exact byte ranges from complete cached shards. A cold cache fetches
+a complete shard internally; the browser receives only the requested range.
+These reads and the Parquet reads invoke the Worker and count toward its request
+allowance. Other static files are served directly. Each Parquet range request
+uses one R2 HEAD and one GET (two Class B operations); uploading the file uses
+one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
+
+Set up once:
+
+1. Enable R2 in the Cloudflare account and create the bucket:
+   `pnpm exec wrangler r2 bucket create ramascene-explorer-data`.
+2. Create a `cloudflare` GitHub environment with the secret `CLOUDFLARE_API_TOKEN`, and set
+   the repository variable `CLOUDFLARE_ACCOUNT_ID`. The environment allows every branch,
+   because pull requests deploy previews. Scope the token to the account with Workers
+   Scripts Write and Workers R2 Storage Write, and to the simonvanlierde.com zone with
+   Workers Routes Write. Local OAuth login does not configure GitHub Actions.
+
+Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
+local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
+covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
+isolation, the map and a custom calculation in Chromium, Firefox and WebKit. To run it
+yourself, build the kernel and the site, then:
+
+```sh
+key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
+pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
+pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local
+node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another terminal
+```
+
+Pass a preview's version URL instead to check a pull request's deployment.
+The compatibility date matches the runtime bundled with the pinned Wrangler release.
+
+To switch production from GitHub Pages:
+
+1. Run the check against a pull request's preview URL.
+2. In Cloudflare, set SSL/TLS to Full, not Full (strict): GitHub's certificate renewal can
+   fail behind the proxy. Do this before the next step. With Flexible, Cloudflare asks
+   GitHub Pages over HTTP, Pages redirects to HTTPS, and every page on the domain loops.
+3. Proxy the simonvanlierde.com DNS records.
+4. Run the check against `https://simonvanlierde.com/ramascene-explorer/`.
+5. Remove `pages.yml` once production has served a few days.
+
+To roll back a bad production deploy, run `pnpm exec wrangler rollback` and pick the last
+good version; it needs no rebuild. Before `pages.yml` is gone, switching the DNS records
+back to DNS only hands the whole domain back to GitHub Pages.
