@@ -4,9 +4,9 @@
   "cpu": "Intel(R) Core(TM) i9-14900KF",
   "date": "2026-11-01",
   "sources": {
-    "browser-data.js": "2c4d38a8a0cc038cbd4f019012c592f8e4a1ae042be092b335fbee9cbe30c801",
-    "browser-engine.js": "c47411f01da2261e5581078433cadc3dc57fd80a6489c047340e93ed1c1bf7cc",
-    "engine/src/lib.rs": "978194e1139b5ac59416a7662b919284ba758d23f7cc70101b3962b5f6b72878"
+    "browser-data.js": "9f3dcf41963116b23f78ff80717da71fe88437ac9ba302d2f7f5433ff4b4ef58",
+    "browser-engine.js": "0da50531b27b062040096ea4c8cff271642576f8d636868192282bbcd17a3688",
+    "engine/src/lib.rs": "a98bc617c9ad1e4c1aeabb2fafdbdfbb4acb4ffa42490e05aa3b40dec7d7f185"
   },
   "summary": [
     {
@@ -17,11 +17,11 @@
       "flowColumns": 1,
       "lByRows": true,
       "download": 51079.79010204081,
-      "firstMs": 15.430825999999996,
-      "repeatMs": 1.9196360000000112,
+      "firstMs": 12.250513000000005,
+      "repeatMs": 3.3889879999999977,
       "firstBytes": 89882,
       "firstReads": 8,
-      "peakRssBytes": 84410368
+      "peakRssBytes": 84860928
     },
     {
       "workload": "default",
@@ -31,11 +31,11 @@
       "flowColumns": 49,
       "lByRows": true,
       "download": 2014762.9565306124,
-      "firstMs": 127.379103,
-      "repeatMs": 4.247278999999992,
+      "firstMs": 105.52982700000001,
+      "repeatMs": 4.4661490000000015,
       "firstBytes": 4327075,
       "firstReads": 264,
-      "peakRssBytes": 107204608
+      "peakRssBytes": 107569152
     },
     {
       "workload": "steel to all of Europe",
@@ -45,11 +45,11 @@
       "flowColumns": 49,
       "lByRows": false,
       "download": 2582395.12,
-      "firstMs": 166.260507,
-      "repeatMs": 43.13311600000003,
+      "firstMs": 155.117796,
+      "repeatMs": 31.303038999999984,
       "firstBytes": 5019193,
       "firstReads": 298,
-      "peakRssBytes": 150724608
+      "peakRssBytes": 150413312
     },
     {
       "workload": "electricity to manufacturing",
@@ -59,11 +59,11 @@
       "flowColumns": 1078,
       "lByRows": false,
       "download": 56812692.64000001,
-      "firstMs": 1753.930549,
-      "repeatMs": 1010.6226870000003,
+      "firstMs": 1399.123171,
+      "repeatMs": 800.4823540000002,
       "firstBytes": 43238896,
       "firstReads": 301,
-      "peakRssBytes": 493359104
+      "peakRssBytes": 479928320
     },
     {
       "workload": "manufacturing to electricity",
@@ -73,11 +73,11 @@
       "flowColumns": 4165,
       "lByRows": true,
       "download": 124105617.34,
-      "firstMs": 4307.1718869999995,
-      "repeatMs": 3798.753463,
+      "firstMs": 3553.3226520000003,
+      "repeatMs": 3106.4807760000003,
       "firstBytes": 134876595,
       "firstReads": 359,
-      "peakRssBytes": 563798016
+      "peakRssBytes": 531472384
     },
     {
       "workload": "China final demand",
@@ -87,11 +87,11 @@
       "flowColumns": 9800,
       "lByRows": true,
       "download": 63905982,
-      "firstMs": 1451.654617,
-      "repeatMs": 1333.1823749999999,
+      "firstMs": 1246.966893,
+      "repeatMs": 1150.104224,
       "firstBytes": 65041993,
       "firstReads": 161,
-      "peakRssBytes": 238694400
+      "peakRssBytes": 241799168
     },
     {
       "workload": "default",
@@ -101,11 +101,11 @@
       "flowColumns": 49,
       "lByRows": true,
       "download": 2014762.9565306124,
-      "firstMs": 428.709366,
-      "repeatMs": 4.1906040000000075,
+      "firstMs": 403.33355099999994,
+      "repeatMs": 5.094861999999978,
       "firstBytes": 4327075,
       "firstReads": 264,
-      "peakRssBytes": 116785152
+      "peakRssBytes": 121569280
     }
   ],
   "results": [
@@ -122,23 +122,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 14.022587000000001,
+          "ms": 17.055742000000002,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 3.3142989999999912,
+          "ms": 3.298051000000001,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 83578880,
+      "peakRssBytes": 84860928,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -154,23 +154,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 16.107402,
+          "ms": 14.877217000000002,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 3.4815210000000008,
+          "ms": 3.3889879999999977,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 84656128,
+      "peakRssBytes": 84230144,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -186,23 +186,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 12.285102000000002,
+          "ms": 10.227937999999995,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 1.6787570000000045,
+          "ms": 5.104474000000003,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 82542592,
+      "peakRssBytes": 84860928,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -218,23 +218,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 16.976793999999998,
+          "ms": 10.221127000000003,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 1.9196360000000112,
+          "ms": 3.8269340000000014,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 85364736,
+      "peakRssBytes": 82849792,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -250,23 +250,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 15.430825999999996,
+          "ms": 12.250513000000005,
           "bytes": 89882,
           "reads": 8,
           "checksum": 38379762943350.45
         },
         {
-          "ms": 1.6766220000000018,
+          "ms": 3.3260019999999955,
           "bytes": 0,
           "reads": 0,
           "checksum": 38379762943350.45
         }
       ],
-      "peakRssBytes": 84410368,
+      "peakRssBytes": 85045248,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -282,23 +282,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 110.598391,
+          "ms": 102.58823500000001,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.068234000000018,
+          "ms": 4.483555999999993,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 107204608,
+      "peakRssBytes": 107458560,
       "load": [
-        6.11,
-        6.16,
-        5.89
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -314,23 +314,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 130.521468,
+          "ms": 105.90092000000001,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.034669000000008,
+          "ms": 4.407213999999982,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 108462080,
+      "peakRssBytes": 108347392,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -346,23 +346,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 127.379103,
+          "ms": 101.86544599999999,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.313182999999981,
+          "ms": 4.383994000000001,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 106803200,
+      "peakRssBytes": 107569152,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -378,23 +378,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 127.97822199999999,
+          "ms": 105.52982700000001,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.247278999999992,
+          "ms": 4.4661490000000015,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 108806144,
+      "peakRssBytes": 106987520,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -410,23 +410,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 112.51662499999999,
+          "ms": 106.56453400000001,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.35330399999998,
+          "ms": 4.515304000000015,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 105639936,
+      "peakRssBytes": 108482560,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -442,23 +442,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 175.185709,
+          "ms": 152.640206,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 43.247570000000024,
+          "ms": 31.074795999999992,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 150687744,
+      "peakRssBytes": 150413312,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -474,23 +474,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 163.30879299999998,
+          "ms": 147.825568,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 41.903696999999994,
+          "ms": 30.926512000000002,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 152801280,
+      "peakRssBytes": 150835200,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -506,23 +506,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 166.260507,
+          "ms": 175.53030199999998,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 43.70877899999999,
+          "ms": 31.493773000000004,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 155041792,
+      "peakRssBytes": 149172224,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -538,23 +538,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 172.74643700000001,
+          "ms": 156.10488,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 42.81176400000001,
+          "ms": 31.303038999999984,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 149127168,
+      "peakRssBytes": 149540864,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -570,23 +570,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 164.322341,
+          "ms": 155.117796,
           "bytes": 5019193,
           "reads": 298,
           "checksum": 38334909113223.77
         },
         {
-          "ms": 43.13311600000003,
+          "ms": 32.87552600000001,
           "bytes": 0,
           "reads": 0,
           "checksum": 38334909113223.77
         }
       ],
-      "peakRssBytes": 150724608,
+      "peakRssBytes": 150667264,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        15.79,
+        8.53,
+        6.15
       ]
     },
     {
@@ -602,23 +602,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1824.965061,
+          "ms": 1426.2812669999998,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 1010.6226870000003,
+          "ms": 807.9113179999999,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 492064768,
+      "peakRssBytes": 483008512,
       "load": [
-        5.94,
-        6.12,
-        5.88
+        14.77,
+        8.44,
+        6.14
       ]
     },
     {
@@ -634,23 +634,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1721.7633289999999,
+          "ms": 1394.821732,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 1007.4529860000002,
+          "ms": 797.217457,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 496267264,
+      "peakRssBytes": 480886784,
       "load": [
-        5.79,
-        6.09,
-        5.87
+        14.77,
+        8.44,
+        6.14
       ]
     },
     {
@@ -666,23 +666,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1753.930549,
+          "ms": 1380.621956,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 1014.2811800000002,
+          "ms": 800.4280880000001,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 493359104,
+      "peakRssBytes": 466292736,
       "load": [
-        5.97,
-        6.12,
-        5.88
+        13.98,
+        8.38,
+        6.13
       ]
     },
     {
@@ -698,23 +698,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1720.695602,
+          "ms": 1399.123171,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 1007.8249419999997,
+          "ms": 802.5802349999999,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 493887488,
+      "peakRssBytes": 447549440,
       "load": [
-        5.97,
-        6.12,
-        5.88
+        13.98,
+        8.38,
+        6.13
       ]
     },
     {
@@ -730,23 +730,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1859.8771239999999,
+          "ms": 1409.547587,
           "bytes": 43238896,
           "reads": 301,
           "checksum": 37228463678972.375
         },
         {
-          "ms": 1106.395761,
+          "ms": 800.4823540000002,
           "bytes": 20774563,
           "reads": 57,
           "checksum": 37228463678972.375
         }
       ],
-      "peakRssBytes": 490934272,
+      "peakRssBytes": 479928320,
       "load": [
-        5.81,
-        6.08,
-        5.87
+        13.1,
+        8.29,
+        6.11
       ]
     },
     {
@@ -762,23 +762,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 4303.340435,
+          "ms": 3538.6934349999997,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 3797.9048140000004,
+          "ms": 3104.456033,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 518127616,
+      "peakRssBytes": 531472384,
       "load": [
-        5.66,
-        6.05,
-        5.86
+        12.29,
+        8.2,
+        6.09
       ]
     },
     {
@@ -794,23 +794,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 4307.1718869999995,
+          "ms": 3580.734387,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 3803.5153680000003,
+          "ms": 3138.41683,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 567189504,
+      "peakRssBytes": 530448384,
       "load": [
-        5.72,
-        6.05,
-        5.86
+        11.55,
+        8.12,
+        6.08
       ]
     },
     {
@@ -826,23 +826,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 4312.0536010000005,
+          "ms": 3515.426089,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 3787.8037410000006,
+          "ms": 3106.4807760000003,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 563798016,
+      "peakRssBytes": 506548224,
       "load": [
-        5.6,
-        6.01,
-        5.85
+        10.31,
+        7.96,
+        6.05
       ]
     },
     {
@@ -858,23 +858,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 4292.726976,
+          "ms": 3553.3226520000003,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 3798.753463,
+          "ms": 3171.5636449999997,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 565587968,
+      "peakRssBytes": 541028352,
       "load": [
-        5.56,
-        5.99,
-        5.85
+        9.72,
+        7.88,
+        6.03
       ]
     },
     {
@@ -890,23 +890,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 4320.681883,
+          "ms": 3561.5250920000003,
           "bytes": 134876595,
           "reads": 359,
           "checksum": 38338351133674.44
         },
         {
-          "ms": 3822.407019,
+          "ms": 3105.965834,
           "bytes": 112231155,
           "reads": 180,
           "checksum": 38338351133674.44
         }
       ],
-      "peakRssBytes": 529256448,
+      "peakRssBytes": 546390016,
       "load": [
-        5.71,
-        6.01,
-        5.85
+        9.26,
+        7.82,
+        6.02
       ]
     },
     {
@@ -922,23 +922,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1451.654617,
+          "ms": 1254.115273,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 1342.358321,
+          "ms": 1167.188234,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 245895168,
+      "peakRssBytes": 242667520,
       "load": [
-        5.73,
-        6.01,
-        5.86
+        8.84,
+        7.75,
+        6.01
       ]
     },
     {
@@ -954,23 +954,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1460.4152569999999,
+          "ms": 1289.930027,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 1338.087209,
+          "ms": 1156.0980010000003,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 238415872,
+      "peakRssBytes": 241311744,
       "load": [
-        5.73,
-        6.01,
-        5.86
+        8.84,
+        7.75,
+        6.01
       ]
     },
     {
@@ -986,23 +986,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1445.18092,
+          "ms": 1236.733139,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 1324.660871,
+          "ms": 1139.867225,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 235552768,
+      "peakRssBytes": 242257920,
       "load": [
-        5.68,
-        5.99,
-        5.85
+        8.45,
+        7.69,
+        6
       ]
     },
     {
@@ -1018,23 +1018,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1456.8572279999998,
+          "ms": 1246.966893,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 1332.141478,
+          "ms": 1145.6568280000001,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 244609024,
+      "peakRssBytes": 239144960,
       "load": [
-        5.68,
-        5.99,
-        5.85
+        8.45,
+        7.69,
+        6
       ]
     },
     {
@@ -1050,23 +1050,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 1434.516844,
+          "ms": 1246.191758,
           "bytes": 65041993,
           "reads": 161,
           "checksum": 36549796718193.45
         },
         {
-          "ms": 1333.1823749999999,
+          "ms": 1150.104224,
           "bytes": 63905982,
           "reads": 110,
           "checksum": 36549796718193.45
         }
       ],
-      "peakRssBytes": 238694400,
+      "peakRssBytes": 241799168,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     },
     {
@@ -1082,23 +1082,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 433.900664,
+          "ms": 391.50048100000004,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.1906040000000075,
+          "ms": 4.287916999999993,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 116785152,
+      "peakRssBytes": 108519424,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     },
     {
@@ -1114,23 +1114,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 427.043365,
+          "ms": 404.70838399999997,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.338599999999985,
+          "ms": 5.69969500000002,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 116006912,
+      "peakRssBytes": 122490880,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     },
     {
@@ -1146,23 +1146,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 428.709366,
+          "ms": 403.33355099999994,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.1796920000000455,
+          "ms": 5.502464999999972,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 117895168,
+      "peakRssBytes": 121606144,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     },
     {
@@ -1178,23 +1178,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 426.764643,
+          "ms": 407.286571,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.169930999999963,
+          "ms": 5.094861999999978,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 117751808,
+      "peakRssBytes": 121569280,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     },
     {
@@ -1210,23 +1210,23 @@
       "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
       "trials": [
         {
-          "ms": 435.903634,
+          "ms": 400.36685900000003,
           "bytes": 4327075,
           "reads": 264,
           "checksum": 38375617165783.91
         },
         {
-          "ms": 4.271990999999957,
+          "ms": 4.322223000000008,
           "bytes": 0,
           "reads": 0,
           "checksum": 38375617165783.91
         }
       ],
-      "peakRssBytes": 107827200,
+      "peakRssBytes": 110604288,
       "load": [
-        5.7,
-        5.99,
-        5.85
+        8.02,
+        7.61,
+        5.98
       ]
     }
   ]
