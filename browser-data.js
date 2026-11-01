@@ -13,6 +13,18 @@ const PARALLEL = 16;
 
 const SHAPES = { A: [9800, 9800], L: [9800, 9800], LC: [9800, 9800], H: [9800, 2205], X: [9800, 49], Y: [9800, 49] };
 
+const CRC_TABLE = Uint32Array.from({ length: 256 }, (_, n) => {
+	let c = n;
+	for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+	return c;
+});
+
+function crc32(bytes) {
+	let c = 0xffffffff;
+	for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+	return (c ^ 0xffffffff) >>> 0;
+}
+
 // readRange(shard, start, end) resolves to that byte range of the shard file.
 export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {}) {
 	if (!Number.isSafeInteger(cacheBytes) || cacheBytes < 0) throw new Error("invalid matrix cache budget");
@@ -62,13 +74,16 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 		retained += values.byteLength;
 	}
 
+	// The decoder writes into a buffer of the row's size, which bounds memory, but does
+	// not report how much it filled; the gzip trailer's CRC-32 and size catch short data.
 	function decode(bytes) {
 		const length = rows * width * 4;
-		// Without an output buffer the decoder returns exactly what it decoded.
-		const raw = gunzip(bytes);
-		if (raw.byteLength !== length) throw new Error("invalid matrix chunk");
-		const values = new Float32Array(raw.buffer, raw.byteOffset, rows * width);
-		if (!values.every(Number.isFinite)) throw new Error("invalid matrix values");
+		const trailer = new DataView(bytes.buffer, bytes.byteOffset + bytes.byteLength - 8, 8);
+		if (bytes.byteLength < 18 || trailer.getUint32(4, true) !== length) throw new Error("invalid matrix chunk");
+		const raw = gunzip(bytes, new Uint8Array(length));
+		if (crc32(raw) !== trailer.getUint32(0, true)) throw new Error("invalid matrix chunk");
+		const values = new Float32Array(raw.buffer);
+		for (const v of values) if (!Number.isFinite(v)) throw new Error("invalid matrix values");
 		return values;
 	}
 

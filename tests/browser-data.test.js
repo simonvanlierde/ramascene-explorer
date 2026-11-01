@@ -95,6 +95,24 @@ test("a chunk whose gzip size field overstates its data is refused", async () =>
 	await assert.rejects(read(chunks, [0]), /invalid matrix chunk/);
 });
 
+test("decoded chunks own exactly their bytes, and a chunk claiming more than a row is refused", async () => {
+	const { readRange } = fixture();
+	const buffers = [];
+	await arrayReader(info, readRange)([0, 1, 3], (_, values) => buffers.push(values.buffer.byteLength));
+	assert.deepEqual(buffers, [12, 12, 12]);
+	const { gzipSync } = await import("node:zlib");
+	// a megabyte of zeros where a row of three values belongs
+	const chunk = gzipSync(new Uint8Array(1024 ** 2));
+	const index = new DataView(new ArrayBuffer(16));
+	index.setBigUint64(8, BigInt(chunk.length), true);
+	const shard = Buffer.concat([chunk, Buffer.from(index.buffer)]);
+	const one = { shape: [1, 3], chunk_rows: 1, shard_rows: 1, shard_bytes: [shard.length], chunk_bytes: chunk.length };
+	const bomb = arrayReader(one, async (_, start, end) =>
+		shard.buffer.slice(shard.byteOffset + start, shard.byteOffset + end),
+	);
+	await assert.rejects(read(bomb, [0]), /invalid matrix chunk/);
+});
+
 test("range reads refuse a full download, a wrong offset and truncated data", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	t.mock.method(globalThis, "fetch", async () => new Response("0123456789"));

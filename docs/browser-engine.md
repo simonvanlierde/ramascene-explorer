@@ -81,7 +81,7 @@ written by zarr-python, so any Zarr v3 reader can open it:
 | `X`, `Y` | 9,800 × 49 | 2.6 MB | rows K and F |
 
 Values are float32 with gzip. Storing float32 moves the 153 published
-scenarios by at most 5.5e-9 relative; the arithmetic is float64 throughout.
+scenarios by at most 5.5e-9 relative (the parity test prints its worst case); the arithmetic is float64 throughout.
 L is stored twice so the reader can take `L[K, J]` from K rows or J columns,
 whichever is less to download: the Europe steel scenarios change 49 rows that
 feed 6,400 columns. A system whose pivot falls below float32 precision,
@@ -112,7 +112,7 @@ data therefore gets different URLs. The reader refuses the earlier row layouts,
 and version 3 uses a new manifest name, so a cached older manifest cannot reach
 the new reader. The export takes about 10 s with 8 threads.
 
-The store is a separate `data-2011` release asset, 766 MB. The earlier
+The store is a separate `data-2011` release asset, 803 MB. The earlier
 `ramascene-browser-engine*.tar` assets remain for the older layouts. Move any
 existing `data/browser-engine` directory aside before extraction, so the build
 contains only the selected export.
@@ -166,7 +166,7 @@ Do not download the entire export to warm a cache. Large, rarely used
 assets should load when needed, as the
 [Chrome runtime-caching guide](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/)
 explains. In the broad scenarios the time goes to the small system's dense
-products, not to reading or decoding: gunzip runs at about 150 MB/s. A compiled
+products, not to reading or decoding: gunzip measured about 150 MB/s of output. A compiled
 core would speed up that part; persistent browser storage and GPU kernels have
 no measured bottleneck to justify them.
 
@@ -199,6 +199,6 @@ The [recorded diagnostics](measurements/browser-engine-zarr.json) used Node
 | manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s |
 | China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s |
 
-With the earlier [row layout](measurements/browser-engine-rows.json), the
-default scenario took 211 ms locally and 1.27 s with 150 ms latency. Use these numbers to locate costs, not to promise
-phone or network performance.
+The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
+used a paired method, so compare them with care. Use these numbers to locate
+costs, not to promise phone or network performance.
