@@ -115,17 +115,19 @@ export function plan(meta, steps) {
 	const K = columns.length;
 	const n = Math.min(R, K);
 	const work = R * K * n + n ** 3 / 3 + n * n * C + R * K * C + K * finals.length * C + J.length * F * C;
-	const memory = 8 * (2 * R * K + K * J.length + n * n + 2 * n * C + K * C + J.length * C + F * C + H_BATCH * F);
 	// Mean stored bytes per row; without them, count rows.
 	const size = (name) => meta.arrays?.[name]?.chunk_bytes ?? 1;
 	// L[K, J] from K rows of L or J columns, whichever is less to fetch.
 	const byRows = !R || K * size("L") <= J.length * size("LC");
 	const download = R * size("A") + (R ? (byRows ? K * size("L") : J.length * size("LC")) : 0) + J.length * size("H");
+	// L[K, J] by columns also holds the untransposed copy while it transposes.
+	const memory =
+		8 * (2 * R * K + (byRows ? 1 : 2) * K * J.length + n * n + 2 * n * C + K * C + J.length * C + F * C + H_BATCH * F);
 	if (work > LIMITS.work || memory > LIMITS.memory || (meta.arrays && download > LIMITS.download)) {
 		const one = steps.length === 1 && edits.length === 1;
-		const size = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
+		const detail = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
 		throw new Error(
-			`too broad to compute in the browser: it changes ${(R + finals.length).toLocaleString("en")} supply rows${size}. Choose a narrower product or fewer producing countries.`,
+			`too broad to compute in the browser: it changes ${(R + finals.length).toLocaleString("en")} supply rows${detail}. Choose a narrower product or fewer producing countries.`,
 		);
 	}
 	return { edits, technical, rows, columns, finals, J, byRows, download };

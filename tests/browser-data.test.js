@@ -80,6 +80,21 @@ test("a corrupt shard index or chunk is refused", async () => {
 	await assert.rejects(read(wide, [0]), /invalid matrix chunk/);
 });
 
+test("a chunk whose gzip size field overstates its data is refused", async () => {
+	const { gzipSync } = await import("node:zlib");
+	const chunk = gzipSync(Buffer.from(new Float32Array([1.5, 2.5]).buffer));
+	// claim 12 bytes, a row of three values, for 8 bytes of data
+	chunk.writeUInt32LE(12, chunk.length - 4);
+	const index = new DataView(new ArrayBuffer(16));
+	index.setBigUint64(8, BigInt(chunk.length), true);
+	const shard = Buffer.concat([chunk, Buffer.from(index.buffer)]);
+	const one = { shape: [1, 3], chunk_rows: 1, shard_rows: 1, shard_bytes: [shard.length], chunk_bytes: chunk.length };
+	const chunks = arrayReader(one, async (_, start, end) =>
+		shard.buffer.slice(shard.byteOffset + start, shard.byteOffset + end),
+	);
+	await assert.rejects(read(chunks, [0]), /invalid matrix chunk/);
+});
+
 test("range reads refuse a full download, a wrong offset and truncated data", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	t.mock.method(globalThis, "fetch", async () => new Response("0123456789"));

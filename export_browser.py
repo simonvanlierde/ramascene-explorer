@@ -93,6 +93,9 @@ def write_array(directory, name, matrix, chunk_rows=1, shard_rows=SHARD_ROWS):
     for start in range(0, len(single), shard_rows):
         array[start : start + shard_rows] = single[start : start + shard_rows]
     shards = [directory / name / "c" / str(i) / "0" for i in range(len(values) // shard_rows)]
+    # zarr writes no file for a shard of empty chunks, and the reader expects one per shard.
+    if missing := [str(p) for p in shards if not p.exists()]:
+        raise ValueError(f"{name} has all-zero shards: {missing}")
     sizes = [p.stat().st_size for p in shards]
     chunks = len(values) // chunk_rows
     stored = sum(sizes) - 16 * chunks

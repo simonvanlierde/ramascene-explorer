@@ -37,6 +37,11 @@ def test_country_chunks_and_whole_shards(tmp_path):
         write_array(tmp_path, "Y", matrix[:300])
 
 
+def test_array_refuses_an_all_zero_shard(tmp_path):
+    with pytest.raises(ValueError, match="all-zero shards"):
+        write_array(tmp_path, "Z", np.array([[1.0, 2], [3, 4], [0, 0], [0, 0]]), shard_rows=2)
+
+
 def test_array_refuses_nonfinite_and_float32_overflow(tmp_path):
     with pytest.raises(ValueError, match="non-finite"):
         write_array(tmp_path, "A", np.full((200, 1), np.inf))

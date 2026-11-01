@@ -1,4 +1,4 @@
-import { decompressGzip } from "hyparquet-compressors";
+import { gunzip } from "hyparquet-compressors";
 
 // The browser export is a float32 Zarr v3 store (export_browser.py): each array
 // is sharded by producing country, with gzip chunks of whole rows and a shard
@@ -51,7 +51,8 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 	}
 
 	function keep(chunk, values) {
-		if (values.byteLength > cacheBytes) return;
+		// Two overlapping reads of one chunk must not count its bytes twice.
+		if (cache.has(chunk) || values.byteLength > cacheBytes) return;
 		while (retained + values.byteLength > cacheBytes) {
 			const oldest = cache.keys().next().value;
 			retained -= cache.get(oldest).byteLength;
@@ -63,13 +64,9 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 
 	function decode(bytes) {
 		const length = rows * width * 4;
-		// The gzip trailer ends with the uncompressed size; the decoder does not check it.
-		if (
-			bytes.byteLength < 18 ||
-			new DataView(bytes.buffer, bytes.byteOffset).getUint32(bytes.byteLength - 4, true) !== length
-		)
-			throw new Error("invalid matrix chunk");
-		const raw = decompressGzip(bytes, length);
+		// Without an output buffer the decoder returns exactly what it decoded.
+		const raw = gunzip(bytes);
+		if (raw.byteLength !== length) throw new Error("invalid matrix chunk");
 		const values = new Float32Array(raw.buffer, raw.byteOffset, rows * width);
 		if (!values.every(Number.isFinite)) throw new Error("invalid matrix values");
 		return values;
