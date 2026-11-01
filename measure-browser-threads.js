@@ -7,6 +7,8 @@ import { chromium } from "@playwright/test";
 const origin = process.argv[2] ?? "http://127.0.0.1:4193/";
 const output = process.argv[3];
 const repetitions = Number(process.argv[4] ?? 3);
+const limits = process.argv[5] ? process.argv[5].split(",").map(Number) : undefined;
+if (limits) assert.ok(limits.every((n) => Number.isInteger(n) && n >= 1 && n <= 16));
 const worker = new URL(`assets/${readdirSync("dist/assets").find((f) => /^browser-worker-.*\.js$/.test(f))}`, origin)
 	.href;
 const cases = {
@@ -41,8 +43,12 @@ function rss(pid) {
 const samples = [];
 for (let pair = -1; pair < repetitions; pair++) {
 	for (const [name, step] of Object.entries(cases)) {
+		if (limits && name !== "manufacturing to electricity") continue;
 		let reference;
-		for (const single of pair % 2 ? [false, true] : [true, false]) {
+		const order = limits ? limits.slice() : [1, 4];
+		if (pair % 2) order.reverse();
+		for (const count of order) {
+			const single = count === 1;
 			const server = await chromium.launchServer({ headless: true });
 			const browser = await chromium.connect(server.wsEndpoint());
 			let peak = 0;
@@ -51,6 +57,15 @@ for (let pair = -1; pair < repetitions; pair++) {
 			}, 25);
 			try {
 				const page = await browser.newPage();
+				if (limits && !single) {
+					await page.route("**/assets/browser-worker-*.js", async (route) => {
+						const response = await route.fetch();
+						const body = await response.text();
+						const cap = /Math\.min\(4,Math\.max\(1,/g;
+						assert.equal([...body.matchAll(cap)].length, 1, "expected one thread cap in worker bundle");
+						await route.fulfill({ response, body: body.replace(cap, `Math.min(${count},Math.max(1,`) });
+					});
+				}
 				await page.goto(origin);
 				const trial = await page.evaluate(
 					async ({ worker, origin, step, single }) => {
@@ -58,11 +73,16 @@ for (let pair = -1; pair < repetitions; pair++) {
 						const w = new Worker(worker, { type: "module" });
 						const call = (body) =>
 							new Promise((resolve, reject) => {
-								w.onmessage = ({ data }) =>
-									data.error || data.retrySingle
-										? reject(new Error(data.error ?? "thread pool failed"))
-										: resolve(data.value);
-								w.onerror = (e) => reject(new Error(e.message));
+								const deadline = setTimeout(() => reject(new Error("measurement exceeded 90 seconds")), 90_000);
+								w.onmessage = ({ data }) => {
+									clearTimeout(deadline);
+									if (data.error || data.retrySingle) reject(new Error(data.error ?? "thread pool failed"));
+									else resolve(data.value);
+								};
+								w.onerror = (e) => {
+									clearTimeout(deadline);
+									reject(new Error(e.message));
+								};
 								w.postMessage({ id: 1, base: new URL("data/browser-engine/", origin).href, body, single });
 							});
 						try {
@@ -81,7 +101,7 @@ for (let pair = -1; pair < repetitions; pair++) {
 					},
 					{ worker, origin, step, single: single ? true : undefined },
 				);
-				assert.equal(trial.threads, !single && name === "manufacturing to electricity" ? 4 : 1);
+				assert.equal(trial.threads, !single && name === "manufacturing to electricity" ? count : 1);
 				if (reference) {
 					const scale = Math.max(...reference.map(Math.abs));
 					const error = Math.max(...trial.flows.map((v, i) => Math.abs(v - reference[i]))) / scale;
@@ -106,6 +126,7 @@ if (output)
 				date: new Date().toISOString(),
 				cpu: cpus()[0].model,
 				affinity: /Cpus_allowed_list:\s+(.+)/.exec(readFileSync("/proc/self/status", "utf8"))?.[1],
+				limits,
 				container: "mcr.microsoft.com/playwright:v1.64.1-noble",
 				browser: chromium.executablePath().split("/").at(-3),
 				method:

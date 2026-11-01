@@ -268,3 +268,41 @@ The shared host and local asset server produced slow samples in both modes;
 all five measured pairs remain in the JSON. These are local browser diagnostics,
 not phone or Internet-download timings. Small and sparse cases use the same
 single-thread implementation in both modes.
+
+### Eight and sixteen threads
+
+The [scaling diagnostics](measurements/browser-engine-thread-scaling.json) compare
+1, 4, 8 and 16 threads on the same dense case. Five sets used fresh Chromium process
+trees on CPUs 0–23 of the same i9-14900KF. The combined CPU allocation leaves room
+for sixteen calculation threads, but the quiet helper does not support that allocation;
+these runs share CPUs with host processes. All complete flow arrays match the
+single-thread reference at relative 1e-8.
+
+| Threads | First calculation | Repeated calculation | Peak browser process-tree RSS |
+| ---: | ---: | ---: | ---: |
+| 1 | 2.29 s | 1.79 s | 1.10 GB |
+| 4 | 1.76 s | 1.28 s | 1.10 GB |
+| 8 | 1.72 s | 1.25 s | 1.11 GB |
+| 16 | 2.42 s | 1.20 s | 1.14 GB |
+
+These are medians. Repeated calculations range from 1.19–3.19 s at four threads,
+1.16–2.17 s at eight, and 1.11–1.92 s at sixteen. First calculations have larger
+outliers, retained in the JSON. Eight threads improve the median repeat by 2%
+over four, and sixteen by 6%; those gains are small relative to the observed variation.
+
+Keep the four-thread cap. The pinned wasm-bindgen runtime reserves a
+[2 MiB stack per additional thread](https://github.com/wasm-bindgen/wasm-bindgen/blob/0.2.129/crates/cli-support/src/transforms/threads/mod.rs#L12).
+Eight calculation threads would consume the entire 16 MiB pool allowance in stacks
+alone, and sixteen would need 32 MiB before runtime space. Increasing the allowance
+would remove the largest dense case from the existing working-memory budget.
+
+Reproduce the scaling comparison with:
+
+```sh
+OSS_BENCH_SLOTS='scale:0-23' OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash measure-browser-threads.sh 5 1,4,8,16
+```
+
+The harness changes the cap only in the benchmark's intercepted worker response,
+asserts the actual pool size, and leaves the shipped cap unchanged. Use the same
+CPU allocation for every count; do not compare these timings with the separate
+four-thread P-core-slot measurements above.
