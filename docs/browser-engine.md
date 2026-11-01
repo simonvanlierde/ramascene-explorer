@@ -173,11 +173,10 @@ Do not download the entire export to warm a cache. Large, rarely used
 assets should load when needed, as the
 [Chrome runtime-caching guide](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/)
 explains. The WebAssembly kernel does the small system's dense products with faer's
-matrix routines, without wasm SIMD, which measured no faster. With the kernel, reading
-and decoding take longer than the maths in the broad scenarios: for manufacturing used
-by electricity, reads take about 1.8 s against 1.4 s in the kernel, nearly all of it
-gunzip in JavaScript at about 150 MB/s of output. Decoding in Rust (zlib-rs measured
-306 MB/s) is the next step. WebAssembly memory grows to the largest scenario run in a
+matrix routines, without wasm SIMD, which measured no faster. It also decodes the
+stored chunks, with flate2's zlib-rs backend: about 306 MB/s of output, against about
+150 MB/s for gunzip in JavaScript, which took manufacturing used by electricity from
+3.52 s to 2.60 s. WebAssembly memory grows to the largest scenario run in a
 tab and is not returned until the worker restarts. Persistent browser storage and GPU
 kernels have no measured bottleneck to justify them.
 
@@ -204,16 +203,16 @@ The [recorded diagnostics](measurements/browser-engine-wasm.json) used Node
 | Case | Rows × columns | Read | JavaScript | WebAssembly |
 | --- | ---: | ---: | ---: | ---: |
 | one product in one country | 1 × 1 | 0.09 MB | 12 ms | 11 ms |
-| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 105 ms |
-| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 407 ms |
-| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 156 ms |
-| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 1.39 s |
-| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 3.52 s |
-| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 1.23 s |
+| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 70 ms |
+| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 362 ms |
+| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 125 ms |
+| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 1.07 s |
+| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 2.60 s |
+| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 813 ms |
 
 The WebAssembly column also gains from 64 parallel ranges per array and the
 faster chunk check, which the JavaScript record predates. Peak memory of the
-largest case rose from 484 MB to 542 MB, because the kernel holds its own copies
+largest case rose from 484 MB to 497 MB, because the kernel holds its own copies
 of ΔA and L[K, R].
 
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
