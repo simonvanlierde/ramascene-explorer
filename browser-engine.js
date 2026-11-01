@@ -1,47 +1,14 @@
 // Float64 flows from changes to technical coefficients or final demand.
 // Matrix rows come from the data reader; this module has no network or DOM.
+// The dense products and the small solve run in engine/ (Rust, built to wasm);
+// the caller loads that module before the first scenario.
+import { correction, fold } from "./engine/pkg/ramascene_engine.js";
 
 // The export stores float32, so a pivot this close to zero, relative to the
 // system's scale, cannot be told apart from a singular system.
 const STORED_EPSILON = 2 ** -23;
 // H rows read and folded into the flows at once.
 const H_BATCH = 256;
-
-export function solve(matrix, rhs, n, columns, referenceScale = 0, epsilon = Number.EPSILON) {
-	if (
-		!Number.isInteger(n) ||
-		n < 1 ||
-		!Number.isInteger(columns) ||
-		columns < 1 ||
-		matrix.length !== n * n ||
-		rhs.length !== n * columns
-	)
-		throw new Error("invalid solve dimensions");
-	if (!matrix.every(Number.isFinite) || !rhs.every(Number.isFinite)) throw new Error("the solve needs finite numbers");
-	const a = Float64Array.from(matrix);
-	const x = Float64Array.from(rhs);
-	const norm = a.reduce((max, v) => Math.max(max, Math.abs(v)), referenceScale);
-	for (let k = 0; k < n; k++) {
-		let pivot = k;
-		for (let i = k + 1; i < n; i++) if (Math.abs(a[i * n + k]) > Math.abs(a[pivot * n + k])) pivot = i;
-		if (Math.abs(a[pivot * n + k]) <= epsilon * norm * n) throw new Error("singular or ill-conditioned scenario");
-		for (let j = k; j < n; j++) [a[k * n + j], a[pivot * n + j]] = [a[pivot * n + j], a[k * n + j]];
-		for (let c = 0; c < columns; c++)
-			[x[k * columns + c], x[pivot * columns + c]] = [x[pivot * columns + c], x[k * columns + c]];
-		for (let i = k + 1; i < n; i++) {
-			const factor = a[i * n + k] / a[k * n + k];
-			for (let j = k + 1; j < n; j++) a[i * n + j] -= factor * a[k * n + j];
-			for (let c = 0; c < columns; c++) x[i * columns + c] -= factor * x[k * columns + c];
-		}
-	}
-	for (let i = n - 1; i >= 0; i--)
-		for (let c = 0; c < columns; c++) {
-			for (let j = i + 1; j < n; j++) x[i * columns + c] -= a[i * n + j] * x[j * columns + c];
-			x[i * columns + c] /= a[i * n + i];
-		}
-	if (!x.every(Number.isFinite)) throw new Error("non-finite scenario solution");
-	return x;
-}
 
 function expand(list, ids, bound) {
 	if (!Array.isArray(ids) || !ids.length) throw new Error("select at least one id");
@@ -197,74 +164,16 @@ export async function scenarioFlows(data, steps) {
 		// T = L[K,R], K × R
 		const T = new Float64Array(K * R);
 		for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) T[k * R + r] = l[k * W + position.get(rows[r])];
-		const nonzero = Array.from({ length: R }, (_, r) => {
-			const list = [];
-			for (let k = 0; k < K; k++) if (delta[r * K + k]) list.push(k);
-			return Int32Array.from(list);
-		});
-		const absRow = (m, i, width) => {
-			let v = 0;
-			for (let j = 0; j < width; j++) v += Math.abs(m[i * width + j]);
-			return v;
-		};
-		let correction;
-		let referenceScale = 1;
-		if (R <= K) {
-			// S = I − ΔA T (R × R), right side ΔA X₀[K,:]
-			const S = new Float64Array(R * R);
-			const rhs = new Float64Array(R * C);
-			const tAbs = Float64Array.from({ length: K }, (_, k) => absRow(T, k, R));
-			for (let r = 0; r < R; r++) {
-				S[r * R + r] = 1;
-				// Compare pivots with the scale before I − ΔA T cancels, not just S.
-				let rowScale = 1;
-				for (const k of nonzero[r]) {
-					const v = delta[r * K + k];
-					rowScale += Math.abs(v) * tAbs[k];
-					for (let q = 0; q < R; q++) S[r * R + q] -= v * T[k * R + q];
-					for (let c = 0; c < C; c++) rhs[r * C + c] += v * x[k * C + c];
-				}
-				referenceScale = Math.max(referenceScale, rowScale);
-			}
-			correction = solve(S, rhs, R, C, referenceScale, STORED_EPSILON);
-		} else {
-			// S = I − T ΔA (K × K), W = ΔA S⁻¹ X₀[K,:]
-			const S = new Float64Array(K * K);
-			const dAbs = Float64Array.from({ length: R }, (_, r) => absRow(delta, r, K));
-			for (let k = 0; k < K; k++) {
-				S[k * K + k] = 1;
-				let rowScale = 1;
-				for (let r = 0; r < R; r++) {
-					const t = T[k * R + r];
-					if (!t) continue;
-					rowScale += Math.abs(t) * dAbs[r];
-					for (const q of nonzero[r]) S[k * K + q] -= t * delta[r * K + q];
-				}
-				referenceScale = Math.max(referenceScale, rowScale);
-			}
-			const V = solve(S, x, K, C, referenceScale, STORED_EPSILON);
-			correction = new Float64Array(R * C);
-			for (let r = 0; r < R; r++)
-				for (const k of nonzero[r]) {
-					const v = delta[r * K + k];
-					for (let c = 0; c < C; c++) correction[r * C + c] += v * V[k * C + c];
-				}
-		}
+		const w = correction(delta, T, x, R, K, C, STORED_EPSILON);
 		for (let r = 0; r < R; r++) {
 			const j = position.get(rows[r]);
-			for (let c = 0; c < C; c++) Z[j * C + c] += correction[r * C + c];
+			for (let c = 0; c < C; c++) Z[j * C + c] += w[r * C + c];
 		}
 	}
 	for (let start = 0; start < J.length; start += H_BATCH) {
 		const batch = J.slice(start, start + H_BATCH);
 		const h = await (start ? read("H", batch) : firstH);
-		for (let b = 0; b < batch.length; b++) {
-			const z = Z.subarray((start + b) * C, (start + b + 1) * C);
-			for (let f = 0; f < F; f++) {
-				const v = h[b * F + f];
-				if (v) for (let c = 0; c < C; c++) out[f * C + c] += v * z[c];
-			}
-		}
+		fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 	}
 	if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
 	return out;

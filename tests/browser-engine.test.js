@@ -1,18 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { plan, scenarioFlows, solve } from "../browser-engine.js";
+import { plan, scenarioFlows } from "../browser-engine.js";
+import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);
-
-test("the small solve pivots and leaves its inputs unchanged", () => {
-	const a = [0, 2, 1, 3];
-	assert.deepEqual([...solve(a, [4, 7], 2, 1)], [1, 2]);
-	assert.deepEqual(a, [0, 2, 1, 3]);
-	assert.throws(() => solve([1, 2, 2, 4], [1, 2], 2, 1), /singular/);
-	assert.throws(() => solve([NaN], [1], 1, 1), /finite/);
-	assert.throws(() => solve([1, 0, 0, 1e-9], [1, 1], 2, 1, 1, 2 ** -23), /singular/);
-});
 
 // Reads rows (and some columns) of in-memory matrices, as the store reader does.
 function memory(matrices, log = []) {
@@ -83,7 +75,8 @@ const viaColumns = { A: { chunk_bytes: 1 }, L: { chunk_bytes: 100 }, LC: { chunk
 
 // Solves (I − A') X' = Y' for the 2 × 2 economy.
 function direct([[a, b], [c, d]], y = [2, 3]) {
-	return solve([1 - a, -b, -c, 1 - d], y, 2, 1);
+	const det = (1 - a) * (1 - d) - b * c;
+	return [((1 - d) * y[0] + b * y[1]) / det, (c * y[0] + (1 - a) * y[1]) / det];
 }
 
 test("Woodbury and final demand changes agree with a direct solve, in both forms and both L layouts", async () => {
@@ -174,7 +167,7 @@ test("a change to more than one row uses the full Woodbury system", async () => 
 	});
 });
 
-test("identity cancellation is refused while nearby and uniformly small solves remain valid", async () => {
+test("identity cancellation is refused while a nearby change remains valid", async () => {
 	const data = tiny(0.092, 0, 0, 0.1);
 	await assert.rejects(
 		scenarioFlows(data, [step({ consumedBy: [20], techChange: [986.9565217391305] })]),
@@ -182,7 +175,6 @@ test("identity cancellation is refused while nearby and uniformly small solves r
 	);
 	const got = await scenarioFlows(data, [step({ consumedBy: [20], techChange: [980] })]);
 	close(got[0], 2 / (1 - 0.092 * 10.8));
-	close(solve([1e-30], [2e-30], 1, 1)[0], 2);
 });
 
 test("broad and mixed scenarios are refused before reading any matrix", async () => {
