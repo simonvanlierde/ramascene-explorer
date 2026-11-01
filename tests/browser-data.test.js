@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { arrayReader, fetchEngine, fetchRange, openEngine } from "../browser-data.js";
+import { arrayReader, fetchEngine, fetchRange, matrixReader, openEngine } from "../browser-data.js";
 
-const info = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
+const infos = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
+const info = infos.M;
 const shards = info.shard_bytes.map((_, i) => readFileSync(new URL(`fixture-store/M/c/${i}/0`, import.meta.url)));
 const f32 = (row) => row.map(Math.fround);
 
@@ -132,6 +133,53 @@ test("range reads refuse a full download, a wrong offset and truncated data", as
 	await assert.rejects(fetchRange(url, 1, 3, 10), /truncated/);
 	await assert.rejects(fetchRange(url, -1, 3, 10), /invalid matrix byte range/);
 	await assert.rejects(fetchRange(url, 1, 11, 10), /invalid matrix byte range/);
+	// a store a newer deploy removed
+	t.mock.method(globalThis, "fetch", async () => new Response("gone", { status: 404 }));
+	await assert.rejects(fetchRange(url, 1, 3, 10), /updated: reload the page/);
+});
+
+test("rows from chunks of several rows come back in the order asked, with columns", async () => {
+	const p = infos.P;
+	const files = p.shard_bytes.map((_, i) => readFileSync(new URL(`fixture-store/P/c/${i}/0`, import.meta.url)));
+	const read = matrixReader(p, async (shard, start, end) =>
+		files[shard].buffer.slice(files[shard].byteOffset + start, files[shard].byteOffset + end),
+	);
+	const row = (r) => [3 * r, 3 * r + 1, 3 * r + 2].map((v) => v / 4);
+	assert.deepEqual([...(await read([5, 0, 5, 3]))], [...row(5), ...row(0), ...row(5), ...row(3)]);
+	assert.deepEqual([...(await read([7, 2], [2, 0]))], [row(7)[2], row(7)[0], row(2)[2], row(2)[0]]);
+	await assert.rejects(read([0], [3]), /invalid matrix column/);
+	await assert.rejects(read([8]), /invalid matrix row/);
+});
+
+test("a failed range stops the other requests", async () => {
+	const { gzipSync } = await import("node:zlib");
+	// 200 one-row chunks, each 70 KB apart so none merge
+	const chunk = gzipSync(new Uint8Array(12));
+	const index = new DataView(new ArrayBuffer(200 * 16));
+	const body = new Uint8Array(200 * 70_000);
+	for (let i = 0; i < 200; i++) {
+		body.set(chunk, i * 70_000);
+		index.setBigUint64(i * 16, BigInt(i * 70_000), true);
+		index.setBigUint64(i * 16 + 8, BigInt(chunk.length), true);
+	}
+	const shard = Buffer.concat([body, Buffer.from(index.buffer)]);
+	const one = {
+		shape: [200, 3],
+		chunk_rows: 1,
+		shard_rows: 200,
+		shard_bytes: [shard.length],
+		chunk_bytes: chunk.length,
+	};
+	let reads = 0;
+	const chunks = arrayReader(one, async (_, start, end) => {
+		if (start < body.length && reads++ === 0) throw new Error("interrupted");
+		await new Promise((resolve) => setTimeout(resolve, 1));
+		return shard.buffer.slice(shard.byteOffset + start, shard.byteOffset + end);
+	});
+	const all = Array.from({ length: 200 }, (_, i) => i);
+	await assert.rejects(read(chunks, all), /interrupted/);
+	await new Promise((resolve) => setTimeout(resolve, 50));
+	assert.ok(reads <= 64, `${reads} ranges read after the failure`);
 });
 
 test("older and invalid manifests are refused before reading a matrix", () => {
@@ -151,9 +199,9 @@ test("older and invalid manifests are refused before reading a matrix", () => {
 		countries: 49,
 		store: "0".repeat(64),
 		baseline_residual: 0,
-		indicators: [5],
-		sections: [{}],
-		baseline_flows: Array(49 * 49).fill(0),
+		indicators: [5, 3, 7],
+		sections: Array(15).fill({}),
+		baseline_flows: Array(2205 * 49).fill(0),
 		arrays: {
 			A: array([9800, 9800]),
 			L: array([9800, 9800]),
@@ -163,8 +211,10 @@ test("older and invalid manifests are refused before reading a matrix", () => {
 			Y: array([9800, 49], 9800),
 		},
 	};
-	assert.equal(openEngine(meta, noRead).baseline.length, 49 * 49);
-	for (const over of [{ version: 2 }, { baseline_residual: NaN }, { store: "../x" }, { baseline_flows: [0] }])
+	assert.equal(openEngine(meta, noRead).baseline.length, 2205 * 49);
+	// four indicators with matching flows would read H at the wrong width
+	const four = { indicators: [5, 3, 7, 1], baseline_flows: Array(4 * 15 * 49 * 49).fill(0) };
+	for (const over of [{ version: 2 }, { baseline_residual: NaN }, { store: "../x" }, { baseline_flows: [0] }, four])
 		assert.throws(() => openEngine({ ...meta, ...over }, noRead), /unsupported/);
 	assert.throws(() => openEngine({ ...meta, arrays: { ...meta.arrays, L: array([9800, 49]) } }, noRead), /L matrix/);
 	const short = { ...array([9800, 9800]), shard_bytes: [4000] };
@@ -173,10 +223,13 @@ test("older and invalid manifests are refused before reading a matrix", () => {
 
 test("the v3 reader avoids an older cached manifest URL", async (t) => {
 	let requested;
-	t.mock.method(globalThis, "fetch", async (url) => {
+	let cache;
+	t.mock.method(globalThis, "fetch", async (url, init) => {
 		requested = new URL(url).pathname;
+		cache = init?.cache;
 		return new Response("unavailable", { status: 503 });
 	});
 	await assert.rejects(fetchEngine(new URL("https://example.test/data/browser-engine/")), /browser dataset: 503/);
 	assert.equal(requested, "/data/browser-engine/manifest-v3.json");
+	assert.equal(cache, "no-cache");
 });

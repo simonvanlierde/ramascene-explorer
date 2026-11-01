@@ -123,6 +123,15 @@ test("Woodbury and final demand changes agree with a direct solve, in both forms
 						],
 						[2, 3],
 					],
+					// final demand on row 0, a technical change on row 1: L's columns follow J, not R
+					[
+						[step({ product: [11], consumedBy: [20], techChange: [change] }), final],
+						[
+							[a, b],
+							[c * f, d],
+						],
+						[1, 3],
+					],
 				];
 				for (const [steps, changed, y] of cases) {
 					const data = tiny(a, b, c, d, arrays);

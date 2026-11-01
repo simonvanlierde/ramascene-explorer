@@ -46,4 +46,6 @@ test("all 155 browser scenarios match the shipped engine results at relative 1e-
 		}
 	}
 	console.log(`worst relative difference: ${worst.toExponential(2)}`);
+	// Measured at 5.5e-9: a precision regression shows here long before the 1e-6 gate.
+	assert.ok(worst <= 1e-8, `worst relative difference ${worst} above 1e-8`);
 });
