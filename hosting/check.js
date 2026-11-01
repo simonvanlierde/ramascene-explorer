@@ -23,7 +23,10 @@ for (const [path, size] of [
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
 	if (path.includes("store-")) assert.match(res.headers.get("Cache-Control"), /immutable/);
 }
-for (const engine of [chromium, firefox, webkit]) {
+// A preview needs one engine: the three-engine run replays 155 scenarios per engine,
+// all through the Worker, which counts against its daily request allowance.
+const engines = { chromium, firefox, webkit };
+for (const engine of (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").split(",").map((n) => engines[n])) {
 	const browser = await engine.launch({ headless: true });
 	try {
 		const page = await browser.newPage();

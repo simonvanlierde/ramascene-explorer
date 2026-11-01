@@ -135,6 +135,8 @@ jobs:
       - name: ranges, isolation and a browser calculation on the uploaded version
         env:
           URL: ${{ needs.upload.outputs.url }}
+          # previews check one engine; main checks all three before promote
+          CHECK_BROWSERS: ${{ github.event_name == 'pull_request' && 'chromium' || 'chromium,firefox,webkit' }}
         run: node hosting/check.js "$URL"
 
   promote:
