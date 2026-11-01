@@ -59,6 +59,7 @@ let open = $state(false);
 let connected = false;
 function toggle() {
 	open = !open;
+	ui.custom = open;
 	if (open && !connected) {
 		connected = true;
 		connect();

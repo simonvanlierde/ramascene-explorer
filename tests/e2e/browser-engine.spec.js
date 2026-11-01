@@ -105,7 +105,10 @@ test("a selection too broad for the browser says so before Run, and search narro
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…" }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
+	await expect(page.locator("#run-list")).toBeVisible();
 	await page.locator("#live-open").click();
+	// the published runs fold to the chosen one, so the form sits higher
+	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 	// Manufacturing from every country, used by electricity
 	await page.locator("#live-product").selectOption("5");
