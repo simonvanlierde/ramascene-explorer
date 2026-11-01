@@ -571,25 +571,25 @@
   },
   "coal-power-china": {
    "5": {
-    "Europe": 4022100000000.0,
-    "Middle-East": 1863900000000.0,
-    "America": 8044200000000.0,
-    "Asia-Pacific": 15892200000000.0,
-    "Africa": 1275300000000.0
+    "Europe": 4095900000000.0,
+    "Middle-East": 1898100000000.0,
+    "America": 8191800000000.0,
+    "Asia-Pacific": 15390000000000.0,
+    "Africa": 1298700000000.0
    },
    "3": {
-    "Europe": 259870.0,
-    "Middle-East": 59970.0,
-    "America": 289855.0,
-    "Asia-Pacific": 2098950.0,
-    "Africa": 419790.0
+    "Europe": 259740.0,
+    "Middle-East": 59940.0,
+    "America": 289710.0,
+    "Asia-Pacific": 1995000.0,
+    "Africa": 419580.0
    },
    "7": {
-    "Europe": 309783.0,
-    "Middle-East": 19986.0,
-    "America": 1099230.0,
-    "Asia-Pacific": 1898670.0,
-    "Africa": 399720.0
+    "Europe": 309690.0,
+    "Middle-East": 19980.0,
+    "America": 1098900.0,
+    "Asia-Pacific": 1805000.0,
+    "Africa": 399600.0
    }
   },
   "steel-asia-pacific-20": {
@@ -715,8 +715,8 @@
   },
   "embodied": {
    "file": "fixture-embodied.parquet",
-   "bytes": 155194,
-   "sha256": "29cd056d097e0b88f0c4dee13f9cfae8066dc1c262ffe4a9fd6f2698a3dd2a8e"
+   "bytes": 143797,
+   "sha256": "b728dca5934f3f06bb234e741480e32eb6f47b71e1b1c8b1d2a587efd0dcd319"
   }
  },
  "failed": [

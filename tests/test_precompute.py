@@ -285,8 +285,8 @@ def test_zero_change_control_uses_the_modified_A_path():
 
 
 def test_interventions_change_the_result():
-    results = run(fake_engine())["results"]
-    for scenario in ORIGINAL:
+    results = precompute.compute(fake_engine(), precompute.SCENARIOS, INDICATORS)["results"]
+    for scenario in precompute.SCENARIOS:
         assert results[scenario["id"]] != results["baseline"], scenario["id"]
 
 

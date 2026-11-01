@@ -217,6 +217,13 @@ const NAMED = {
 	"coal-power-china": "industry in China required 20% less Chinese coal power per unit of output",
 	"construction-demand-europe": "European final demand for construction work fell by 20%",
 };
+// The kind of change, as the chosen card's subtitle names it; a grid cell has none here.
+export const RUN_KIND = {
+	"vehicle-demand-europe": "Final demand",
+	// first use of the term on the page, so it carries its gloss
+	"construction-demand-europe": "Final demand: what households, governments and investors buy",
+	"coal-power-china": "Electricity use",
+};
 const PLACE = { "Middle-East": "the Middle East", America: "the Americas" };
 export function runText(data, id) {
 	if (NAMED[id]) return NAMED[id];

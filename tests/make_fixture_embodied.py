@@ -75,6 +75,10 @@ def main():
     asia = [codes.index(c) for c in AGGREGATES["Asia-Pacific"].split()]
     for run in runs[1:]:
         cut = rng.random(base.shape) * rng.choice([0.002, 0.02, 0.1])
+        if run == "coal-power-china":  # the change happens where the coal power is made
+            local = np.zeros(n, dtype=bool)
+            local[asia] = True
+            cut[:, ~local, :, :] = 0
         if run.startswith("steel-europe-"):
             local = np.zeros(n, dtype=bool)
             local[europe] = True
