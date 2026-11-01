@@ -7,7 +7,7 @@ name: release
 #   tarball, attests it and uploads the tarball, its SHA256SUMS and the Sigstore
 #   bundle to the release. It runs on the release being published, the same
 #   event Zenodo archives, so a tag pushed without a release attests nothing.
-# - Run by hand: attests embodied.parquet on the data-2011 release, after
+# - Run by hand: attests embodied.parquet on the data-2011-r2 release, after
 #   checking it against data/embodied.sha256, and uploads the bundle there.
 
 on:
@@ -52,7 +52,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          gh release download data-2011-r2 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
           sha256sum --check data/embodied.sha256
           gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-rows.tar --dir data
           sha256sum --check data/browser-engine-rows.sha256
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: write # add the bundle to the data-2011 release
+      contents: write # add the bundle to the data-2011-r2 release
       id-token: write # Sigstore signs the attestation with the run's OIDC identity
       attestations: write # store the attestation on the repository
     steps:
@@ -135,7 +135,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          gh release download data-2011-r2 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
           sha256sum --check data/embodied.sha256
 
       - id: attest
@@ -150,4 +150,4 @@ jobs:
         run: |-
           set -euo pipefail
           cp "$BUNDLE" embodied.parquet.sigstore.json
-          gh release upload data-2011 embodied.parquet.sigstore.json --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload data-2011-r2 embodied.parquet.sigstore.json --repo "$GITHUB_REPOSITORY" --clobber

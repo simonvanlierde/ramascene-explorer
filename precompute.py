@@ -89,13 +89,17 @@ STATUS = "precomputed — not a live calculation"
 # aggregates the RaMa-Scene database defines; together they cover all 49 regions.
 REGIONS = [2, 3, 4, 5, 6]  # Europe, Middle-East, America, Asia-Pacific, Africa
 INDICATORS = [5, 3, 7]  # GHG emissions: Total; Employment: Total; DEU - Metal Ores - Total
-EUROPE, ALL_REGIONS = [2], [1]
+EUROPE, ALL_REGIONS, CHINA = [2], [1], [37]
 # Detail level of the extra outputs: the 49 leaf regions (country global ids
 # 7..55) and the 15 level-2 product aggregates (product global ids 2..16).
 COUNTRIES = list(range(7, 56))
 SECTORS = list(range(2, 17))
 TOP_FLOWS = 12
 FINAL_CONSUMPTION = 276  # ModellingProduct "Y: Final Consumption"
+# ModellingProduct level-2 aggregates "S: Agriculture, hunting and forestry"
+# .. "S: Other service activities": the engine database's 15 industry
+# sections, whose leaves together are all 200 industries.
+INDUSTRY_SECTIONS = list(range(1, 16))
 
 # model_details exactly as the RaMa-Scene front end sends them (global ids).
 # Modelling.model_final_demand / model_intermediates scale the selected cells
@@ -147,6 +151,36 @@ SCENARIOS: list[dict[str, Any]] = [
             },
         ],
     },
+    {
+        "id": "coal-power-china",
+        "label": "Chinese coal power input to Chinese industry −20%",
+        "description": "Technical coefficient of electricity by coal produced in China into every industry "
+        "in China (the 15 industry sections of the engine database), scaled by −20%.",
+        "model_details": [
+            {
+                "product": [204],  # Electricity by coal
+                "originReg": CHINA,
+                "consumedBy": INDUSTRY_SECTIONS,
+                "consumedReg": CHINA,
+                "techChange": [-20],
+            },
+        ],
+    },
+    {
+        "id": "construction-demand-europe",
+        "label": "Final demand for construction work in Europe −20%",
+        "description": "Final demand in European regions for construction work produced in all regions, "
+        "scaled by −20%.",
+        "model_details": [
+            {
+                "product": [226],  # Construction work
+                "originReg": ALL_REGIONS,
+                "consumedBy": [FINAL_CONSUMPTION],
+                "consumedReg": EUROPE,
+                "techChange": [-20],
+            },
+        ],
+    },
 ]
 
 
@@ -158,10 +192,6 @@ SCENARIOS: list[dict[str, Any]] = [
 # unit of output; nothing else changes. Modelled on cement-in-construction
 # above, with the consuming side widened from one industry to all of them.
 GRID_CUTS = [-10, -20, -50]  # techChange in %
-# ModellingProduct level-2 aggregates "S: Agriculture, hunting and forestry"
-# .. "S: Other service activities": the engine database's 15 industry
-# sections, whose leaves together are all 200 industries.
-INDUSTRY_SECTIONS = list(range(1, 16))
 # ramascene_product global ids and names, as db.sqlite3 has them.
 GRID_PRODUCTS: list[dict[str, Any]] = [
     {

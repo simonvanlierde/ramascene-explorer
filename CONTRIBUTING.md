@@ -13,7 +13,7 @@ Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.jso
 
 ```sh
 pnpm install
-gh release download data-2011 --pattern embodied.parquet --dir data
+gh release download data-2011-r2 --pattern embodied.parquet --dir data
 pnpm dev
 ```
 

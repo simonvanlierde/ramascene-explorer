@@ -29,7 +29,7 @@ It covers 49 countries and regions, with results grouped into 15 industry sectio
 Employment is the number of people employed attributed to demand, labelled “jobs” in the interface.
 It is not a measure of full-time equivalents or net job creation.
 
-The 153 published scenarios change monetary final demand or inputs per unit of output.
+The 155 published scenarios change monetary final demand or inputs per unit of output.
 Prices and unselected coefficients stay fixed; substitution and rebound are outside the model.
 The results describe changes to the **2011 economy**, not forecasts.
 See [what each scenario changes](docs/scenarios.md) before interpreting a reduction.
@@ -43,10 +43,10 @@ These checks do not establish whether a scenario's assumptions are realistic.
 
 The page is Svelte 5, built with Vite. Use Node 26 and pnpm locally. Install once with
 `pnpm install`, and fetch the flows from the release (or with
-`gh release download data-2011 --pattern embodied.parquet --dir data`):
+`gh release download data-2011-r2 --pattern embodied.parquet --dir data`):
 
 ```sh
-curl -L -o data/embodied.parquet https://github.com/simonvanlierde/ramascene-explorer/releases/download/data-2011/embodied.parquet
+curl -L -o data/embodied.parquet https://github.com/simonvanlierde/ramascene-explorer/releases/download/data-2011-r2/embodied.parquet
 ```
 
 Then:
@@ -72,7 +72,7 @@ Pages is in [docs/publishing.md](docs/publishing.md).
 
 ## Data and reproducibility
 
-The published results come from one run on 2026-10-14, using engine
+The published results come from one run on 2026-11-01, using engine
 `split/3-performance @ d9113ca`, the head of
 [CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
 `data/results.json` holds scenario totals, parameters, checks and provenance.

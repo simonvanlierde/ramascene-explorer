@@ -3,7 +3,7 @@ name: ci
 # Without the engine or the EXIOBASE matrices: pytest skips the real-engine
 # checks unless --engine is given. node --test and Playwright read the synthetic
 # fixtures and the shipped results, with the embodied flows downloaded from the
-# data-2011 release and checked against their SHA-256.
+# data-2011-r2 release and checked against their SHA-256.
 
 on:
   push:
@@ -63,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
+          gh release download data-2011-r2 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
@@ -133,7 +133,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsSL --retry 3 --output data/embodied.parquet \
-            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/embodied.parquet"
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011-r2/embodied.parquet"
           sha256sum --check data/embodied.sha256
           curl -fsSL --retry 3 --output data/ramascene-browser-engine-rows.tar \
             "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/ramascene-browser-engine-rows.tar"

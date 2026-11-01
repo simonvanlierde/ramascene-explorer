@@ -31,7 +31,7 @@ def engine(request, tmp_path_factory):
 
 
 EXPECTED = {
-    # id: (product name, consumed-by name, origin leaves, consumed leaves, loads A)
+    # id: (product name, consumed-by name or None for the industry sections, origin leaves, consumed leaves, loads A)
     "vehicle-demand-europe": ("Motor vehicles, trailers and semi-trailers", "Y: Final Consumption", 32, 32, False),
     "steel-in-vehicles-europe": (
         "Basic iron and steel and of ferro-alloys and first products thereof",
@@ -41,6 +41,8 @@ EXPECTED = {
         True,
     ),
     "cement-in-construction": ("Cement, lime and plaster", "S: Construction work", 49, 49, True),
+    "coal-power-china": ("Electricity by coal", None, 1, 1, True),
+    "construction-demand-europe": ("Construction work", "Y: Final Consumption", 49, 32, False),
 }
 
 
@@ -49,7 +51,11 @@ def test_scenario_ids_resolve_to_what_the_labels_say(engine, scenario):
     (step,) = scenario["model_details"]
     product, consumed_by, origin_leaves, consumed_leaves, loads_A = EXPECTED[scenario["id"]]
     assert engine.get_names_product(step["product"]) == [product]
-    assert engine.get_modelled_names_product(step["consumedBy"]) == [consumed_by]
+    consumers = engine.get_modelled_names_product(step["consumedBy"])
+    if consumed_by is None:  # the 15 industry sections
+        assert len(consumers) == 15 and all(n.startswith("S: ") for n in consumers)
+    else:
+        assert consumers == [consumed_by]
     ready, load_A = precompute.model_inputs(scenario["model_details"])
     assert len(ready["product"][0]) == 1
     assert len(ready["originReg"][0]) == origin_leaves
