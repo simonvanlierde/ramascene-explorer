@@ -17,6 +17,13 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
+The `<meta>` policy covers the page, not the custom-scenario worker: a worker
+takes its policy from its own response, and GitHub Pages sends none. The worker
+compiles the WebAssembly kernel, so a Content-Security-Policy header served for
+the whole site (for example from a host's `_headers` file) needs
+`'wasm-unsafe-eval'` in `script-src` for `browser-worker`'s script. Leave it out
+of the page's own policy, which compiles no WebAssembly.
+
 The custom-scenario worker reads only the page's own browser dataset.
 It sends no scenario to an external service. Matrix dimensions, finite values,
 ids and percentage bounds are checked. Every matrix read is a single byte range

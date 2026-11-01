@@ -1,0 +1,30 @@
+name: build the wasm kernel
+description: Installs Rust and wasm-bindgen, then builds engine/ into engine/pkg.
+inputs:
+  cache:
+    description: Restore and save the Cargo cache; off for releases.
+    default: "true"
+runs:
+  using: composite
+  steps:
+    # The pinned version, target and components come from engine/rust-toolchain.toml.
+    - shell: bash
+      working-directory: engine
+      run: rustup toolchain install
+    # Saved off pull requests only: a cache a pull request saves is readable by that
+    # pull request alone, and it pushes main's entries out of the 10 GB per-repo limit.
+    - if: inputs.cache == 'true'
+      uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      with:
+        workspaces: engine
+        save-if: ${{ github.event_name != 'pull_request' }}
+    # wasm-bindgen-cli must be the exact version of the wasm-bindgen crate in Cargo.lock.
+    - id: bindgen
+      shell: bash
+      run: echo "version=$(cargo pkgid --locked --manifest-path engine/Cargo.toml wasm-bindgen | sed 's/.*@//')" >> "$GITHUB_OUTPUT"
+    - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      with:
+        tool: wasm-bindgen@${{ steps.bindgen.outputs.version }}
+        fallback: none
+    - shell: bash
+      run: engine/build.sh

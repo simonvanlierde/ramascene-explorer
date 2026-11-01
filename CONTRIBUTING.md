@@ -8,11 +8,13 @@ vulnerability as [.github/SECURITY.md](.github/SECURITY.md) says, not in an issu
 ## Set up
 
 Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.json`),
-[uv](https://docs.astral.sh/uv/) for the Python side, and prek for the git hooks
+[uv](https://docs.astral.sh/uv/) for the Python side, Rust through rustup with
+`wasm-bindgen-cli` for the browser kernel, and prek for the git hooks
 (`uv tool install prek`, then `prek install`).
 
 ```sh
 pnpm install
+pnpm engine
 gh release download data-2011-r2 --pattern embodied.parquet --dir data
 pnpm dev
 ```
@@ -42,8 +44,10 @@ so `pnpm measure-coverage` counts them.
 ## Dependencies
 
 Add one only when the standard library or an existing dependency can't do the job. CI
-installs from the lockfiles unchanged. The release-age rule is in `pnpm-workspace.yaml` and
-`pyproject.toml`, the update schedule in [renovate.json5](renovate.json5), and the
+installs from the lockfiles unchanged, `engine/Cargo.lock` for the Rust kernel. The
+release-age rule is in `pnpm-workspace.yaml` and `pyproject.toml`; the Rust compiler is pinned
+in `engine/rust-toolchain.toml` and the cargo tools in `.github/workflows/ci.yml`, and
+`engine/deny.toml` checks the crates' advisories and licences. The update schedule in [renovate.json5](renovate.json5), and the
 dependency review in `.github/workflows/hygiene.yml`.
 
 ## Sign off your commits

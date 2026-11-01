@@ -58,6 +58,7 @@ jobs:
       # The build copies results.json, the embodied flows and the map geometry into dist/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/engine
       - run: pnpm build
       - name: check the Pages size limit
         run: test "$(du -sb dist | cut -f1)" -lt 1000000000

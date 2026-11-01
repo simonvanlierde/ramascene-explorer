@@ -67,6 +67,7 @@ jobs:
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/engine
       - name: fetch the browser scenario data
         env:
           GH_TOKEN: ${{ github.token }}
@@ -80,6 +81,37 @@ jobs:
         env:
           BROWSER_ENGINE_DATA: data/browser-engine
       - run: node brightway-check/browser_check.js data/browser-engine
+
+  engine:
+    name: engine tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Builds engine/pkg too, which the browser job takes: its Playwright image has
+      # no C linker for build scripts.
+      - uses: ./.github/actions/engine
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2
+          fallback: none
+      - run: cargo fmt --check
+      # --locked: the first build fails on a Cargo.lock that is missing or stale. The
+      # JavaScript exports compile only for wasm32, so lint there.
+      - run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
+      - run: cargo nextest run --locked
+      - run: cargo deny check
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: engine-pkg
+          path: engine/pkg/
+          if-no-files-found: error
+          retention-days: 1
 
   playwright-version:
     name: playwright version
@@ -99,7 +131,7 @@ jobs:
 
   browser:
     name: browser and accessibility tests
-    needs: playwright-version
+    needs: [playwright-version, engine]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # The browsers and their system libraries come with the image, so the job needs
@@ -141,5 +173,9 @@ jobs:
           tar -xf data/ramascene-browser-engine-zarr.tar -C data
 
       - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: engine-pkg
+          path: engine/pkg
       - run: pnpm build
       - run: pnpm exec playwright test

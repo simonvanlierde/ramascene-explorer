@@ -9,6 +9,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openEngine } from "./browser-data.js";
 import { plan, scenarioFlows } from "./browser-engine.js";
+import "./tests/engine-wasm.js";
 import { localRange } from "./tests/local-range.js";
 
 const filename = fileURLToPath(import.meta.url);
@@ -110,7 +111,7 @@ if (process.argv[2] === "--sample") {
 		};
 	});
 	const sources = Object.fromEntries(
-		["browser-data.js", "browser-engine.js"].map((name) => [
+		["browser-data.js", "browser-engine.js", "engine/src/lib.rs"].map((name) => [
 			name,
 			createHash("sha256")
 				.update(readFileSync(`${root}/${name}`))

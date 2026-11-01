@@ -1,0 +1,1233 @@
+{
+  "version": 2,
+  "node": "v26.9.0",
+  "cpu": "Intel(R) Core(TM) i9-14900KF",
+  "date": "2026-11-01",
+  "sources": {
+    "browser-data.js": "9f3dcf41963116b23f78ff80717da71fe88437ac9ba302d2f7f5433ff4b4ef58",
+    "browser-engine.js": "111000eb94ac4aa9701550cb01a9eb5c44c942a3a364f3ac1bde3d5f24019193",
+    "engine/src/lib.rs": "defc14d6dd4fad6069dc45d78f3741fb769c15de4aa2e001b6aa029371e9a9ca"
+  },
+  "summary": [
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "rows": 1,
+      "columns": 1,
+      "flowColumns": 1,
+      "lByRows": true,
+      "download": 51079.79010204081,
+      "firstMs": 11.317599000000001,
+      "repeatMs": 1.6700270000000046,
+      "firstBytes": 89882,
+      "firstReads": 8,
+      "peakRssBytes": 83124224
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "rows": 49,
+      "columns": 32,
+      "flowColumns": 49,
+      "lByRows": true,
+      "download": 2014762.9565306124,
+      "firstMs": 105.249676,
+      "repeatMs": 4.397839000000005,
+      "firstBytes": 4327075,
+      "firstReads": 264,
+      "peakRssBytes": 108683264
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "rows": 49,
+      "columns": 6400,
+      "flowColumns": 49,
+      "lByRows": false,
+      "download": 2582395.12,
+      "firstMs": 155.831285,
+      "repeatMs": 31.326043,
+      "firstBytes": 5019193,
+      "firstReads": 298,
+      "peakRssBytes": 149979136
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "rows": 1078,
+      "columns": 4165,
+      "flowColumns": 1078,
+      "lByRows": false,
+      "download": 56812692.64000001,
+      "firstMs": 1388.333059,
+      "repeatMs": 792.8346490000001,
+      "firstBytes": 43238896,
+      "firstReads": 301,
+      "peakRssBytes": 479485952
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "rows": 4165,
+      "columns": 1078,
+      "flowColumns": 4165,
+      "lByRows": true,
+      "download": 124105617.34,
+      "firstMs": 3524.609302,
+      "repeatMs": 3112.0348679999997,
+      "firstBytes": 134876595,
+      "firstReads": 359,
+      "peakRssBytes": 541515776
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "rows": 0,
+      "columns": 0,
+      "flowColumns": 9800,
+      "lByRows": true,
+      "download": 63905982,
+      "firstMs": 1232.3337339999998,
+      "repeatMs": 1142.3293850000002,
+      "firstBytes": 65041993,
+      "firstReads": 161,
+      "peakRssBytes": 242659328
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "rows": 49,
+      "columns": 32,
+      "flowColumns": 49,
+      "lByRows": true,
+      "download": 2014762.9565306124,
+      "firstMs": 406.553413,
+      "repeatMs": 5.184604999999976,
+      "firstBytes": 4327075,
+      "firstReads": 264,
+      "peakRssBytes": 120610816
+    }
+  ],
+  "results": [
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "size": {
+        "rows": 1,
+        "columns": 1,
+        "flowColumns": 1,
+        "lByRows": true,
+        "download": 51079.79010204081
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 10.999134000000005,
+          "bytes": 89882,
+          "reads": 8,
+          "checksum": 38379762943350.45
+        },
+        {
+          "ms": 1.6223929999999953,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.45
+        }
+      ],
+      "peakRssBytes": 81719296,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "size": {
+        "rows": 1,
+        "columns": 1,
+        "flowColumns": 1,
+        "lByRows": true,
+        "download": 51079.79010204081
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 10.402580999999998,
+          "bytes": 89882,
+          "reads": 8,
+          "checksum": 38379762943350.45
+        },
+        {
+          "ms": 3.7296479999999974,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.45
+        }
+      ],
+      "peakRssBytes": 83124224,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "size": {
+        "rows": 1,
+        "columns": 1,
+        "flowColumns": 1,
+        "lByRows": true,
+        "download": 51079.79010204081
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 12.547885999999998,
+          "bytes": 89882,
+          "reads": 8,
+          "checksum": 38379762943350.45
+        },
+        {
+          "ms": 1.6700270000000046,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.45
+        }
+      ],
+      "peakRssBytes": 84602880,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "size": {
+        "rows": 1,
+        "columns": 1,
+        "flowColumns": 1,
+        "lByRows": true,
+        "download": 51079.79010204081
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 15.021318,
+          "bytes": 89882,
+          "reads": 8,
+          "checksum": 38379762943350.45
+        },
+        {
+          "ms": 3.6910150000000073,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.45
+        }
+      ],
+      "peakRssBytes": 83709952,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "tiny",
+      "delayMs": 0,
+      "size": {
+        "rows": 1,
+        "columns": 1,
+        "flowColumns": 1,
+        "lByRows": true,
+        "download": 51079.79010204081
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 11.317599000000001,
+          "bytes": 89882,
+          "reads": 8,
+          "checksum": 38379762943350.45
+        },
+        {
+          "ms": 1.6571950000000015,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38379762943350.45
+        }
+      ],
+      "peakRssBytes": 81625088,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 113.14542799999998,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.397839000000005,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 108683264,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 100.21302800000001,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.544553000000008,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 108371968,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 109.446751,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.30459399999998,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 109277184,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 105.249676,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.579003,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 109522944,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 100.00862500000001,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.325511000000006,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 108408832,
+      "load": [
+        4.47,
+        8.29,
+        10.96
+      ]
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 6400,
+        "flowColumns": 49,
+        "lByRows": false,
+        "download": 2582395.12
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 146.182304,
+          "bytes": 5019193,
+          "reads": 298,
+          "checksum": 38334909113223.77
+        },
+        {
+          "ms": 33.836714,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38334909113223.77
+        }
+      ],
+      "peakRssBytes": 150028288,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 6400,
+        "flowColumns": 49,
+        "lByRows": false,
+        "download": 2582395.12
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 159.61094200000002,
+          "bytes": 5019193,
+          "reads": 298,
+          "checksum": 38334909113223.77
+        },
+        {
+          "ms": 31.020072999999996,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38334909113223.77
+        }
+      ],
+      "peakRssBytes": 150401024,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 6400,
+        "flowColumns": 49,
+        "lByRows": false,
+        "download": 2582395.12
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 155.831285,
+          "bytes": 5019193,
+          "reads": 298,
+          "checksum": 38334909113223.77
+        },
+        {
+          "ms": 31.036316999999997,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38334909113223.77
+        }
+      ],
+      "peakRssBytes": 147968000,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 6400,
+        "flowColumns": 49,
+        "lByRows": false,
+        "download": 2582395.12
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 152.728114,
+          "bytes": 5019193,
+          "reads": 298,
+          "checksum": 38334909113223.77
+        },
+        {
+          "ms": 31.326043,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38334909113223.77
+        }
+      ],
+      "peakRssBytes": 148447232,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "steel to all of Europe",
+      "delayMs": 0,
+      "size": {
+        "rows": 49,
+        "columns": 6400,
+        "flowColumns": 49,
+        "lByRows": false,
+        "download": 2582395.12
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 160.40560499999998,
+          "bytes": 5019193,
+          "reads": 298,
+          "checksum": 38334909113223.77
+        },
+        {
+          "ms": 31.608958,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38334909113223.77
+        }
+      ],
+      "peakRssBytes": 149979136,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "size": {
+        "rows": 1078,
+        "columns": 4165,
+        "flowColumns": 1078,
+        "lByRows": false,
+        "download": 56812692.64000001
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1388.333059,
+          "bytes": 43238896,
+          "reads": 301,
+          "checksum": 37228463678972.375
+        },
+        {
+          "ms": 809.0018749999999,
+          "bytes": 20774563,
+          "reads": 57,
+          "checksum": 37228463678972.375
+        }
+      ],
+      "peakRssBytes": 479485952,
+      "load": [
+        4.6,
+        8.26,
+        10.93
+      ]
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "size": {
+        "rows": 1078,
+        "columns": 4165,
+        "flowColumns": 1078,
+        "lByRows": false,
+        "download": 56812692.64000001
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1371.70393,
+          "bytes": 43238896,
+          "reads": 301,
+          "checksum": 37228463678972.375
+        },
+        {
+          "ms": 787.2199730000002,
+          "bytes": 20774563,
+          "reads": 57,
+          "checksum": 37228463678972.375
+        }
+      ],
+      "peakRssBytes": 480501760,
+      "load": [
+        4.55,
+        8.19,
+        10.89
+      ]
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "size": {
+        "rows": 1078,
+        "columns": 4165,
+        "flowColumns": 1078,
+        "lByRows": false,
+        "download": 56812692.64000001
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1397.8213250000001,
+          "bytes": 43238896,
+          "reads": 301,
+          "checksum": 37228463678972.375
+        },
+        {
+          "ms": 791.8292439999998,
+          "bytes": 20774563,
+          "reads": 57,
+          "checksum": 37228463678972.375
+        }
+      ],
+      "peakRssBytes": 462446592,
+      "load": [
+        4.55,
+        8.19,
+        10.89
+      ]
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "size": {
+        "rows": 1078,
+        "columns": 4165,
+        "flowColumns": 1078,
+        "lByRows": false,
+        "download": 56812692.64000001
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1382.516977,
+          "bytes": 43238896,
+          "reads": 301,
+          "checksum": 37228463678972.375
+        },
+        {
+          "ms": 792.8346490000001,
+          "bytes": 20774563,
+          "reads": 57,
+          "checksum": 37228463678972.375
+        }
+      ],
+      "peakRssBytes": 466046976,
+      "load": [
+        4.5,
+        8.12,
+        10.85
+      ]
+    },
+    {
+      "workload": "electricity to manufacturing",
+      "delayMs": 0,
+      "size": {
+        "rows": 1078,
+        "columns": 4165,
+        "flowColumns": 1078,
+        "lByRows": false,
+        "download": 56812692.64000001
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1393.555648,
+          "bytes": 43238896,
+          "reads": 301,
+          "checksum": 37228463678972.375
+        },
+        {
+          "ms": 804.1123869999999,
+          "bytes": 20774563,
+          "reads": 57,
+          "checksum": 37228463678972.375
+        }
+      ],
+      "peakRssBytes": 481656832,
+      "load": [
+        4.5,
+        8.12,
+        10.85
+      ]
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "size": {
+        "rows": 4165,
+        "columns": 1078,
+        "flowColumns": 4165,
+        "lByRows": true,
+        "download": 124105617.34
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 3524.609302,
+          "bytes": 134876595,
+          "reads": 359,
+          "checksum": 38338351133674.44
+        },
+        {
+          "ms": 3112.290761,
+          "bytes": 112231155,
+          "reads": 180,
+          "checksum": 38338351133674.44
+        }
+      ],
+      "peakRssBytes": 541515776,
+      "load": [
+        4.46,
+        8.05,
+        10.82
+      ]
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "size": {
+        "rows": 4165,
+        "columns": 1078,
+        "flowColumns": 4165,
+        "lByRows": true,
+        "download": 124105617.34
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 3546.1455640000004,
+          "bytes": 134876595,
+          "reads": 359,
+          "checksum": 38338351133674.44
+        },
+        {
+          "ms": 3107.5185720000004,
+          "bytes": 112231155,
+          "reads": 180,
+          "checksum": 38338351133674.44
+        }
+      ],
+      "peakRssBytes": 541495296,
+      "load": [
+        4.39,
+        7.91,
+        10.74
+      ]
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "size": {
+        "rows": 4165,
+        "columns": 1078,
+        "flowColumns": 4165,
+        "lByRows": true,
+        "download": 124105617.34
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 3506.611758,
+          "bytes": 134876595,
+          "reads": 359,
+          "checksum": 38338351133674.44
+        },
+        {
+          "ms": 3112.0348679999997,
+          "bytes": 112231155,
+          "reads": 180,
+          "checksum": 38338351133674.44
+        }
+      ],
+      "peakRssBytes": 544514048,
+      "load": [
+        4.36,
+        7.85,
+        10.71
+      ]
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "size": {
+        "rows": 4165,
+        "columns": 1078,
+        "flowColumns": 4165,
+        "lByRows": true,
+        "download": 124105617.34
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 3559.7572219999997,
+          "bytes": 134876595,
+          "reads": 359,
+          "checksum": 38338351133674.44
+        },
+        {
+          "ms": 3112.5965979999996,
+          "bytes": 112231155,
+          "reads": 180,
+          "checksum": 38338351133674.44
+        }
+      ],
+      "peakRssBytes": 529883136,
+      "load": [
+        4.33,
+        7.78,
+        10.67
+      ]
+    },
+    {
+      "workload": "manufacturing to electricity",
+      "delayMs": 0,
+      "size": {
+        "rows": 4165,
+        "columns": 1078,
+        "flowColumns": 4165,
+        "lByRows": true,
+        "download": 124105617.34
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 3520.828591,
+          "bytes": 134876595,
+          "reads": 359,
+          "checksum": 38338351133674.44
+        },
+        {
+          "ms": 3100.169783,
+          "bytes": 112231155,
+          "reads": 180,
+          "checksum": 38338351133674.44
+        }
+      ],
+      "peakRssBytes": 544169984,
+      "load": [
+        4.36,
+        7.68,
+        10.6
+      ]
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "size": {
+        "rows": 0,
+        "columns": 0,
+        "flowColumns": 9800,
+        "lByRows": true,
+        "download": 63905982
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1226.970391,
+          "bytes": 65041993,
+          "reads": 161,
+          "checksum": 36549796718193.45
+        },
+        {
+          "ms": 1151.3545520000002,
+          "bytes": 63905982,
+          "reads": 110,
+          "checksum": 36549796718193.45
+        }
+      ],
+      "peakRssBytes": 237969408,
+      "load": [
+        4.36,
+        7.68,
+        10.6
+      ]
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "size": {
+        "rows": 0,
+        "columns": 0,
+        "flowColumns": 9800,
+        "lByRows": true,
+        "download": 63905982
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1242.299024,
+          "bytes": 65041993,
+          "reads": 161,
+          "checksum": 36549796718193.45
+        },
+        {
+          "ms": 1138.934401,
+          "bytes": 63905982,
+          "reads": 110,
+          "checksum": 36549796718193.45
+        }
+      ],
+      "peakRssBytes": 245116928,
+      "load": [
+        4.41,
+        7.63,
+        10.57
+      ]
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "size": {
+        "rows": 0,
+        "columns": 0,
+        "flowColumns": 9800,
+        "lByRows": true,
+        "download": 63905982
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1234.283352,
+          "bytes": 65041993,
+          "reads": 161,
+          "checksum": 36549796718193.45
+        },
+        {
+          "ms": 1142.3293850000002,
+          "bytes": 63905982,
+          "reads": 110,
+          "checksum": 36549796718193.45
+        }
+      ],
+      "peakRssBytes": 244051968,
+      "load": [
+        4.41,
+        7.63,
+        10.57
+      ]
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "size": {
+        "rows": 0,
+        "columns": 0,
+        "flowColumns": 9800,
+        "lByRows": true,
+        "download": 63905982
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1228.008577,
+          "bytes": 65041993,
+          "reads": 161,
+          "checksum": 36549796718193.45
+        },
+        {
+          "ms": 1131.9891710000002,
+          "bytes": 63905982,
+          "reads": 110,
+          "checksum": 36549796718193.45
+        }
+      ],
+      "peakRssBytes": 242659328,
+      "load": [
+        4.38,
+        7.57,
+        10.54
+      ]
+    },
+    {
+      "workload": "China final demand",
+      "delayMs": 0,
+      "size": {
+        "rows": 0,
+        "columns": 0,
+        "flowColumns": 9800,
+        "lByRows": true,
+        "download": 63905982
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 1232.3337339999998,
+          "bytes": 65041993,
+          "reads": 161,
+          "checksum": 36549796718193.45
+        },
+        {
+          "ms": 1152.1723809999999,
+          "bytes": 63905982,
+          "reads": 110,
+          "checksum": 36549796718193.45
+        }
+      ],
+      "peakRssBytes": 239390720,
+      "load": [
+        4.38,
+        7.57,
+        10.54
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 404.951428,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 7.204571000000044,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 120209408,
+      "load": [
+        4.38,
+        7.57,
+        10.54
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 407.53256799999997,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 5.1312110000000075,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 120872960,
+      "load": [
+        4.38,
+        7.57,
+        10.54
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 413.081638,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 5.184604999999976,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 120610816,
+      "load": [
+        4.38,
+        7.57,
+        10.54
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 405.254044,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 4.649094999999988,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 118276096,
+      "load": [
+        4.27,
+        7.49,
+        10.5
+      ]
+    },
+    {
+      "workload": "default",
+      "delayMs": 150,
+      "size": {
+        "rows": 49,
+        "columns": 32,
+        "flowColumns": 49,
+        "lByRows": true,
+        "download": 2014762.9565306124
+      },
+      "datasetManifestSha256": "e28b26ae29afc06912237e8ca7b145e17e2910b94f291447adce211d2ea61d4b",
+      "trials": [
+        {
+          "ms": 406.553413,
+          "bytes": 4327075,
+          "reads": 264,
+          "checksum": 38375617165783.91
+        },
+        {
+          "ms": 5.272708000000023,
+          "bytes": 0,
+          "reads": 0,
+          "checksum": 38375617165783.91
+        }
+      ],
+      "peakRssBytes": 121929728,
+      "load": [
+        4.27,
+        7.49,
+        10.5
+      ]
+    }
+  ]
+}

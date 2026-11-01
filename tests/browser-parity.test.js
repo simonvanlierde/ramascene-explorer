@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { openEngine } from "../browser-data.js";
 import { scenarioFlows } from "../browser-engine.js";
+import "./engine-wasm.js";
 import { localRange } from "./local-range.js";
 
 const directory = process.env.BROWSER_ENGINE_DATA;
