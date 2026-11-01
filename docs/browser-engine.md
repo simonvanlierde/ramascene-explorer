@@ -203,17 +203,17 @@ The [recorded diagnostics](measurements/browser-engine-wasm.json) used Node
 
 | Case | Rows × columns | Read | JavaScript | WebAssembly |
 | --- | ---: | ---: | ---: | ---: |
-| one product in one country | 1 × 1 | 0.09 MB | 12 ms | 14 ms |
-| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 112 ms |
-| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 413 ms |
-| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 161 ms |
-| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 1.40 s |
-| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 3.57 s |
-| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 1.26 s |
+| one product in one country | 1 × 1 | 0.09 MB | 12 ms | 11 ms |
+| default steel scenario | 49 × 32 | 4.33 MB | 116 ms | 105 ms |
+| default, 150 ms per read | 49 × 32 | 4.33 MB | 847 ms | 407 ms |
+| steel used by every European industry | 49 × 6,400 | 5.02 MB | 207 ms | 156 ms |
+| electricity used by manufacturing, everywhere | 1,078 × 4,165 | 43.2 MB | 2.31 s | 1.39 s |
+| manufacturing used by electricity, everywhere | 4,165 × 1,078 | 135 MB | 9.97 s | 3.52 s |
+| China's whole final demand | 9,800 final-demand rows | 65.0 MB | 1.99 s | 1.23 s |
 
 The WebAssembly column also gains from 64 parallel ranges per array and the
 faster chunk check, which the JavaScript record predates. Peak memory of the
-largest case rose from 484 MB to 540 MB, because the kernel holds its own copies
+largest case rose from 484 MB to 542 MB, because the kernel holds its own copies
 of ΔA and L[K, R].
 
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
