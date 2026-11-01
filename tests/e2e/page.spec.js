@@ -58,9 +58,7 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await page.getByRole("radio", { name: /construction work fell/i }).click();
 	await expect(page).toHaveURL(/mode=whatif/);
 	await expect(page).toHaveURL(/scenario=construction-demand-europe/);
-	await expect(page.locator("#headline")).toContainText(
-		"European final demand for construction work fell by 20%",
-	);
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
@@ -405,16 +403,12 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.unroute("**/*.parquet");
 	await page.getByRole("button", { name: "Try again" }).first().click();
 	expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
-	await expect(page.locator("#headline")).toContainText(
-		"European final demand for construction work fell by 20%",
-	);
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
 	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: /construction work fell/i }).click();
-	await expect(page.locator("#headline")).toContainText(
-		"European final demand for construction work fell by 20%",
-	);
+	await expect(page.locator("#headline")).toContainText("European final demand for construction work fell by 20%");
 });
 
 test("a page whose 2011 flows fail to load says so instead of loading for ever", async ({ page }) => {
@@ -472,9 +466,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await expect(
-		page.getByRole("radio", { name: /Chinese coal power/i }),
-	).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("radio", { name: /Chinese coal power/i })).toHaveAttribute("aria-checked", "true");
 	await expect(page.locator("#headline")).toContainText("would have");
 	// every request made between the two clicks is A's: hold them until B is shown
 	let hold = false;

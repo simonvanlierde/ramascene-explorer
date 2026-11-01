@@ -113,7 +113,9 @@ test("a selection too broad for the browser says so before Run, and search narro
 	// Manufacturing from every country, used by electricity
 	await page.locator("#live-product").selectOption("5");
 	await page.locator("#live-consumer").selectOption("5");
-	await expect(page.locator("#live-broad")).toContainText("4,165 product–country pairs (85 products × 49 producing countries)");
+	await expect(page.locator("#live-broad")).toContainText(
+		"4,165 product–country pairs (85 products × 49 producing countries)",
+	);
 	await expect(page.locator("#live-run")).toBeDisabled();
 	// the check plans the form's own change: 0% changes nothing, so it fits
 	await page.locator("#live-change").fill("0");

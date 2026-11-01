@@ -3,7 +3,7 @@ import { test } from "node:test";
 import fc from "fast-check";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../embodied.js";
-import { continents, flowsCsv, niceUp, FEATURED, parseView, SECTION_SHORT, summarise, viewSearch } from "../flows.js";
+import { continents, FEATURED, flowsCsv, niceUp, parseView, SECTION_SHORT, summarise, viewSearch } from "../flows.js";
 
 // Stryker pins the seed so a mutant is killed or not the same way on every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });
