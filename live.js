@@ -1,10 +1,8 @@
-// Pure logic for the optional "run a custom scenario" panel. The panel exists
-// only when the page is opened with ?api=<job API origin>; without it the page
-// never contacts anything but its own data file, so the static build stays static.
+// Shared custom-scenario logic for the browser worker and optional job API.
 
 import { at, cells } from "./embodied.js";
 
-export const LIVE_STATUS = "computed live by the job API, not precomputed";
+export const LIVE_STATUS = "computed by the job API";
 // The change the job API accepts, in percent. GET /catalog states it as
 // tech_change_percent; these are its values, for a job API that does not.
 export const CHANGE_RANGE = { min: -100, max: 1000 };
@@ -114,17 +112,30 @@ export function liveProvenance(job, apiOrigin) {
 	];
 }
 
-// The "if …" clause for a job's first step, in the words of the precomputed runs:
-// "Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe".
-// Names come from GET /catalog, without the engine's "S: " sector prefix; the
-// region "Total" (everywhere) is left out; an id it does not list is shown as the id.
+// Keep the catalogue names in the form; hide the engine's category prefixes.
+export function catalogName(item) {
+	if (item?.final || item?.name === "Y: Final Consumption") return "Final demand";
+	const name = item?.name.replace(/^[A-Z]: /, "");
+	return (
+		{
+			"Basic iron and steel and of ferro-alloys and first products thereof": "Iron, steel and ferro-alloy products",
+			"Motor vehicles, trailers and semi-trailers": "Motor vehicles and trailers",
+		}[name] ?? name
+	);
+}
+
+// The form submits one intervention. Its description retains both regional scopes.
 export function liveText(job, catalog) {
 	const step = job.scenario.model_details[0];
-	const name = (list, [id]) => (catalog?.[list]?.find((x) => x.id === id)?.name ?? `#${id}`).replace(/^[A-Z]: /, "");
+	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);
+	const name = (list, ids) => catalogName(item(list, ids)) ?? `#${ids[0]}`;
 	const where = (prefix, ids) => (name("regions", ids) === "Total" ? "" : `${prefix}${name("regions", ids)}`);
 	const change = step.techChange[0];
 	const product = name("products", step.product).toLowerCase();
-	return `${name("consumers", step.consumedBy)}${where(" in ", step.consumedReg)} used ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${where(" from ", step.originReg)}`;
+	const origin = where(" from ", step.originReg);
+	if (catalogName(item("consumers", step.consumedBy)) === "Final demand")
+		return `final demand${where(" in ", step.consumedReg)} for ${product}${origin} ${change < 0 ? "fell" : change > 0 ? "rose" : "changed"} by ${Math.abs(change)}%`;
+	return `${name("consumers", step.consumedBy)}${where(" in ", step.consumedReg)} required ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${origin} per unit of output`;
 }
 
 // A job's flows as the page's {base, delta}: dense arrays in meta's layout, the

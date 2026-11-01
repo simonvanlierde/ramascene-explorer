@@ -22,6 +22,21 @@ def test_matrix_round_trip(tmp_path):
         np.testing.assert_array_equal(file.read_row_group(i).column("value").to_numpy(), matrix[i])
 
 
+@pytest.mark.parametrize("shape", [(3, 49), (257, 49)])
+def test_dense_matrix_groups_preserve_every_float64_bit(tmp_path, shape):
+    matrix = np.random.default_rng(42).normal(size=shape)
+    matrix[0, :3] = [-0.0, 1e-200, 1e200]
+    original = matrix.copy()
+    path = tmp_path / "dense.parquet"
+    info = write_matrix(path, matrix, rows_per_group=128)
+    file = pq.ParquetFile(path)
+    assert file.num_row_groups == (shape[0] + 127) // 128
+    assert info["shape"] == list(shape)
+    restored = file.read().column("value").to_numpy().reshape(shape)
+    np.testing.assert_array_equal(restored.view(np.uint64), original.view(np.uint64))
+    np.testing.assert_array_equal(matrix.view(np.uint64), original.view(np.uint64))
+
+
 def test_matrix_refuses_nonfinite_values(tmp_path):
     with pytest.raises(ValueError, match="non-finite"):
         write_matrix(tmp_path / "invalid.parquet", np.array([[np.inf]]))

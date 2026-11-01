@@ -1,5 +1,5 @@
 <script>
-// Three numbers under the sentence in Flows; in What if… the five continents,
+// Three numbers under the sentence in Flows; in What if… the five world regions,
 // each its change in emissions (or jobs, or ores) released there.
 import { amount, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "../flows.js";
 import { ui } from "./view.svelte.js";
@@ -40,7 +40,7 @@ const fill = $derived(divFill(extent));
 		</div>
 	</div>
 {:else}
-	<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the continent where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
+	<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the world region where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
 		{#each conts as c (c.name)}
 			{@const v = c.change}
 			{@const p = c.base ? (v / c.base) * 100 : 0}

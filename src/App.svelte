@@ -195,14 +195,14 @@ const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
-// "Verified" only for engine output whose every published run passed every check,
+// Checks passed only for engine output whose every published run passed every check,
 // and never while a run those checks did not cover is on screen
 const verified = $derived(
 	!live && data?.data_kind === "exiobase-v3" && data.checks?.published_passed_every_check === true,
 );
 const retry = () => showRun(ui.run);
 
-// the selection lives in the query string, so every view can be shared
+// The URL shares filters and published scenarios; custom results stay in memory.
 $effect(() => {
 	if (!ready) return;
 	const q = viewSearch(ui, meta.country_codes, location.search);
@@ -237,16 +237,16 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "precomputed, not a forecast"}</span>
+				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
 				{#if live}
 					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
 				{:else if verified}
-					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Verified: how this was computed and checked">
+					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Checks passed: view calculation checks and method">
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-						Verified
+						Checks passed
 					</button>
 				{:else}
-					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Not verified: {flag?.synthetic ? "test data" : "a check failed"}</button>
+					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Checks unavailable: {flag?.synthetic ? "test data" : "a check failed"}</button>
 				{/if}
 			{/if}
 			<a class="pill gh" href="https://github.com/simonvanlierde/ramascene-explorer" aria-label="Source code on GitHub" title="Source code on GitHub">

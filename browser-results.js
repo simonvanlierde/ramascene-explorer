@@ -1,11 +1,11 @@
 import { liveFlows } from "./live.js";
 
-export const BROWSER_STATUS = "computed in this browser, not precomputed";
+export const BROWSER_STATUS = "computed in this browser";
 export const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
-	pill: "Browser run: method",
-	heading: "This run: computed in the browser",
-	note: "This scenario uses float64 Woodbury updates on EXIOBASE v3.3.sm. The 153 published scenarios are checked against RaMa-Scene at relative 1e-9; a custom scenario is not an independent validation of its assumptions.",
+	pill: "Browser method",
+	heading: "Custom calculation",
+	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates. All 153 published scenarios match RaMa-Scene within relative 1e-9. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
 };
 
 export function browserProvenance(job) {

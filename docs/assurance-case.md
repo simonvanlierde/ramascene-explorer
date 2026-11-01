@@ -1,8 +1,8 @@
 # Assurance case
 
-Why the page and its release files can be trusted. This page gives the
-argument; [security.md](security.md) and [publishing.md](publishing.md) hold
-the details it points to.
+This page describes controls against misleading links, changed data files and compromised builds.
+It also records what those controls cannot establish.
+See [security.md](security.md) for URL validation and [publishing.md](publishing.md) for release verification.
 
 ## Threat model
 

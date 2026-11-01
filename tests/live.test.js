@@ -6,6 +6,7 @@ import { compare } from "../explorer.js";
 import {
 	apiUrl,
 	CHANGE_RANGE,
+	catalogName,
 	ignoredApi,
 	jobRun,
 	LIVE_STATUS,
@@ -118,7 +119,7 @@ test("a live result is compared with its own job's baseline", () => {
 
 test("the provenance says live, not precomputed, and carries the job's measurements", () => {
 	const rows = Object.fromEntries(liveProvenance(job, "http://127.0.0.1:8020"));
-	assert.equal(rows.Status, "computed live by the job API, not precomputed");
+	assert.equal(rows.Status, "computed by the job API");
 	assert.match(rows["Job API"], /127\.0\.0\.1:8020 · job abc123/);
 	assert.match(rows.Engine, /feat\/engine-package · 7fb5f4c/);
 	assert.match(rows.Computed, /60\.0 s/);
@@ -163,17 +164,41 @@ test("liveText words a job like a precomputed run, with catalog names", () => {
 	};
 	assert.equal(
 		liveText(job, catalog),
-		"Manufacture of motor vehicles in Africa used 20% less motor vehicles from Europe",
+		"Manufacture of motor vehicles in Africa required 20% less motor vehicles from Europe per unit of output",
 	);
 	const rise = { scenario: { model_details: [{ ...job.scenario.model_details[0], techChange: [5] }] } };
-	assert.equal(liveText(rise, null), "#198 in #2 used 5% more #180 from #1");
+	assert.equal(liveText(rise, null), "#198 in #2 required 5% more #180 from #1 per unit of output");
 	// the engine's own names: a sector prefix, and Total for everywhere
 	const engine = {
 		...catalog,
 		regions: [{ id: 1, name: "Total" }, ...catalog.regions.slice(1)],
 		consumers: [{ id: 198, name: "S: Motor vehicles" }],
 	};
-	assert.equal(liveText(job, engine), "Motor vehicles in Africa used 20% less motor vehicles");
+	assert.equal(liveText(job, engine), "Motor vehicles in Africa required 20% less motor vehicles per unit of output");
+});
+
+test("catalogue labels retain the meaning of long product names", () => {
+	assert.equal(catalogName({ name: "S: Motor vehicles, trailers and semi-trailers" }), "Motor vehicles and trailers");
+	assert.equal(
+		catalogName({ name: "Basic iron and steel and of ferro-alloys and first products thereof" }),
+		"Iron, steel and ferro-alloy products",
+	);
+	assert.equal(catalogName({ name: "Y: Final Consumption" }), "Final demand");
+});
+
+test("final-demand copy describes spending, including the origin and destination", () => {
+	const demand = { scenario: { model_details: [{ ...job.scenario.model_details[0], consumedBy: [276] }] } };
+	const catalog = {
+		products: [{ id: 180, name: "Motor vehicles" }],
+		regions: [
+			{ id: 1, name: "Europe" },
+			{ id: 2, name: "Africa" },
+		],
+		consumers: [{ id: 276, name: "Y: Final Consumption", final: true }],
+	};
+	assert.equal(liveText(demand, catalog), "final demand in Africa for motor vehicles from Europe fell by 20%");
+	const zero = { scenario: { model_details: [{ ...demand.scenario.model_details[0], techChange: [0] }] } };
+	assert.equal(liveText(zero, catalog), "final demand in Africa for motor vehicles from Europe changed by 0%");
 });
 
 test("liveFlows: the job's own baseline, and the change against it, in the page's layout", () => {

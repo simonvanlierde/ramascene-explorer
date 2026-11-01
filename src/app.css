@@ -623,6 +623,12 @@ button.pill:hover {
   max-width: 900px;
   text-wrap: balance;
 }
+.hl .scenario-context {
+  display: block;
+  margin: 6px 0;
+  font: 400 14px / 1.5 var(--sans);
+  text-wrap: pretty;
+}
 .hl .n {
   font: 700 0.92em var(--sans);
   font-variant-numeric: tabular-nums;

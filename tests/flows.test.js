@@ -181,8 +181,11 @@ test("the Sankey carries the whole selection through each column", () => {
 });
 
 test("plain-language run text, named and grid", () => {
-	assert.equal(runText(fixture, "cement-in-construction"), "builders everywhere used 20% less cement");
-	assert.match(runText(fixture, "steel-europe-50"), /^every industry in Europe used 50% less /);
+	assert.equal(
+		runText(fixture, "cement-in-construction"),
+		"construction required 20% less cement per unit of output worldwide",
+	);
+	assert.match(runText(fixture, "steel-europe-50"), /^every industry in Europe required 50% less /);
 });
 
 test("the view round-trips through the query string, old links included", () => {

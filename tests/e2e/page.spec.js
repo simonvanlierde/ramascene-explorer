@@ -30,8 +30,8 @@ test("synthetic data renders the map, sentence and method under a banner", async
 	await expect(page.locator("#headline")).toContainText("Germany");
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expectNoAxeViolations(page);
-	await expect(page.getByRole("button", { name: /^Verified/ })).toHaveCount(0);
-	await page.getByRole("button", { name: "Not verified: test data" }).click();
+	await expect(page.getByRole("button", { name: /^Checks passed/ })).toHaveCount(0);
+	await page.getByRole("button", { name: "Checks unavailable: test data" }).click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
 	await expect(page.locator("#provenance dt").first()).toHaveText("data_kind", { useInner: true });
 });
@@ -55,21 +55,27 @@ test("What if… loads a run, keeps it in the URL and survives a reload", async 
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await page.getByRole("radio", { name: /construction required/i }).click();
 	await expect(page).toHaveURL(/mode=whatif/);
 	await expect(page).toHaveURL(/scenario=cement-in-construction/);
-	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+	await expect(page.locator("#headline")).toContainText(
+		"construction required 20% less cement per unit of output worldwide",
+	);
 	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100");
 	await expectNoAxeViolations(page);
 	// the run list folds to the chosen run, and stays folded after a reload
-	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
+	await expect(page.locator(".run.chosen")).toContainText(
+		"Construction required 20% less cement per unit of output worldwide",
+	);
 	await page.reload();
 	await ready(page);
 	await openSelection(page);
-	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
+	await expect(page.locator(".run.chosen")).toContainText(
+		"Construction required 20% less cement per unit of output worldwide",
+	);
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await expect(page.getByRole("radio", { name: /builders everywhere/i })).toHaveAttribute("aria-checked", "true");
+	await expect(page.getByRole("radio", { name: /construction required/i })).toHaveAttribute("aria-checked", "true");
 });
 
 test("the industry rail, country box and direction drive the sentence and the URL", async ({ page }) => {
@@ -167,7 +173,7 @@ test("the shipped results render without the synthetic banner", async ({ page })
 	await page.goto("");
 	await ready(page);
 	await expect(page.locator("#banner")).toBeHidden();
-	await expect(page.locator("#headline")).toContainText("Germany’s consumption caused");
+	await expect(page.locator("#headline")).toContainText("Germany’s consumption was linked to");
 	await expect(page.locator(".pill.ok")).toHaveCount(1); // hidden, not removed, on a phone
 	await expect(page.getByRole("link", { name: "Source code on GitHub" })).toHaveAttribute(
 		"href",
@@ -367,10 +373,10 @@ test("a phone puts the content first and the selection in a sheet", async ({ pag
 	expect(overflow).toBe(0);
 });
 
-test("the honesty notes stay on screen: precomputed, not a forecast, and 'would have'", async ({ page }) => {
+test("the honesty notes stay on screen: Published scenarios · not forecasts, and 'would have'", async ({ page }) => {
 	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
 	await ready(page);
-	await expect(page.locator(".pill.basis")).toContainText("precomputed, not a forecast");
+	await expect(page.locator(".pill.basis")).toContainText("Published scenarios · not forecasts");
 	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
 	await expect(page.locator("#headline")).toContainText("would have");
 });
@@ -391,7 +397,7 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.route("**/*.parquet", (route) => route.abort());
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await page.getByRole("radio", { name: /construction required/i }).click();
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
 	// read out once, from the map's legend, also while a phone's sheet is closed
@@ -399,12 +405,16 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.unroute("**/*.parquet");
 	await page.getByRole("button", { name: "Try again" }).first().click();
 	expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
-	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+	await expect(page.locator("#headline")).toContainText(
+		"construction required 20% less cement per unit of output worldwide",
+	);
 	await expect(page.getByText("That run could not be loaded")).toHaveCount(0);
 	// picking it again from the list works too
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /builders everywhere/i }).click();
-	await expect(page.locator("#headline")).toContainText("builders everywhere used 20% less cement");
+	await page.getByRole("radio", { name: /construction required/i }).click();
+	await expect(page.locator("#headline")).toContainText(
+		"construction required 20% less cement per unit of output worldwide",
+	);
 });
 
 test("a page whose 2011 flows fail to load says so instead of loading for ever", async ({ page }) => {
@@ -417,7 +427,7 @@ test("a page whose 2011 flows fail to load says so instead of loading for ever",
 	await expect(page.getByRole("alert").filter({ hasText: "could not be loaded" })).toBeVisible();
 });
 
-test("a run with a failed check is not shown as Verified", async ({ page }) => {
+test("a run with a failed check is not shown as checks passed", async ({ page }) => {
 	await page.route("**/data/results.json", async (route) => {
 		const response = await route.fetch();
 		const doc = await response.json();
@@ -462,7 +472,9 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	await ready(page);
 	await page.getByRole("button", { name: "What if…" }).click();
 	await openSelection(page);
-	await expect(page.getByRole("radio", { name: /Europe bought 20% fewer/i })).toHaveAttribute("aria-checked", "true");
+	await expect(
+		page.getByRole("radio", { name: /European final demand for European-made motor vehicles/i }),
+	).toHaveAttribute("aria-checked", "true");
 	await expect(page.locator("#headline")).toContainText("would have");
 	// every request made between the two clicks is A's: hold them until B is shown
 	let hold = false;
@@ -483,21 +495,23 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 		await route.continue();
 	});
 	hold = true;
-	await page.getByRole("radio", { name: /European car makers/i }).click();
+	await page.getByRole("radio", { name: /European vehicle makers/i }).click();
 	await started;
 	hold = false;
 	// picking a run folds the list: open it again for the second pick
 	await page.getByRole("button", { name: "Change the intervention" }).click();
-	await page.getByRole("radio", { name: /builders everywhere/i }).click();
+	await page.getByRole("radio", { name: /construction required/i }).click();
 	const headline = page.locator("#headline");
-	await expect(headline).toContainText("builders everywhere used 20% less cement");
+	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
 	expect(held).toBeGreaterThan(0);
 	// let A's request finish and the page settle: B must stay
 	release();
 	await page.waitForTimeout(800);
-	await expect(headline).toContainText("builders everywhere used 20% less cement");
-	await expect(headline).not.toContainText("European car makers");
-	await expect(page.locator(".run.chosen")).toContainText("Builders everywhere used 20% less cement");
+	await expect(headline).toContainText("construction required 20% less cement per unit of output worldwide");
+	await expect(headline).not.toContainText("European vehicle makers");
+	await expect(page.locator(".run.chosen")).toContainText(
+		"Construction required 20% less cement per unit of output worldwide",
+	);
 });
 
 test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apart", async ({ page, isMobile }) => {

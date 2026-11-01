@@ -5,16 +5,16 @@ cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: "RaMa-Scene Explorer"
 abstract: >-
-  A static, map-first explorer of the greenhouse-gas emissions, jobs and
-  metal-ore extraction embodied in each country's final demand, split by 15
-  industry sections, over precomputed RaMa-Scene engine runs on EXIOBASE
-  v3.3.sm (base year 2011): the baseline, three named interventions and 150
-  material-efficiency scenarios. Flows are drawn on a flat map or a globe, and
-  What if… shows how each run changes them. Every precomputed number comes from
-  a verified engine run, with its provenance and checks on the same page. An
-  optional live mode sends a custom scenario to the RaMa-Scene job API and
-  shows its result, marked as not checked. Releases carry build provenance.
-  Nothing is a forecast.
+  RaMa-Scene Explorer traces the supply chains behind consumption using
+  EXIOBASE v3.3.sm data for 2011. It maps where greenhouse-gas emissions,
+  employment and metal-ore extraction occur across 49 countries and regions,
+  grouped into 15 industry sections. Readers can trace a footprint, inspect
+  its flows and compare 153 published scenarios. Custom scenarios can run in
+  the browser or through an optional RaMa-Scene job API. The model changes
+  monetary final demand or inputs per unit of output, with prices and other
+  coefficients fixed. The results describe the 2011 economy, not forecasts.
+  Methods, assumptions, provenance and numerical checks accompany the results.
+  The code is MIT-licensed; derived EXIOBASE data is shared under CC BY 4.0.
 version: 0.4.0
 doi: 10.5281/zenodo.23461260
 url: "https://simonvanlierde.com/ramascene-explorer/"

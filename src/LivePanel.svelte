@@ -6,6 +6,7 @@ import { onDestroy } from "svelte";
 import { BROWSER_STATUS, browserProvenance } from "../browser-results.js";
 import { amountText, pct, wording } from "../flows.js";
 import {
+	catalogName,
 	CHANGE_RANGE,
 	LIVE_STATUS,
 	liveData,
@@ -174,17 +175,17 @@ async function submit(event) {
 {/snippet}
 
 {#snippet options(items)}
-	{#each items ?? [] as item (item.id)}<option value={String(item.id)}>{item.name}</option>{/each}
+	{#each items ?? [] as item (item.id)}<option value={String(item.id)} title={item.name}>{catalogName(item)}</option>{/each}
 {/snippet}
 
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
-		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : "Computed live by the job API"}</small></span>
+		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : "Calculated by the job API"}</small></span>
 		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={() => (open = !open)}>{open ? "Close" : "Set up"}</button>
 	</div>
 	{#if !open}{@render state()}{/if}
 	<div id="live-body" class="live-body" hidden={!open}>
-		<p class="live-label" id="live-label">Results in this panel are {status}.</p>
+		<p class="live-label" id="live-label">Results are {status}.</p>
 		<p class="hint">{browser ? "One intervention on the 2011 economy, calculated on this device. The page downloads the data it needs. The result uses the same baseline as the published scenarios; no scenario is sent to a job server." : "One intervention on the 2011 base year, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
@@ -192,13 +193,13 @@ async function submit(event) {
 			<select id="live-product" required disabled={!catalog} bind:value={pick.product}>{@render options(catalog?.products)}</select>
 			<label for="live-origin">Produced in</label>
 			<select id="live-origin" required disabled={!catalog} bind:value={pick.origin}>{@render options(catalog?.regions)}</select>
-			<label for="live-consumer">Consumed by</label>
+			<label for="live-consumer">Used by</label>
 			<select id="live-consumer" required disabled={!catalog} bind:value={pick.consumer}>{@render options(catalog?.consumers)}</select>
-			<label for="live-consumed-reg">Consumed in</label>
+			<label for="live-consumed-reg">Used in</label>
 			<select id="live-consumed-reg" required disabled={!catalog} bind:value={pick.consumedReg}>{@render options(catalog?.regions)}</select>
-			<label for="live-change">Change, %</label>
+			<label for="live-change">Input or demand change, %</label>
 			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value="-20" required aria-describedby="live-change-h" bind:this={changeInput} />
-			<small class="fh" id="live-change-h">From {minus(range.min)} to +{range.max}</small>
+			<small class="fh" id="live-change-h">For an industry, change inputs per unit of output. For final demand, change spending. Negative values reduce the selected quantity. Range: {minus(range.min)} to +{range.max}%.</small>
 			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 		</form>
 		<!-- under Run while the form is open, so its answer is where the reader is -->

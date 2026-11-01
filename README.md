@@ -5,29 +5,39 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/ramascene-explorer/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/ramascene-explorer)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16003/badge)](https://www.bestpractices.dev/projects/16003)
 
-A static, map-first page over **precomputed** RaMa-Scene engine output on the
-EXIOBASE 2011 base year. It shows where a country's consumption causes
-greenhouse-gas emissions, jobs and metal-ore extraction, split by 15 industry
-sections, and what one intervention would have changed: three named
-interventions and a grid of 150 material-efficiency scenarios. Add `?compute=1`
-to [compute a custom scenario on your device](docs/browser-engine.md), or use
-the optional [job API mode](docs/page.md#live-scenarios-optional). Nothing is a forecast. The engine changes final demand
-or technical coefficients in the 2011 economy and has no projection step.
+**What we consume connects us to environmental impacts across global supply chains.**
+RaMa-Scene Explorer maps those connections using EXIOBASE data for 2011.
+See where emissions and metal-ore extraction occur, and where people work,
+to supply a country's consumption. Then explore how changes in demand or
+production inputs would affect those footprints.
 
-Open it at <https://simonvanlierde.com/ramascene-explorer/>.
+[Open the explorer](https://simonvanlierde.com/ramascene-explorer/).
 
-`data/results.json` and `data/embodied.parquet` come from one precompute run
-on 2026-10-14, with engine `split/3-performance @ d9113ca`, the head of
-[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
-The same run wrote `data/regions.json` and `data/flows.json`. The precompute
-checks the flows against these detail files, and the page does not read them.
-The Parquet file is too large for git, so it ships as a release asset (see
-[docs/precompute.md](docs/precompute.md#embodied-flows)).
+1. Choose a country or region. **Its consumption** traces the supply chains serving its final demand.
+2. Follow the flows on the map. Select an industry section to see its contribution.
+3. Open **What if…**. Compare a published scenario with the 2011 baseline.
 
-`brightway-check/results/` holds the independent agreement checks. `tests/fixture.json` and
-`tests/fixture-embodied.parquet` are synthetic data for testing the page. For
-any data whose `data_kind` is not `exiobase-v3`, the page shows a red
-"SYNTHETIC TEST DATA: NOT A RESULT" banner.
+**Details → Method** explains the model, data and calculation checks.
+The [reading guide](docs/page.md) explains the map and units.
+For a custom scenario, [enable calculation on your device](docs/browser-engine.md)
+or connect an optional [job API](docs/page.md#live-scenarios-optional).
+
+## What the results mean
+
+The demand-pull input–output model links spending to production throughout the supply chain.
+It covers 49 countries and regions, with results grouped into 15 industry sections.
+Employment is the number of people employed attributed to demand, labelled “jobs” in the interface.
+It is not a measure of full-time equivalents or net job creation.
+
+The 153 published scenarios change monetary final demand or inputs per unit of output.
+Prices and unselected coefficients stay fixed; substitution and rebound are outside the model.
+The results describe changes to the **2011 economy**, not forecasts.
+See [what each scenario changes](docs/scenarios.md) before interpreting a reduction.
+
+Calculation checks test numerical agreement and consistency.
+The [Brightway comparison](brightway-check/README.md) compares one footprint across several implementations,
+including an unresolved difference in the pycirk reconstruction.
+These checks do not establish whether a scenario's assumptions are realistic.
 
 ## View
 
@@ -49,8 +59,9 @@ pnpm preview    # serves dist/ on http://127.0.0.1:4180/
 
 Open `?mode=whatif&scenario=steel-in-vehicles-europe` or
 `?region=CN&dir=out&indicator=7&sections=2`. Add `data=tests/fixture.json` to
-see the page on the synthetic fixture. The selection lives in the query
-string, so you can share a view by its URL.
+see the page on the synthetic fixture.
+Filters and published scenarios are stored in the URL.
+Custom results are not included; a shared link opens the last published scenario.
 
 ## Build
 
@@ -59,18 +70,26 @@ when present. Any static host serves it, as long as it answers HTTP range
 requests: the page reads the Parquet file in pieces. Publishing to GitHub
 Pages is in [docs/publishing.md](docs/publishing.md).
 
-## Brightway check
+## Data and reproducibility
 
-[`brightway-check/`](brightway-check/) loads the same EXIOBASE v3.3.sm arrays into
-Brightway as an input-output database and scores one product six ways: Brightway,
-numpy, pymrio, pycirk, the browser reader and this engine through the adapter in `precompute.py`. Its
-README has the agreement table. It is a separate uv project with its own pins.
+The published results come from one run on 2026-10-14, using engine
+`split/3-performance @ d9113ca`, the head of
+[CMLPlatform/ramascene#74](https://github.com/CMLPlatform/ramascene/pull/74).
+`data/results.json` holds scenario totals, parameters, checks and provenance.
+`data/embodied.parquet` holds the map flows and ships as a release asset.
+The [precompute guide](docs/precompute.md) explains how to reproduce both.
+
+`data/regions.json` and `data/flows.json` provide additional checks; the page does not read them.
+`brightway-check/` is a separate uv project with its own dependency pins.
+`tests/fixture.json` and `tests/fixture-embodied.parquet` are synthetic fixtures.
+Any dataset whose `data_kind` is not `exiobase-v3` gets a red
+“SYNTHETIC TEST DATA: NOT A RESULT” banner.
 
 ## Test
 
 ```sh
 uv run pytest                          # everything except the engine adapter
-uv run pytest --engine="$ENGINE_DIR"   # adds the real-engine adapter checks (768 MB)
+uv run pytest --engine="$ENGINE_DIR"   # adds checks that need the engine and EXIOBASE arrays
 pnpm test                              # the page logic, with the coverage floor
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
@@ -91,18 +110,10 @@ them before and after a change to the code they cover.
 
 ## Docs
 
-- [docs/scenarios.md](docs/scenarios.md): what each scenario changes
-- [docs/precompute.md](docs/precompute.md): how to regenerate the data, the embodied flows, and the checks they must pass
-- [docs/page.md](docs/page.md): the map, the industry rail, What if…, Details and the optional live scenarios
-- [docs/browser-engine.md](docs/browser-engine.md): custom scenarios computed on the device, data and checks
-- [docs/publishing.md](docs/publishing.md): CI and the GitHub Pages workflow
-- [docs/architecture.md](docs/architecture.md): how the parts fit together, and the page's modules
-- [docs/interface.md](docs/interface.md): the URL parameters and the job API contract
-- [docs/security.md](docs/security.md): what the page accepts from `?api=` and `?data=`
-- [docs/assurance-case.md](docs/assurance-case.md): why the page and its release files can be trusted
-- [CONTRIBUTING.md](CONTRIBUTING.md): how to set up, test and send a change
-- [GOVERNANCE.md](GOVERNANCE.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [docs/roadmap.md](docs/roadmap.md): what is planned for the next year, and what is not
+- **Read the results:** [map and units](docs/page.md), [scenario definitions](docs/scenarios.md).
+- **Understand the calculations:** [published data](docs/precompute.md), [browser method and limits](docs/browser-engine.md), [cross-engine comparison](brightway-check/README.md).
+- **Develop:** [architecture](docs/architecture.md), [URL and API reference](docs/interface.md), [contributing](CONTRIBUTING.md).
+- **Publish and maintain:** [CI and releases](docs/publishing.md), [security](docs/security.md), [security controls](docs/assurance-case.md), [governance](GOVERNANCE.md), [code of conduct](CODE_OF_CONDUCT.md), [roadmap](docs/roadmap.md).
 
 ## Cite
 

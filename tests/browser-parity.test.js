@@ -14,6 +14,7 @@ test("all 153 browser scenarios match the shipped engine results at relative 1e-
 	const data = await openEngine(meta, (name) =>
 		asyncBufferFromFile(`${directory}/${name}-${meta.files[name].sha256}.parquet`),
 	);
+	for (const name of ["X", "Y", "B"]) await assert.rejects(data.row(name, 0), /use X, Y or B directly/);
 	await assert.rejects(
 		scenarioOutput(data, [
 			{

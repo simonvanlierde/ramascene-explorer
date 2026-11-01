@@ -2,12 +2,12 @@
 
 Open the page with `?compute=1`, switch to What if…, then open Custom scenario.
 Choose a product, its origin, a consuming industry and region, and a percentage
-change. Run scenario computes the result on your device. Choose
-`Y: Final Consumption` to change final demand instead of a technical coefficient.
+change. Run scenario computes the result on your device. Choose **Final demand** to change spending. An industry selection changes inputs per unit of monetary output.
+The catalogue records this final-demand category as `Y: Final Consumption`.
 If `?api=` is also present, the job API takes precedence.
 
-The result lights the map, sentence, continent totals and Details. Its label says
-"computed in this browser, not precomputed". The shared link keeps the last
+The result lights the map, sentence, world-region totals and Details. Its label says
+"computed in this browser". The shared link keeps the last
 precomputed scenario, so reopening it does not reconstruct the custom calculation.
 
 The calculation runs in a worker. It downloads the baseline output, final demand
@@ -53,7 +53,9 @@ X′ = X₀ + L[:, R] solve(S, D X₀[C, :])
 ```
 
 The exporter stores A rows and L columns as separate Parquet row groups.
-It also stores `M = B L`, Y, X and the three selected B rows. Final-demand
+It groups 128 logical rows of X and Y per Parquet row group, since both matrices
+load in full. A, L, M and B keep separate row groups for their logical rows.
+It also stores `M = B L` and the three selected B rows. Final-demand
 changes update X₀ from the affected L columns. Overlapping interventions
 multiply the selected coefficients in order. The page groups `B × X′` into
 the same producer × industry section × consumer layout as the precomputed flows.
@@ -72,16 +74,20 @@ the baseline residual of `(I − A) X = Y` at relative 1e-9 before writing.
 The manifest records each file's dimensions, size and SHA-256. Matrix filenames
 include their hashes, so an old manifest cannot silently read a new matrix.
 
-The prepared export is a `data-2011` release asset, about 920 MB:
+The grouped export is a separate `data-2011` release asset, about 916 MB.
+The earlier `ramascene-browser-engine.tar` remains available for reproducing
+measurements of the original layout.
+Move any existing `data/browser-engine` directory aside before extraction, so
+the build contains only the selected export.
 
 ```sh
-gh release download data-2011 --repo simonvanlierde/ramascene-explorer --pattern ramascene-browser-engine.tar --dir data
+gh release download data-2011 --repo simonvanlierde/ramascene-explorer --pattern ramascene-browser-engine-grouped.tar --dir data
 sha256sum --check data/browser-engine.sha256
-tar -xf data/ramascene-browser-engine.tar -C data
+tar -xf data/ramascene-browser-engine-grouped.tar -C data
 ```
 
 The build includes the data when present. CI and publishing download and verify
-the archive. The full site is about 973 MB; the Pages build refuses 1 GB or more.
+the archive. The full site is about 969 MB; the Pages build refuses 1 GB or more.
 The browser fetches only the data needed for a calculation, rather than this
 whole export. The desktop and phone smoke test bounds that transfer at 50 MB
 for the default steel scenario.
@@ -121,7 +127,7 @@ in [web.dev's worker guide](https://web.dev/articles/off-main-thread).
 The matrix URLs include content hashes. Range requests use normal HTTP caching
 instead of forcing revalidation. A new dataset gets new matrix URLs; see
 [MDN's cache-busting guidance](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching).
-Do not download the entire 920 MB export to warm a cache. Large, rarely used
+Do not download the entire 916 MB export to warm a cache. Large, rarely used
 assets should load when needed, as the
 [Chrome runtime-caching guide](https://developer.chrome.com/docs/workbox/caching-resources-during-runtime/)
 explains. Persistent browser storage, WebAssembly and GPU kernels need a measured
@@ -132,32 +138,36 @@ bottleneck before they justify another runtime or storage lifecycle here.
 With the prepared export present, compare against a committed implementation:
 
 ```sh
-taskset -c 30,31 node measure-browser-engine.js bd8b71e docs/measurements/browser-engine.json
+taskset -c 30,31 node measure-browser-engine.js bd8b71e docs/measurements/browser-engine.json /path/to/original/browser-engine /path/to/grouped/browser-engine
 ```
 
 Choose CPUs available on the measurement machine. On macOS, omit `taskset`.
+The last two arguments select the original and grouped exports. Without them,
+both implementations use `data/browser-engine`, which compares code on one layout.
 The script runs seven interleaved pairs in fresh Node processes for a one-product
 case, the default 49-row scenario, and an 85-row manufacturing scenario. A fourth
 case adds 150 ms of synthetic latency per read to the default scenario. It
 records initialization, first and repeated calculation plus flow aggregation,
-read bytes, peak RSS, source hashes and host load. Files use the warm OS cache.
+read bytes, peak RSS, source and manifest hashes, and host load. Files use the warm OS cache.
 It measures the numerical/data path, not browser painting or network latency.
 The [recorded diagnostics](measurements/browser-engine.json) came from a shared
 machine; use them to locate costs, not to promise phone or network performance.
 
-On 2026-11-01, Node 26.9.0 on an i9-14900KF, pinned to CPUs 30–31 with host load
-5.9–6.6, gave these default-case medians against `bd8b71e`:
+On 2026-11-01, Node 26.9.0 on an i9-14900KF, pinned to CPUs 30–31 on a shared host,
+gave these default-case medians. The comparison includes the code changes since
+`bd8b71e` and the grouped X/Y export:
 
 | Measurement | Before | After | Change |
 | --- | ---: | ---: | ---: |
-| Data initialization | 1.22 s | 424 ms | −65% |
-| First calculation and flow aggregation | 495 ms | 349 ms | −30% |
-| Repeated calculation and flow aggregation | 70.3 ms | 49.2 ms | −30% |
-| Peak process RSS | 350 MB | 254 MB | −28% |
-| First calculation, 150 ms synthetic read delay | 1.39 s | 1.23 s | −12% |
+| Data initialization | 1.21 s | 162 ms | −87% |
+| First calculation and flow aggregation | 509 ms | 380 ms | −25% |
+| Repeated calculation and flow aggregation | 69.0 ms | 48.7 ms | −29% |
+| Peak process RSS | 373 MB | 236 MB | −37% |
+| First calculation, 150 ms synthetic read delay | 1.40 s | 1.27 s | −10% |
 
-The one-product first calculation stayed within measurement noise. The 85-row
-case improved from 811 ms to 533 ms. Results matched between implementations;
+The one-product first calculation increased from 167 ms to 188 ms. Its combined
+initialization and first calculation decreased from 1.39 s to 349 ms. The 85-row
+case improved from 813 ms to 551 ms. Results matched between implementations;
 the separate parity test checks all 153 published scenarios. The raw record
 includes every sample, ranges can be derived from it, and each implementation's
 source hashes identify the measured code.

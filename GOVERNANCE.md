@@ -14,10 +14,10 @@ RaMa-Scene Explorer has one maintainer: Simon van Lierde
 
 ## If the maintainer is unavailable
 
-A named person can take over the GitHub repository, and the recovery details
-for Zenodo are in an emergency-access vault. Nothing else is needed to keep
-the project going: there are no stored secrets, packages or domains, and the
-release and Pages workflows run with GitHub's own token.
+A successor can take over the GitHub repository and publish it through GitHub Pages.
+The release and Pages workflows use GitHub's own token.
+The static site needs no separate calculation server.
+Zenodo ownership and any custom domain need a separate transfer.
 
 The code, the release history and the docs are public under the MIT license,
 so anyone can also fork the project.

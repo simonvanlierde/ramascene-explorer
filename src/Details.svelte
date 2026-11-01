@@ -125,7 +125,7 @@ function downloadCsv() {
 }
 
 // --- copy link ----------------------------------------------------------------
-// The query string holds the whole view, so the link is the page's own URL.
+// Custom results are not serialized; the URL keeps the last published scenario.
 let copied = $state("");
 let linkBox = $state(null);
 let linkInput = $state();
@@ -173,6 +173,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 			<p class="ps">
 				{ui.dir === "in" ? `What ${nameIn} consumes` : w.made.own(nameIn)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
 			</p>
+			{#if live}<p class="ps">Copy link shares the filters and last published scenario. It does not include this custom result.</p>{/if}
 			<p class="copied" role="status">{copied}</p>
 			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
 		</div>
@@ -266,14 +267,20 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		<section class="part" aria-labelledby="meaning-heading">
 			<h2 id="meaning-heading">What the numbers mean</h2>
 			<p>
-				Each flow is the {w.noun} that industries in one country {ui.indicator === 3 ? "provide" : ui.indicator === 7 ? "extract" : "release"} in {data.base_year}
-				to make goods and services finally bought in another: by households, governments and investment, not by other industries along the way.
-				A country's consumption sums the flows into it; its production sums the flows out of it.
+				The map traces supply chains from final demand to the industries where {w.source}.
+				Final demand includes household spending, government spending and investment.
+				Consumption adds the flows serving the selected country or region. Production adds the flows originating there.
 			</p>
 			<p>
-				The figures come from the RaMa-Scene engine's demand-pull model on {data.provenance.dataset.name}. What if… shows how one precomputed
-				change to 2011 demand, or to an industry's inputs, would have shifted them. None of it is a forecast.
+				RaMa-Scene calculates these links with a demand-pull Leontief input–output model using {data.provenance.dataset.name} for {data.base_year}.
+				What if… changes spending or input requirements per unit of output, then recalculates the supply chain.
+				Prices and all unselected coefficients stay fixed. The model includes no substitution or rebound response. These are scenarios for the 2011 economy, not forecasts.
 			</p>
+			<p>
+				GHG means greenhouse-gas emissions, measured in megatonnes of CO₂-equivalent. Metal ores are measured in megatonnes extracted.
+				Employment counts people employed who are attributed to the selected demand. The label “jobs” does not mean full-time equivalents or net job creation.
+			</p>
+			<p>Choose a country, follow its consumption footprint on the map, then try a published scenario in What if… to compare it with the baseline.</p>
 		</section>
 		{#if live}
 			<section class="part" aria-labelledby="live-provenance-heading">
@@ -295,7 +302,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 		{#if check && !live}
 			<p class="vf">
 				<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-				Verified: flows sum to the engine's per-country totals (worst relative difference {check.max_relative_difference.toExponential(0)})
+				Flow check passed: country totals match the engine (relative tolerance 1e-9)
 			</p>
 		{/if}
 	</footer>

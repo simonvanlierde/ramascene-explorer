@@ -46,13 +46,14 @@ def catalog(db):
         return {"products": listing("product"), "regions": listing("country"), "consumers": listing("modellingproduct")}
 
 
-def write_matrix(path, matrix):
+def write_matrix(path, matrix, rows_per_group=1):
     schema = pa.schema([("value", pa.float64())])
     with pq.ParquetWriter(path, schema, compression="gzip", use_dictionary=False) as writer:
-        for row in matrix:
-            if not np.isfinite(row).all():
+        for start in range(0, len(matrix), rows_per_group):
+            values = np.asarray(matrix[start : start + rows_per_group], dtype=np.float64).ravel()
+            if not np.isfinite(values).all():
                 raise ValueError(f"non-finite values in {path.name}")
-            writer.write_table(pa.table({"value": np.asarray(row, dtype=np.float64)}))
+            writer.write_table(pa.table({"value": values}))
     with path.open("rb") as stream:
         sha = hashlib.file_digest(stream, "sha256").hexdigest()
     return {"shape": list(matrix.shape), "bytes": path.stat().st_size, "sha256": sha}
@@ -86,7 +87,7 @@ def export(data, db, out):
     matrices = {"A": A, "L": L.T, "Y": Y, "X": X, "B": B[[i - 1 for i in INDICATORS]], "M": B @ L}
     files = {}
     for name, matrix in matrices.items():
-        files[name] = write_matrix(out / f"{name}.parquet", matrix)
+        files[name] = write_matrix(out / f"{name}.parquet", matrix, rows_per_group=128 if name in {"X", "Y"} else 1)
         (out / f"{name}.parquet").rename(out / f"{name}-{files[name]['sha256']}.parquet")
         print(f"{name}: {files[name]['bytes']} bytes", flush=True)
     metadata = {

@@ -99,9 +99,9 @@ const WORDING = {
 		factor: 1e-9,
 		unit: "Mt CO₂-eq",
 		in: {
-			verb: " consumption caused",
+			verb: " consumption was linked to",
 			abroad: "was released abroad",
-			would: " consumption would have caused",
+			would: " consumption would have been linked to",
 			where: "released in",
 		},
 		out: {
@@ -121,9 +121,9 @@ const WORDING = {
 		factor: 1e3,
 		unit: "jobs",
 		in: {
-			verb: " consumption supported",
+			verb: " consumption was linked to",
 			abroad: "of them were abroad",
-			would: " consumption would have supported",
+			would: " consumption would have been linked to",
 			where: "in jobs in",
 		},
 		out: {
@@ -198,9 +198,9 @@ export function amountShort(v, id) {
 
 // Plain-language "if …" clause for each run, as the sentence uses it.
 const NAMED = {
-	"vehicle-demand-europe": "Europe bought 20% fewer cars, vans and trucks",
-	"steel-in-vehicles-europe": "European car makers used 20% less steel",
-	"cement-in-construction": "builders everywhere used 20% less cement",
+	"vehicle-demand-europe": "European final demand for European-made motor vehicles fell by 20%",
+	"steel-in-vehicles-europe": "European vehicle makers required 20% less steel per unit of output",
+	"cement-in-construction": "construction required 20% less cement per unit of output worldwide",
 };
 const PLACE = { "Middle-East": "the Middle East", America: "the Americas" };
 export function runText(data, id) {
@@ -210,7 +210,7 @@ export function runText(data, id) {
 	const product = data.grid.products.find((p) => p.slug === s.grid.product);
 	const region = data.grid.regions.find((r) => r.slug === s.grid.region);
 	const name = region?.name ?? s.grid.region;
-	return `every industry in ${PLACE[name] ?? name} used ${Math.abs(s.grid.cut)}% less ${(product?.short ?? s.grid.product).toLowerCase()}`;
+	return `every industry in ${PLACE[name] ?? name} required ${Math.abs(s.grid.cut)}% less ${(product?.short ?? s.grid.product).toLowerCase()} per unit of output`;
 }
 export const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 

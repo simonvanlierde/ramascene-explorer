@@ -82,7 +82,8 @@ export async function openEngine(meta, openFile) {
 	}
 	const readers = new Map();
 	async function row(name, index) {
-		if (!["A", "L", "Y", "X", "B", "M"].includes(name)) throw new Error("unknown matrix");
+		if (!["A", "L", "M"].includes(name))
+			throw new Error("matrix rows are available for A, L and M; use X, Y or B directly");
 		if (!readers.has(name))
 			readers.set(
 				name,
@@ -102,8 +103,7 @@ export async function openEngine(meta, openFile) {
 		if (Number(metadata.num_rows) !== height * width) throw new Error("invalid matrix dimensions");
 		const values = new Float64Array(height * width);
 		let count = 0;
-		// X and Y have 9,800 row groups. Decode bounded batches to avoid keeping
-		// thousands of resolved column promises and their buffers alive at once.
+		// Bound decoding so intermediate column buffers can be released between batches.
 		for (let start = 0; start < height; start += 128) {
 			await parquetRead({
 				file,

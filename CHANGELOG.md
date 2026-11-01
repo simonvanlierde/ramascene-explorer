@@ -18,8 +18,17 @@ follow [Semantic Versioning](https://semver.org/).
 - `pnpm measure-coverage` reports how much of each Svelte file the browser
   tests run, in Chromium ([docs/publishing.md](docs/publishing.md#svelte-coverage)).
 
+### Changed
+
+- The [reading guide](docs/page.md) and interface distinguish monetary demand from
+  inputs per unit of output, explain employment units, and make calculation checks
+  and the limits of sharing custom results explicit.
+
 ### Fixed
 
+- Browser scenario data groups X and Y into larger Parquet row groups, reducing
+  startup work and download size without changing the float64 values. See the
+  [data layout and measurements](docs/browser-engine.md).
 - Browser scenarios reject numerical cancellation near a singular system and
   announce loading, errors and completion to screen readers. Decoding and row
   caching use bounded memory; broad selections are checked before matrix reads.

@@ -139,9 +139,9 @@ test("runText falls back to the label, then the id, and names the grid's product
 	};
 	assert.equal(runText(data, "missing"), "missing");
 	assert.equal(runText(data, "plain"), "A plain run");
-	assert.equal(runText(data, "g1"), "every industry in the Middle East used 30% less steel");
-	assert.equal(runText(data, "g2"), "every industry in the Americas used 10% less cement");
-	assert.equal(runText(data, "g3"), "every industry in xx used 5% less glass");
+	assert.equal(runText(data, "g1"), "every industry in the Middle East required 30% less steel per unit of output");
+	assert.equal(runText(data, "g2"), "every industry in the Americas required 10% less cement per unit of output");
+	assert.equal(runText(data, "g3"), "every industry in xx required 5% less glass per unit of output");
 });
 
 test("a run adds the change and its percentage to each CSV row", () => {

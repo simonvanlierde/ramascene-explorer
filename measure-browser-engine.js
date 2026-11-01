@@ -1,4 +1,4 @@
-// Paired local-file diagnostics: node measure-browser-engine.js <before-ref> [output.json]
+// Paired diagnostics: node measure-browser-engine.js <before-ref> [output.json] [before-data-dir] [after-data-dir]
 // Each sample gets a fresh process. Pin the parent to the same CPUs for both refs.
 
 import assert from "node:assert/strict";
@@ -19,7 +19,7 @@ const steps = {
 	broad: { product: [5], originReg: [7], consumedBy: [4], consumedReg: [1], techChange: [-20] },
 };
 
-async function sample(ref, workload, delayMs) {
+async function sample(ref, workload, delayMs, directory = `${root}/data/browser-engine`) {
 	const hashes = {};
 	async function module(name) {
 		let source =
@@ -34,8 +34,8 @@ async function sample(ref, workload, delayMs) {
 	const { openEngine, outputFlows } = await module("browser-data.js");
 	const { scenarioOutput } = await module("browser-engine.js");
 	const { asyncBufferFromFile } = await import("hyparquet");
-	const directory = `${root}/data/browser-engine`;
-	const meta = JSON.parse(readFileSync(`${directory}/manifest.json`, "utf8"));
+	const manifest = readFileSync(`${directory}/manifest.json`, "utf8");
+	const meta = JSON.parse(manifest);
 	let bytes = 0;
 	let reads = 0;
 	const started = performance.now();
@@ -70,6 +70,7 @@ async function sample(ref, workload, delayMs) {
 		ref,
 		workload,
 		delayMs,
+		datasetManifestSha256: createHash("sha256").update(manifest).digest("hex"),
 		hashes,
 		readyMs,
 		trials,
@@ -84,10 +85,13 @@ async function sample(ref, workload, delayMs) {
 }
 
 if (process.argv[2] === "--sample") {
-	console.log(JSON.stringify(await sample(process.argv[3], process.argv[4], Number(process.argv[5]))));
+	console.log(JSON.stringify(await sample(process.argv[3], process.argv[4], Number(process.argv[5]), process.argv[6])));
 } else {
 	const before = process.argv[2];
-	if (!before) throw new Error("usage: node measure-browser-engine.js <before-ref> [output.json]");
+	if (!before)
+		throw new Error(
+			"usage: node measure-browser-engine.js <before-ref> [output.json] [before-data-dir] [after-data-dir]",
+		);
 	const results = [];
 	for (const [workload, delayMs] of [
 		["tiny", 0],
@@ -99,10 +103,21 @@ if (process.argv[2] === "--sample") {
 			const paired = [];
 			for (const ref of pair % 2 ? ["working-tree", before] : [before, "working-tree"]) {
 				const result = JSON.parse(
-					execFileSync(process.execPath, [filename, "--sample", ref, workload, String(delayMs)], {
-						cwd: root,
-						encoding: "utf8",
-					}),
+					execFileSync(
+						process.execPath,
+						[
+							filename,
+							"--sample",
+							ref,
+							workload,
+							String(delayMs),
+							(ref === before ? process.argv[4] : process.argv[5]) ?? `${root}/data/browser-engine`,
+						],
+						{
+							cwd: root,
+							encoding: "utf8",
+						},
+					),
 				);
 				results.push({ pair, ...result });
 				paired.push(result);

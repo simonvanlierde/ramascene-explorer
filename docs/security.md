@@ -47,7 +47,7 @@ the page's layout or hold a value that is not a number.
 A link with `?api=https://other.example` makes the page fetch that origin's
 catalog on load, and send it a job when someone clicks Run. The page cannot
 tell a good job API from a bad one, and a bad one can return wrong numbers.
-So a live result is labelled "computed live by the job API, not precomputed",
+So a live result is labelled "computed by the job API",
 with the API's origin and provenance: check that origin before you trust it.
 A live run never enters the shared link.
 

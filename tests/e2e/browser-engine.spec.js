@@ -22,8 +22,11 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
 	await expect(page.locator("#live-news")).toContainText("Computed in this browser in");
-	await expect(page.locator("#status .basis")).toContainText("computed in this browser, not precomputed");
+	await expect(page.locator("#status .basis")).toContainText("computed in this browser");
 	await expect(page.locator(".bands path").first()).toBeVisible();
+	await page.locator("#status .pill.live").click();
+	await expect(page.locator(".ph")).toContainText("It does not include this custom result.");
+	await page.keyboard.press("Escape");
 	expect(external).toEqual([]);
 	expect(matrixBytes).toBeGreaterThan(0);
 	expect(matrixBytes).toBeLessThan(50e6);
