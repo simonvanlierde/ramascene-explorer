@@ -13,6 +13,11 @@ place ripples through supply chains worldwide.
 
 **[Open the explorer](https://simonvanlierde.com/ramascene-explorer/)**
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/explorer-dark.png">
+  <img alt="The explorer showing Germany's greenhouse-gas footprint on a globe, with bands to the regions where the emissions are released" src="docs/img/explorer-light.png">
+</picture>
+
 ## Try it
 
 1. Choose a country. The map shows where the goods and services it consumes are made.
