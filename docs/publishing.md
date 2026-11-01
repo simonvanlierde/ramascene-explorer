@@ -78,3 +78,56 @@ test ran that code. On 2026-10-27 the browser tests covered 92.1% of the
 Svelte lines (1,397 of 1,517); `Sentence.svelte` was lowest at 69.3%. One
 `load.spec.js` test alone covers 50.4%. CI does not run this, so the number is
 a snapshot, not a gate.
+
+## Cloudflare staging
+
+`wrangler.jsonc` deploys a separate `ramascene-explorer-staging` site on
+`workers.dev`. GitHub Pages remains the production host. The staging site sends
+COOP and COEP headers so browsers can use shared memory. The current kernel
+still uses one thread; hosting alone does not make calculations multithreaded.
+Staging responses also send `X-Robots-Tag: noindex`.
+
+The app, fonts, maps and browser dataset ship as static assets. The Parquet file
+exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
+The Worker streams it from the `ramascene-explorer-data` R2 bucket at the same
+`data/embodied.parquet` URL. Its R2 key includes the checksum from `results.json`,
+so an older deployment keeps reading its own dataset.
+
+The local Workers asset server returns whole files for range requests.
+The Worker therefore routes Zarr store reads through Cloudflare's Cache API,
+which returns exact byte ranges from complete cached shards. A cold cache fetches
+a complete shard internally; the browser receives only the requested range.
+These reads and the Parquet reads invoke the Worker and count toward its request
+allowance. Other static files are served directly. Each Parquet range request
+uses one R2 HEAD and one GET (two Class B operations); uploading the file uses
+one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
+
+To deploy staging from a prepared checkout:
+
+1. Run `pnpm exec wrangler login` and select the Cloudflare account.
+2. Enable R2 in that account. Run `pnpm exec wrangler r2 bucket create ramascene-explorer-data` once.
+3. Build the kernel with `engine/build.sh`. Run `pnpm build` with the verified release data present.
+4. Upload the pinned object, then deploy:
+
+   ```sh
+   key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
+   pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote
+   pnpm exec wrangler deploy
+   ```
+
+5. Run `node hosting/check.js https://<staging-host>/` with Playwright's browsers installed.
+   It checks HEAD and exact ranges for both data sources, immutable shard caching,
+   cross-origin isolation, the map and a custom calculation in Chromium, Firefox and WebKit.
+
+`cloudflare.yml` provides a manual, main-only deployment after the bucket exists.
+Set the repository secret `CLOUDFLARE_API_TOKEN` and variable `CLOUDFLARE_ACCOUNT_ID`.
+Scope the token to the chosen account with Workers Scripts Write and Workers R2
+Storage Write permissions. Local OAuth login does not configure GitHub Actions.
+Release files are checksum-verified before upload. CI runs the same browser check
+against the local Workers runtime with a local R2 object; it needs no Cloudflare credentials.
+
+For a local check, upload with `--local` instead of `--remote`, then start
+`pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local`.
+Run `node hosting/check.js http://127.0.0.1:4191/` in another terminal.
+The compatibility date matches the runtime bundled with the pinned Wrangler release.
+Do not switch the production domain until the check also passes on the deployed staging URL.

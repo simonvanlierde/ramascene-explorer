@@ -13,3 +13,5 @@ reports/
 .env
 engine/target/
 engine/pkg/
+.wrangler/
+.dev.vars

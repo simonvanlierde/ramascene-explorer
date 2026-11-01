@@ -179,3 +179,16 @@ jobs:
           path: engine/pkg
       - run: pnpm build
       - run: pnpm exec playwright test
+      - name: check Cloudflare range reads and isolation
+        run: |
+          set -euo pipefail
+          key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
+          pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
+          node node_modules/wrangler/bin/wrangler.js dev --port 4191 --ip 127.0.0.1 --local > /tmp/cloudflare-staging.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for _ in {1..30}; do
+            if curl -fsS http://127.0.0.1:4191/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node hosting/check.js http://127.0.0.1:4191/ || { cat /tmp/cloudflare-staging.log; exit 1; }
