@@ -63,14 +63,14 @@ jobs:
         with:
           node-version: "26"
 
-      # The build copies results.json, the embodied flows and the map geometry into dist/,
+      # The build copies results.json, the embodied flows and the map geometry into site/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
       # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
       - uses: ./.github/actions/engine
         with:
           cache: "false"
-      - run: pnpm build
+      - run: pnpm build:cloudflare
 
       - name: publish
         id: publish
@@ -87,7 +87,7 @@ jobs:
           pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote
           if [ "$EVENT" = pull_request ]; then
             # previews stay out of search results; each version keeps its own _headers
-            printf '\n/*\n  X-Robots-Tag: noindex\n' >> dist/_headers
+            printf '\n/*\n  X-Robots-Tag: noindex\n' >> site/_headers
             pnpm exec wrangler versions upload --preview-alias "pr-$PR" | tee "$RUNNER_TEMP/upload.log"
             url=$(grep -oE "https://pr-$PR-[a-z0-9.-]+\.workers\.dev" "$RUNNER_TEMP/upload.log" | head -1)
             test -n "$url" || { echo "No preview URL in the upload output"; exit 1; }

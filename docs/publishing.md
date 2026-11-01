@@ -83,8 +83,8 @@ a snapshot, not a gate.
 
 `wrangler.jsonc` describes one Worker, `ramascene-explorer`, on the routes
 `simonvanlierde.com/ramascene-explorer` and `simonvanlierde.com/ramascene-explorer/*`.
-`assets.base_path` serves `dist/` under that prefix, so the domain's other pages stay on
-GitHub Pages. The routes take effect once the domain's DNS records are proxied through
+`pnpm build:cloudflare` builds into `site/ramascene-explorer/`, so the assets sit under that
+prefix and the domain's other pages stay on GitHub Pages. The routes take effect once the domain's DNS records are proxied through
 Cloudflare; until then GitHub Pages serves the site at the same address.
 
 `cloudflare.yml` deploys it on every push to `main`. Each pull request from this
