@@ -4,9 +4,62 @@
 //! Matrices arrive as row-major `f64` slices, as the JavaScript worker holds them.
 //! See `scenarioFlows` in browser-engine.js for how the pieces are gathered.
 
-use faer::linalg::matmul::matmul;
+use faer::linalg::matmul::matmul as faer_matmul;
 use faer::linalg::solvers::Solve;
 use faer::{Accum, Mat, MatMut, MatRef, Par};
+
+fn threads() -> usize {
+    #[cfg(feature = "threads")]
+    {
+        rayon::current_num_threads()
+    }
+    #[cfg(not(feature = "threads"))]
+    {
+        1
+    }
+}
+
+fn matmul(
+    out: MatMut<'_, f64>,
+    accum: Accum,
+    lhs: MatRef<'_, f64>,
+    rhs: MatRef<'_, f64>,
+    alpha: f64,
+) {
+    multiply(out, accum, lhs, rhs, alpha, threads());
+}
+
+// Split output rows, keeping each dot product and the input matrices unchanged.
+fn multiply(
+    out: MatMut<'_, f64>,
+    accum: Accum,
+    lhs: MatRef<'_, f64>,
+    rhs: MatRef<'_, f64>,
+    alpha: f64,
+    count: usize,
+) {
+    #[cfg(feature = "threads")]
+    if count > 1
+        && lhs.nrows() >= 32
+        && lhs
+            .nrows()
+            .saturating_mul(lhs.ncols())
+            .saturating_mul(rhs.ncols())
+            >= 1_000_000
+    {
+        let mid = lhs.nrows() / 2;
+        let (top, bottom) = out.split_at_row_mut(mid);
+        let (a, b) = lhs.split_at_row(mid);
+        rayon::join(
+            || multiply(top, accum, a, rhs, alpha, count / 2),
+            || multiply(bottom, accum, b, rhs, alpha, count - count / 2),
+        );
+        return;
+    }
+    #[cfg(not(feature = "threads"))]
+    let _ = count;
+    faer_matmul(out, accum, lhs, rhs, alpha, Par::Seq);
+}
 
 /// Why a scenario or a stored chunk was refused.
 #[derive(Debug, PartialEq, Eq)]
@@ -84,10 +137,10 @@ pub fn correction(
         let t = MatRef::from_row_major_slice(t, k, r);
         let x = MatRef::from_row_major_slice(x, k, c);
         let mut s = Mat::<f64>::identity(k, k);
-        matmul(&mut s, Accum::Add, t, delta, -1.0, Par::Seq);
+        matmul(s.as_mut(), Accum::Add, t, delta, -1.0);
         let v = solve(s.as_ref(), x, scale, epsilon)?;
         let mut w = Mat::<f64>::zeros(r, c);
-        matmul(&mut w, Accum::Replace, delta, &v, 1.0, Par::Seq);
+        matmul(w.as_mut(), Accum::Replace, delta, v.as_ref(), 1.0);
         w
     };
     let out: Vec<f64> = (0..r)
@@ -144,7 +197,6 @@ fn small_system(
             d,
             MatRef::from_row_major_slice(t, k, r),
             -1.0,
-            Par::Seq,
         );
         matmul(
             MatMut::from_row_major_slice_mut(&mut rhs, r, c),
@@ -152,7 +204,6 @@ fn small_system(
             d,
             MatRef::from_row_major_slice(x, k, c),
             1.0,
-            Par::Seq,
         );
     } else {
         for (d_row, (s_row, rhs_row)) in delta
@@ -218,7 +269,7 @@ pub fn fold(out: &mut [f64], h: &[f64], z: &[f64], f: usize, c: usize) -> Result
     let h = MatRef::from_row_major_slice(h, b, f);
     let z = MatRef::from_row_major_slice(z, b, c);
     let out = MatMut::from_row_major_slice_mut(out, f, c);
-    matmul(out, Accum::Add, h.transpose(), z, 1.0, Par::Seq);
+    matmul(out, Accum::Add, h.transpose(), z, 1.0);
     Ok(())
 }
 
@@ -259,6 +310,14 @@ pub fn decode(bytes: &[u8], length: usize) -> Result<Vec<f32>, Error> {
 /// The exports browser-engine.js and browser-data.js call, with errors as JavaScript exceptions.
 #[cfg(target_arch = "wasm32")]
 pub mod wasm {
+    #[cfg(feature = "threads")]
+    pub use wasm_bindgen_rayon::init_thread_pool;
+
+    /// Number of threads available to the numerical kernel.
+    #[wasm_bindgen::prelude::wasm_bindgen]
+    pub fn thread_count() -> usize {
+        super::threads()
+    }
     use wasm_bindgen::prelude::*;
 
     /// [`super::correction`] for JavaScript.
@@ -548,5 +607,44 @@ mod tests {
         for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
             assert_eq!(decode(&gzip(&[1.0, v]), 8), Err(Error::ChunkValues));
         }
+    }
+    #[test]
+    fn split_products_match_direct_dot_products() {
+        let (m, k, n) = (65, 257, 63);
+        let a: Vec<f64> = (0..m * k).map(|i| (i as f64 * 0.7).sin()).collect();
+        let b: Vec<f64> = (0..k * n).map(|i| (i as f64 * 0.3).cos()).collect();
+        for accum in [Accum::Replace, Accum::Add] {
+            for count in [1, 3, 4] {
+                let mut out = Mat::<f64>::from_fn(m, n, |_, _| 7.0);
+                multiply(
+                    out.as_mut(),
+                    accum,
+                    MatRef::from_row_major_slice(&a, m, k),
+                    MatRef::from_row_major_slice(&b, k, n),
+                    -0.25,
+                    count,
+                );
+                for i in 0..m {
+                    for j in 0..n {
+                        let dot: f64 = (0..k).map(|q| a[i * k + q] * b[q * n + j]).sum();
+                        let base = if matches!(accum, Accum::Add) {
+                            7.0
+                        } else {
+                            0.0
+                        };
+                        close(out[(i, j)], base - 0.25 * dot);
+                    }
+                }
+            }
+        }
+    }
+    #[cfg(feature = "threads")]
+    #[test]
+    fn thread_count_uses_the_active_pool() {
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(3)
+            .build()
+            .unwrap();
+        pool.install(|| assert_eq!(threads(), 3));
     }
 }

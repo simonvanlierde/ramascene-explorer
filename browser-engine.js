@@ -110,7 +110,7 @@ export function plan(meta, steps) {
 			`too broad to compute in the browser: it changes ${J.length.toLocaleString("en")} product–country pairs${detail}. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it.`,
 		);
 	}
-	return { edits, technical, rows, columns, finals, J, byRows, download };
+	return { edits, technical, rows, columns, finals, J, byRows, download, memory };
 }
 
 // ΔA = A' − A on the selected rows and columns, in place, so no copy of A stays
@@ -140,7 +140,7 @@ function change(a, technical, rows, columns) {
 // solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
 // The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
 // flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
-export async function scenarioFlows(data, steps) {
+export async function scenarioFlows(data, steps, kernel = { correction, fold }) {
 	const { meta, baseline, read } = data;
 	const C = meta.countries;
 	const { edits, technical, rows, columns, finals, J, byRows } = plan(meta, steps);
@@ -183,7 +183,7 @@ export async function scenarioFlows(data, steps) {
 		// T = L[K,R], K × R
 		const T = new Float64Array(K * R);
 		for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) T[k * R + r] = l[k * W + position.get(rows[r])];
-		const w = correction(delta, T, x, R, K, C, STORED_EPSILON);
+		const w = kernel.correction(delta, T, x, R, K, C, STORED_EPSILON);
 		for (let r = 0; r < R; r++) {
 			const j = position.get(rows[r]);
 			for (let c = 0; c < C; c++) Z[j * C + c] += w[r * C + c];
@@ -192,7 +192,7 @@ export async function scenarioFlows(data, steps) {
 	for (let start = 0; start < J.length; start += H_BATCH) {
 		const batch = J.slice(start, start + H_BATCH);
 		const h = await (start ? read("H", batch) : firstH);
-		fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
+		kernel.fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 	}
 	if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
 	return out;

@@ -40,3 +40,32 @@ test("an ordinary error leaves the worker running, a fatal one stops it", { time
 	assert.equal(worker.terminated, true);
 	await assert.rejects(client.request({ n: 4 }), /reload to try again/);
 });
+
+test("a failed thread pool is terminated and pending requests retry on one thread", { timeout: 2000 }, async () => {
+	const client = browserClient();
+	const pool = FakeWorker.last;
+	const body = { n: 1 };
+	const first = client.request(body);
+	const second = client.request({ n: 2 });
+	body.n = 99;
+	pool.answer({ id: pool.sent[0].id, retrySingle: true });
+	const fallback = FakeWorker.last;
+	try {
+		assert.equal(pool.terminated, true);
+		assert.notEqual(fallback, pool);
+		assert.deepEqual(
+			fallback.sent.map((m) => m.single),
+			[true, true],
+		);
+		assert.deepEqual(fallback.sent[0].body, { n: 1 });
+		pool.answer({ id: pool.sent[0].id, value: -1 });
+		pool.onerror();
+		fallback.answer({ id: fallback.sent[0].id, value: 10 });
+		fallback.answer({ id: fallback.sent[1].id, value: 20 });
+		assert.equal(await first, 10);
+		assert.equal(await second, 20);
+	} finally {
+		client.close();
+		await Promise.allSettled([first, second]);
+	}
+});

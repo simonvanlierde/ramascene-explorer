@@ -218,3 +218,53 @@ of ΔA and L[K, R].
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
 used a paired method, so compare them with care. Use these numbers to locate
 costs, not to promise phone or network performance.
+
+## Browser threads
+
+On a cross-origin-isolated host, broad dense technical changes can use a shared-memory
+WebAssembly build with Rayon. The worker divides matrix products into disjoint output rows;
+inputs stay shared and all arithmetic stays float64. The LU solve and decoding remain serial.
+Small products also remain serial to avoid scheduling overhead.
+
+The worker selects the pool only when there are more changed rows than input columns,
+and the main product needs at least 100 million multiply-adds. The opposite direction
+uses the sparse build and did not benefit in paired measurements. It also reserves
+16 MiB within the working-memory budget for stacks and runtime space.
+
+The pool has at most four threads and leaves one reported CPU core available.
+Hosts without isolation, and devices reporting two cores or fewer, use the existing
+single-thread build. A failed pool startup or its 15-second deadline terminates the
+worker and retries pending requests once in a fresh single-thread worker.
+
+The build uses the nightly pinned in `engine/threads/rust-toolchain.toml` because
+WebAssembly atomics require rebuilding Rust's standard library. `pnpm engine` builds
+both variants. Vite bundles the nested module workers; they inherit the host's isolation
+headers. GitHub Pages keeps the single-thread path.
+
+The paired browser diagnostics are in [browser-engine-threads.json](measurements/browser-engine-threads.json).
+They include cold and repeated scenarios and peak RSS of a fresh Chromium process tree.
+Process-tree RSS counts shared mappings more than once; it is not the calculation's
+working-memory estimate. Reproduce with the Playwright image from package.json:
+
+```sh
+OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash measure-browser-threads.sh 5
+```
+
+The host's quiet gate and CPU slot keep this run separate from other heavy jobs.
+The harness discards a warm-up pair, alternates mode order and checks complete flow arrays
+against the single-thread result at relative 1e-8.
+
+On the pinned i9-14900KF P-core slot (CPUs 0–7), five paired Chromium runs
+of manufacturing used by electricity had these medians:
+
+| Measurement | One thread | Four threads |
+| --- | ---: | ---: |
+| First calculation, including reads and pool startup | 2.24 s | 1.65 s |
+| Repeated calculation | 1.77 s | 1.19 s |
+| Peak browser process-tree RSS | 1.11 GB | 1.11 GB |
+
+The first calculation was 27% faster and the repeat was 33% faster.
+The shared host and local asset server produced slow samples in both modes;
+all five measured pairs remain in the JSON. These are local browser diagnostics,
+not phone or Internet-download timings. Small and sparse cases use the same
+single-thread implementation in both modes.

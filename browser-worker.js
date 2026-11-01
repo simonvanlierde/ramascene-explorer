@@ -1,11 +1,13 @@
 import { fetchEngine } from "./browser-data.js";
-import { scenarioFlows } from "./browser-engine.js";
+import { plan, scenarioFlows } from "./browser-engine.js";
+import { loadKernel, useThreads } from "./browser-kernel.js";
 import { browserResult } from "./browser-results.js";
 import init from "./engine/pkg/ramascene_engine.js";
 
 let loaded;
 let engine;
-self.onmessage = async ({ data: { id, base, body } }) => {
+let compute;
+self.onmessage = async ({ data: { id, base, body, single } }) => {
 	try {
 		loaded ??= fetchEngine(new URL(base)).catch((e) => {
 			loaded = null;
@@ -38,8 +40,21 @@ self.onmessage = async ({ data: { id, base, body } }) => {
 		else {
 			await kernel;
 			const start = performance.now();
-			const flows = await scenarioFlows(data, body.model_details);
+			// Diagnostics can force either build; the client leaves single unset until fallback.
+			const broad = useThreads(plan(data.meta, body.model_details), single === false);
+			let maths;
+			try {
+				if (broad && !single) {
+					compute ??= loadKernel();
+					maths = await compute;
+				} else maths = await loadKernel(true);
+			} catch {
+				self.postMessage({ id, retrySingle: true });
+				return;
+			}
+			const flows = await scenarioFlows(data, body.model_details, maths);
 			const value = browserResult(data, body, flows, (performance.now() - start) / 1000);
+			value.threads = maths.thread_count();
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
 		}
 	} catch (e) {

@@ -15,6 +15,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Dense custom scenarios can use up to four browser threads on a host that enables shared
+  memory ([browser threads](docs/browser-engine.md#browser-threads)).
+
 - What if… opens on three featured scenarios: coal power in China, steel in Asia-Pacific and
   construction demand in Europe. The three original interventions still open from their links.
 - The README is a short introduction; the development steps moved to [develop.md](docs/develop.md),

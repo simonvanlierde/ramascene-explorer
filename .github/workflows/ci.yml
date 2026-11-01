@@ -42,6 +42,7 @@ jobs:
 
   page:
     name: page tests
+    needs: engine
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -67,7 +68,10 @@ jobs:
           sha256sum --check data/embodied.sha256
 
       - run: pnpm install --frozen-lockfile
-      - uses: ./.github/actions/engine
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: engine-pkg
+          path: engine
       - name: fetch the browser scenario data
         env:
           GH_TOKEN: ${{ github.token }}
@@ -104,12 +108,17 @@ jobs:
       # --locked: the first build fails on a Cargo.lock that is missing or stale. The
       # JavaScript exports compile only for wasm32, so lint there.
       - run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
-      - run: cargo nextest run --locked
+      - run: cargo clippy --locked --features threads --all-targets -- -D warnings
+      - run: cargo nextest run --locked --features threads
+        env:
+          RAYON_NUM_THREADS: "4"
       - run: cargo deny check
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: engine-pkg
-          path: engine/pkg/
+          path: |
+            engine/pkg/
+            engine/pkg-threads/
           if-no-files-found: error
           retention-days: 1
 
@@ -176,7 +185,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: engine-pkg
-          path: engine/pkg
+          path: engine
       - run: pnpm build
       - run: pnpm exec playwright test
       - name: check Cloudflare range reads and isolation

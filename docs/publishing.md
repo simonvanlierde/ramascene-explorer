@@ -83,8 +83,7 @@ a snapshot, not a gate.
 
 `wrangler.jsonc` deploys a separate `ramascene-explorer-staging` site on
 `workers.dev`. GitHub Pages remains the production host. The staging site sends
-COOP and COEP headers so browsers can use shared memory. The current kernel
-still uses one thread; hosting alone does not make calculations multithreaded.
+COOP and COEP headers so browsers can use shared memory. Broad dense calculations can use the [threaded kernel](browser-engine.md#browser-threads).
 Staging responses also send `X-Robots-Tag: noindex`.
 
 The app, fonts, maps and browser dataset ship as static assets. The Parquet file

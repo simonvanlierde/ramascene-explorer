@@ -27,6 +27,20 @@ for (const engine of [chromium, firefox, webkit]) {
 	const browser = await engine.launch({ headless: true });
 	try {
 		const page = await browser.newPage();
+		await page.addInitScript(() => {
+			const Original = Worker;
+			globalThis.workerUrls = [];
+			globalThis.threadCounts = [];
+			globalThis.Worker = class extends Original {
+				constructor(...args) {
+					super(...args);
+					workerUrls.push(String(args[0]));
+					this.addEventListener("message", ({ data }) => {
+						if (data.value?.threads) threadCounts.push(data.value.threads);
+					});
+				}
+			};
+		});
 		await page.goto(url("").href);
 		assert.equal(await page.evaluate(() => crossOriginIsolated), true);
 		await expect(page.locator(".mapc .rg")).toHaveCount(49);
@@ -35,7 +49,108 @@ for (const engine of [chromium, firefox, webkit]) {
 		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 		await page.locator("#live-run").click();
 		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
-		console.log(`${engine.name()}: isolated, map loaded, browser calculation passed`);
+		assert.deepEqual(await page.evaluate(() => threadCounts), [1]);
+		await page.locator("#live-product").selectOption("5");
+		await page.locator("#live-origin").selectOption("1");
+		await page.locator("#live-consumer").selectOption("5");
+		await page.locator("#live-consumed-reg").selectOption("1");
+		await page.locator("#live-run").click();
+		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+		const expected = await page.evaluate(() => Math.min(4, Math.max(1, (navigator.hardwareConcurrency || 2) - 1)));
+		assert.deepEqual(await page.evaluate(() => threadCounts), [1, expected]);
+		const parity = await page.evaluate(async (base) => {
+			const reference = await (await fetch(new URL("data/results.json", base))).json();
+			const meta = await (await fetch(new URL("data/browser-engine/manifest-v3.json", base))).json();
+			const w = new Worker(workerUrls[0], { type: "module" });
+			const call = (body) =>
+				new Promise((resolve, reject) => {
+					w.onmessage = ({ data }) =>
+						data.error || data.retrySingle
+							? reject(new Error(data.error ?? "thread pool failed"))
+							: resolve(data.value);
+					w.onerror = (e) => reject(new Error(e.message));
+					w.postMessage({ id: 1, base: new URL("data/browser-engine/", base).href, body, single: false });
+				});
+			try {
+				await call();
+				try {
+					await call({
+						model_details: [
+							{ product: [82], originReg: [7], consumedBy: [81], consumedReg: [7], techChange: [632.7954014961612] },
+						],
+					});
+					throw new Error("singular scenario was accepted");
+				} catch (e) {
+					if (!e.message.includes("singular or ill-conditioned")) throw e;
+				}
+				let worst = 0;
+				let threads;
+				const cases = reference.scenarios.filter((s) => s.id !== "baseline");
+				for (const scenario of cases) {
+					const value = await call({ model_details: scenario.model_details });
+					threads = value.threads;
+					const flows = value.result.flows.scenario;
+					for (let i = 0; i < meta.indicators.length; i++)
+						for (const region of meta.catalog.regions.filter((r) => r.id >= 2 && r.id <= 6)) {
+							let got = 0;
+							for (const p of region.leaves)
+								for (let s = 0; s < meta.sections.length; s++)
+									for (let c = 0; c < meta.countries; c++)
+										got += flows[((i * meta.countries + p) * meta.sections.length + s) * meta.countries + c];
+							const want = reference.results[scenario.id][String(meta.indicators[i])][region.name];
+							worst = Math.max(worst, Math.abs(got - want) / Math.max(Math.abs(want), 1e-12));
+						}
+				}
+				return { worst, threads, count: cases.length };
+			} finally {
+				w.terminate();
+			}
+		}, base);
+		assert.equal(parity.count, 155);
+		assert.equal(parity.threads, expected);
+		assert.ok(parity.worst <= 1e-8, `threaded parity: ${parity.worst}`);
+		console.log(`${engine.name()}: ${expected} threads, dense calculation and 155 published scenarios passed`);
+		if (engine === chromium) {
+			await page.close();
+			const fallback = await browser.newPage();
+			await fallback.addInitScript(() => {
+				const Original = Worker;
+				globalThis.workerCount = 0;
+				globalThis.lastThreads = 0;
+				globalThis.Worker = class extends Original {
+					constructor(...args) {
+						super(...args);
+						workerCount++;
+						this.addEventListener("message", ({ data }) => {
+							if (data.value?.threads) lastThreads = data.value.threads;
+						});
+					}
+				};
+			});
+			await fallback.route("**/assets/browser-worker-*.js", async (route) => {
+				const response = await route.fetch();
+				const prefix =
+					'const PoolWorker=Worker;self.Worker=class extends PoolWorker {constructor(){super(new URL("missing-pool-worker.js",self.location.href),{type:"module"})}};\n';
+				await route.fulfill({ response, body: prefix + (await response.text()) });
+			});
+			await fallback.goto(url("").href);
+			await fallback.getByRole("button", { name: "What if…" }).first().click();
+			await fallback.locator("#live-open").click();
+			await expect(fallback.locator("#live-state")).toHaveText("Ready to compute in this browser.", {
+				timeout: 60_000,
+			});
+			for (const [id, value] of [
+				["product", "5"],
+				["origin", "1"],
+				["consumer", "5"],
+				["consumed-reg", "1"],
+			])
+				await fallback.locator(`#live-${id}`).selectOption(value);
+			await fallback.locator("#live-run").click();
+			await expect(fallback.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+			assert.deepEqual(await fallback.evaluate(() => [workerCount, lastThreads]), [expected > 1 ? 2 : 1, 1]);
+			console.log("chromium: failed pool terminated and calculation retried on one thread");
+		}
 	} finally {
 		await browser.close();
 	}
