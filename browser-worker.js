@@ -12,6 +12,13 @@ const load = (base) =>
 		loaded = null;
 		throw e;
 	}));
+// the reader decodes with the kernel, so no read starts before it loads; a failed load is
+// tried again on the next message
+const ready = () =>
+	(engine ??= init().catch((e) => {
+		engine = null;
+		throw e;
+	}));
 
 // Reads started for the selection the form shows, before Run: {key, reads}. One
 // prefetch downloads at a time; while it does, only the newest selection waits.
@@ -23,14 +30,17 @@ async function prefetch(base, steps) {
 	if (prefetching) return;
 	prefetching = true;
 	try {
-		const data = await load(base);
+		const [data] = await Promise.all([load(base), ready()]);
 		while (waiting) {
 			const planned = plan(data.meta, waiting);
 			waiting = null;
 			const key = readKey(planned);
 			if (ahead?.key === key) continue;
-			ahead = { key, reads: startReads(data, planned) };
-			await Promise.allSettled(Object.values(ahead.reads));
+			const current = { key, reads: startReads(data, planned) };
+			ahead = current;
+			const settled = await Promise.allSettled(Object.values(current.reads));
+			// a failed read is not kept: Run reads it again
+			if (ahead === current && settled.some((r) => r.status === "rejected")) ahead = null;
 		}
 	} catch {
 		// a selection the form will refuse, or a failed load: Run reports either
@@ -45,13 +55,9 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	let threaded = false;
 	try {
 		const loading = load(base);
-		// the kernel loads alongside the data, and a failed load is tried again on the next message
-		engine ??= init().catch((e) => {
-			engine = null;
-			throw e;
-		});
-		// this message's own load: a failure resets engine before a later await could see null
-		const kernel = engine;
+		// the kernel loads alongside the data; this message keeps its own promise, since a
+		// failure resets engine before a later await could see it
+		const kernel = ready();
 		kernel.catch(() => {});
 		const data = await loading;
 		// the form checks a selection's size with these before sending it

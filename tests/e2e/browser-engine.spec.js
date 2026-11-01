@@ -79,8 +79,14 @@ test("a failed kernel download leaves the form usable and Run loads it again", a
 	await page.getByRole("button", { name: "What if…" }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
+	let reads = 0;
+	page.on("request", (request) => {
+		if (request.url().includes("/browser-engine/store-")) reads++;
+	});
 	// the catalogue needs no kernel
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	// the prefetch decodes with the kernel, so it loads the kernel first
+	await expect.poll(() => reads, { timeout: 10_000 }).toBeGreaterThan(0);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
 	expect(attempts).toBe(2);
