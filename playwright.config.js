@@ -11,7 +11,7 @@ export default defineConfig({
 	// CI runners have 4 CPUs; Playwright's default of half the cores left them idle
 	workers: process.env.CI ? 4 : undefined,
 	reporter: process.env.CI ? "github" : "list",
-	use: { baseURL: "http://127.0.0.1:4180/" },
+	use: { baseURL: "http://127.0.0.1:4180/", trace: "retain-on-failure" },
 	webServer: {
 		// CI builds in its own step, so a build error shows as that step failing
 		command: process.env.CI ? "pnpm preview" : "pnpm build && pnpm preview",
