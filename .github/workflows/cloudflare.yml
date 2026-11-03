@@ -112,10 +112,6 @@ jobs:
               --content-type application/octet-stream > /dev/null
             printf '%s\n' "$store" | pnpm exec wrangler r2 object put "$marker" --pipe --remote
           fi
-          # previews share the bucket, so only main changes its CORS rule
-          if [ "$EVENT" != pull_request ]; then
-            pnpm exec wrangler r2 bucket cors set ramascene-explorer-data --file hosting/r2-cors.json --force
-          fi
           if [ "$EVENT" = pull_request ]; then
             # previews stay out of search results; each version keeps its own _headers
             printf '\n/*\n  X-Robots-Tag: noindex\n' >> site/_headers

@@ -12,7 +12,7 @@ const results = await (await fetch(url("data/results.json"))).json();
 const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
 // With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
 // host by their hashes, read across origins; without it, from next to the page.
-// unset, the workflow passes an empty string
+// When the variable is unset, the workflow passes an empty string.
 const data = process.env.DATA_ORIGIN ? process.env.DATA_ORIGIN.replace(/\/?$/, "/") : null;
 const sha = results.provenance.embodied.sha256;
 const shard = `browser-engine/store-${manifest.store}/A/c/0/0`;

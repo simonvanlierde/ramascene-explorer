@@ -153,9 +153,8 @@ directly instead, with no Worker in the path:
 - `cloudflare.yml` uploads the Parquet file as `embodied/<sha256>.parquet` and the browser
   store as `browser-engine/store-<hash>/...`, both with an immutable `Cache-Control`. A store
   goes up once: the `.complete` marker, written last, tells later runs it is all there.
-- Each run on `main` sets the bucket's CORS rule from `hosting/r2-cors.json`: GET and HEAD with a
-  `Range` header from any origin, so previews on `workers.dev` can read it too. The data is
-  public, and the page needs CORS because it is cross-origin isolated.
+- The page needs CORS, because it is cross-origin isolated. The data is public, so any origin
+  may read it, previews on `workers.dev` included.
 - With the repository variable `DATA_ORIGIN` set (for example
   `https://ramascene-data.simonvanlierde.com/`), the build bakes it in as
   `VITE_DATA_ORIGIN`. The page then reads both files from that host by their hashes, and
@@ -163,15 +162,32 @@ directly instead, with no Worker in the path:
   manifest still ship with the page, so each deployment names its own data.
 - Without the variable, the page reads the data next to itself, through the Worker, as above.
 
-Set up once, in the Cloudflare dashboard: R2 → `ramascene-explorer-data` → Settings →
-Custom Domains → add `ramascene-data.simonvanlierde.com`. Cloudflare caches only some file
-types by default, and the shards have no extension, so add a Cache Rule too: Caching → Cache
-Rules → hostname equals `ramascene-data.simonvanlierde.com`, Eligible for cache, edge TTL
-from the origin. Wait for a push to `main` to upload the store and set CORS, then set the
-`DATA_ORIGIN` variable and run `cloudflare.yml` again. R2 answers range requests itself;
-cache misses are R2 reads (Class B operations), and the check reads each file without and
-then with `Origin`, so a cached answer without CORS headers fails it. A second input-output database is a new upload under its own
-keys, with no change to the Worker.
+Set up once:
+
+1. R2 → `ramascene-explorer-data` → Settings → Custom Domains → add
+   `ramascene-data.simonvanlierde.com`.
+2. Caching → Cache Rules → hostname equals `ramascene-data.simonvanlierde.com`, Eligible for
+   cache, edge TTL from the origin. Cloudflare caches only some file types by default, and the
+   shards have no extension.
+3. Rules → Transform Rules → Modify Response Header → hostname equals
+   `ramascene-data.simonvanlierde.com`, set `Access-Control-Allow-Origin: *` and
+   `Access-Control-Expose-Headers: Content-Range, ETag`. R2 adds CORS headers only to requests
+   that send `Origin`, and the edge cache ignores `Vary: Origin`: without this rule, one plain
+   read caches a copy the page cannot use, for a year.
+4. Set the bucket's CORS rule, for preflights:
+   `pnpm exec wrangler r2 bucket cors set ramascene-explorer-data --file hosting/r2-cors.json`.
+5. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
+   `gh workflow run cloudflare.yml --ref main`.
+
+`hosting/check.js` reads each data file without and then with `Origin`, so a cached copy
+without CORS headers fails it. To go back to the Worker, delete the variable and run the
+workflow again: every version still ships the store, and the Worker still serves the Parquet.
+Cache misses are R2 reads (Class B operations). A second input-output database is a new
+upload under its own keys, with no change to the Worker.
+
+Old stores stay in the bucket too, about 770 MB each. To delete one the live manifest does not
+name, delete its `browser-engine/store-<hash>/.complete` marker first, so a later run uploads
+it again in full, then the objects under that prefix.
 
 Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
 local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check

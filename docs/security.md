@@ -7,7 +7,8 @@ This page covers the technical surface. To report a vulnerability, follow
 
 The published page is static files, served by a Cloudflare Worker that only answers
 byte ranges ([publishing.md](publishing.md#cloudflare)). There is no database or login,
-and it stores nothing. Without `?api=` it fetches only its own files
+and it stores nothing. Without `?api=` it fetches only its own files, and, with the
+[data host](publishing.md#data-host) set, the published data from that host by hash
 ([page.md](page.md#live-scenarios-optional)). How those files are built and
 checked is in [publishing.md](publishing.md).
 
@@ -81,7 +82,9 @@ the [threaded kernel](browser-engine.md#browser-threads) uses it for broad dense
 The app keeps its existing meta CSP.
 
 The hosting Worker exposes only the pinned Parquet object for GET and HEAD.
-It never accepts uploads or exposes arbitrary R2 keys. Zarr store reads use the
+It never accepts uploads or exposes arbitrary R2 keys. With the data host set, the bucket
+itself is public, read-only, on its own hostname, with CORS for any origin: keep only
+public data, keyed by hash, in it. Zarr store reads use the
 Cache API for byte ranges; all other assets go directly through static hosting.
 R2 credentials stay on Cloudflare or in the deployment environment, never in the browser.
 The deploy token is a secret on the `cloudflare` GitHub environment. The environment allows
