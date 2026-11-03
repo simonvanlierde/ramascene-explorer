@@ -222,15 +222,19 @@ const revealR = $derived(ui.dir === "in" ? (1 - reveal) * reach * 1.15 : reveal 
 
 // --- interaction ------------------------------------------------------------------
 let tween = 0;
+// the running tween: false, "turn" (a drag stops it) or "glide" (any press stops it)
+let turning = false;
 function animate(ms, stepFn) {
 	cancelAnimationFrame(tween);
+	turning = false;
+	tween = 0;
 	if (reducedMotion()) return stepFn(1);
 	const t0 = performance.now();
 	const frame = (now) => {
 		const p = Math.min(1, (now - t0) / ms);
 		nudge();
 		stepFn(cubicInOut(p));
-		if (p < 1) tween = requestAnimationFrame(frame);
+		tween = p < 1 ? requestAnimationFrame(frame) : 0;
 	};
 	tween = requestAnimationFrame(frame);
 }
@@ -247,6 +251,7 @@ function turnTo(ll) {
 	if (alpha < 0.5) return;
 	const [a, b] = [rot, facing(ll)];
 	animate(800, (t) => (rot = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]));
+	turning = "turn";
 }
 // centre the globe on the selection once the shapes are in
 $effect(() => {
@@ -375,11 +380,13 @@ function down(e) {
 	if (pts.size === 2) {
 		const [a, b] = [...pts.values()];
 		pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
-		if (drag) drag.moved = true;
+		// a pinch is no flick, even when its fingers lift one at a time
+		if (drag) [drag.moved, drag.pinched] = [true, true];
 		for (const id of pts.keys()) capture(id);
 	}
+	if (turning === "glide") cancelAnimationFrame(tween);
 	if (alpha < 0.5 && zk === 1 && pts.size < 2) return;
-	drag ??= { x: e.clientX, y: e.clientY, moved: false };
+	drag ??= { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, moved: false };
 }
 function move(e) {
 	if (!pts.has(e.pointerId)) return;
@@ -396,11 +403,19 @@ function move(e) {
 	const dx = e.clientX - drag.x;
 	const dy = e.clientY - drag.y;
 	// capture only once it is a drag: a captured pointer's click lands on the svg,
-	// not on the region under it, and a plain click would select nothing
-	if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 2) {
+	// not on the region under it, and a plain click would select nothing. Measured
+	// from the press, so a slow drag of 1 px per event still counts as one.
+	if (!drag.moved && Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 2) {
 		drag.moved = true;
 		capture(e.pointerId);
 	}
+	// a turn's next frame would put the globe back and lose the drag, also a turn that
+	// started during the drag (a second finger, the country box)
+	if (drag.moved && turning) cancelAnimationFrame(tween);
+	// px per ms, smoothed over the last few moves, for the glide on release
+	const dt = e.timeStamp - (drag.t ?? e.timeStamp);
+	if (dt > 0) drag.v = [(drag.v?.[0] ?? 0) / 2 + dx / dt / 2, (drag.v?.[1] ?? 0) / 2 + dy / dt / 2];
+	drag.t = e.timeStamp;
 	drag.x = e.clientX;
 	drag.y = e.clientY;
 	drag.dx = (drag.dx ?? 0) + dx;
@@ -410,10 +425,37 @@ function move(e) {
 	const d = drag;
 	d.frame ||= requestAnimationFrame(() => {
 		nudge();
-		if (alpha > 0.5) rot = [rot[0] + (d.dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (d.dy * 0.35) / zk))];
+		if (alpha > 0.5) spin(d.dx, d.dy);
 		else off = clampOff([off[0] + d.dx, off[1] + d.dy]);
 		d.dx = d.dy = d.frame = 0;
 	});
+}
+const spin = (dx, dy) =>
+	(rot = [rot[0] + (dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (dy * 0.35) / zk))]);
+// A flick lets the globe glide on a little: at most about 34°, gone in a few
+// hundred ms. A pause before the release, a new press, a turn or a morph stops it.
+const GLIDE_MS = 80; // decay time constant
+const GLIDE_MAX = 1.2; // px per ms
+function glide(d, at) {
+	const [vx, vy] = d.v ?? [0, 0];
+	const speed = Math.hypot(vx, vy);
+	// a running Flat/Globe morph (a tween that is no turn) keeps going, without a glide
+	if (alpha < 0.5 || d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
+	let v = [(vx / speed) * Math.min(speed, GLIDE_MAX), (vy / speed) * Math.min(speed, GLIDE_MAX)];
+	let last = performance.now();
+	const frame = (now) => {
+		// a frame can start before the release that asked for it
+		const k = Math.exp(-Math.max(0, now - last) / GLIDE_MS);
+		// the distance covered since the last frame under exponential decay
+		spin(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
+		nudge();
+		v = [v[0] * k, v[1] * k];
+		last = now;
+		tween = Math.hypot(...v) > 0.02 ? requestAnimationFrame(frame) : 0;
+	};
+	cancelAnimationFrame(tween);
+	tween = requestAnimationFrame(frame);
+	turning = "glide";
 }
 function up(e) {
 	pts.delete(e.pointerId);
@@ -421,6 +463,7 @@ function up(e) {
 	// the finger left on the glass carries on from where it is
 	const [rest] = pts.values();
 	if (rest && drag) [drag.x, drag.y] = rest;
+	if (!pts.size && drag?.moved && e.type === "pointerup") glide(drag, e.timeStamp);
 	if (!pts.size) setTimeout(() => (drag = null));
 }
 

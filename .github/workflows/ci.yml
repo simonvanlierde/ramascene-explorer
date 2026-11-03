@@ -199,6 +199,13 @@ jobs:
           path: engine
       - run: pnpm build
       - run: pnpm exec playwright test ${{ matrix.projects }}
+      # a failure keeps its trace (DOM, console, timing), for failures only CI shows
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-${{ matrix.engine }}
+          path: test-results/
+          retention-days: 7
       # in the shortest shard; check.js drives all three engines itself
       - name: check Cloudflare range reads and isolation
         if: matrix.engine == 'firefox'

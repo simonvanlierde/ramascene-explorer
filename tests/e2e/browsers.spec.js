@@ -1,14 +1,17 @@
 import { expect, test } from "./test.js";
 
+// NOTE: on the CI runners, Playwright's desktop WebKit left a frame the page asked for
+// after the test's own script returned unrun for seconds. The same tests pass in its
+// iPhone WebKit, in Chromium and Firefox, and in the same image off CI. So each drag
+// test waits on the page's frames inside its script.
+
 // A quick flick can release the pointer before the next frame; WebKit runs its
 // frames late enough that every test drag did. The turn must still land.
 test("a globe drag released before the next frame still turns the globe", async ({ page }) => {
 	await page.goto("?data=tests/fixture.json&map=globe");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	await expect(page.locator("svg.map")).toHaveClass(/\bglobe\b/);
-	const region = page.locator(".mapc .rg").first();
-	const before = await region.getAttribute("d");
-	await page.locator("svg.map").evaluate((svg) => {
+	const turned = await page.locator("svg.map").evaluate(async (svg) => {
 		const r = svg.getBoundingClientRect();
 		const at = (type, dx) =>
 			svg.dispatchEvent(
@@ -20,9 +23,112 @@ test("a globe drag released before the next frame still turns the globe", async 
 					clientY: r.y + r.height / 2,
 				}),
 			);
+		const first = () => svg.querySelector(".mapc .rg").getAttribute("d");
+		const frames = (ms) =>
+			new Promise((done) => {
+				const end = performance.now() + ms;
+				const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+				requestAnimationFrame(tick);
+			});
+		const d0 = first();
 		at("pointerdown", 0);
 		at("pointermove", 60);
 		at("pointerup", 60);
+		await frames(500);
+		return first() !== d0;
 	});
-	await expect.poll(() => region.getAttribute("d")).not.toBe(before);
+	expect(turned, "the drag turned the globe").toBe(true);
+});
+
+// A drag while the globe still turns to a picked country must win over the turn,
+// or the turn's next frame puts the globe back and the drag is lost.
+test("a globe drag during a turn is not undone by the turn", async ({ page }) => {
+	// steps: 0 no drag, 1 one 60 px move, 60 sixty moves of 1 px (a slow drag)
+	const pickSpain = async (steps) => {
+		await page.goto("?data=tests/fixture.json&map=globe");
+		await expect(page.locator(".mapc .rg")).toHaveCount(49);
+		await page.waitForTimeout(1000); // the turn to the opening country is over
+		return page.locator("svg.map").evaluate(async (svg, steps) => {
+			const frames = (ms) =>
+				new Promise((done) => {
+					const end = performance.now() + ms;
+					const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+					requestAnimationFrame(tick);
+				});
+			// the first point says where Germany is, whether thinned or full outlines are drawn
+			const germany = () => svg.querySelector('.rg[data-region="DE"]').getAttribute("d").split("L")[0];
+			const before = germany();
+			svg.querySelector('.rg[data-region="ES"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			await frames(50); // the turn to Spain has started
+			const r = svg.getBoundingClientRect();
+			const at = (type, dx) =>
+				svg.dispatchEvent(
+					new PointerEvent(type, {
+						bubbles: true,
+						pointerId: 1,
+						isPrimary: true,
+						clientX: r.x + r.width / 2 + dx,
+						clientY: r.y + r.height / 2,
+					}),
+				);
+			if (steps) {
+				at("pointerdown", 0);
+				for (let i = 1; i <= steps; i++) at("pointermove", (i * 60) / steps);
+				at("pointerup", 60);
+			}
+			await frames(1500); // past the 800 ms turn and the 150 ms settle
+			return { before, after: germany() };
+		}, steps);
+	};
+	const turned = await pickSpain(0);
+	expect(turned.after, "picking Spain turned the globe").not.toBe(turned.before);
+	expect((await pickSpain(1)).after, "a drag").not.toBe(turned.after);
+	expect((await pickSpain(60)).after, "a slow drag").not.toBe(turned.after);
+});
+
+// A flick glides on a little after the release; a drag that stops before the
+// release, or any drag under reduced motion, ends where the pointer let go.
+test("a flick lets the globe glide on, a paused drag does not", async ({ page }) => {
+	const dragGermany = async (pause, reduce = "no-preference") => {
+		await page.emulateMedia({ reducedMotion: reduce });
+		await page.goto("?data=tests/fixture.json&map=globe");
+		await expect(page.locator(".mapc .rg")).toHaveCount(49);
+		await page.waitForTimeout(1000); // the turn to the opening country is over
+		// in the page, so a slow runner's round trips cannot add a pause before the release
+		await page.locator("svg.map").evaluate(async (svg, pause) => {
+			const r = svg.getBoundingClientRect();
+			const at = (type, dx) =>
+				svg.dispatchEvent(
+					new PointerEvent(type, {
+						bubbles: true,
+						pointerId: 1,
+						isPrimary: true,
+						clientX: r.x + r.width / 2 + dx,
+						clientY: r.y + r.height / 2,
+					}),
+				);
+			const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+			const frames = (ms) =>
+				new Promise((done) => {
+					const end = performance.now() + ms;
+					const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+					requestAnimationFrame(tick);
+				});
+			at("pointerdown", 0);
+			// 2 ms apart by the clock, not by timers, which a loaded runner delays
+			for (let i = 1; i <= 6; i++) {
+				const t = performance.now() + 2;
+				while (performance.now() < t);
+				at("pointermove", i * 40);
+			}
+			if (pause) await wait(200); // a flick releases at once: even a 0 ms timer can run late
+			at("pointerup", 240);
+			await frames(1000); // past the glide and the 150 ms settle
+		}, pause);
+		// the first point says where Germany is, whether thinned or full outlines are drawn
+		return (await page.locator('.mapc .rg[data-region="DE"]').getAttribute("d")).split("L")[0];
+	};
+	const paused = await dragGermany(true);
+	expect(await dragGermany(false)).not.toBe(paused);
+	expect(await dragGermany(false, "reduce")).toBe(paused);
 });
