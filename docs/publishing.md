@@ -5,7 +5,7 @@
 `pnpm test` and `pnpm exec playwright test`. None of them needs the engine or
 the EXIOBASE matrices, because the engine checks skip without `--engine`.
 Both test steps fail below a line-coverage floor: `fail_under` in
-`pyproject.toml` for `precompute.py` and `compare_data.py`, and the `test`
+`pyproject.toml` for `pipeline/precompute.py` and `pipeline/compare_data.py`, and the `test`
 script in `package.json` for the JS modules (not the Svelte files).
 Playwright runs as one job per browser engine (Chromium, Firefox, WebKit) with
 four workers each; the required check `browser and accessibility tests` passes

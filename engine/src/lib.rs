@@ -2,7 +2,7 @@
 //! the decoding of the store's gzip chunks.
 //!
 //! Matrices arrive as row-major `f64` slices, as the JavaScript worker holds them.
-//! See `scenarioFlows` in browser-engine.js for how the pieces are gathered.
+//! See `scenarioFlows` in src/lib/browser-engine/browser-engine.js for how the pieces are gathered.
 
 use faer::linalg::matmul::matmul as faer_matmul;
 use faer::linalg::solvers::Solve;
@@ -323,7 +323,7 @@ pub fn decode(bytes: &[u8], length: usize) -> Result<Vec<f32>, Error> {
     }
 }
 
-/// The exports browser-engine.js and browser-data.js call, with errors as JavaScript exceptions.
+/// The exports src/lib/browser-engine/browser-engine.js and browser-data.js call, with errors as JavaScript exceptions.
 #[cfg(target_arch = "wasm32")]
 pub mod wasm {
     #[cfg(feature = "threads")]

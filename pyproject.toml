@@ -28,7 +28,7 @@ exclude-newer = "7 days"
 default-groups = ["dev", "precompute"]
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = [".", "pipeline"]
 testpaths = ["tests"]
 
 [tool.coverage.report]
@@ -39,12 +39,17 @@ fail_under = 80
 # RaMa-Scene is a checkout passed with --engine, not an installed dependency.
 allowed-unresolved-imports = ["ramascene", "ramascene.**"]
 
+[tool.ty.environment]
+extra-paths = ["pipeline"]
+
 [tool.ty.src]
 # Its own uv project, with the Brightway packages this environment lacks.
 exclude = ["brightway-check"]
 
 [tool.ruff]
 line-length = 120
+# the pipeline modules are imported by bare name, so they sort as first-party
+src = [".", "pipeline"]
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -66,8 +71,9 @@ pydocstyle.convention = "google"
 # The engine imports only work after setup_django() has configured Django.
 # compute() runs the checks in order and refuses at the first failure; tolerances
 # are written where they are compared; git and the worker run with fixed argv.
-"precompute.py" = ["PLC0415", "C901", "PLR0912", "PLR0915", "PLR2004", "FBT002", "S603", "S607"]
-"compare_data.py" = ["C901"]
+"pipeline/*.py" = ["INP001"]
+"pipeline/precompute.py" = ["PLC0415", "C901", "PLR0912", "PLR0915", "PLR2004", "FBT002", "S603", "S607"]
+"pipeline/compare_data.py" = ["C901"]
 # The fake engine mirrors the real adapter's signatures and knobs.
 "tests/**" = ["S101", "D1", "INP001", "PLR2004", "FBT", "PLC0415", "ARG001", "C901", "PT018", "S603", "S607", "ARG002", "ARG005", "S108"]
-"conftest.py" = ["D1", "INP001"]
+"tests/conftest.py" = ["D1", "INP001"]

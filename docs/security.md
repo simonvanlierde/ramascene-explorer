@@ -38,7 +38,7 @@ and publishing.
 
 ## What `?api=` accepts
 
-`apiUrl` in `live.js` turns the value into an origin, or ignores it. It accepts
+`apiUrl` in `src/lib/live.js` turns the value into an origin, or ignores it. It accepts
 a value only if:
 
 - it parses as a URL;
@@ -66,7 +66,7 @@ A live run never enters the shared link.
 
 ## What `?data=` accepts
 
-`dataUrl` in `explorer.js` accepts only a relative path ending in `.json`: the
+`dataUrl` in `src/lib/explorer.js` accepts only a relative path ending in `.json`: the
 first segment holds word characters and dashes, later segments may also hold
 dots, and no segment is `..`. So `?data=` cannot point at another origin. Any
 other value shows in the status line and the page reads `data/results.json`. A

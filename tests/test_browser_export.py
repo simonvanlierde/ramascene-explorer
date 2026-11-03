@@ -91,3 +91,10 @@ def test_export_refuses_an_existing_manifest_before_reading_sources(tmp_path, ma
     (tmp_path / manifest).write_text("{}")
     with pytest.raises(ValueError, match="already has a manifest"):
         export(tmp_path / "absent-data", tmp_path / "absent-db", tmp_path)
+
+
+def test_export_finds_the_published_results_from_the_pipeline_folder(tmp_path):
+    # results.json sits in the repository's data/, one level above pipeline/; past it,
+    # the export goes on to the EXIOBASE arrays, which are absent here
+    with pytest.raises(FileNotFoundError, match=r"A_v4\.npy"):
+        export(tmp_path / "absent-data", tmp_path / "absent-db", tmp_path)

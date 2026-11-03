@@ -1,10 +1,10 @@
 <script>
 // A custom run's totals by producing region, against the run's own baseline.
 // Details shows it for a run on the map; the live panel for a job the map cannot draw.
-import { compare } from "../explorer.js";
-import { BROWSER_STATUS } from "../browser-results.js";
-import { amountText, displayChange, pct, wording } from "../flows.js";
-import { LIVE_STATUS, liveData } from "../live.js";
+import { compare } from "./lib/explorer.js";
+import { BROWSER_STATUS } from "./lib/browser-engine/browser-results.js";
+import { amountText, displayChange, pct, wording } from "./lib/flows.js";
+import { LIVE_STATUS, liveData } from "./lib/live.js";
 
 // indicator: the page's indicator; without it, the table has its own select.
 // ids: prefix for element ids, distinct per place, since both places can show at once

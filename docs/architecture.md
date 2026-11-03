@@ -9,7 +9,7 @@ when a reader opens the custom-scenario form. [browser-engine.md](browser-engine
 
 ```text
 RaMa-Scene engine + EXIOBASE matrices
-        |  precompute.py (run by hand, needs the engine)
+        |  pipeline/precompute.py (run by hand, needs the engine)
         v
 data/results.json        data/embodied.parquet  (release asset)
         |                        |
@@ -26,21 +26,21 @@ Each part has its own page; [the docs index](README.md) links them all.
 
 `index.html` loads `src/main.js`, which mounts `src/App.svelte`. The Svelte
 files in `src/` draw the view. The logic that needs no browser lives in plain
-modules next to `index.html`, so `node --test` can test it:
+modules in `src/lib/`, so `node --test` can test it:
 
 | module | what it holds |
 | --- | --- |
-| `explorer.js` | where the data file is (`?data=`), the synthetic-data banner, run matching |
-| `embodied.js` | reading the Parquet file by range request |
-| `flows.js` | sums, scales, units, the table and CSV, the URL parameters |
-| `map.js` | which map country belongs to which region |
-| `live.js` | the optional job API: origin check, request body, result reshaping |
-| `browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse) |
+| `src/lib/explorer.js` | where the data file is (`?data=`), the synthetic-data banner, run matching |
+| `src/lib/embodied.js` | reading the Parquet file by range request |
+| `src/lib/flows.js` | sums, scales, units, the table and CSV, the URL parameters |
+| `src/lib/map.js` | which map country belongs to which region |
+| `src/lib/live.js` | the optional job API: origin check, request body, result reshaping |
+| `src/lib/browser-engine/browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse) |
 | `engine/` | the Rust kernel, built to WebAssembly: the small linear solve and the flow sums |
-| `browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
-| `browser-results.js` | browser source labels, provenance and result shape |
+| `src/lib/browser-engine/browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
+| `src/lib/browser-engine/browser-results.js` | browser source labels, provenance and result shape |
 
-`browser-client.js` sends requests to `browser-worker.js`, which loads the data
+`browser-client.js` sends requests to `browser-worker.js` (both in `src/lib/browser-engine/`), which loads the data
 and computes off the main thread. The existing custom-scenario form uses either
 that worker or the job API. Both hand the same flow layout to the map.
 
@@ -53,7 +53,7 @@ It reads the baseline row group to draw the map, then loads the default scenario
 Other scenarios load once, on demand.
 
 The stylesheet (`src/app.css`) defines interface colours.
-Data colours and the scales that use them are in `flows.js`.
+Data colours and the scales that use them are in `src/lib/flows.js`.
 
 ## First-load size
 

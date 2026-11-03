@@ -1,4 +1,4 @@
-import { liveFlows } from "./live.js";
+import { liveFlows } from "../live.js";
 
 export const BROWSER_STATUS = "computed in this browser";
 export const BROWSER_SOURCE = {

@@ -19,6 +19,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The page modules moved to `src/lib/`, the Python pipeline to `pipeline/` and the measurement
+  scripts to `scripts/`, so the repository root holds only configuration and project files.
 - Dense custom scenarios can use up to four browser threads on a host that enables shared
   memory ([browser threads](docs/browser-engine.md#browser-threads)).
 - The site is served from Cloudflare at the same address, with the headers browsers need

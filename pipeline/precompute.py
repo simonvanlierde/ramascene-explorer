@@ -1,6 +1,6 @@
 r"""Run the RaMa-Scene engine over a fixed scenario grid and write one JSON file.
 
-    uv run python precompute.py --run --engine "$ENGINE_DIR" \\
+    uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" \\
         --data "$DATASETS_DIR" --out data/results.json
 
 The engine is imported as a package and driven the way ramascene.tasks.execute_calc
@@ -1122,7 +1122,7 @@ def public_command(argv):
         else:
             words.append(shlex.quote(a))
         previous = a
-    return " ".join(["uv run python precompute.py", *words])
+    return " ".join(["uv run python pipeline/precompute.py", *words])
 
 
 def peak_rss_bytes():

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fitExtent } from "../flows.js";
+import { fitExtent } from "../src/lib/flows.js";
 
 // A selection with one flow per entry: `pct` is each flow's % change on a
 // 2011 flow of `val` (default 100); `total` is the sum, as summarise() makes it.

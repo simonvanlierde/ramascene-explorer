@@ -4,7 +4,7 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "../flows.js";
+import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "./lib/flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause

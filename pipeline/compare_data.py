@@ -1,6 +1,6 @@
 """Compare two precompute runs value by value: results, regions and flows.
 
-    uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR [--rtol 1e-12]
+    uv run python pipeline/compare_data.py OLD_DATA_DIR NEW_DATA_DIR [--rtol 1e-12]
 
 Every number under every key but provenance, runs and checks (timings, and
 check residuals that are float noise by design) must agree to the relative

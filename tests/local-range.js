@@ -1,5 +1,5 @@
 import { openSync, readSync } from "node:fs";
-import { shardPath } from "../browser-data.js";
+import { shardPath } from "../src/lib/browser-engine/browser-data.js";
 
 // readRange for an export on disk, as the parity tests and checks use it.
 export function localRange(directory, meta) {

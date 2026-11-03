@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../embodied.js";
+import { openEmbodied, readRun } from "../src/lib/embodied.js";
 import {
 	amountText,
 	capitalise,
@@ -18,7 +18,7 @@ import {
 	share,
 	summarise,
 	tableRows,
-} from "../flows.js";
+} from "../src/lib/flows.js";
 
 const opts = { runs: ["baseline", "a"], indicators: [5], codes: ["DE", "FR"] };
 const zoom = (z) => parseView(`?zoom=${z}`, opts).zoom;

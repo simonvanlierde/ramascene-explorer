@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
-import { at, embodiedUrl, openEmbodied, openEmbodiedUrl, readRun } from "../embodied.js";
+import { at, embodiedUrl, openEmbodied, openEmbodiedUrl, readRun } from "../src/lib/embodied.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));

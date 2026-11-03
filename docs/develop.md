@@ -64,7 +64,7 @@ uv run pytest                          # everything except the engine adapter
 uv run pytest --engine="$ENGINE_DIR"   # adds checks that need the engine and EXIOBASE arrays
 pnpm test                              # the page logic, with the coverage floor
 pnpm exec playwright test              # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
-pnpm mutation                          # mutation score of flows.js with Stryker (about 4 minutes); fails below 75%
+pnpm mutation                          # mutation score of src/lib/flows.js with Stryker (about 4 minutes); fails below 75%
 (cd engine && cargo fmt --check && cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings && cargo clippy --locked --features threads --all-targets -- -D warnings && RAYON_NUM_THREADS=4 cargo nextest run --locked --features threads && cargo deny check)  # the Rust kernel, as CI runs it
 ```
 

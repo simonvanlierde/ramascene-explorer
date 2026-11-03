@@ -1,6 +1,6 @@
 <script>
-import { lookupGrid, pickerState } from "../explorer.js";
-import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording } from "../flows.js";
+import { lookupGrid, pickerState } from "./lib/explorer.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording } from "./lib/flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";

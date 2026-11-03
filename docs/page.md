@@ -145,7 +145,7 @@ See [loading measurements](architecture.md#first-load-size) for transfer sizes a
 ## Map geometry
 
 The map uses Natural Earth outlines. Malta is too small for this geometry and appears only in the table.
-The five “Rest of …” regions combine their Natural Earth countries, as `REST_OF` in `map.js` lists them.
+The five “Rest of …” regions combine their Natural Earth countries, as `REST_OF` in `src/lib/map.js` lists them.
 Those boundaries can differ from EXIOBASE's country groups at the edges.
 See the [geometry source and processing](architecture.md#map-geometry).
 

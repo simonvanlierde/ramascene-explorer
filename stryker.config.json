@@ -5,9 +5,9 @@
 		"command": "FC_SEED=1 node --test --experimental-test-module-mocks"
 	},
 	"mutate": [
-		"flows.js",
-		"browser-data.js",
-		"browser-engine.js"
+		"src/lib/flows.js",
+		"src/lib/browser-engine/browser-data.js",
+		"src/lib/browser-engine/browser-engine.js"
 	],
 	"coverageAnalysis": "off",
 	"ignorePatterns": [

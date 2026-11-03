@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { LIMITS, plan, readKey, scenarioFlows, startReads } from "../browser-engine.js";
 import { correction } from "../engine/pkg/ramascene_engine.js";
+import { LIMITS, plan, readKey, scenarioFlows, startReads } from "../src/lib/browser-engine/browser-engine.js";
 import "./engine-wasm.js";
 
 const close = (a, b) => assert.ok(Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b)), `${a} != ${b}`);

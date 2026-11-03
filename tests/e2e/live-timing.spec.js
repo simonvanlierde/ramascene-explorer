@@ -1,4 +1,4 @@
-import { apiUrl, LIVE_STATUS } from "../../live.js";
+import { apiUrl, LIVE_STATUS } from "../../src/lib/live.js";
 import { expect, test } from "./test.js";
 
 const api = process.env.LIVE_API;

@@ -1,7 +1,7 @@
 <script>
 // Three numbers under the sentence in Flows; in What if… the five world regions,
 // each its change in emissions (or jobs, or ores) released there.
-import { amount, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "../flows.js";
+import { amount, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "./lib/flows.js";
 import { themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, conts, whatif, extent } = $props();

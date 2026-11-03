@@ -4,7 +4,7 @@ This folder loads EXIOBASE v3.3.sm (2011, monetary product-by-product, as the
 numpy arrays that RaMa-Scene reads) into a Brightway project as one
 input-output database. It runs one LCA and compares the score with numpy,
 pymrio, pycirk, the browser reader and RaMa-Scene's own engine. The engine
-route uses the explorer's adapter in `../precompute.py`, so it checks the same
+route uses the explorer's adapter in `../pipeline/precompute.py`, so it checks the same
 engine that produced the explorer's results.
 
 The LCA: 1 M EUR of final demand for "Cement, lime and plaster" (p26.d) made
@@ -105,7 +105,7 @@ it to relative 1e-6. The browser's modified-coefficient path is checked separate
 on every published scenario at relative 1e-6. The other routes still need
 the original arrays; CI checks their committed results against this table.
 
-`engine.py` runs in the explorer's environment, as `precompute.py` does.
+`engine.py` runs in the explorer's environment, as `pipeline/precompute.py` does.
 `results/engine.json` comes from
 [simonvanlierde/ramascene@d9113ca](https://github.com/simonvanlierde/ramascene/commit/d9113ca9ad38bc29d2a96392dabf74d70abf830e),
 the engine behind the explorer's results. A rerun of all three steps from the

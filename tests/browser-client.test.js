@@ -22,7 +22,7 @@ class FakeWorker {
 }
 globalThis.Worker = FakeWorker;
 globalThis.document = { baseURI: "https://example.org/" };
-const { browserClient } = await import("../browser-client.js");
+const { browserClient } = await import("../src/lib/browser-engine/browser-client.js");
 
 test("an ordinary error leaves the worker running, a fatal one stops it", { timeout: 2000 }, async () => {
 	const client = browserClient();

@@ -34,7 +34,7 @@ pnpm test
 pnpm build && pnpm exec playwright test   # once: pnpm exec playwright install chromium firefox webkit
 ```
 
-`pnpm mutation` (about 4 minutes) fails when the mutation score of `flows.js` is below 75%.
+`pnpm mutation` (about 4 minutes) fails when the mutation score of `src/lib/flows.js` is below 75%.
 
 New behaviour comes with a test, and a bug fix with a test that fails without it. Page
 logic tests go in `tests/*.test.js`, browser tests in `tests/e2e/`, Python tests in `tests/`.

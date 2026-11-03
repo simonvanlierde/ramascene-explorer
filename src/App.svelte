@@ -1,11 +1,11 @@
 <script>
 import { tick } from "svelte";
 import { cubicInOut } from "svelte/easing";
-import { banner, dataUrl, ignoredData, sameRun } from "../explorer.js";
-import { embodiedUrl, openEmbodiedUrl, readRun } from "../embodied.js";
-import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "../flows.js";
-import { apiUrl, ignoredApi, jobRun } from "../live.js";
-import { browserRun } from "../browser-results.js";
+import { banner, dataUrl, ignoredData, sameRun } from "./lib/explorer.js";
+import { embodiedUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
+import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "./lib/flows.js";
+import { apiUrl, ignoredApi, jobRun } from "./lib/live.js";
+import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { threadCount } from "../browser-kernel.js";
+import { threadCount } from "../src/lib/browser-engine/browser-kernel.js";
 
 test("the pool leaves a core available and stays within four threads", () => {
 	for (const [cores, want] of [
@@ -19,7 +19,7 @@ test("the pool leaves a core available and stays within four threads", () => {
 });
 
 test("only dense broad systems use threads, with room for the thread runtime", async () => {
-	const { useThreads } = await import("../browser-kernel.js");
+	const { useThreads } = await import("../src/lib/browser-engine/browser-kernel.js");
 	const plan = { rows: { length: 4165 }, columns: { length: 1078 }, memory: 240 * 1024 ** 2 };
 	assert.equal(useThreads(plan), true);
 	assert.equal(useThreads({ ...plan, rows: { length: 4000 }, columns: { length: 500 } }), true);

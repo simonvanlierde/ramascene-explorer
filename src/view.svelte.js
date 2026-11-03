@@ -3,7 +3,7 @@
 // string and writes it back; the components read and set it directly.
 
 import { MediaQuery } from "svelte/reactivity";
-import { MAP } from "../flows.js";
+import { MAP } from "./lib/flows.js";
 
 export const ui = $state({
 	mode: "flows", // "flows" | "whatif"

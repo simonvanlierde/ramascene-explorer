@@ -1,5 +1,5 @@
 <script>
-import { runSummary, shortCommit } from "../explorer.js";
+import { runSummary, shortCommit } from "./lib/explorer.js";
 
 // scenario: the shown one, or the excluded record whose parameters are listed
 let { data, scenario } = $props();

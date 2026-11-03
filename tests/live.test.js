@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { at } from "../embodied.js";
-import { compare } from "../explorer.js";
+import { at } from "../src/lib/embodied.js";
+import { compare } from "../src/lib/explorer.js";
 import {
 	apiUrl,
 	CHANGE_RANGE,
@@ -19,7 +19,7 @@ import {
 	scenarioBody,
 	unreachableMessage,
 	waitForJob,
-} from "../live.js";
+} from "../src/lib/live.js";
 
 // A job as GET /jobs/{id} returns it once succeeded (numbers made up, shape real).
 const job = {
@@ -143,7 +143,7 @@ test("the custom panel's code loads on demand, and only it contacts the job API"
 	assert.match(app, /\{#await import\("\.\/LivePanel\.svelte"\)/);
 	assert.doesNotMatch(app, /import LivePanel|id="live"/);
 	// The panel component is the only place that fetches from the API.
-	assert.doesNotMatch(readFileSync(new URL("../live.js", import.meta.url), "utf8"), /fetch\(/);
+	assert.doesNotMatch(readFileSync(new URL("../src/lib/live.js", import.meta.url), "utf8"), /fetch\(/);
 });
 
 test("unreachableMessage: a network failure reads as offline, an HTTP error keeps its detail", () => {

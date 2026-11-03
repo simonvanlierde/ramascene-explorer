@@ -7,7 +7,7 @@ playwright-report/
 dist/
 site/
 data/embodied.parquet
-data/browser-engine/
+data/browser-engine
 data/ramascene-browser-engine*.tar
 .stryker-tmp/
 reports/

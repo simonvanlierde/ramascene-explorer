@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { geoEqualEarth, geoOrthographic } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../embodied.js";
+import { openEmbodied, readRun } from "../src/lib/embodied.js";
 import {
 	amountShort,
 	amountText,
@@ -32,7 +32,7 @@ import {
 	theName,
 	viewSearch,
 	wording,
-} from "../flows.js";
+} from "../src/lib/flows.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));

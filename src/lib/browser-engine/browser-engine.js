@@ -2,7 +2,7 @@
 // Matrix rows come from the data reader; this module has no network or DOM.
 // The dense products and the small solve run in engine/ (Rust, built to wasm);
 // the caller loads that module before the first scenario.
-import { correction, fold } from "./engine/pkg/ramascene_engine.js";
+import { correction, fold } from "../../../engine/pkg/ramascene_engine.js";
 
 // The export stores float32, so a pivot this close to zero, relative to the
 // system's scale, cannot be told apart from a singular system.
