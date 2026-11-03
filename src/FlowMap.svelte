@@ -222,8 +222,10 @@ const revealR = $derived(ui.dir === "in" ? (1 - reveal) * reach * 1.15 : reveal 
 
 // --- interaction ------------------------------------------------------------------
 let tween = 0;
+let turning = false; // the running tween is a turn, which a drag may stop
 function animate(ms, stepFn) {
 	cancelAnimationFrame(tween);
+	turning = false;
 	if (reducedMotion()) return stepFn(1);
 	const t0 = performance.now();
 	const frame = (now) => {
@@ -247,6 +249,7 @@ function turnTo(ll) {
 	if (alpha < 0.5) return;
 	const [a, b] = [rot, facing(ll)];
 	animate(800, (t) => (rot = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]));
+	turning = true;
 }
 // centre the globe on the selection once the shapes are in
 $effect(() => {
@@ -400,6 +403,8 @@ function move(e) {
 	if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 2) {
 		drag.moved = true;
 		capture(e.pointerId);
+		// the turn's next frame would put the globe back and lose the drag
+		if (turning) cancelAnimationFrame(tween);
 	}
 	drag.x = e.clientX;
 	drag.y = e.clientY;
