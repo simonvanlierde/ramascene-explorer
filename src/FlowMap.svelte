@@ -380,12 +380,13 @@ function down(e) {
 	if (pts.size === 2) {
 		const [a, b] = [...pts.values()];
 		pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
-		if (drag) drag.moved = true;
+		// a pinch is no flick, even when its fingers lift one at a time
+		if (drag) [drag.moved, drag.pinched] = [true, true];
 		for (const id of pts.keys()) capture(id);
 	}
 	if (turning === "glide") cancelAnimationFrame(tween);
 	if (alpha < 0.5 && zk === 1 && pts.size < 2) return;
-	drag ??= { x: e.clientX, y: e.clientY, moved: false };
+	drag ??= { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, moved: false };
 }
 function move(e) {
 	if (!pts.has(e.pointerId)) return;
@@ -402,13 +403,15 @@ function move(e) {
 	const dx = e.clientX - drag.x;
 	const dy = e.clientY - drag.y;
 	// capture only once it is a drag: a captured pointer's click lands on the svg,
-	// not on the region under it, and a plain click would select nothing
-	if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 2) {
+	// not on the region under it, and a plain click would select nothing. Measured
+	// from the press, so a slow drag of 1 px per event still counts as one.
+	if (!drag.moved && Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 2) {
 		drag.moved = true;
 		capture(e.pointerId);
-		// the turn's next frame would put the globe back and lose the drag
-		if (turning) cancelAnimationFrame(tween);
 	}
+	// a turn's next frame would put the globe back and lose the drag, also a turn that
+	// started during the drag (a second finger, the country box)
+	if (drag.moved && turning) cancelAnimationFrame(tween);
 	// px per ms, smoothed over the last few moves, for the glide on release
 	const dt = e.timeStamp - (drag.t ?? e.timeStamp);
 	if (dt > 0) drag.v = [(drag.v?.[0] ?? 0) / 2 + dx / dt / 2, (drag.v?.[1] ?? 0) / 2 + dy / dt / 2];
@@ -429,19 +432,20 @@ function move(e) {
 }
 const spin = (dx, dy) =>
 	(rot = [rot[0] + (dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (dy * 0.35) / zk))]);
-// A flick lets the globe glide on a little: at most about 30°, gone in a few
-// hundred ms. A pause before the release, a new press or any turn stops it.
+// A flick lets the globe glide on a little: at most about 34°, gone in a few
+// hundred ms. A pause before the release, a new press, a turn or a morph stops it.
 const GLIDE_MS = 80; // decay time constant
 const GLIDE_MAX = 1.2; // px per ms
 function glide(d, at) {
 	const [vx, vy] = d.v ?? [0, 0];
 	const speed = Math.hypot(vx, vy);
 	// a running Flat/Globe morph (a tween that is no turn) keeps going, without a glide
-	if (alpha < 0.5 || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
+	if (alpha < 0.5 || d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
 	let v = [(vx / speed) * Math.min(speed, GLIDE_MAX), (vy / speed) * Math.min(speed, GLIDE_MAX)];
 	let last = performance.now();
 	const frame = (now) => {
-		const k = Math.exp(-(now - last) / GLIDE_MS);
+		// a frame can start before the release that asked for it
+		const k = Math.exp(-Math.max(0, now - last) / GLIDE_MS);
 		// the distance covered since the last frame under exponential decay
 		spin(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
 		nudge();

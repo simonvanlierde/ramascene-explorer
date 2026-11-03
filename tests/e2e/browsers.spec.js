@@ -43,21 +43,25 @@ test("a globe drag released before the next frame still turns the globe", async 
 // A drag while the globe still turns to a picked country must win over the turn,
 // or the turn's next frame puts the globe back and the drag is lost.
 test("a globe drag during a turn is not undone by the turn", async ({ page }) => {
-	const pickSpain = async (dragToo) => {
+	// steps: 0 no drag, 1 one 60 px move, 60 sixty moves of 1 px (a slow drag)
+	const pickSpain = async (steps) => {
 		await page.goto("?data=tests/fixture.json&map=globe");
 		await expect(page.locator(".mapc .rg")).toHaveCount(49);
 		await page.waitForTimeout(1000); // the turn to the opening country is over
-		await page.locator("svg.map").evaluate(async (svg, drag) => {
+		return page.locator("svg.map").evaluate(async (svg, steps) => {
+			const frames = (ms) =>
+				new Promise((done) => {
+					const end = performance.now() + ms;
+					const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+					requestAnimationFrame(tick);
+				});
+			// the first point says where Germany is, whether thinned or full outlines are drawn
+			const germany = () => svg.querySelector('.rg[data-region="DE"]').getAttribute("d").split("L")[0];
+			const before = germany();
 			svg.querySelector('.rg[data-region="ES"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-			// two frames: the turn to Spain has started
-			await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
-			if (!drag) return;
+			await frames(50); // the turn to Spain has started
 			const r = svg.getBoundingClientRect();
-			for (const [type, dx] of [
-				["pointerdown", 0],
-				["pointermove", 60],
-				["pointerup", 60],
-			])
+			const at = (type, dx) =>
 				svg.dispatchEvent(
 					new PointerEvent(type, {
 						bubbles: true,
@@ -67,12 +71,19 @@ test("a globe drag during a turn is not undone by the turn", async ({ page }) =>
 						clientY: r.y + r.height / 2,
 					}),
 				);
-		}, dragToo);
-		await page.waitForTimeout(1500); // past the 800 ms turn and the 150 ms settle
-		return page.locator('.mapc .rg[data-region="DE"]').getAttribute("d");
+			if (steps) {
+				at("pointerdown", 0);
+				for (let i = 1; i <= steps; i++) at("pointermove", (i * 60) / steps);
+				at("pointerup", 60);
+			}
+			await frames(1500); // past the 800 ms turn and the 150 ms settle
+			return { before, after: germany() };
+		}, steps);
 	};
-	const turned = await pickSpain(false);
-	expect(await pickSpain(true)).not.toBe(turned);
+	const turned = await pickSpain(0);
+	expect(turned.after, "picking Spain turned the globe").not.toBe(turned.before);
+	expect((await pickSpain(1)).after, "a drag").not.toBe(turned.after);
+	expect((await pickSpain(60)).after, "a slow drag").not.toBe(turned.after);
 });
 
 // A flick glides on a little after the release; a drag that stops before the
