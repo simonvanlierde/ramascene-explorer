@@ -8,8 +8,10 @@ globalThis.self = { postMessage: (message) => posted.push(message) };
 const at = (path) => new URL(path, import.meta.url).href;
 let scenarioFlows;
 let startReads = () => ({});
-mock.module(at("../browser-data.js"), { namedExports: { fetchEngine: async () => ({ meta: {} }) } });
-mock.module(at("../browser-engine.js"), {
+mock.module(at("../src/lib/browser-engine/browser-data.js"), {
+	namedExports: { fetchEngine: async () => ({ meta: {} }) },
+});
+mock.module(at("../src/lib/browser-engine/browser-engine.js"), {
 	namedExports: {
 		plan: (_meta, steps) => ({ steps }),
 		readKey: ({ steps }) => JSON.stringify(steps),
@@ -17,15 +19,15 @@ mock.module(at("../browser-engine.js"), {
 		scenarioFlows: (...args) => scenarioFlows(...args),
 	},
 });
-mock.module(at("../browser-kernel.js"), {
+mock.module(at("../src/lib/browser-engine/browser-kernel.js"), {
 	namedExports: {
 		loadKernel: async (single = false) => ({ single, thread_count: () => (single ? 1 : 4) }),
 		useThreads: () => true,
 	},
 });
-mock.module(at("../browser-results.js"), { namedExports: { browserResult: () => ({}) } });
+mock.module(at("../src/lib/browser-engine/browser-results.js"), { namedExports: { browserResult: () => ({}) } });
 mock.module(at("../engine/pkg/ramascene_engine.js"), { defaultExport: async () => {} });
-await import("../browser-worker.js");
+await import("../src/lib/browser-engine/browser-worker.js");
 
 const base = "https://example.test/";
 const run = async (single, steps = []) => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import { banner, compare, dataUrl, ignoredData, sameRun } from "../explorer.js";
+import { banner, compare, dataUrl, ignoredData, sameRun } from "../src/lib/explorer.js";
 
 // The committed synthetic fixture, shaped like precompute.py output.
 const data = JSON.parse(readFileSync(new URL("./fixture.json", import.meta.url), "utf8"));
@@ -76,7 +76,7 @@ test("a shipped data file is real engine output, never synthetic", () => {
 
 // --- material-efficiency grid --------------------------------------------------
 
-import { gridScenarioId, lookupGrid, pickerState, runSummary } from "../explorer.js";
+import { gridScenarioId, lookupGrid, pickerState, runSummary } from "../src/lib/explorer.js";
 
 test("grid ids are product-region-cut with the cut unsigned", () => {
 	assert.equal(gridScenarioId("steel", "europe", -10), "steel-europe-10");

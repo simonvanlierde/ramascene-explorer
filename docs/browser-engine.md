@@ -116,7 +116,7 @@ with the whole file, and the Worker refuses them.
 From the explorer, with the RaMa-Scene arrays and its label database available:
 
 ```sh
-OPENBLAS_NUM_THREADS=8 uv run python export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
+OPENBLAS_NUM_THREADS=8 uv run python pipeline/export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
 ```
 
 Use a new output directory. The export refuses an existing manifest. It checks
@@ -200,7 +200,7 @@ kernels have no measured bottleneck to justify them.
 With the prepared export present:
 
 ```sh
-taskset -c 30,31 node measure-browser-engine.js docs/measurements/browser-engine-zarr.json
+taskset -c 30,31 node scripts/measure-browser-engine.js docs/measurements/browser-engine-zarr.json
 ```
 
 Choose CPUs available on the measurement machine. On macOS, omit `taskset`.
@@ -266,7 +266,7 @@ Process-tree RSS counts shared mappings more than once; it is not the calculatio
 working-memory estimate. Reproduce with the Playwright image from package.json:
 
 ```sh
-OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash measure-browser-threads.sh 5
+OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash scripts/measure-browser-threads.sh 5
 ```
 
 The host's quiet gate and CPU slot keep this run separate from other heavy jobs.
@@ -312,7 +312,7 @@ it saved about 50 ms at 3.4×10<sup>8</sup>. So the pool starts at 10<sup>9</sup
 No scenario between 3.4×10<sup>8</sup> and 1.4×10<sup>9</sup> was measured, so the
 crossover lies somewhere in that range. Repeated calculations gained 10–30 ms below
 10<sup>9</sup> on both CPU counts; all samples are in the JSON. Reproduce with
-`bash measure-browser-threads.sh 5 threshold` (add `4cpu` as a third argument under
+`bash scripts/measure-browser-threads.sh 5 threshold` (add `4cpu` as a third argument under
 `taskset -c 0-3`) through `oss-bench`, as above.
 
 ### Eight and sixteen threads
@@ -345,7 +345,7 @@ would remove the largest dense case from the existing working-memory budget.
 Reproduce the scaling comparison with:
 
 ```sh
-OSS_BENCH_SLOTS='scale:0-23' OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash measure-browser-threads.sh 5 1,4,8,16
+OSS_BENCH_SLOTS='scale:0-23' OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash scripts/measure-browser-threads.sh 5 1,4,8,16
 ```
 
 The harness changes the cap only in the benchmark's intercepted worker response,

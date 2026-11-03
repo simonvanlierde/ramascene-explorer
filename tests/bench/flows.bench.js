@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { geoEqualEarth } from "d3-geo";
 import { parquetReadObjects } from "hyparquet";
 import { describe, test } from "vitest";
-import { dense, openEmbodied, readRun } from "../../embodied.js";
+import { dense, openEmbodied, readRun } from "../../src/lib/embodied.js";
 import {
 	arc,
 	bandGeometry,
@@ -17,7 +17,7 @@ import {
 	sankeyLayout,
 	summarise,
 	tableRows,
-} from "../../flows.js";
+} from "../../src/lib/flows.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("../fixture.json"), "utf8"));

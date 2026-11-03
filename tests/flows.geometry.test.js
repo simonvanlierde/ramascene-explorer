@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
 import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../embodied.js";
-import { arc, bandGeometry, SECTION_SHORT, sankeyLayout, summarise, taper, taperGlyph } from "../flows.js";
+import { openEmbodied, readRun } from "../src/lib/embodied.js";
+import { arc, bandGeometry, SECTION_SHORT, sankeyLayout, summarise, taper, taperGlyph } from "../src/lib/flows.js";
 
 // Same pinned seed as the property tests, so Stryker sees the same inputs every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });

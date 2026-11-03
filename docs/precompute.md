@@ -26,7 +26,7 @@ change to `A` without solving the whole system again.
 
 ```sh
 # the command data/results.json records, verbatim
-uv run python precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
+uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --engine-pr https://github.com/CMLPlatform/ramascene/pull/74 --data "$DATASETS_DIR" --out data/results.json --out-regions data/regions.json --out-flows data/flows.json --out-embodied data/embodied.parquet
 # subsets: --scenarios named|grid, --limit N
 ```
 
@@ -41,7 +41,7 @@ stacked on #73 (the Django 5.2 upgrade). `data/run-log.md` logs that run, and
 with the embodied flows, 1 min 59 s wall time and 1.64 GB (1.53 GiB)
 maximum RSS, under `nice -n 10` with BLAS capped at 8 threads on a 32-core
 machine (2026-11-01). The 153 scenarios that the previous run (2026-10-14) also
-had kept every value exactly (`compare_data.py`, identical values).
+had kept every value exactly (`pipeline/compare_data.py`, identical values).
 
 Each file's `provenance` block records the engine commit, the dataset
 checksums, the command and the run time. The blocks are identical apart from
@@ -57,7 +57,7 @@ writes nothing.
 
 ## Solver
 
-`precompute.py` calls `Modelling` as `tasks.execute_calc` does and passes no
+`pipeline/precompute.py` calls `Modelling` as `tasks.execute_calc` does and passes no
 solver, so the engine picks one:
 
 - When at most 2,000 rows of `A` change and the result passes the engine's
@@ -79,7 +79,7 @@ dense 9800 × 9800 matrix. In the shipped run that took about 1.64 GB
 (1.53 GiB) at peak per worker. The engine memory-maps `L` and maps `A`
 copy-on-write, so much of that peak is file pages that the workers share
 through the page cache, which each worker's RSS still counts. Each scenario
-runs in a fresh worker process (`precompute.py --worker`, one at a time). Its
+runs in a fresh worker process (`pipeline/precompute.py --worker`, one at a time). Its
 wall time and peak RSS (`ru_maxrss`) are that process's own.
 
 ## Checks
@@ -113,7 +113,7 @@ time, peak RSS and check outcome.
 
 ## Compare two runs
 
-`uv run python compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
+`uv run python pipeline/compare_data.py OLD_DATA_DIR NEW_DATA_DIR` compares two runs
 value by value (every number in the three files, except provenance, run
 timings and check residuals; relative 1e-12 by default).
 
@@ -153,7 +153,7 @@ the same provenance as the other files.
 bytes and SHA-256, taken after the Parquet file is written. The page passes the
 size to its Parquet reader, which can then read the footer straight away
 instead of first sending a HEAD request to learn the size. The footer itself
-does not carry this record. `compare_data.py` skips it with the rest of the
+does not carry this record. `pipeline/compare_data.py` skips it with the rest of the
 provenance. `tests/make_fixture_embodied.py` writes the same record for
 `tests/fixture-embodied.parquet` into `tests/fixture.json`, and
 `tests/test_embodied.py` checks that both records match their files.

@@ -1,5 +1,5 @@
+import init, * as single from "../../../engine/pkg/ramascene_engine.js";
 import { LIMITS } from "./browser-engine.js";
-import init, * as single from "./engine/pkg/ramascene_engine.js";
 
 // Keep one core for the page, and bound extra stacks and scheduling on phones.
 export const threadCount = (isolated, cores) => (isolated ? Math.min(4, Math.max(1, (cores || 2) - 1)) : 1);
@@ -12,7 +12,7 @@ export async function loadKernel(forceSingle = false) {
 	try {
 		return await Promise.race([
 			(async () => {
-				const kernel = await import("./engine/pkg-threads/index.js");
+				const kernel = await import("../../../engine/pkg-threads/index.js");
 				await kernel.default();
 				await kernel.initThreadPool(count);
 				return kernel;

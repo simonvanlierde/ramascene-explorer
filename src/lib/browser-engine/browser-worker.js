@@ -1,8 +1,8 @@
+import init from "../../../engine/pkg/ramascene_engine.js";
 import { fetchEngine } from "./browser-data.js";
 import { plan, readKey, scenarioFlows, startReads } from "./browser-engine.js";
 import { loadKernel, useThreads } from "./browser-kernel.js";
 import { browserResult } from "./browser-results.js";
-import init from "./engine/pkg/ramascene_engine.js";
 
 let loaded;
 let engine;

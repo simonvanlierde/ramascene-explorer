@@ -1,6 +1,6 @@
 """Export the 2011 EXIOBASE arrays as a float32 Zarr v3 store for browser scenarios.
 
-    uv run python export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
+    uv run python pipeline/export_browser.py --data /path/to/datasets --db /path/to/db.sqlite3 --out data/browser-engine
 
 Each array is sharded by producing country (200 rows per shard file) with one
 gzip chunk per row, so a scenario reads just the rows it needs, a country's

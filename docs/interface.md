@@ -6,8 +6,8 @@ The URL stores filters and published scenarios. It does not store custom results
 a shared link opens the last published scenario with the current filters.
 A missing or out-of-range value falls back to its default. Defaults
 are left out of the link. `data`, `api` and `compute` survive when the page rewrites it.
-Code: `parseView` and `viewSearch` in `flows.js`, `data` in `explorer.js`, `api`
-in `live.js`.
+Code: `parseView` and `viewSearch` in `src/lib/flows.js`, `data` in `src/lib/explorer.js`, `api`
+in `src/lib/live.js`.
 
 | parameter | values | default |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ is the contract: status codes, the `techChange` range, job retention and
 timeouts. `ramascene-jobs` only answers pages served from `127.0.0.1` or
 `localhost`, so run the page locally to use it
 ([page.md](page.md#live-scenarios-optional)). Any other job API must send its
-own CORS headers. The page makes these calls (`src/LivePanel.svelte`, `live.js`):
+own CORS headers. The page makes these calls (`src/LivePanel.svelte`, `src/lib/live.js`):
 
 | call | what it does |
 | --- | --- |
@@ -68,7 +68,7 @@ precomputed file's country order (EXIOBASE's), and every value is a finite
 number. The page draws these
 flows only when the shape matches the precomputed file; otherwise the result
 stays in the panel. `liveFlows` in
-`live.js` does the check. How a live run is shown is in
+`src/lib/live.js` does the check. How a live run is shown is in
 [page.md](page.md#live-scenarios-optional).
 
 ### Measure a live scenario

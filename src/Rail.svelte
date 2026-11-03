@@ -3,7 +3,7 @@
 // share of the selected flows; sections switched off fold to the minimum.
 // From "all", a click isolates one section; after that, clicks add or
 // remove; emptying the selection returns to all.
-import { amountText, SECTION_COLOURS, SECTION_SHORT, share } from "../flows.js";
+import { amountText, SECTION_COLOURS, SECTION_SHORT, share } from "./lib/flows.js";
 import { ui } from "./view.svelte.js";
 
 let { sum, labelledby } = $props();

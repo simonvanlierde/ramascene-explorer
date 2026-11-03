@@ -2,7 +2,7 @@
 // Run: node brightway-check/browser_check.js data/browser-engine [results/browser.json]
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
-import { openEngine } from "../browser-data.js";
+import { openEngine } from "../src/lib/browser-engine/browser-data.js";
 import { localRange } from "../tests/local-range.js";
 import "../tests/engine-wasm.js";
 

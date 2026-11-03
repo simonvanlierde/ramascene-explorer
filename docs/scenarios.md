@@ -44,7 +44,7 @@ Russia, Switzerland, Norway and Rest of Europe.
 
 ## Material-efficiency grid
 
-150 scenarios of one shape, `steel-asia-pacific-20` above included, defined as data in `precompute.py`
+150 scenarios of one shape, `steel-asia-pacific-20` above included, defined as data in `pipeline/precompute.py`
 (`GRID_PRODUCTS`, `GRID_REGIONS`, `GRID_CUTS`, `grid_scenarios()`). Each one
 scales the technical coefficient of one product, from all regions, into
 **every industry of one world region** by the cut. Nothing else changes.

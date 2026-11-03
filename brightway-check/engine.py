@@ -3,9 +3,9 @@
     uv run --project .. python engine.py \\
         --engine "$RAMASCENE_DIR" --data "$DATASETS_DIR" --out results/engine.json
 
-Run it with the explorer's environment (--project ..), as precompute.py runs,
+Run it with the explorer's environment (--project ..), as pipeline/precompute.py runs,
 not this folder's. The engine adapter (setup_django, run_route, reference_validation,
-engine_revision) is the explorer's own, imported from ../precompute.py. Final
+engine_revision) is the explorer's own, imported from ../pipeline/precompute.py. Final
 demand is a 9800x49 matrix with a single 1 (M EUR) at NL cement, consumed in NL.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "pipeline"))
 import precompute  # noqa: E402
 
 from case import GHG_ROW, NL_LOCAL, YEAR, K  # noqa: E402

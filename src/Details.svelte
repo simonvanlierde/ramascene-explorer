@@ -3,7 +3,7 @@ import { tick } from "svelte";
 // The slide-over: the selection taken apart as a Sankey (released in →
 // industry → consumed in), the same flows as a sortable table, and the
 // method with every check. Provenance and the verification stay in its footer.
-import { shortCommit } from "../explorer.js";
+import { shortCommit } from "./lib/explorer.js";
 import {
 	amount,
 	amountText,
@@ -18,8 +18,8 @@ import {
 	tableRows,
 	theName,
 	wording,
-} from "../flows.js";
-import { BROWSER_STATUS } from "../browser-results.js";
+} from "./lib/flows.js";
+import { BROWSER_STATUS } from "./lib/browser-engine/browser-results.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Provenance from "./Provenance.svelte";
 import { ui, wide } from "./view.svelte.js";

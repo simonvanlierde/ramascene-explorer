@@ -2,7 +2,7 @@
 // A catalogue select, indented by level. A list of more than ten items gets a
 // search button that opens a box narrowing the options to the matches and their parents.
 import { tick, untrack } from "svelte";
-import { catalogName, filterTree } from "../live.js";
+import { catalogName, filterTree } from "./lib/live.js";
 
 // tree: catalogTree(items); value: the picked item's id, as a string
 let { id, label, tree, value = $bindable(), disabled = false } = $props();

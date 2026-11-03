@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { gzipSync } from "node:zlib";
 import "./engine-wasm.js";
-import { arrayReader, fetchEngine, fetchRange, matrixReader, openEngine } from "../browser-data.js";
+import {
+	arrayReader,
+	fetchEngine,
+	fetchRange,
+	matrixReader,
+	openEngine,
+} from "../src/lib/browser-engine/browser-data.js";
 
 const infos = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
 const info = infos.M;

@@ -37,8 +37,8 @@ import {
 	taperGlyph,
 	theName,
 	wording,
-} from "../flows.js";
-import { regionForIso, thinTopology } from "../map.js";
+} from "./lib/flows.js";
+import { regionForIso, thinTopology } from "./lib/map.js";
 import { reducedMotion, themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();

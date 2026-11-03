@@ -1,7 +1,7 @@
 <script>
 // The country combobox (WAI-ARIA combobox with a listbox popup): type to
 // filter by name or code, arrows to move, Enter to choose, Escape to close.
-import { placeName } from "../flows.js";
+import { placeName } from "./lib/flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, labelledby } = $props();

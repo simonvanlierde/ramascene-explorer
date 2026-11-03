@@ -46,11 +46,11 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
 
       # The page shows a banner over synthetic data, but it must never go out at
-      # all: only output that passed precompute.py's checks is marked exiobase-v3.
+      # all: only output that passed pipeline/precompute.py's checks is marked exiobase-v3.
       - name: check the data
         run: |
           set -euo pipefail
-          test -f data/results.json || { echo "data/results.json is missing: run precompute.py first"; exit 1; }
+          test -f data/results.json || { echo "data/results.json is missing: run pipeline/precompute.py first"; exit 1; }
           jq -e '.data_kind == "exiobase-v3"' data/results.json >/dev/null \
             || { echo "data/results.json is not exiobase-v3 output"; exit 1; }
 

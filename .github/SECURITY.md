@@ -8,7 +8,7 @@ Don't open a public issue or pull request for it: anyone can read those before t
 
 Please include:
 
-- What the problem is and where: a page script, `precompute.py`, a workflow, or the
+- What the problem is and where: a page script, `pipeline/precompute.py`, a workflow, or the
   published page.
 - How to reproduce it: the URL or query string, or the command and input.
 - The impact you expect.
@@ -26,9 +26,9 @@ rather not be named. The CHANGELOG entry for that release links the advisory.
 
 In scope:
 
-- The page: `index.html`, the scripts beside it, and how it reads the `?data=` and
+- The page: `index.html`, the scripts and components in `src/`, and how it reads the `?data=` and
   `?api=` parameters.
-- `precompute.py`, `compare_data.py` and the browser calculation and data reader modules.
+- `pipeline/` (`precompute.py`, `compare_data.py`) and the browser calculation and data reader modules in `src/lib/`.
 - The workflows in `.github/workflows/`, including the Pages deploy, which publishes
   only from `main`.
 

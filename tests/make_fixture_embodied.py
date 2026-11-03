@@ -7,7 +7,7 @@ sections. Each run cuts a random share of every flow, except that the
 steel-europe runs touch only flows released in Europe, and
 cement-asia-pacific-20 raises the flows released in Asia-Pacific, so the page meets a mixed-sign run.
 It also records the file's size and SHA-256 in tests/fixture.json (provenance.embodied).
-Run: uv run python -m tests.make_fixture_embodied
+Run: PYTHONPATH=pipeline uv run python -m tests.make_fixture_embodied
 """
 
 import json

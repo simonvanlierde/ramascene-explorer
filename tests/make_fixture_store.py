@@ -3,7 +3,7 @@
 M has two shards of two rows, one gzip chunk per row; row 2 is all zeros, so its
 chunk is stored as empty. P (8 x 3) has chunks of two rows, as X and Y do. The
 reader tests read them as the browser would.
-Run: uv run python -m tests.make_fixture_store
+Run: PYTHONPATH=pipeline uv run python -m tests.make_fixture_store
 """
 
 import json

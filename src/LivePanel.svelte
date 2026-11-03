@@ -2,7 +2,7 @@
 // Custom form: computes in the browser, or on the job API with ?api=. This component alone contacts the job
 // API; its text is never rendered as markup.
 import { onDestroy } from "svelte";
-import { BROWSER_STATUS, browserProvenance } from "../browser-results.js";
+import { BROWSER_STATUS, browserProvenance } from "./lib/browser-engine/browser-results.js";
 import {
 	CHANGE_RANGE,
 	catalogTree,
@@ -13,8 +13,8 @@ import {
 	scenarioBody,
 	unreachableMessage,
 	waitForJob,
-} from "../live.js";
-import { plan } from "../browser-engine.js";
+} from "./lib/live.js";
+import { plan } from "./lib/browser-engine/browser-engine.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
@@ -100,7 +100,7 @@ function connect({ quiet = false } = {}) {
 	unreachable = false;
 	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
 	const connecting = browser
-		? import("../browser-client.js").then(({ browserClient }) => {
+		? import("./lib/browser-engine/browser-client.js").then(({ browserClient }) => {
 			if (attempt !== connection) return null;
 			client?.close();
 			client = browserClient();

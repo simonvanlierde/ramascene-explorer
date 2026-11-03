@@ -1,4 +1,4 @@
-import { decode } from "./engine/pkg/ramascene_engine.js";
+import { decode } from "../../../engine/pkg/ramascene_engine.js";
 
 // The browser export is a float32 Zarr v3 store (export_browser.py): each array
 // is sharded by producing country, with gzip chunks of whole rows and a shard

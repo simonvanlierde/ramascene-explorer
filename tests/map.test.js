@@ -4,8 +4,8 @@ import { test } from "node:test";
 import { geoArea, geoOrthographic, geoPath } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
 import { merge } from "topojson-client";
-import { openEmbodied } from "../embodied.js";
-import { REST_OF, regionForIso, thinTopology } from "../map.js";
+import { openEmbodied } from "../src/lib/embodied.js";
+import { REST_OF, regionForIso, thinTopology } from "../src/lib/map.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const topo = JSON.parse(readFileSync(path("../geo/countries-110m.topo.json"), "utf8"));

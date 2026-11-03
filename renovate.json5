@@ -72,7 +72,7 @@
       matchPackageNames: ["wasm-bindgen"],
       automerge: false,
     },
-    // precompute.py imports the RaMa-Scene engine, which runs on Django 5.
+    // pipeline/precompute.py imports the RaMa-Scene engine, which runs on Django 5.
     {
       matchPackageNames: ["django"],
       allowedVersions: "<6",

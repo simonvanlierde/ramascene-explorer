@@ -16,4 +16,4 @@ if [ "${2:-}" = threshold ]; then
 elif [ -n "${2:-}" ]; then
 	output=docs/measurements/browser-engine-thread-scaling.json
 fi
-node measure-browser-threads.js http://127.0.0.1:4193/ramascene-explorer/ "$output" "${1:-3}" "${2:-}"
+node scripts/measure-browser-threads.js http://127.0.0.1:4193/ramascene-explorer/ "$output" "${1:-3}" "${2:-}"

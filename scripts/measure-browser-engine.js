@@ -1,4 +1,4 @@
-// Diagnostics: node measure-browser-engine.js [output.json] [data-dir]
+// Diagnostics: node scripts/measure-browser-engine.js [output.json] [data-dir]
 // Each sample gets a fresh process. Pin the parent to fixed CPUs.
 
 import { execFileSync } from "node:child_process";
@@ -7,13 +7,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { cpus, loadavg } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { openEngine } from "./browser-data.js";
-import { plan, scenarioFlows } from "./browser-engine.js";
-import "./tests/engine-wasm.js";
-import { localRange } from "./tests/local-range.js";
+import { openEngine } from "../src/lib/browser-engine/browser-data.js";
+import { plan, scenarioFlows } from "../src/lib/browser-engine/browser-engine.js";
+import "../tests/engine-wasm.js";
+import { localRange } from "../tests/local-range.js";
 
 const filename = fileURLToPath(import.meta.url);
-const root = dirname(filename);
+const root = dirname(dirname(filename));
 const sections = Array.from({ length: 15 }, (_, i) => i + 1);
 const steps = {
 	tiny: { product: [82], originReg: [7], consumedBy: [81], consumedReg: [7], techChange: [-20] },
@@ -111,10 +111,14 @@ if (process.argv[2] === "--sample") {
 		};
 	});
 	const sources = Object.fromEntries(
-		["browser-data.js", "browser-engine.js", "engine/src/lib.rs"].map((name) => [
+		[
+			["browser-data.js", "src/lib/browser-engine/browser-data.js"],
+			["browser-engine.js", "src/lib/browser-engine/browser-engine.js"],
+			["engine/src/lib.rs", "engine/src/lib.rs"],
+		].map(([name, path]) => [
 			name,
 			createHash("sha256")
-				.update(readFileSync(`${root}/${name}`))
+				.update(readFileSync(`${root}/${path}`))
 				.digest("hex"),
 		]),
 	);
