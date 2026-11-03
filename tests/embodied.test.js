@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
-import { at, embodiedUrl, openEmbodied, openEmbodiedUrl, readRun } from "../src/lib/embodied.js";
+import { at, embodiedUrl, flowsUrl, openEmbodied, openEmbodiedUrl, readRun } from "../src/lib/embodied.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
@@ -149,4 +149,18 @@ test("without a size, or with one too small for the file, the server is asked", 
 		fixture.scenarios.map((s) => s.id),
 	);
 	assert.deepEqual(server.log, ["GET", "HEAD", "GET"]);
+});
+
+test("the published flows come from the data origin by their checksum", async () => {
+	const sha = "a".repeat(64);
+	const data = { provenance: { embodied: { sha256: sha } } };
+	assert.equal(flowsUrl("data/results.json", data, null), "data/embodied.parquet");
+	assert.equal(
+		flowsUrl("data/results.json", data, "https://data.example.org/"),
+		`https://data.example.org/embodied/${sha}.parquet`,
+	);
+	// a test document stays next to the page, and so does a checksum that is not one
+	assert.equal(flowsUrl("tests/fixture.json", data, "https://data.example.org/"), "tests/fixture-embodied.parquet");
+	const odd = { provenance: { embodied: { sha256: "../x" } } };
+	assert.equal(flowsUrl("data/results.json", odd, "https://data.example.org/"), "data/embodied.parquet");
 });

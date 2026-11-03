@@ -10,23 +10,33 @@ assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
 const results = await (await fetch(url("data/results.json"))).json();
 const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
-for (const [path, size] of [
-	["data/embodied.parquet", results.provenance.embodied.bytes],
-	[`data/browser-engine/store-${manifest.store}/A/c/0/0`, manifest.arrays.A.shard_bytes[0]],
+// With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
+// host by their hashes, read across origins; without it, from next to the page.
+const data = process.env.DATA_ORIGIN;
+const sha = results.provenance.embodied.sha256;
+const shard = `browser-engine/store-${manifest.store}/A/c/0/0`;
+for (const [href, size] of [
+	[data ? new URL(`embodied/${sha}.parquet`, data) : url("data/embodied.parquet"), results.provenance.embodied.bytes],
+	[data ? new URL(shard, data) : url(`data/${shard}`), manifest.arrays.A.shard_bytes[0]],
 ]) {
-	const head = await fetch(url(path), { method: "HEAD" });
+	const path = String(href);
+	const cors = data ? { Origin: new URL(base).origin } : {};
+	const head = await fetch(href, { method: "HEAD", headers: cors });
 	assert.equal(head.status, 200, path);
 	assert.equal(Number(head.headers.get("Content-Length")), size, path);
-	const res = await fetch(url(path), { headers: { Range: "bytes=0-1" } });
+	const res = await fetch(href, { headers: { ...cors, Range: "bytes=0-1" } });
 	assert.equal(res.status, 206, path);
 	assert.equal(res.headers.get("Content-Range"), `bytes 0-1/${size}`, path);
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
-	if (path.includes("store-")) assert.match(res.headers.get("Cache-Control"), /immutable/);
+	if (data) assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*", path);
+	if (data || path.includes("store-")) assert.match(res.headers.get("Cache-Control") ?? "", /immutable/, path);
 }
-// A preview needs one engine: the three-engine run replays 155 scenarios per engine,
-// all through the Worker, which counts against its daily request allowance.
+// Each engine runs the page and its calculations; only the first replays the 155 published
+// scenarios, which read the whole store. Through the Worker, every read counts against its
+// daily request allowance.
 const engines = { chromium, firefox, webkit };
-for (const engine of (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").split(",").map((n) => engines[n])) {
+const names = (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").split(",");
+for (const engine of names.map((n) => engines[n])) {
 	const browser = await engine.launch({ headless: true });
 	try {
 		const page = await browser.newPage();
@@ -61,6 +71,10 @@ for (const engine of (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").s
 		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
 		const expected = await page.evaluate(() => Math.min(4, Math.max(1, (navigator.hardwareConcurrency || 2) - 1)));
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1, expected]);
+		if (engine !== engines[names[0]]) {
+			console.log(`${engine.name()}: ${expected} threads and a dense calculation passed`);
+			continue;
+		}
 		const parity = await page.evaluate(async (base) => {
 			const reference = await (await fetch(new URL("data/results.json", base))).json();
 			const meta = await (await fetch(new URL("data/browser-engine/manifest-v3.json", base))).json();
@@ -142,6 +156,9 @@ for (const engine of (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").s
 			await expect(fallback.locator("#live-state")).toHaveText("Ready to compute in this browser.", {
 				timeout: 60_000,
 			});
+			// The worker script has loaded. Interception also breaks the worker's cross-origin
+			// reads from the data host in Chromium, so it ends before the first one.
+			await fallback.unrouteAll();
 			for (const [id, value] of [
 				["product", "5"],
 				["origin", "1"],

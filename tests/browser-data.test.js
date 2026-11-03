@@ -9,6 +9,7 @@ import {
 	fetchRange,
 	matrixReader,
 	openEngine,
+	storeBase,
 } from "../src/lib/browser-engine/browser-data.js";
 
 const infos = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
@@ -440,4 +441,10 @@ test("the v3 reader avoids an older cached manifest URL", async (t) => {
 	await assert.rejects(fetchEngine(new URL("https://example.test/data/browser-engine/")), /browser dataset: 503/);
 	assert.equal(requested, "/data/browser-engine/manifest-v3.json");
 	assert.equal(cache, "no-cache");
+});
+
+test("the shards come from the data origin when one is set, the manifest never does", () => {
+	const base = new URL("https://example.test/ramascene-explorer/data/browser-engine/");
+	assert.equal(storeBase(base, null), base);
+	assert.equal(storeBase(base, "https://data.example.org/").href, "https://data.example.org/browser-engine/");
 });

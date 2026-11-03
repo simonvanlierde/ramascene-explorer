@@ -92,8 +92,8 @@ without serving it, then runs `hosting/check.js` against that version's preview 
 the Playwright image. On `main`, only a version that passes the check goes on the
 production routes. Each pull request from this repository stops after the check, which
 runs in Chromium only (`CHECK_BROWSERS`); the run on `main` uses Chromium, Firefox and
-WebKit, because each engine replays all 155 scenarios through the Worker and the
-requests count toward its daily allowance. The pull request keeps the
+WebKit. Only the first engine replays all 155 scenarios, which read the whole store: through
+the Worker, those reads count toward its daily request allowance. The pull request keeps the
 alias `pr-<number>`. Its version URL,
 `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
 shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
@@ -142,6 +142,33 @@ Set up once:
    because pull requests deploy previews. Scope the token to the account with Workers
    Scripts Write and Workers R2 Storage Write, and to the simonvanlierde.com zone with
    Workers Routes Write. Local OAuth login does not configure GitHub Actions.
+
+## Data host
+
+The Worker counts every request it runs, refused ones included, and the free plan allows
+100,000 a day. One custom scenario reads about 270 byte ranges, so serving the data through
+the Worker caps how many scenarios a day the site can run. The data can come from R2
+directly instead, with no Worker in the path:
+
+- `cloudflare.yml` uploads the Parquet file as `embodied/<sha256>.parquet` and the browser
+  store as `browser-engine/store-<hash>/...`, both with an immutable `Cache-Control`. A store
+  goes up once: the `.complete` marker, written last, tells later runs it is all there.
+- Each run sets the bucket's CORS rule from `hosting/r2-cors.json`: GET and HEAD with a
+  `Range` header from any origin, so previews on `workers.dev` can read it too. The data is
+  public, and the page needs CORS because it is cross-origin isolated.
+- With the repository variable `DATA_ORIGIN` set (for example
+  `https://ramascene-data.simonvanlierde.com/`), the build bakes it in as
+  `VITE_DATA_ORIGIN`. The page then reads both files from that host by their hashes, and
+  `hosting/check.js` checks ranges, CORS and caching there. `results.json` and the store's
+  manifest still ship with the page, so each deployment names its own data.
+- Without the variable, the page reads the data next to itself, through the Worker, as above.
+
+Set up once, in the Cloudflare dashboard: R2 → `ramascene-explorer-data` → Settings →
+Custom Domains → add `ramascene-data.simonvanlierde.com`. Wait for a push to `main` to upload
+the store, then set the `DATA_ORIGIN` variable and run `cloudflare.yml` again. R2 answers
+range requests itself, and Cloudflare caches the custom domain's responses; cache misses are
+R2 reads (Class B operations). A second input-output database is a new upload under its own
+keys, with no change to the Worker.
 
 Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
 local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
