@@ -14,6 +14,8 @@ follow [Semantic Versioning](https://semver.org/).
 - A [documentation index](docs/README.md) by reader: the results, the method, contributing.
 - A dark theme. It follows the system setting until you use the toggle in the header, and
   the browser keeps your choice ([page.md](docs/page.md#theme)).
+- A flick on the globe lets it glide on a little after you let go. A pause before letting go,
+  or reduced motion, stops it where you released it.
 
 ### Changed
 
@@ -51,6 +53,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A drag on the globe while it turned to a picked country was undone by the turn. The drag
+  now stops the turn.
 - Running a custom scenario while the form was still downloading another selection's data held
   both at once, which could pass the memory budget on a phone. Run now stops the other download
   first ([browser-engine.md](docs/browser-engine.md)).

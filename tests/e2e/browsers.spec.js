@@ -61,3 +61,26 @@ test("a globe drag during a turn is not undone by the turn", async ({ page }) =>
 	const turned = await pickSpain(false);
 	expect(await pickSpain(true)).not.toBe(turned);
 });
+
+// A flick glides on a little after the release; a drag that stops before the
+// release, or any drag under reduced motion, ends where the pointer let go.
+test("a flick lets the globe glide on, a paused drag does not", async ({ page }) => {
+	const dragGermany = async (pause, reduce = "no-preference") => {
+		await page.emulateMedia({ reducedMotion: reduce });
+		await page.goto("?data=tests/fixture.json&map=globe");
+		await expect(page.locator(".mapc .rg")).toHaveCount(49);
+		await page.waitForTimeout(1000); // the turn to the opening country is over
+		const r = await page.locator("svg.map").boundingBox();
+		const [x, y] = [r.x + r.width / 2, r.y + r.height / 2];
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await page.mouse.move(x + 120, y, { steps: 6 });
+		if (pause) await page.waitForTimeout(200);
+		await page.mouse.up();
+		await page.waitForTimeout(1000); // past the glide and the 150 ms settle
+		return page.locator('.mapc .rg[data-region="DE"]').getAttribute("d");
+	};
+	const paused = await dragGermany(true);
+	expect(await dragGermany(false)).not.toBe(paused);
+	expect(await dragGermany(false, "reduce")).toBe(paused);
+});
