@@ -3,4 +3,6 @@
 // in development and the tests, they are read next to the page. Set at build time with
 // VITE_DATA_ORIGIN, e.g. https://data.example.org/ (docs/publishing.md#data-host).
 // import.meta.env is undefined under node --test, hence the ?.
-export const DATA_ORIGIN = import.meta.env?.VITE_DATA_ORIGIN || null;
+const origin = import.meta.env?.VITE_DATA_ORIGIN;
+// with a trailing slash, so a path in it is kept when keys resolve against it
+export const DATA_ORIGIN = origin ? origin.replace(/\/?$/, "/") : null;

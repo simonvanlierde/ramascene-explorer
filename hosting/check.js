@@ -12,7 +12,7 @@ const results = await (await fetch(url("data/results.json"))).json();
 const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
 // With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
 // host by their hashes, read across origins; without it, from next to the page.
-const data = process.env.DATA_ORIGIN;
+const data = process.env.DATA_ORIGIN?.replace(/\/?$/, "/");
 const sha = results.provenance.embodied.sha256;
 const shard = `browser-engine/store-${manifest.store}/A/c/0/0`;
 for (const [href, size] of [
@@ -20,7 +20,11 @@ for (const [href, size] of [
 	[data ? new URL(shard, data) : url(`data/${shard}`), manifest.arrays.A.shard_bytes[0]],
 ]) {
 	const path = String(href);
-	const cors = data ? { Origin: new URL(base).origin } : {};
+	const origin = new URL(base).origin;
+	const cors = data ? { Origin: origin } : {};
+	// A read without Origin first: if the edge cached that answer, without CORS headers,
+	// for later CORS reads, the page could not read the file and the check below fails.
+	if (data) await (await fetch(href, { headers: { Range: "bytes=0-1" } })).arrayBuffer();
 	const head = await fetch(href, { method: "HEAD", headers: cors });
 	assert.equal(head.status, 200, path);
 	assert.equal(Number(head.headers.get("Content-Length")), size, path);
@@ -28,7 +32,7 @@ for (const [href, size] of [
 	assert.equal(res.status, 206, path);
 	assert.equal(res.headers.get("Content-Range"), `bytes 0-1/${size}`, path);
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
-	if (data) assert.equal(res.headers.get("Access-Control-Allow-Origin"), "*", path);
+	if (data) assert.ok(["*", origin].includes(res.headers.get("Access-Control-Allow-Origin")), path);
 	if (data || path.includes("store-")) assert.match(res.headers.get("Cache-Control") ?? "", /immutable/, path);
 }
 // Each engine runs the page and its calculations; only the first replays the 155 published

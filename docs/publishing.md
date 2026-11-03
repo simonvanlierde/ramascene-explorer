@@ -153,7 +153,7 @@ directly instead, with no Worker in the path:
 - `cloudflare.yml` uploads the Parquet file as `embodied/<sha256>.parquet` and the browser
   store as `browser-engine/store-<hash>/...`, both with an immutable `Cache-Control`. A store
   goes up once: the `.complete` marker, written last, tells later runs it is all there.
-- Each run sets the bucket's CORS rule from `hosting/r2-cors.json`: GET and HEAD with a
+- Each run on `main` sets the bucket's CORS rule from `hosting/r2-cors.json`: GET and HEAD with a
   `Range` header from any origin, so previews on `workers.dev` can read it too. The data is
   public, and the page needs CORS because it is cross-origin isolated.
 - With the repository variable `DATA_ORIGIN` set (for example
@@ -164,16 +164,20 @@ directly instead, with no Worker in the path:
 - Without the variable, the page reads the data next to itself, through the Worker, as above.
 
 Set up once, in the Cloudflare dashboard: R2 → `ramascene-explorer-data` → Settings →
-Custom Domains → add `ramascene-data.simonvanlierde.com`. Wait for a push to `main` to upload
-the store, then set the `DATA_ORIGIN` variable and run `cloudflare.yml` again. R2 answers
-range requests itself, and Cloudflare caches the custom domain's responses; cache misses are
-R2 reads (Class B operations). A second input-output database is a new upload under its own
+Custom Domains → add `ramascene-data.simonvanlierde.com`. Cloudflare caches only some file
+types by default, and the shards have no extension, so add a Cache Rule too: Caching → Cache
+Rules → hostname equals `ramascene-data.simonvanlierde.com`, Eligible for cache, edge TTL
+from the origin. Wait for a push to `main` to upload the store and set CORS, then set the
+`DATA_ORIGIN` variable and run `cloudflare.yml` again. R2 answers range requests itself;
+cache misses are R2 reads (Class B operations), and the check reads each file without and
+then with `Origin`, so a cached answer without CORS headers fails it. A second input-output database is a new upload under its own
 keys, with no change to the Worker.
 
 Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
 local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
 covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
-isolation, the map and a custom calculation in Chromium, Firefox and WebKit. To run it
+isolation, the map and a custom calculation in Chromium, Firefox and WebKit, and the 155
+published scenarios in the first of them. To run it
 yourself, build the kernel and the site, then:
 
 ```sh

@@ -235,7 +235,9 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
 	if (response.status === 404) {
 		await response.body?.cancel();
-		// The manifest names the store by its hash, so a 404 means a newer deploy.
+		// The manifest names the store by its hash: next to the page, a 404 means a newer
+		// deploy; on the data host, a store that was never uploaded, which hosting/check.js
+		// catches before a version goes live.
 		throw new Error("the browser data was updated: reload the page");
 	}
 	if (response.status !== 206 || response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`) {
