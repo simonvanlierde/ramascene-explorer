@@ -1,14 +1,17 @@
 import { expect, test } from "./test.js";
 
+// NOTE: on the CI runners, Playwright's desktop WebKit left a frame the page asked for
+// after the test's own script returned unrun for seconds. The same tests pass in its
+// iPhone WebKit, in Chromium and Firefox, and in the same image off CI. So each drag
+// test waits on the page's frames inside its script.
+
 // A quick flick can release the pointer before the next frame; WebKit runs its
 // frames late enough that every test drag did. The turn must still land.
 test("a globe drag released before the next frame still turns the globe", async ({ page }) => {
 	await page.goto("?data=tests/fixture.json&map=globe");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	await expect(page.locator("svg.map")).toHaveClass(/\bglobe\b/);
-	const region = page.locator(".mapc .rg").first();
-	const before = await region.getAttribute("d");
-	const seen = await page.locator("svg.map").evaluate(async (svg) => {
+	const turned = await page.locator("svg.map").evaluate(async (svg) => {
 		const r = svg.getBoundingClientRect();
 		const at = (type, dx) =>
 			svg.dispatchEvent(
@@ -21,20 +24,20 @@ test("a globe drag released before the next frame still turns the globe", async 
 				}),
 			);
 		const first = () => svg.querySelector(".mapc .rg").getAttribute("d");
+		const frames = (ms) =>
+			new Promise((done) => {
+				const end = performance.now() + ms;
+				const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+				requestAnimationFrame(tick);
+			});
 		const d0 = first();
 		at("pointerdown", 0);
 		at("pointermove", 60);
 		at("pointerup", 60);
-		// NOTE: diagnostics for a failure seen only on the CI WebKit runners
-		const t0 = performance.now();
-		const framed = await Promise.race([
-			new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done(true)))),
-			new Promise((done) => setTimeout(() => done(false), 3000)),
-		]);
-		return { framed, ms: Math.round(performance.now() - t0), moved: first() !== d0, hidden: document.hidden };
+		await frames(500);
+		return first() !== d0;
 	});
-	test.info().annotations.push({ type: "drag", description: JSON.stringify(seen) });
-	await expect.poll(() => region.getAttribute("d"), { message: JSON.stringify(seen) }).not.toBe(before);
+	expect(turned, "the drag turned the globe").toBe(true);
 });
 
 // A drag while the globe still turns to a picked country must win over the turn,
@@ -94,6 +97,12 @@ test("a flick lets the globe glide on, a paused drag does not", async ({ page })
 					}),
 				);
 			const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+			const frames = (ms) =>
+				new Promise((done) => {
+					const end = performance.now() + ms;
+					const tick = () => (performance.now() >= end ? done() : requestAnimationFrame(tick));
+					requestAnimationFrame(tick);
+				});
 			at("pointerdown", 0);
 			for (let i = 1; i <= 6; i++) {
 				await wait(16);
@@ -101,8 +110,8 @@ test("a flick lets the globe glide on, a paused drag does not", async ({ page })
 			}
 			await wait(pause ? 200 : 0);
 			at("pointerup", 120);
+			await frames(1000); // past the glide and the 150 ms settle
 		}, pause);
-		await page.waitForTimeout(1000); // past the glide and the 150 ms settle
 		return page.locator('.mapc .rg[data-region="DE"]').getAttribute("d");
 	};
 	const paused = await dragGermany(true);
