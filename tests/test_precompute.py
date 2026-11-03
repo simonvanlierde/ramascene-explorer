@@ -316,7 +316,7 @@ def test_both_engine_intervention_kinds_are_covered():
 PROVENANCE: dict[str, Any] = {
     "engine": {"repository": "r", "branch": "b", "commit": "c" * 40, "label": "b @ ccccccc", "dirty": False},
     "dataset": {**precompute.DATASET, "year": 2011, "sha256": {}},
-    "command": "uv run python precompute.py --run",
+    "command": "uv run python pipeline/precompute.py --run",
     "generated_at": "2026-09-26T00:00:00+00:00",
     "python": "3",
     "numpy": "2",
@@ -381,7 +381,7 @@ def test_provenance_records_commit_versions_and_dataset_hashes(tmp_path):
     assert set(p["dataset"]["sha256"]) == {"A", "L", "Y", "B"}
     assert p["python"] == ".".join(map(str, sys.version_info[:3]))
     assert p["numpy"] == np.__version__ and p["django"]
-    assert p["command"] == "uv run python precompute.py --run --engine e"
+    assert p["command"] == "uv run python pipeline/precompute.py --run --engine e"
     assert p["generated_at"].endswith("+00:00")
 
 
