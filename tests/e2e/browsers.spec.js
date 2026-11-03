@@ -8,7 +8,7 @@ test("a globe drag released before the next frame still turns the globe", async 
 	await expect(page.locator("svg.map")).toHaveClass(/\bglobe\b/);
 	const region = page.locator(".mapc .rg").first();
 	const before = await region.getAttribute("d");
-	await page.locator("svg.map").evaluate((svg) => {
+	const seen = await page.locator("svg.map").evaluate(async (svg) => {
 		const r = svg.getBoundingClientRect();
 		const at = (type, dx) =>
 			svg.dispatchEvent(
@@ -20,11 +20,21 @@ test("a globe drag released before the next frame still turns the globe", async 
 					clientY: r.y + r.height / 2,
 				}),
 			);
+		const first = () => svg.querySelector(".mapc .rg").getAttribute("d");
+		const d0 = first();
 		at("pointerdown", 0);
 		at("pointermove", 60);
 		at("pointerup", 60);
+		// NOTE: diagnostics for a failure seen only on the CI WebKit runners
+		const t0 = performance.now();
+		const framed = await Promise.race([
+			new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done(true)))),
+			new Promise((done) => setTimeout(() => done(false), 3000)),
+		]);
+		return { framed, ms: Math.round(performance.now() - t0), moved: first() !== d0, hidden: document.hidden };
 	});
-	await expect.poll(() => region.getAttribute("d")).not.toBe(before);
+	test.info().annotations.push({ type: "drag", description: JSON.stringify(seen) });
+	await expect.poll(() => region.getAttribute("d"), { message: JSON.stringify(seen) }).not.toBe(before);
 });
 
 // A drag while the globe still turns to a picked country must win over the turn,
@@ -70,13 +80,28 @@ test("a flick lets the globe glide on, a paused drag does not", async ({ page })
 		await page.goto("?data=tests/fixture.json&map=globe");
 		await expect(page.locator(".mapc .rg")).toHaveCount(49);
 		await page.waitForTimeout(1000); // the turn to the opening country is over
-		const r = await page.locator("svg.map").boundingBox();
-		const [x, y] = [r.x + r.width / 2, r.y + r.height / 2];
-		await page.mouse.move(x, y);
-		await page.mouse.down();
-		await page.mouse.move(x + 120, y, { steps: 6 });
-		if (pause) await page.waitForTimeout(200);
-		await page.mouse.up();
+		// in the page, so a slow runner's round trips cannot add a pause before the release
+		await page.locator("svg.map").evaluate(async (svg, pause) => {
+			const r = svg.getBoundingClientRect();
+			const at = (type, dx) =>
+				svg.dispatchEvent(
+					new PointerEvent(type, {
+						bubbles: true,
+						pointerId: 1,
+						isPrimary: true,
+						clientX: r.x + r.width / 2 + dx,
+						clientY: r.y + r.height / 2,
+					}),
+				);
+			const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+			at("pointerdown", 0);
+			for (let i = 1; i <= 6; i++) {
+				await wait(16);
+				at("pointermove", i * 20);
+			}
+			await wait(pause ? 200 : 0);
+			at("pointerup", 120);
+		}, pause);
 		await page.waitForTimeout(1000); // past the glide and the 150 ms settle
 		return page.locator('.mapc .rg[data-region="DE"]').getAttribute("d");
 	};
