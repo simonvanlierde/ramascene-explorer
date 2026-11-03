@@ -104,15 +104,18 @@ test("a flick lets the globe glide on, a paused drag does not", async ({ page })
 					requestAnimationFrame(tick);
 				});
 			at("pointerdown", 0);
+			// 2 ms apart by the clock, not by timers, which a loaded runner delays
 			for (let i = 1; i <= 6; i++) {
-				await wait(16);
-				at("pointermove", i * 20);
+				const t = performance.now() + 2;
+				while (performance.now() < t);
+				at("pointermove", i * 40);
 			}
-			await wait(pause ? 200 : 0);
-			at("pointerup", 120);
+			if (pause) await wait(200); // a flick releases at once: even a 0 ms timer can run late
+			at("pointerup", 240);
 			await frames(1000); // past the glide and the 150 ms settle
 		}, pause);
-		return page.locator('.mapc .rg[data-region="DE"]').getAttribute("d");
+		// the first point says where Germany is, whether thinned or full outlines are drawn
+		return (await page.locator('.mapc .rg[data-region="DE"]').getAttribute("d")).split("L")[0];
 	};
 	const paused = await dragGermany(true);
 	expect(await dragGermany(false)).not.toBe(paused);
