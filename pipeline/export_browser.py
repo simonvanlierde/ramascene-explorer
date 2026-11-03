@@ -149,7 +149,8 @@ def verify_arrays(data, expected):
 def export(data, db, out):
     if any((out / name).exists() for name in ("manifest.json", "manifest-v2.json", "manifest-v3.json")):
         raise ValueError("output already has a manifest; use a new directory")
-    reference = json.loads((Path(__file__).parent / "data" / "results.json").read_text(encoding="utf-8"))
+    results = Path(__file__).resolve().parent.parent / "data" / "results.json"
+    reference = json.loads(results.read_text(encoding="utf-8"))
     verify_arrays(data, reference["provenance"]["dataset"]["sha256"])
     A, L, Y, B = (np.load(data / "2011" / f"{name}_v4.npy", mmap_mode="r") for name in ("A", "L", "Y", "B"))
     if A.shape != (9800, 9800) or L.shape != A.shape or Y.shape != (9800, 49) or B.shape != (60, 9800):
