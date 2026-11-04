@@ -81,9 +81,18 @@ test("an aborted read stops its chunk downloads but keeps the shared shard index
 		{ name: "AbortError" },
 	);
 	// the index went out without the signal, so another read can still use it
-	assert.deepEqual(signals, [undefined, controller.signal]);
+	assert.deepEqual(signals, [undefined]);
 	assert.deepEqual((await read(chunks, [0])).get(0), f32([1.25, -0.125, 0]));
-	assert.equal(calls.length, 3);
+	assert.equal(calls.length, 2);
+});
+
+test("an aborted read does not wait for a shard index that stalls", { timeout: 2000 }, async () => {
+	// only the range timeout ends a stalled index read, a minute later
+	const chunks = arrayReader(info, () => new Promise(() => {}));
+	const controller = new AbortController();
+	const reading = chunks([0], () => {}, controller.signal);
+	setTimeout(() => controller.abort());
+	await assert.rejects(reading, { name: "AbortError" });
 });
 
 test("the chunk cache is bounded by bytes and evicts the oldest chunk", async () => {

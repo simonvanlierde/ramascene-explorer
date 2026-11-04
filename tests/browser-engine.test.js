@@ -597,3 +597,43 @@ test("reads started before Run serve a run with the same slices, and only that r
 	assert.ok(data.log.length > before);
 	assert.ok(other.every(Number.isFinite));
 });
+
+test("a failed read stops the run's other reads and waits for them before it rejects", { timeout: 2000 }, async () => {
+	const data = tiny(0.1, 0.2, 0.1, 0.1);
+	const read = data.read;
+	const open = new Set();
+	const stopped = [];
+	// every read but A and Y waits until its signal aborts, as a download the page stops does
+	data.read = (name, rows, columns, signal) => {
+		if (name === "A") return Promise.reject(new Error("A could not load"));
+		if (name === "Y") return read(name, rows, columns, signal);
+		open.add(name);
+		return new Promise((_, reject) =>
+			signal.addEventListener("abort", () => {
+				stopped.push(name);
+				// a stopped download settles a turn later
+				setTimeout(() => {
+					open.delete(name);
+					reject(signal.reason);
+				});
+			}),
+		);
+	};
+	// the first real failure, not a sibling's AbortError
+	await assert.rejects(scenarioFlows(data, [step()]), /A could not load/);
+	assert.deepEqual(stopped.toSorted(), ["H", "L", "X"]);
+	assert.equal(open.size, 0, "the run rejected while reads still downloaded");
+
+	// reads the prefetch started carry its signal: the run stops them through ahead.stop
+	const controller = new AbortController();
+	const planned = plan(data.meta, [step()]);
+	const ahead = {
+		key: readKey(planned),
+		reads: startReads(data, planned, controller.signal),
+		stop: () => controller.abort(),
+	};
+	stopped.length = 0;
+	await assert.rejects(scenarioFlows(data, [step()], ahead), /A could not load/);
+	assert.deepEqual(stopped.toSorted(), ["H", "L", "X"]);
+	assert.equal(open.size, 0, "the run rejected while the prefetch's reads still downloaded");
+});

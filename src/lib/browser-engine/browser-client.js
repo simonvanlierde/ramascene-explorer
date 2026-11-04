@@ -4,6 +4,8 @@ export function browserClient() {
 	const pending = new Map();
 	let next = 0;
 	let stopped = false;
+	// set when the worker script fails to load, so Try again would load it again in vain
+	let outdated = false;
 	const base = new URL("data/browser-engine/", document.baseURI).href;
 	function start() {
 		worker = new Worker(new URL("./browser-worker.js", import.meta.url), { type: "module" });
@@ -22,8 +24,17 @@ export function browserClient() {
 			else task.resolve(value);
 			if (fatal) close();
 		};
-		worker.onerror = () => {
-			if (active === worker) close();
+		worker.onerror = (event) => {
+			if (active !== worker) return;
+			// A script that throws sends an ErrorEvent. A plain Event means the script or one
+			// of its imports did not load: after a deploy, the hashed file names this tab knows
+			// are gone.
+			outdated = !(event instanceof ErrorEvent);
+			close(
+				outdated
+					? "The browser worker could not load. Reload the page; it may have been updated since you opened it."
+					: undefined,
+			);
 		};
 	}
 	start();
@@ -42,12 +53,12 @@ export function browserClient() {
 			worker.postMessage({ id: waiting, base, body: task.body, single });
 		}
 	}
-	function close() {
+	function close(reason = "browser worker stopped") {
 		stopped = true;
 		worker.terminate();
 		for (const task of pending.values()) {
 			clearTimeout(task.timeout);
-			task.reject(new Error("browser worker stopped"));
+			task.reject(new Error(reason));
 		}
 		pending.clear();
 	}
@@ -55,6 +66,9 @@ export function browserClient() {
 		close,
 		get stopped() {
 			return stopped;
+		},
+		get outdated() {
+			return outdated;
 		},
 		// Starts the reads for a selection before Run; no reply.
 		prefetch(body) {
