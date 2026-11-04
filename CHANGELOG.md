@@ -6,6 +6,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- The Cloudflare workflow builds the site in a job with no secrets. The jobs that hold the
+  deploy token only download the result and run wrangler.
+- `undici` is held at 7.30.1 or later through wrangler, which clears eight advisories. They
+  reached `wrangler dev` and CI only.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added

@@ -17,22 +17,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Every run uploads a version without serving it; check tests that version, and only
-  # then does promote put it on the production routes.
-  upload:
-    name: ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
-    # Forks get no secrets, so their pull requests get no preview. Run workflow offers
-    # every branch; only main publishes production.
+  # Installs dependencies and runs the build, which executes repository code, so this job has
+  # no environment and no secrets. The upload job gets only its output.
+  build:
+    name: build
     if: >-
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
       || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
-    environment:
-      name: cloudflare
-      url: ${{ steps.publish.outputs.url }}
-    outputs:
-      url: ${{ steps.publish.outputs.url }}
-      version: ${{ steps.publish.outputs.version }}
-      playwright: ${{ steps.playwright.outputs.version }}
     runs-on: ubuntu-latest
     # the threaded kernel builds std from source on a pinned nightly, with no cache
     timeout-minutes: 20
@@ -40,10 +31,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      # check's browser image must match the Playwright in package.json
-      - id: playwright
-        run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
 
       # The page shows a banner over synthetic data, but it must never go out at
       # all: only output that passed pipeline/precompute.py's checks is marked exiobase-v3.
@@ -76,7 +63,7 @@ jobs:
       # The build copies results.json, the embodied flows and the map geometry into site/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
-      # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
+      # No cache: a cache a pull request poisoned must not reach the production build.
       - uses: ./.github/actions/engine
         with:
           cache: "false"
@@ -86,6 +73,57 @@ jobs:
         env:
           VITE_DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
 
+      # include-hidden-files: site/ holds _headers and .assetsignore, which the upload skips by
+      # default. The data/ paths are what the upload job puts on R2.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site
+          path: |
+            site
+            data/embodied.parquet
+            data/results.json
+            data/browser-engine
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  # Every run uploads a version without serving it; check tests that version, and only
+  # then does promote put it on the production routes.
+  upload:
+    name: ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
+    # Forks get no secrets, so their pull requests get no preview. Run workflow offers
+    # every branch; only main publishes production.
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+      || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
+    needs: build
+    environment:
+      name: cloudflare
+      url: ${{ steps.publish.outputs.url }}
+    outputs:
+      url: ${{ steps.publish.outputs.url }}
+      version: ${{ steps.publish.outputs.version }}
+      playwright: ${{ steps.playwright.outputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # check's browser image must match the Playwright in package.json
+      - id: playwright
+        run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+      # Only wrangler runs here. --ignore-scripts keeps lifecycle scripts out of this job; the
+      # lockfile fixes every version and hash, so this is the wrangler the other jobs resolve.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: publish
         id: publish
         env:
@@ -179,7 +217,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
-      - run: pnpm install --frozen-lockfile
+      # The deploy token is in scope here: only wrangler runs, so no install scripts.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: serve the checked version
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
