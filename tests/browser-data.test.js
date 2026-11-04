@@ -172,13 +172,14 @@ test("range reads refuse a full download, a wrong offset and truncated data", as
 test("a failed range read names its file and range, and a failed fetch its phase, unless its own signal stopped it", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	const abort = new DOMException("The operation was aborted. ", "AbortError");
-	t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
+	const always = t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
 	const error = await fetchRange(url, 1, 3, 10).catch((e) => e);
 	assert.match(
 		error.message,
-		/^the browser data could not be read \(AbortError: The operation was aborted\.; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms\)$/,
+		/^the browser data could not be read \(AbortError: The operation was aborted\.; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms, second try\)$/,
 	);
 	assert.equal(error.cause, abort);
+	assert.equal(always.mock.callCount(), 2);
 	// the response came, its body did not
 	t.mock.method(globalThis, "fetch", async () => {
 		const response = new Response("12", { status: 206, headers: { "Content-Range": "bytes 1-2/10" } });
@@ -187,7 +188,7 @@ test("a failed range read names its file and range, and a failed fetch its phase
 	});
 	await assert.rejects(
 		fetchRange(url, 1, 3, 10),
-		/\(TypeError: NetworkError .*bytes 1-2, reading the body, after \d+ ms\)$/,
+		/\(TypeError: NetworkError .*bytes 1-2, reading the body, after \d+ ms, second try\)$/,
 	);
 	// the read's own errors keep their message
 	t.mock.method(globalThis, "fetch", async () => new Response("gone", { status: 404 }));
@@ -207,19 +208,35 @@ test("a failed range read names its file and range, and a failed fetch its phase
 	const controller = new AbortController();
 	controller.abort();
 	t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
+	const stopped = t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
 	await assert.rejects(fetchRange(url, 1, 3, 10, controller.signal), (e) => e === abort);
+	assert.equal(stopped.mock.callCount(), 1);
+});
+
+test("a body read the page did not stop gets one more try", async (t) => {
+	// as in Firefox: the first body read aborts by itself, the second arrives
+	const fetches = t.mock.method(globalThis, "fetch", async () => {
+		const response = new Response("12", { status: 206, headers: { "Content-Range": "bytes 1-2/10" } });
+		if (fetches.mock.callCount() === 0)
+			response.arrayBuffer = () => Promise.reject(new DOMException("The operation was aborted.", "AbortError"));
+		return response;
+	});
+	assert.equal(new TextDecoder().decode(await fetchRange("https://example.test/A/c/0/0", 1, 3, 10)), "12");
+	assert.equal(fetches.mock.callCount(), 2);
 });
 
 test("a range that stalls times out with its read named, and its own stop still wins", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	// a server that never answers: only an abort ends the request, as in a browser
-	t.mock.method(globalThis, "fetch", (_url, { signal }) => {
+	const stalls = t.mock.method(globalThis, "fetch", (_url, { signal }) => {
 		return new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
 	});
 	await assert.rejects(
 		fetchRange(url, 1, 3, 10, undefined, 20),
 		/^Error: the browser data could not be read \(TimeoutError: .*; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms\)$/,
 	);
+	// a stall is not tried again: a second one would pass the page's deadline
+	assert.equal(stalls.mock.callCount(), 1);
 	await assert.rejects(fetchRange(url, 1, 3, 10, new AbortController().signal, 20), /TimeoutError: .*bytes 1-2/);
 	const controller = new AbortController();
 	const stopped = fetchRange(url, 1, 3, 10, controller.signal, 60_000);
