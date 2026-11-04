@@ -148,6 +148,19 @@ sha256sum --check data/browser-engine-zarr.sha256
 tar -xf data/ramascene-browser-engine-zarr.tar -C data
 ```
 
+To publish a new export, pack it with fixed names, times and modes, so the same files give
+the same tar:
+
+```sh
+tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode=u=rwX,go=rX --format=gnu \
+  -cf data/ramascene-browser-engine-zarr.tar -C data browser-engine
+sha256sum data/ramascene-browser-engine-zarr.tar > data/browser-engine-zarr.sha256
+```
+
+Then upload the tar to the data release and commit the new `data/browser-engine-zarr.sha256`.
+That file and the release asset's digest are the only reference for the archive. Do not
+gzip it: gzip stores the write time, so a re-export of the same data would change the bytes.
+
 The build includes the data when present. CI and publishing download and verify
 the archive. Cloudflare refuses any single asset over 25 MiB
 ([publishing.md](publishing.md#cloudflare)). The browser fetches
