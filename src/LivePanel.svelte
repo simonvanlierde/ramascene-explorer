@@ -15,6 +15,7 @@ import {
 	waitForJob,
 } from "./lib/live.js";
 import { plan } from "./lib/browser-engine/browser-engine.js";
+import { fmt } from "./lib/flows.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
@@ -76,17 +77,19 @@ const trees = $derived({
 });
 const body = (techChange) =>
 	scenarioBody({ product: pick.product, originReg: pick.origin, consumedBy: pick.consumer, consumedReg: pick.consumedReg, techChange }, range);
-// a browser selection too large to compute, said before Run
-const tooBroad = $derived.by(() => {
-	if (!browser || !catalog) return "";
+// a browser selection's plan before Run: what it downloads, or why it is too large
+const planned = $derived.by(() => {
+	if (!browser || !catalog) return {};
 	try {
-		plan({ catalog, ...catalog.size }, body(change).model_details);
-		return "";
+		return { download: plan({ catalog, ...catalog.size }, body(change).model_details).download };
 	} catch (e) {
 		// other errors surface on Run
-		return e.message.startsWith("too broad") ? `This selection is ${e.message}` : "";
+		return { tooBroad: e.message.startsWith("too broad") ? `This selection is ${e.message}` : "" };
 	}
 });
+const tooBroad = $derived(planned.tooBroad ?? "");
+// said only above 5 MB, where the download is what a reader on a phone may wait for
+const download = $derived(planned.download > 5e6 ? `Run downloads about ${fmt(planned.download / 1e6)} MB of data.` : "");
 
 function say(text, bad = false) {
 	message = text;
@@ -239,7 +242,8 @@ async function submit(event) {
 			<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
-			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
+			{#if download}<p class="hint" id="live-download">{download}</p>{/if}
+			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : download ? "live-download" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 			{#if running}
 				<p class="hint live-elapsed">
 					<!-- the status line announces the start and the result; the count is for sighted readers -->

@@ -6,8 +6,9 @@ import * as single from "../engine/pkg/ramascene_engine.js";
 import "./engine-wasm.js";
 
 // The real worker, engine and store reader over the exported store, with fetch replaced.
-// A read with a signal (the read-ahead's) waits in held until the test releases it, and
-// an abort only marks it: the test decides when the stopped read settles.
+// A read-ahead read waits in held until the test releases it, and an abort only marks
+// it: the test decides when the stopped read settles. Every read has a timeout signal;
+// only a read-ahead's joins it to its own, with AbortSignal.any.
 const directory = process.env.BROWSER_ENGINE_DATA;
 const posted = [];
 globalThis.self = { postMessage: (message) => posted.push(message) };
@@ -17,13 +18,20 @@ mock.module(new URL("../src/lib/browser-engine/browser-kernel.js", import.meta.u
 const base = "https://example.test/data/browser-engine/";
 const files = new Map();
 const held = [];
+const joined = new WeakSet();
+const any = AbortSignal.any;
+AbortSignal.any = (signals) => {
+	const signal = any.call(AbortSignal, signals);
+	joined.add(signal);
+	return signal;
+};
 let fetches = 0;
 globalThis.fetch = async (url, { headers, signal } = {}) => {
 	const path = `${directory}/${String(url).slice(base.length)}`;
 	if (!headers?.Range) return new Response(readFileSync(path));
 	fetches++;
 	const [start, end] = /bytes=(\d+)-(\d+)/.exec(headers.Range).slice(1).map(Number);
-	if (signal) await new Promise((resolve, reject) => held.push({ signal, resolve, reject }));
+	if (joined.has(signal)) await new Promise((resolve, reject) => held.push({ signal, resolve, reject }));
 	if (!files.has(path)) files.set(path, openSync(path, "r"));
 	const fd = files.get(path);
 	const bytes = new Uint8Array(end - start + 1);
