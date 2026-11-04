@@ -1,4 +1,4 @@
-# RaMa-Scene Explorer
+# <img src="docs/img/logo.svg" alt="" width="40" align="top"> RaMa-Scene Explorer
 
 [![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23461260.svg)](https://doi.org/10.5281/zenodo.23461260)
