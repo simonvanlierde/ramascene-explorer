@@ -15,6 +15,8 @@ const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))
 // When the variable is unset, the workflow passes an empty string.
 const data = process.env.DATA_ORIGIN ? process.env.DATA_ORIGIN.replace(/\/?$/, "/") : null;
 const sha = results.provenance.embodied.sha256;
+// the origin of the production routes in wrangler.jsonc
+const PRODUCTION = "https://simonvanlierde.com";
 const shard = `browser-engine/store-${manifest.store}/A/c/0/0`;
 for (const [href, size] of [
 	[data ? new URL(`embodied/${sha}.parquet`, data) : url("data/embodied.parquet"), results.provenance.embodied.bytes],
@@ -34,6 +36,13 @@ for (const [href, size] of [
 	assert.equal(res.headers.get("Content-Range"), `bytes 0-1/${size}`, path);
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
 	if (data) assert.ok(["*", origin].includes(res.headers.get("Access-Control-Allow-Origin")), path);
+	// The edge caches a copy per Origin value, so the production page's origin gets its own
+	// read: a preview's origin passing says nothing about the copy production is served.
+	if (data) {
+		const live = await fetch(href, { headers: { Origin: PRODUCTION, Range: "bytes=0-1" } });
+		await live.arrayBuffer();
+		assert.ok(["*", PRODUCTION].includes(live.headers.get("Access-Control-Allow-Origin")), `${path} for ${PRODUCTION}`);
+	}
 	if (data || path.includes("store-")) assert.match(res.headers.get("Cache-Control") ?? "", /immutable/, path);
 }
 // Each engine runs the page and its calculations; only the first replays the 155 published

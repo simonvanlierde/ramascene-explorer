@@ -59,6 +59,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The data host served the production page a cached copy of the flows without CORS headers,
+  so the map did not load. The deploy check now reads the data with production's origin too,
+  and the setup adds the CORS headers at the edge ([data host](docs/publishing.md#data-host)).
 - A drag on the globe while it turned to a picked country was undone by the turn. The drag
   now stops the turn.
 - Running a custom scenario while the form was still downloading another selection's data held
