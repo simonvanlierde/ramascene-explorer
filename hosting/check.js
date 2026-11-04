@@ -14,8 +14,23 @@ if (new URL(base).hostname.endsWith(".workers.dev")) {
 	assert.equal(root.status, 302);
 	assert.equal(new URL(root.headers.get("Location"), base).pathname, new URL(base).pathname);
 }
-const results = await (await fetch(url("data/results.json"))).json();
-const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
+// A bad answer is logged with its status and cf-ray, then fetched once more; a second bad
+// answer fails the check.
+async function json(path, retried = false) {
+	const res = await fetch(url(path));
+	const text = await res.text();
+	try {
+		assert.equal(res.status, 200);
+		return JSON.parse(text);
+	} catch (e) {
+		const why = `${path}: status ${res.status}, ${text.length} bytes, cf-ray ${res.headers.get("cf-ray")}`;
+		if (retried) throw new Error(why, { cause: e });
+		console.log(`${why}; fetching it again`);
+		return json(path, true);
+	}
+}
+const results = await json("data/results.json");
+const manifest = await json("data/browser-engine/manifest-v3.json");
 // With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
 // host by their hashes, read across origins; without it, from next to the page.
 // When the variable is unset, the workflow passes an empty string.
