@@ -102,7 +102,10 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 			if (!byShard.has(shard)) byShard.set(shard, []);
 			byShard.get(shard).push(chunk);
 		}
-		const planned = await Promise.all([...byShard].map(([shard, list]) => ranges(shard, list)));
+		const indexed = Promise.all([...byShard].map(([shard, list]) => ranges(shard, list)));
+		// an abort does not wait for the shard indexes: they are small, and only the range
+		// timeout ends one that stalls
+		const planned = await (signal ? Promise.race([indexed, aborted(signal)]) : indexed);
 		const zeros = new Float32Array(rows * width);
 		for (const { empty } of planned) for (const chunk of empty) onChunk(chunk, zeros);
 		const queue = planned.flatMap((p) => p.out);
@@ -127,6 +130,13 @@ export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {
 		await Promise.all(Array.from({ length: Math.min(PARALLEL, queue.length) }, worker));
 	};
 }
+
+// Rejects with the signal's reason once it aborts.
+const aborted = (signal) =>
+	new Promise((_, reject) => {
+		if (signal.aborted) reject(signal.reason);
+		else signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+	});
 
 function validArray(info, shape) {
 	return (
