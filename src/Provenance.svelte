@@ -2,7 +2,7 @@
 import { runSummary, shortCommit } from "./lib/explorer.js";
 
 // scenario: the shown one, or the excluded record whose parameters are listed
-let { data, scenario } = $props();
+let { data, scenario, away = {} } = $props();
 
 const p = $derived(data.provenance);
 const e = $derived(p.engine);
@@ -106,8 +106,8 @@ const checks = $derived.by(() => {
 <footer>
 	<div class="titleblock colophon" id="footer">
 		<dl class="cell"><dt>Engine commit</dt><dd>{shortCommit(e.commit)}</dd></dl>
-		{#if d.doi}<dl class="cell"><dt>Dataset DOI</dt><dd><a href="https://doi.org/{d.doi}">{d.doi}</a></dd></dl>{/if}
+		{#if d.doi}<dl class="cell"><dt>Dataset DOI</dt><dd><a href="https://doi.org/{d.doi}" {...away}>{d.doi}{#if away.target} (opens in new tab){/if}</a></dd></dl>{/if}
 		{#if p.generated_at}<dl class="cell"><dt>Generated</dt><dd>{p.generated_at}</dd></dl>{/if}
-		<dl class="cell"><dt>Built by</dt><dd>Simon van Lierde · <a href="https://github.com/simonvanlierde/ramascene-explorer">source</a></dd></dl>
+		<dl class="cell"><dt>Built by</dt><dd>Simon van Lierde · <a href="https://github.com/simonvanlierde/ramascene-explorer" {...away}>source{#if away.target} (opens in new tab){/if}</a></dd></dl>
 	</div>
 </footer>
