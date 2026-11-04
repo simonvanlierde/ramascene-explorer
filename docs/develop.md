@@ -39,8 +39,8 @@ The [URL reference](interface.md#url-parameters) lists every parameter.
 
 `pnpm build` writes a static site to `dist/`, with `data/` and `geo/` copied in
 when present. Any static host serves it, as long as it answers HTTP range
-requests: the page reads the Parquet file in pieces. Publishing to GitHub
-Pages is in [publishing.md](publishing.md).
+requests: the page reads the Parquet file in pieces. Publishing to Cloudflare
+is in [publishing.md](publishing.md#cloudflare).
 
 ## Data and reproducibility
 

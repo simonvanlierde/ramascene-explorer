@@ -199,6 +199,10 @@ test("a failed range read names its file and range, and a failed fetch its phase
 	await assert.rejects(fetchRange(url, 1, 3, 10), {
 		message: "browser scenario data needs a server with HTTP range support (/A/c/0/0 bytes 1-2, status 200)",
 	});
+	t.mock.method(globalThis, "fetch", async () => new Response("busy", { status: 503 }));
+	await assert.rejects(fetchRange(url, 1, 3, 10), {
+		message: "the data host failed: try again (/A/c/0/0 bytes 1-2, status 503)",
+	});
 	t.mock.method(
 		globalThis,
 		"fetch",

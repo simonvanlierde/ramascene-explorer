@@ -38,6 +38,8 @@ modules in `src/lib/`, so `node --test` can test it:
 | `src/lib/browser-engine/browser-engine.js` | the scenario planner and budgets, float64 Woodbury updates (a low-rank correction of the baseline inverse) |
 | `engine/` | the Rust kernel, built to WebAssembly: the small linear solve and the flow sums |
 | `src/lib/browser-engine/browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
+| `src/lib/browser-engine/browser-kernel.js` | loading the WebAssembly kernel, threaded where the page allows it |
+| `src/lib/data-origin.js` | where a deployed build reads the large data (`DATA_ORIGIN`) |
 | `src/lib/browser-engine/browser-results.js` | browser source labels, provenance and result shape |
 
 `browser-client.js` sends requests to `browser-worker.js` (both in `src/lib/browser-engine/`), which loads the data

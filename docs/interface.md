@@ -5,7 +5,7 @@
 The URL stores filters and published scenarios. It does not store custom results;
 a shared link opens the last published scenario with the current filters.
 A missing or out-of-range value falls back to its default. Defaults
-are left out of the link. `data`, `api` and `compute` survive when the page rewrites it.
+are left out of the link. `data` and `api` survive when the page rewrites it.
 Code: `parseView` and `viewSearch` in `src/lib/flows.js`, `data` in `src/lib/explorer.js`, `api`
 in `src/lib/live.js`.
 
@@ -22,7 +22,6 @@ in `src/lib/live.js`.
 | `panel` | `sankey`, `table`, `method` | none |
 | `data` | a relative path to a `.json` file ([security.md](security.md#what-data-accepts)) | `data/results.json` |
 | `api` | a job API origin ([security.md](security.md#what-api-accepts)) | none |
-| `compute` | `1` enables [browser scenarios](browser-engine.md); `api` takes precedence | none |
 
 The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the

@@ -29,8 +29,8 @@ In scope:
 - The page: `index.html`, the scripts and components in `src/`, and how it reads the `?data=` and
   `?api=` parameters.
 - `pipeline/` (`precompute.py`, `compare_data.py`) and the browser calculation and data reader modules in `src/lib/`.
-- The workflows in `.github/workflows/`, including the Pages deploy, which publishes
-  only from `main`.
+- The workflows in `.github/workflows/`, including the Cloudflare deploy (`cloudflare.yml`),
+  which publishes production only from `main` and previews from this repository's branches.
 
 Out of scope:
 

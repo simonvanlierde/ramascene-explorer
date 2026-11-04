@@ -291,7 +291,7 @@ $effect(() => {
 		<main class="main solo" id="empty">
 			{#if empty}
 				<p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
-				<pre>uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
+				<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
 				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}

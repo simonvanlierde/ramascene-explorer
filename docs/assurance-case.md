@@ -72,8 +72,8 @@ good one from a bad one, so it labels a live result with its origin.
   A software release's attested `dist` tarball includes those matrices.
 - The `embodied.parquet` attestation says this workflow vouched for a file
   with that hash, not that it ran `pipeline/precompute.py`: the file is built locally.
-- The Pages site is not checked against the release tarball, since Pages may
-  deploy a later commit of `main` than the tag. A `v*` tag is not checked to
+- The deployed site is not checked against the release tarball, since
+  `cloudflare.yml` deploys every push to `main`, which may be later than the tag. A `v*` tag is not checked to
   be on `main`; only the maintainer can publish releases.
 - If immutable releases are turned on, `release.yml` must move to a
   draft-release flow, because it adds assets after publishing.
