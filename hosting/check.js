@@ -101,10 +101,13 @@ for (const engine of names.map((n) => engines[n])) {
 			const w = new Worker(workerUrls[0], { type: "module" });
 			const call = (body) =>
 				new Promise((resolve, reject) => {
+					// computing messages only mark a threaded kernel call's start and end
 					w.onmessage = ({ data }) =>
-						data.error || data.retrySingle
-							? reject(new Error(data.error ?? "thread pool failed"))
-							: resolve(data.value);
+						"computing" in data
+							? undefined
+							: data.error || data.retrySingle
+								? reject(new Error(data.error ?? "thread pool failed"))
+								: resolve(data.value);
 					w.onerror = (e) => reject(new Error(e.message));
 					w.postMessage({ id: 1, base: new URL("data/browser-engine/", base).href, body, single: false });
 				});
