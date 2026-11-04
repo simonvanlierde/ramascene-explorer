@@ -14,8 +14,23 @@ if (new URL(base).hostname.endsWith(".workers.dev")) {
 	assert.equal(root.status, 302);
 	assert.equal(new URL(root.headers.get("Location"), base).pathname, new URL(base).pathname);
 }
-const results = await (await fetch(url("data/results.json"))).json();
-const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
+// A bad answer is logged with its status and cf-ray, then fetched once more; a second bad
+// answer fails the check.
+async function json(path, retried = false) {
+	const res = await fetch(url(path));
+	const text = await res.text();
+	try {
+		assert.equal(res.status, 200);
+		return JSON.parse(text);
+	} catch (e) {
+		const why = `${path}: status ${res.status}, ${text.length} bytes, cf-ray ${res.headers.get("cf-ray")}`;
+		if (retried) throw new Error(why, { cause: e });
+		console.log(`${why}; fetching it again`);
+		return json(path, true);
+	}
+}
+const results = await json("data/results.json");
+const manifest = await json("data/browser-engine/manifest-v3.json");
 // With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
 // host by their hashes, read across origins; without it, from next to the page.
 // When the variable is unset, the workflow passes an empty string.
@@ -56,33 +71,110 @@ for (const [href, size] of [
 // daily request allowance.
 const engines = { chromium, firefox, webkit };
 const names = (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").split(",");
+const started = performance.now();
+const at = () => Math.round(performance.now() - started);
+// Records the page's and its workers' requests and console, so a failed wait prints what
+// the data reads were doing at that moment.
+function watch(page, failed) {
+	const open = new Map();
+	const odd = [];
+	const done = [];
+	const logs = [];
+	const short = (u) => u.replace(/store-[0-9a-f]{8}[0-9a-f]+/, (s) => s.slice(0, 14)).slice(0, 140);
+	page.on("request", (r) => open.set(r, { url: short(r.url()), host: new URL(r.url()).host, t: at() }));
+	page.on("response", (res) => {
+		const h = res.headers();
+		const entry = open.get(res.request());
+		if (entry) Object.assign(entry, { status: res.status(), ray: h["cf-ray"], cache: h["cf-cache-status"] });
+		if (![200, 206, 204, 304].includes(res.status()) || h["cf-mitigated"])
+			odd.push(`${at()} ${res.status()} ${h["cf-mitigated"] ?? ""} ${h["cf-ray"] ?? ""} ${short(res.url())}`);
+	});
+	page.on("requestfinished", (r) => {
+		const e = open.get(r);
+		open.delete(r);
+		if (e) done.push({ ...e, ms: at() - e.t });
+	});
+	page.on("requestfailed", (r) => {
+		const e = open.get(r);
+		open.delete(r);
+		failed.push(
+			`${at()} after ${e ? at() - e.t : "?"} ms ${r.failure()?.errorText} ${e?.status ?? ""} ${e?.ray ?? ""} ${short(r.url())}`,
+		);
+	});
+	const log = (m) => logs.push(`${at()} ${m.type()} ${m.text().slice(0, 300)}`);
+	page.on("console", log);
+	page.on("pageerror", (e) => logs.push(`${at()} pageerror ${e.message.slice(0, 300)}`));
+	page.on("worker", (w) => {
+		logs.push(`${at()} worker ${short(w.url())}`);
+		w.on?.("console", log);
+	});
+	return async function dump() {
+		const state = await page
+			.locator("#live-state")
+			.textContent({ timeout: 1000 })
+			.catch(() => "(none)");
+		const messages = await page.evaluate(() => globalThis.workerLog ?? []).catch((e) => [String(e)]);
+		const slow = done.toSorted((a, b) => b.ms - a.ms).slice(0, 10);
+		const data = done.filter((d) => d.host !== new URL(base).host);
+		console.log(
+			[
+				`--- evidence at ${at()} ms; #live-state: ${state}`,
+				`requests finished: ${done.length} (${data.length} off the page's host, ${data.reduce((s, d) => s + d.ms, 0)} ms in all)`,
+				`still open (${open.size}):`,
+				...[...open.values()].map(
+					(e) => `  started ${e.t}, open ${at() - e.t} ms ${e.status ?? "no response"} ${e.ray ?? ""} ${e.url}`,
+				),
+				`failed (${failed.length}):`,
+				...failed.map((f) => `  ${f}`),
+				`not 2xx or challenged (${odd.length}):`,
+				...odd.map((f) => `  ${f}`),
+				"slowest finished:",
+				...slow.map((e) => `  started ${e.t}, ${e.ms} ms ${e.status} ${e.cache ?? ""} ${e.ray ?? ""} ${e.url}`),
+				`worker messages (last 40 of ${messages.length}):`,
+				...messages.slice(-40).map((m) => `  ${m}`),
+				`console (last 40 of ${logs.length}):`,
+				...logs.slice(-40).map((m) => `  ${m}`),
+			].join("\n"),
+		);
+	};
+}
 for (const engine of names.map((n) => engines[n])) {
 	const browser = await engine.launch({ headless: true });
+	let dump = async () => {};
+	const failed = [];
 	try {
 		const page = await browser.newPage();
+		dump = watch(page, failed);
 		await page.addInitScript(() => {
 			const Original = Worker;
+			const t0 = performance.now();
 			globalThis.workerUrls = [];
 			globalThis.threadCounts = [];
+			globalThis.workerLog = [];
 			globalThis.Worker = class extends Original {
 				constructor(...args) {
 					super(...args);
-					workerUrls.push(String(args[0]));
+					const n = workerUrls.push(String(args[0]));
 					this.addEventListener("message", ({ data }) => {
 						if (data.value?.threads) threadCounts.push(data.value.threads);
+						const { value, ...rest } = data ?? {};
+						workerLog.push(
+							`${Math.round(performance.now() - t0)} w${n} ${JSON.stringify(rest).slice(0, 300)}${value ? ` value:${Object.keys(value)}` : ""}`,
+						);
 					});
+					this.addEventListener("error", (e) => workerLog.push(`w${n} error ${e.message}`));
 				}
 			};
 		});
 		await page.goto(url("").href);
 		assert.equal(await page.evaluate(() => crossOriginIsolated), true);
-		// a fresh preview's first load reads the flows from a cold edge
-		await expect(page.locator(".mapc .rg")).toHaveCount(49, { timeout: 30_000 });
+		// Every wait leaves room for one range read the data host leaves hanging: the page
+		// gives it 60 s, then tries it again (src/lib/range.js).
+		await expect(page.locator(".mapc .rg")).toHaveCount(49, { timeout: 90_000 });
 		await page.getByRole("button", { name: "What if…" }).first().click();
 		await page.locator("#live-open").click();
-		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 120_000 });
 		await page.locator("#live-run").click();
-		// the first Run reads its slices from a cold edge, slow from CI's runners
 		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1]);
 		await page.locator("#live-product").selectOption("5");
@@ -90,7 +182,7 @@ for (const engine of names.map((n) => engines[n])) {
 		await page.locator("#live-consumer").selectOption("5");
 		await page.locator("#live-consumed-reg").selectOption("1");
 		await page.locator("#live-run").click();
-		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 		const expected = await page.evaluate(() => Math.min(4, Math.max(1, (navigator.hardwareConcurrency || 2) - 1)));
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1, expected]);
 		if (engine !== engines[names[0]]) {
@@ -155,6 +247,7 @@ for (const engine of names.map((n) => engines[n])) {
 		if (engine === chromium) {
 			await page.close();
 			const fallback = await browser.newPage();
+			dump = watch(fallback, failed);
 			await fallback.addInitScript(() => {
 				const Original = Worker;
 				globalThis.workerCount = 0;
@@ -179,7 +272,7 @@ for (const engine of names.map((n) => engines[n])) {
 			await fallback.getByRole("button", { name: "What if…" }).first().click();
 			await fallback.locator("#live-open").click();
 			await expect(fallback.locator("#live-state")).toHaveText("Ready to compute in this browser.", {
-				timeout: 60_000,
+				timeout: 120_000,
 			});
 			// The worker script has loaded. Interception also breaks the worker's cross-origin
 			// reads from the data host in Chromium, so it ends before the first one.
@@ -192,11 +285,17 @@ for (const engine of names.map((n) => engines[n])) {
 			])
 				await fallback.locator(`#live-${id}`).selectOption(value);
 			await fallback.locator("#live-run").click();
-			await expect(fallback.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+			await expect(fallback.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 			assert.deepEqual(await fallback.evaluate(() => [workerCount, lastThreads]), [expected > 1 ? 2 : 1, 1]);
 			console.log("chromium: failed pool terminated and calculation retried on one thread");
 		}
+	} catch (e) {
+		console.log(`${engine.name()} failed: ${e.message.split("\n")[0]}`);
+		await dump();
+		throw e;
 	} finally {
+		// a passing run lists the reads that failed and were tried again
+		for (const f of failed) console.log(`${engine.name()} request failed: ${f}`);
 		await browser.close();
 	}
 }

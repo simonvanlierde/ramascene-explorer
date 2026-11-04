@@ -7,7 +7,8 @@
 	"mutate": [
 		"src/lib/flows.js",
 		"src/lib/browser-engine/browser-data.js",
-		"src/lib/browser-engine/browser-engine.js"
+		"src/lib/browser-engine/browser-engine.js",
+		"src/lib/range.js"
 	],
 	"coverageAnalysis": "off",
 	"ignorePatterns": [

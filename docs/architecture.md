@@ -32,6 +32,7 @@ modules in `src/lib/`, so `node --test` can test it:
 | --- | --- |
 | `src/lib/explorer.js` | where the data file is (`?data=`), the synthetic-data banner, run matching |
 | `src/lib/embodied.js` | reading the Parquet file by range request |
+| `src/lib/range.js` | one byte-range read, with its stall timer and one retry, for the Parquet file and the Zarr store |
 | `src/lib/flows.js` | sums, scales, units, the table and CSV, the URL parameters |
 | `src/lib/map.js` | which map country belongs to which region |
 | `src/lib/live.js` | the optional job API: origin check, request body, result reshaping |
