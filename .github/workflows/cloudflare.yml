@@ -1,11 +1,14 @@
 name: cloudflare
 
-# Production deploys from main; each pull request from this repository uploads a
-# version with a preview alias, served on workers.dev (docs/publishing.md#cloudflare).
+# Production deploys from main. Each ready pull request from this repository gets its own
+# preview Worker, which preview-retire.yml deletes (docs/publishing.md#cloudflare).
 on:
   push:
     branches: [main]
   pull_request:
+    # the default types plus ready_for_review: a draft gets no preview, so marking it ready
+    # is what starts one
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -17,15 +20,25 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Every run uploads a version without serving it; check tests that version, and only
-  # then does promote put it on the production routes.
+  # On main, uploads a version without serving it; check tests that version, and only then
+  # does promote put it on the production routes. On a pull request, deploys the preview
+  # Worker that check tests.
   upload:
     name: ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
-    # Forks get no secrets, so their pull requests get no preview. Run workflow offers
-    # every branch; only main publishes production.
+    # Forks get no secrets, so their pull requests get no preview. Nor do drafts, or bot
+    # pull requests (Renovate, Dependabot), so their code never runs with the token.
+    # Run workflow offers every branch; only main publishes production.
     if: >-
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]')
+        && !endsWith(github.actor, '[bot]'))
       || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
+    # shares preview-retire.yml's group, so a retire waits for a deploy in flight
+    concurrency:
+      group: ${{ github.event_name == 'pull_request' && format('preview-{0}', github.event.pull_request.number) || 'upload' }}
+    permissions:
+      contents: read
+      pull-requests: read # to re-read the pull request's state before the deploy
     environment:
       name: cloudflare
       url: ${{ steps.publish.outputs.url }}
@@ -53,16 +66,16 @@ jobs:
           test -f data/results.json || { echo "data/results.json is missing: run pipeline/precompute.py first"; exit 1; }
           jq -e '.data_kind == "exiobase-v3"' data/results.json >/dev/null \
             || { echo "data/results.json is not exiobase-v3 output"; exit 1; }
+          test "$(jq -r .provenance.embodied.sha256 data/results.json)" = "$(cut -d' ' -f1 data/embodied.sha256)" \
+            || { echo "data/results.json names other embodied flows than data/embodied.sha256"; exit 1; }
 
-      # The embodied flows are too large for git and live on a release instead.
-      # The checksum pins the exact file this commit was built against.
-      - name: fetch the embodied flows
+      # The store ships with the page, and its manifest names the store the page reads. It is
+      # too large for git and lives on a release; the checksum pins the exact file.
+      - name: fetch the browser store
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download data-2011-r2 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
-          sha256sum --check data/embodied.sha256
           gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-zarr.tar --dir data
           sha256sum --check data/browser-engine-zarr.sha256
           tar -xf data/ramascene-browser-engine-zarr.tar -C data
@@ -73,7 +86,7 @@ jobs:
         with:
           node-version: "26"
 
-      # The build copies results.json, the embodied flows and the map geometry into site/,
+      # The build copies results.json, the store and the map geometry into site/,
       # and leaves out the synthetic fixture.
       - run: pnpm install --frozen-lockfile
       # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
@@ -86,54 +99,68 @@ jobs:
         env:
           VITE_DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
 
+      # This workflow never writes to R2; data.yml publishes a data release there. The Worker
+      # and the data host both read the bucket, so the data must be in before anything serves
+      # this build. The query string skips an edge copy of a 404 from before the upload.
+      - name: check the data is published
+        env:
+          DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
+        run: |
+          set -euo pipefail
+          test -n "$DATA_ORIGIN" || { echo "Set the DATA_ORIGIN repository variable: the published data is checked there"; exit 1; }
+          store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
+          [[ $store =~ ^store-[0-9a-f]{64}$ ]] || { echo "The manifest names no valid store: $store"; exit 1; }
+          for key in "embodied/$(cut -d' ' -f1 data/embodied.sha256).parquet" "browser-engine/$store/.complete"; do
+            code=$(curl -sS --max-time 30 -o /dev/null -I -w '%{http_code}' "${DATA_ORIGIN%/}/$key?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" || true)
+            if [ "$code" != 200 ]; then
+              echo "::error::${DATA_ORIGIN%/}/$key answers HTTP $code: the data for this commit is not published: publish its data release first (data.yml)"
+              exit 1
+            fi
+          done
+
       - name: publish
         id: publish
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Set the CLOUDFLARE_API_TOKEN secret on the cloudflare environment"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Set the CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
-          # The key is the file's own hash: a results.json from another run must not
-          # overwrite an immutable object under its name.
-          sha=$(sha256sum data/embodied.parquet | cut -d' ' -f1)
-          test "$sha" = "$(node -p 'require("./data/results.json").provenance.embodied.sha256')" \
-            || { echo "data/results.json names other embodied flows than data/embodied.parquet"; exit 1; }
-          key="embodied/$sha.parquet"
-          immutable="public, max-age=31536000, immutable"
-          pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote \
-            --cache-control "$immutable" --content-type application/vnd.apache.parquet
-          # The store's keys carry its hash too. The marker goes up last, so a store is only
-          # skipped once every shard is in.
-          store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
-          marker="ramascene-explorer-data/browser-engine/$store/.complete"
-          if ! pnpm exec wrangler r2 object get "$marker" --remote --pipe > /dev/null 2>&1; then
-            (cd data/browser-engine && find "$store" -type f) | xargs -P 8 -I{} \
-              pnpm exec wrangler r2 object put "ramascene-explorer-data/browser-engine/{}" \
-              --file "data/browser-engine/{}" --remote --cache-control "$immutable" \
-              --content-type application/octet-stream > /dev/null
-            printf '%s\n' "$store" | pnpm exec wrangler r2 object put "$marker" --pipe --remote
-          fi
           if [ "$EVENT" = pull_request ]; then
-            # previews stay out of search results; each version keeps its own _headers
+            # The event may be minutes old. Read the pull request now, so a late deploy cannot
+            # bring back the preview of one that has closed or turned draft since.
+            state=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.state + " " + (.draft|tostring)')
+            if [ "$state" != "open false" ]; then
+              echo "::notice::Preview skipped: pull request $PR is no longer open and ready ($state)."
+              exit 0
+            fi
+            # previews stay out of search results
             printf '\n/*\n  X-Robots-Tag: noindex\n' >> site/_headers
-            pnpm exec wrangler versions upload --preview-alias "pr-$PR" | tee "$RUNNER_TEMP/upload.log"
-            url=$(grep -oE "https://pr-$PR-[a-z0-9.-]+\.workers\.dev" "$RUNNER_TEMP/upload.log" | head -1)
+            pnpm exec wrangler deploy --config wrangler.preview.jsonc --name "ramascene-explorer-pr-$PR" \
+              --message "PR $PR at $SHA" | tee "$RUNNER_TEMP/upload.log"
+            url=$(grep -oE "https://ramascene-explorer-pr-$PR\.[a-z0-9.-]+\.workers\.dev" "$RUNNER_TEMP/upload.log" | head -1)
+            test -n "$url" || { echo "Deployed, but wrangler printed no workers.dev address: check wrangler.preview.jsonc"; exit 1; }
+            echo "### Preview: $url/ramascene-explorer/" >> "$GITHUB_STEP_SUMMARY"
           else
             pnpm exec wrangler versions upload | tee "$RUNNER_TEMP/upload.log"
             url=$(grep -oE "https://[a-z0-9]+-ramascene-explorer\.[a-z0-9.-]+\.workers\.dev" "$RUNNER_TEMP/upload.log" | head -1)
+            version=$(grep -oiE "Worker Version ID: [0-9a-f-]{36}" "$RUNNER_TEMP/upload.log" | grep -oE "[0-9a-f-]{36}$")
+            test -n "$url" || { echo "No preview URL in the upload output"; exit 1; }
+            test -n "$version" || { echo "No version ID in the upload output"; exit 1; }
+            echo "version=$version" >> "$GITHUB_OUTPUT"
           fi
-          version=$(grep -oiE "Worker Version ID: [0-9a-f-]{36}" "$RUNNER_TEMP/upload.log" | grep -oE "[0-9a-f-]{36}$")
-          test -n "$url" || { echo "No preview URL in the upload output"; exit 1; }
-          test -n "$version" || { echo "No version ID in the upload output"; exit 1; }
-          { echo "url=$url/ramascene-explorer/"; echo "version=$version"; } >> "$GITHUB_OUTPUT"
+          echo "url=$url/ramascene-explorer/" >> "$GITHUB_OUTPUT"
 
   check:
     name: check ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
     needs: upload
+    # no URL: the pull request closed or turned draft before its preview went up
+    if: needs.upload.outputs.url != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # The same browser image as ci.yml's browser job; this job gets no token.
@@ -179,7 +206,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
-      - run: pnpm install --frozen-lockfile
+      # The deploy token is in scope here: no install scripts and no .pnpmfile.cjs.
+      - run: pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
       - name: serve the checked version
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

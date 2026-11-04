@@ -29,8 +29,9 @@ workflows' `pnpm/action-setup` steps read it.
 
 `cloudflare.yml` publishes the site ([Cloudflare](#cloudflare)). Commit the precompute
 output before you merge it. The workflow ships the bundled page and fonts, the map
-geometry, `results.json`, `embodied.parquet` and the browser dataset. Both release
-downloads are pinned by their checksums. It stops if `data/results.json` is missing or
+geometry, `results.json` and the browser dataset, whose release download is pinned by its
+checksum. `embodied.parquet` and the store go to R2 separately, through
+[`data.yml`](#publish-the-data). The deploy stops if `data/results.json` is missing or
 isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can never go out.
 
 To check that the site serves range requests, ask for two bytes. The answer
@@ -87,19 +88,35 @@ a snapshot, not a gate.
 prefix. The domain's DNS records are proxied through Cloudflare, so these routes take
 production, and the domain's other pages still come from GitHub Pages through the proxy.
 
-`cloudflare.yml` deploys it on every push to `main`. Each run first uploads a version
-without serving it, then runs `hosting/check.js` against that version's preview URL in
-the Playwright image. On `main`, only a version that passes the check goes on the
-production routes. Each pull request from this repository stops after the check, which
-runs in Chromium only (`CHECK_BROWSERS`); the run on `main` uses Chromium, Firefox and
-WebKit. Only the first engine replays all 155 scenarios, which read the whole store: through
-the Worker, those reads count toward its daily request allowance. The pull request keeps the
-alias `pr-<number>`. Its version URL,
-`https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
-shows on the pull request as the `cloudflare` environment's deployment; the bare
-`https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/` redirects there (`public/_redirects`). Preview builds add
-`X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
-forks get no secrets, so they get no preview.
+`cloudflare.yml` deploys it on every push to `main`. The run builds the site, checks that
+the data this commit names is [published](#publish-the-data), and uploads a version without
+serving it. It then runs `hosting/check.js` against that version's URL in the Playwright
+image, in Chromium, Firefox and WebKit. Only a version that passes goes on the production
+routes. Only the first engine replays all 155 scenarios, which read the whole store: through
+the Worker, those reads count toward its daily request allowance.
+
+Each ready pull request from this repository gets its own preview Worker,
+`ramascene-explorer-pr-<number>`, deployed from `wrangler.preview.jsonc` and checked in
+Chromium only (`CHECK_BROWSERS`). Its only address,
+`https://ramascene-explorer-pr-<number>.<subdomain>.workers.dev/ramascene-explorer/`, shows
+on the pull request as the `cloudflare` environment's deployment; the bare address redirects
+there (`public/_redirects`). Version URLs are off for these Workers, so nothing else serves
+the build. Previews add `X-Robots-Tag: noindex` to their `_headers`; production is indexed.
+
+A preview is live only while its pull request is open and not a draft:
+
+- Drafts, pull requests from forks and bot pull requests (any author ending in `[bot]`, so
+  Renovate) get no preview job, so their code never runs with the token.
+- Before it deploys, the job reads the pull request again, so a late run cannot bring back
+  the preview of one that has closed or turned draft.
+- `preview-retire.yml` deletes the Worker through the Cloudflare API when the pull request
+  closes, merges or turns draft, and fails unless the address then answers 404. Its daily
+  sweep deletes any `ramascene-explorer-pr-<number>` Worker whose pull request is no longer
+  open and ready. To retire some by hand: `gh workflow run preview-retire.yml -f prs="12 13"`.
+
+Earlier pull requests uploaded versions of the production Worker with a `pr-<number>` alias.
+Those `pr-<number>-ramascene-explorer` URLs still serve their builds; the retire workflow
+does not touch the production Worker.
 
 The site sends COOP and COEP headers so browsers can use shared memory. Broad dense
 calculations can use the [threaded kernel](browser-engine.md#browser-threads).
@@ -112,16 +129,18 @@ The Worker streams it from the `ramascene-explorer-data` R2 bucket at the same
 `data/embodied.parquet` URL. Its R2 key includes the checksum from `results.json`,
 so an older deployment keeps reading its own dataset.
 
-Nothing deletes those older objects, so each data change leaves one in the bucket
+No workflow deletes those older objects, so each data change leaves one in the bucket
 (about 52 MB). Keep it while you might roll back to a version that reads it. After that,
-find its checksum in the history of `data/embodied.sha256` and delete it:
+find its checksum in the history of `data/embodied.sha256` and delete it with your own
+login (the workflows' tokens are not meant for this):
 
 ```sh
 git log -p --format=%h -- data/embodied.sha256
 pnpm exec wrangler r2 object delete "ramascene-explorer-data/embodied/<old sha256>.parquet" --remote
 ```
 
-Never delete the key the current `results.json` names: the live site reads it.
+Never delete the key the current `results.json` names: the live site reads it, and every
+deploy checks it is there.
 
 The local Workers asset server returns whole files for range requests.
 The Worker therefore routes Zarr store reads through Cloudflare's Cache API,
@@ -141,8 +160,43 @@ Set up once:
 2. Create a `cloudflare` GitHub environment with the secret `CLOUDFLARE_API_TOKEN`, and set
    the repository variable `CLOUDFLARE_ACCOUNT_ID`. The environment allows every branch,
    because pull requests deploy previews. Scope the token to the account with Workers
-   Scripts Write and Workers R2 Storage Write, and to the simonvanlierde.com zone with
-   Workers Routes Write. Local OAuth login does not configure GitHub Actions.
+   Scripts Write, and to the simonvanlierde.com zone with Workers Routes Write. It needs no
+   R2 permission: the deploys never write to the bucket. Local OAuth login does not
+   configure GitHub Actions.
+3. Set up [data publishing](#publish-the-data).
+
+## Publish the data
+
+`data.yml` puts a data release's files in the `ramascene-explorer-data` bucket. It runs when
+a `data-*` release is published, or by hand:
+`gh workflow run data.yml --ref <tag> -f tag=<tag>`. The tag's commit must contain
+`data.yml`: `data-2011` and `data-2011-r2` predate it, so their data, already in the bucket,
+can only be published again through a new `data-*` release. It checks the release files against the
+committed `data/embodied.sha256` and `data/browser-engine-zarr.sha256` of the commit it runs
+on, and skips a release file with another checksum, such as an older Parquet on the same
+release. It then uploads through R2's S3 API:
+
+- the Parquet file as `embodied/<sha256>.parquet`, and
+- the browser store as `browser-engine/store-<hash>/...`, eight files at a time, then the
+  `browser-engine/store-<hash>/.complete` marker last, so the marker means the store is whole.
+
+All of them get an immutable `Cache-Control`. Each key is written once (`If-None-Match: *`).
+When a key is already there, the run passes only if the object has the same size, and the
+same SHA-256 where its metadata stores one; anything else fails the run. Nothing is deleted.
+
+Every deploy and preview checks, over HTTPS on `DATA_ORIGIN`, that the Parquet file and the
+store's `.complete` marker its commit names are there. If not, it fails with "the data for
+this commit is not published". So publish a data release, and let `data.yml` finish, before
+you merge the commit that reads it.
+
+Set up once:
+
+1. R2 → Manage API tokens → Create Account API token
+   (`https://dash.cloudflare.com/<account id>/r2/api-tokens`): Object Read & Write, applied
+   to the `ramascene-explorer-data` bucket only.
+2. Create a `data` GitHub environment whose deployment policy allows the tag pattern `data-*`
+   only, with the secrets `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` from that token, and
+   the variable `R2_ACCOUNT_ID` (the same account ID as `CLOUDFLARE_ACCOUNT_ID`).
 
 ## Data host
 
@@ -151,9 +205,8 @@ The Worker counts every request it runs, refused ones included, and the free pla
 the Worker caps how many scenarios a day the site can run. The data can come from R2
 directly instead, with no Worker in the path:
 
-- `cloudflare.yml` uploads the Parquet file as `embodied/<sha256>.parquet` and the browser
-  store as `browser-engine/store-<hash>/...`, both with an immutable `Cache-Control`. A store
-  goes up once: the `.complete` marker, written last, tells later runs it is all there.
+- [`data.yml`](#publish-the-data) puts the Parquet file and the browser store in the bucket
+  under their hashes.
 - The page needs CORS, because it is cross-origin isolated. The data is public, so any origin
   may read it, previews on `workers.dev` included.
 - With the repository variable `DATA_ORIGIN` set (for example
@@ -175,8 +228,7 @@ Set up once:
    `Access-Control-Allow-Origin` to `*` and `Access-Control-Expose-Headers` to
    `Content-Range, ETag`. Leave the bucket without a CORS policy.
 4. Caching → Configuration → Custom Purge → Hostname → `ramascene-data.simonvanlierde.com`.
-5. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
-   `gh workflow run cloudflare.yml --ref main`.
+5. Set the `DATA_ORIGIN` variable and run `gh workflow run cloudflare.yml --ref main`.
 
 R2 adds CORS headers only when it answers a read itself, and the edge can serve a copy cached
 without them for a year; that broke production once. The response-header rule sets the
@@ -184,16 +236,18 @@ headers on every answer, cached ones included, so the CORS headers have one sour
 sends no preflight requests (single-range reads need none), so R2 never has to answer
 `OPTIONS`. `hosting/check.js` reads each data file without `Origin`, with the version's
 origin and with production's, and fails on a missing header.
-To go back to the Worker, delete the variable and run the workflow again: every version still
-ships the store, and the Worker still serves the Parquet.
+To go back to the Worker, drop `VITE_DATA_ORIGIN` from the build step in `cloudflare.yml` and
+run the workflow again: every version still ships the store, and the Worker still serves the
+Parquet. Keep the variable, which the published-data check reads.
 Cache misses are R2 reads (Class B operations). A second input-output database is a new
 upload under its own keys, with no change to the Worker.
 
 Old stores stay in the bucket too, about 770 MB each. To delete one the live manifest does not
-name, delete its `browser-engine/store-<hash>/.complete` marker first, so a later run uploads
-it again in full, then the objects under that prefix.
+name, delete its `browser-engine/store-<hash>/.complete` marker first, so no deploy takes the
+store as whole while you delete it, then the objects under that prefix. To bring it back, run
+`data.yml` for its release again.
 
-Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
+CI runs `hosting/check.js` against the
 local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
 covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
 isolation, the map and a custom calculation in Chromium, Firefox and WebKit, and the 155
@@ -207,7 +261,7 @@ pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local
 node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another terminal
 ```
 
-Pass a preview's version URL instead to check a pull request's deployment, as `cloudflare.yml` does.
+Pass a preview's or a version's URL instead to check that deployment, as `cloudflare.yml` does.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
 
 SSL/TLS on the zone stays Full, not Full (strict): GitHub's certificate renewal can fail
