@@ -516,6 +516,10 @@ export function taperGlyph(v, widthK, x1, dir) {
 // largest plus one "other regions" node; the middle column is the sections in
 // the selection with any flow. Returns nodes and ribbon paths in a width ×
 // height box.
+// layout units the longest section label takes, with its 4-unit gap, on a 360 px
+// phone, where the text scales down least (164 measured for "Electricity, gas, water")
+export const SANKEY_LABEL_ROOM = 170;
+
 export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {}) {
 	const { vals } = sum;
 	const secs = [...sel.on].filter((q) => sum.sec[q] > 0).sort((a, b) => sum.sec[b] - sum.sec[a]);
@@ -542,10 +546,12 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {})
 	const nw = 9;
 	// release mirrors consumption: the selected country is one node at the edge,
 	// and the industry labels face it, over the bands that fan into it. The
-	// sections sit midway, so both stages get the same width for their links.
+	// sections sit midway, so both stages get the same width for their links,
+	// unless that leaves the labels less than SANKEY_LABEL_ROOM before the far column.
 	const xL = inDir ? 132 : 6;
 	const xR = inDir ? width - nw - 6 : width - 132 - nw;
-	const xM = Math.round((xL + xR) / 2);
+	const midway = Math.round((xL + xR) / 2);
+	const xM = inDir ? Math.min(midway, xR - SANKEY_LABEL_ROOM - nw) : Math.max(midway, xL + nw + SANKEY_LABEL_ROOM);
 	const total = sum.total || 1;
 	const scale = (c) => (height - top0 - gap * (c.length - 1)) / total;
 	const stack = (c) => {

@@ -3,7 +3,16 @@ import { test } from "node:test";
 import fc from "fast-check";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../src/lib/embodied.js";
-import { arc, bandGeometry, SECTION_SHORT, sankeyLayout, summarise, taper, taperGlyph } from "../src/lib/flows.js";
+import {
+	arc,
+	bandGeometry,
+	SANKEY_LABEL_ROOM,
+	SECTION_SHORT,
+	sankeyLayout,
+	summarise,
+	taper,
+	taperGlyph,
+} from "../src/lib/flows.js";
 
 // Same pinned seed as the property tests, so Stryker sees the same inputs every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });
@@ -444,13 +453,18 @@ test("the Sankey draws into the box it is given", () => {
 	assert.equal(build({ who: 0, dir: "in", on: ALL }).lay.height, 420);
 });
 
-test("both stages of the Sankey get the same width for their links, however wide the box", () => {
+test("both Sankey stages get the same link width once the section labels fit, and the labels always do", () => {
 	for (const dir of ["in", "out"])
-		for (const width of [452, 600, 853]) {
+		for (const width of [452, 547, 600, 853]) {
 			const { lay } = build({ who: 0, dir, on: ALL }, { width, height: 420 });
 			const first = lay.x.M - (lay.x.L + lay.nw);
 			const second = lay.x.R - (lay.x.M + lay.nw);
-			assert.ok(Math.abs(first - second) <= 1, `${dir} at ${width}: ${first} vs ${second}`);
+			// the labels sit between the sections and the selected country's column
+			assert.ok(
+				(dir === "in" ? second : first) >= SANKEY_LABEL_ROOM,
+				`${dir} at ${width}: labels get ${dir === "in" ? second : first}`,
+			);
+			if (width >= 547) assert.ok(Math.abs(first - second) <= 1, `${dir} at ${width}: ${first} vs ${second}`);
 		}
 });
 
