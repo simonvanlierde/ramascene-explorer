@@ -143,10 +143,10 @@ for (const map of ["globe", "flat"])
 	});
 
 // Bands meet at the selected country; once a turn puts it behind the globe, they would
-// run across the far side, so none is drawn, like the ring around it.
+// run across the far side, so each ends at the horizon instead, and the ring goes.
 // The published flows, not the fixture: their partners span the world, so some stay in
 // view when the selection has turned away.
-test("the globe draws no bands while the selection is behind it", async ({ page }) => {
+test("the globe's bands end at the horizon while the selection is behind it", async ({ page }) => {
 	await page.goto("?map=globe");
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await page.waitForTimeout(1000); // the turn to the opening country is over
@@ -178,6 +178,19 @@ test("the globe draws no bands while the selection is behind it", async ({ page 
 		at("pointerup", 520);
 		await frames(500);
 	});
-	await expect(page.locator(".mapc .ring")).toHaveAttribute("opacity", "0");
-	await expect(page.locator(".bands path")).toHaveCount(0);
+	await expect(page.locator(".mapc .ring")).toHaveCount(0);
+	// the band's selection end is the middle of its outline (one edge out, the other back):
+	// halfway between the two edges' ends, on the horizon, it sits on the globe's outline
+	const gaps = await page.locator("svg.map").evaluate((svg) => {
+		const globe = svg.querySelector(":scope > path").getBBox();
+		const [cx, cy, r] = [globe.x + globe.width / 2, globe.y + globe.height / 2, globe.width / 2];
+		return [...svg.querySelectorAll(".bands path")].map((band) => {
+			const points = band.getAttribute("d").slice(1, -1).split("L");
+			const n = points.length / 2;
+			const [[x1, y1], [x2, y2]] = [points[n - 1], points[n]].map((p) => p.split(",").map(Number));
+			return Math.abs(Math.hypot((x1 + x2) / 2 - cx, (y1 + y2) / 2 - cy) - r);
+		});
+	});
+	expect(gaps.length).toBeGreaterThan(0);
+	for (const gap of gaps) expect(gap).toBeLessThan(4);
 });

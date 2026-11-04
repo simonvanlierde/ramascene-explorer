@@ -11,6 +11,8 @@
   --ink: #1f2a33;
   --mut: #5c6873;
   --rule: #e0e4e7;
+  /* the globe's edge shading, so it reads as a sphere; kept faint, since the fills are data */
+  --limb: rgb(31 42 51 / 0.09);
   --soft: #eef1f3;
   --tint: #e3e9ee;
   --tint-hover: #d5dee5;
@@ -51,6 +53,7 @@
   --ink: #e3e8ec;
   --mut: #9ba7b1;
   --rule: #2f383f;
+  --limb: rgb(0 0 0 / 0.32);
   --soft: #242c32;
   --tint: #2b343b;
   --tint-hover: #36414a;
@@ -862,6 +865,12 @@ svg.map.live .rg {
   stroke-width: 0.6;
   stroke-linejoin: round;
   pointer-events: none;
+}
+.limb {
+  pointer-events: none;
+}
+.limb stop {
+  stop-color: var(--limb);
 }
 .ring {
   fill: var(--halo);

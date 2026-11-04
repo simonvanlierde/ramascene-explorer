@@ -20,6 +20,7 @@ import {
 	amountText,
 	arc,
 	bandGeometry,
+	horizonBands,
 	bandPartners,
 	changeArm,
 	divBand,
@@ -143,22 +144,41 @@ const geom = $derived.by(() => {
 	const B = proj(self);
 	const shown = visible(self);
 	const lines = [];
-	// the bands meet at the selection: behind the globe, they would cross the far side
-	// (a projected point is not clipped), so none is drawn, like the ring
-	for (const k of shown ? bandPartners(sum.bands, ui.who, anchors) : []) {
+	for (const k of bandPartners(sum.bands, ui.who, anchors)) {
 		const A = shapes[k].at;
 		let P;
+		let ts;
 		if (alpha > 0.5) {
+			// only the stretch of the great circle in view is drawn: a projected point
+			// behind the globe is not clipped, it lands mirrored on the front
 			const ip = geoInterpolate(A, self);
-			// a partner over the horizon: its band starts where the great circle comes into view
-			const t0 = STEPS.find((t) => visible(ip(t))) ?? 1;
-			P = STEPS.map((t) => proj(ip(t0 + (1 - t0) * t)));
+			const seen = STEPS.filter((t) => visible(ip(t)));
+			if (!seen.length) continue;
+			const a = horizon(ip, seen[0], -1);
+			const b = horizon(ip, seen.at(-1), 1);
+			ts = STEPS.map((t) => a + (b - a) * t);
+			P = ts.map((t) => proj(ip(t)));
 		} else P = arc(proj(A), B);
 		if (P.some((p) => !p)) continue;
-		lines.push({ k, v: sum.vals[k], P });
+		lines.push({ k, v: sum.vals[k], P, ts });
 	}
+	// with the selection behind the globe, the bands end at the horizon, without the ring
+	if (!shown) return { R: 0, bands: horizonBands(lines, { k: widthK, dir: ui.dir }), B, shown };
 	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown };
 });
+// The t nearest the horizon between the step t, in view, and the next step toward
+// sign, found by halving the gap: a visible stretch of a short great circle is one piece.
+function horizon(ip, t, sign) {
+	let inside = t;
+	let outside = t + sign / (STEPS.length - 1);
+	if (outside < 0 || outside > 1) return t;
+	for (let i = 0; i < 8; i++) {
+		const m = (inside + outside) / 2;
+		if (visible(ip(m))) inside = m;
+		else outside = m;
+	}
+	return inside;
+}
 // The boxes of what floats on the map (the chips, the zoom, the legend and the
 // note), in view px, so no label goes under them.
 let mapv = $state();
@@ -588,6 +608,15 @@ const unit = $derived(wording(ui.indicator).unit);
 					/>
 				{/each}
 			</g>
+			<!-- shading toward the globe's edge, fading in with the morph; flat at the centre,
+			     so the selected country's fill and the legend's colours match there -->
+			{#if alpha > 0.5}
+				<radialGradient id="limb-g" class="limb">
+					<stop offset="0.6" stop-opacity="0" />
+					<stop offset="1" />
+				</radialGradient>
+				<path class="limb" d={sphere} fill="url(#limb-g)" opacity={(alpha - 0.5) * 2} />
+			{/if}
 			{#if reveal < 1}
 				<defs>
 					<radialGradient id="reveal-g" gradientUnits="userSpaceOnUse" cx={geom.B[0]} cy={geom.B[1]} r={revealR}>

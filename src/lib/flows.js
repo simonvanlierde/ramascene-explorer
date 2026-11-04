@@ -433,21 +433,12 @@ export function bandGeometry(lines, B, { k: widthK, dir, minWidth = 0.8 }) {
 			const f = (i / n) ** 3;
 			return [pt[0] + (E[0] - B[0]) * f, pt[1] + (E[1] - B[1]) * f];
 		});
-		const L = [];
-		const Rt = [];
-		const widths = [];
-		Q.forEach((pt, i) => {
-			const t = i / n;
-			const a = Q[Math.max(0, i - 1)];
-			const c = Q[Math.min(n, i + 1)];
-			const dx = c[0] - a[0];
-			const dy = c[1] - a[1];
-			const h = Math.hypot(dx, dy) || 1;
-			const hw = (w / 2) * taper(dir === "in" ? t : 1 - t);
-			widths.push(2 * hw);
-			L.push([pt[0] - (dy / h) * hw, pt[1] + (dx / h) * hw]);
-			Rt.push([pt[0] + (dy / h) * hw, pt[1] - (dx / h) * hw]);
-		});
+		const { L, Rt, widths } = ribbon(
+			Q,
+			w,
+			dir,
+			Q.map((_, i) => i / n),
+		);
 		// the collar end sits on the circle, as wide as the band is there
 		const half = widths[n] / (2 * R);
 		const e1 = [B[0] + R * Math.cos(p - half), B[1] + R * Math.sin(p - half)];
@@ -457,10 +448,42 @@ export function bandGeometry(lines, B, { k: widthK, dir, minWidth = 0.8 }) {
 			Math.hypot(L[n - 1][0] - e1[0], L[n - 1][1] - e1[1]) < Math.hypot(L[n - 1][0] - e2[0], L[n - 1][1] - e2[1]);
 		L[n] = near ? e1 : e2;
 		Rt[n] = near ? e2 : e1;
-		const xy = (q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`;
-		return { k, v, widths, d: `M${L.map(xy).join("L")}L${Rt.reverse().map(xy).join("L")}Z` };
+		return { k, v, widths, d: outline(L, Rt) };
 	});
 	return { R, bands };
+}
+
+// The two edges of a tapered band along the points Q. ts: where each point sits along
+// the whole band, 0 at the partner and 1 at the selected country.
+function ribbon(Q, w, dir, ts) {
+	const n = Q.length - 1;
+	const L = [];
+	const Rt = [];
+	const widths = [];
+	Q.forEach((pt, i) => {
+		const a = Q[Math.max(0, i - 1)];
+		const c = Q[Math.min(n, i + 1)];
+		const dx = c[0] - a[0];
+		const dy = c[1] - a[1];
+		const h = Math.hypot(dx, dy) || 1;
+		const hw = (w / 2) * taper(dir === "in" ? ts[i] : 1 - ts[i]);
+		widths.push(2 * hw);
+		L.push([pt[0] - (dy / h) * hw, pt[1] + (dx / h) * hw]);
+		Rt.push([pt[0] + (dy / h) * hw, pt[1] - (dx / h) * hw]);
+	});
+	return { L, Rt, widths };
+}
+const xy = (q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`;
+const outline = (L, Rt) => `M${L.map(xy).join("L")}L${[...Rt].reverse().map(xy).join("L")}Z`;
+
+// Bands whose selected country is behind the globe: each runs from its partner to the
+// horizon, as wide there as it would be at that point of the whole band, with no collar.
+// lines: [{k, v, P, ts}], P the stretch in view and ts each point's place along the band.
+export function horizonBands(lines, { k: widthK, dir, minWidth = 0.8 }) {
+	return lines.map(({ k, v, P, ts }) => {
+		const { L, Rt, widths } = ribbon(P, Math.max(minWidth, v * widthK), dir, ts);
+		return { k, v, widths, d: outline(L, Rt) };
+	});
 }
 
 // Quadratic arc from a to c bowed upwards: the flat map's centreline.
