@@ -114,7 +114,7 @@ is one product from one producing country. Manufacturing from every country used
 and the card says so before you run it. Choose a narrower product, fewer producing countries, or
 fewer industries or regions that use it, or use the job API.
 
-Above 5 MB, the card says how much Run will download.
+Above 5 MB, the card says how much the selection downloads.
 While it runs, the card shows the seconds elapsed and a **Cancel** button.
 A finished custom scenario replaces the map's scenario, with its own baseline and provenance.
 **Details → Method** lists its totals by producing region.

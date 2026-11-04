@@ -89,7 +89,7 @@ const planned = $derived.by(() => {
 });
 const tooBroad = $derived(planned.tooBroad ?? "");
 // said only above 5 MB, where the download is what a reader on a phone may wait for
-const download = $derived(planned.download > 5e6 ? `Run downloads about ${fmt(planned.download / 1e6)} MB of data.` : "");
+const download = $derived(planned.download > 5e6 ? `This selection downloads about ${fmt(planned.download / 1e6)} MB of data.` : "");
 
 function say(text, bad = false) {
 	message = text;

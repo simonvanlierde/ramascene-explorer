@@ -97,7 +97,12 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "Set the CLOUDFLARE_API_TOKEN secret on the cloudflare environment"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Set the CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
-          key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
+          # The key is the file's own hash: a results.json from another run must not
+          # overwrite an immutable object under its name.
+          sha=$(sha256sum data/embodied.parquet | cut -d' ' -f1)
+          test "$sha" = "$(node -p 'require("./data/results.json").provenance.embodied.sha256')" \
+            || { echo "data/results.json names other embodied flows than data/embodied.parquet"; exit 1; }
+          key="embodied/$sha.parquet"
           immutable="public, max-age=31536000, immutable"
           pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --remote \
             --cache-control "$immutable" --content-type application/vnd.apache.parquet

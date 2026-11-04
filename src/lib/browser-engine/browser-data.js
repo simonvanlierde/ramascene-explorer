@@ -177,8 +177,8 @@ export function matrixReader(info, readRange, options) {
 }
 
 // readRange(name, shard, start, end) is injected for local parity tests.
-// Browser calls stay on this data directory; the manifest cannot redirect a
-// matrix to another origin.
+// The manifest names the store by its hash only: the host it is read from is the
+// page's own directory or DATA_ORIGIN (storeBase), never one the manifest names.
 export function openEngine(meta, readRange) {
 	const C = meta.countries;
 	if (
@@ -229,8 +229,8 @@ export async function fetchEngine(base, origin = DATA_ORIGIN) {
 	);
 }
 
-// A range that takes longer than this has stalled: the run fails with that read named,
-// well before the page's 120 s deadline for the whole calculation.
+// A range read that takes longer than this fails the run with that read named. The
+// time counts from the fetch, so it includes waiting behind the run's other reads.
 const RANGE_TIMEOUT_MS = 60_000;
 
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
@@ -253,6 +253,11 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 				// deploy; on the data host, a store that was never uploaded, which hosting/check.js
 				// catches before main promotes a version.
 				throw new Error(`the browser data was updated: reload the page (${where})`);
+			}
+			if (response.status >= 500) {
+				await response.body?.cancel();
+				// The Worker answers a passing R2 or cache failure with 503; that is the host, not its setup.
+				throw new Error(`the data host failed: try again (${where}, status ${response.status})`);
 			}
 			if (
 				response.status !== 206 ||

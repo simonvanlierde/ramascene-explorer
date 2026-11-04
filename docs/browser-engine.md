@@ -23,7 +23,7 @@ last changed, so Run waits only for what is still loading. A new percentage read
 same rows, so it starts nothing new. One selection downloads at a time; while it does,
 only the newest waits, so quick changes waste at most one download. Run on a
 selection other than the one downloading stops that download first, so the two
-never share the memory budget. Above 5 MB, the form says how much Run will download.
+never share the memory budget. Above 5 MB, the form says how much the selection downloads.
 A selection changed while Run computes waits for Run to finish before it downloads.
 
 While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
@@ -100,7 +100,7 @@ written by zarr-python, so any Zarr v3 reader can open it:
 | `H` | 9,800 × 2,205 | 64 MB | rows J |
 | `X`, `Y` | 9,800 × 49 | 2.6 MB | rows K and F |
 
-Values are float32 with gzip. Storing float32 moves the 153 published
+Values are float32 with gzip. Storing float32 moves the 155 published
 scenarios by at most 5.5e-9 relative (the parity test prints its worst case); the arithmetic is float64 throughout.
 L is stored twice so the reader can take `L[K, J]` from K rows or J columns,
 whichever is less to download: the Europe steel scenarios change 49 rows that
@@ -146,7 +146,8 @@ tar -xf data/ramascene-browser-engine-zarr.tar -C data
 ```
 
 The build includes the data when present. CI and publishing download and verify
-the archive. The Pages build refuses a site of 1 GB or more. The browser fetches
+the archive. Cloudflare refuses any single asset over 25 MiB
+([publishing.md](publishing.md#cloudflare)). The browser fetches
 only the data a calculation needs. The desktop and phone smoke test bounds that
 transfer at 50 MB for the default steel scenario.
 
