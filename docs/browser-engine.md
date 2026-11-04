@@ -24,6 +24,7 @@ same rows, so it starts nothing new. One selection downloads at a time; while it
 only the newest waits, so quick changes waste at most one download. Run on a
 selection other than the one downloading stops that download first, so the two
 never share the memory budget. Above 5 MB, the form says how much Run will download.
+A selection changed while Run computes waits for Run to finish before it downloads.
 
 While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
 stops the worker and starts a fresh one. A worker that runs out of memory, or passes

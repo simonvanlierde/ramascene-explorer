@@ -66,6 +66,39 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 		await page.screenshot({ path: info.outputPath("browser-form.png"), fullPage: true });
 });
 
+test("after a trap stops the worker, the next Run computes in a fresh one", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	test.setTimeout(90_000);
+	// the first worker answers Run as a trap does; the catalogue and read-ahead stay real
+	let attempts = 0;
+	await page.route("**/assets/browser-worker-*.js", async (route) => {
+		attempts++;
+		if (attempts > 1) return route.continue();
+		const real = await (await route.fetch()).text();
+		return route.fulfill({
+			contentType: "text/javascript",
+			body: `${real}
+const real = self.onmessage;
+self.onmessage = (e) =>
+	e.data.body ? self.postMessage({ id: e.data.id, fatal: true, error: "the calculation stopped in this browser" }) : real(e);`,
+		});
+	});
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toHaveText("Scenario failed: the calculation stopped in this browser");
+	// the fresh worker starts quietly: the failure stays on screen until the next Run
+	await expect.poll(() => attempts).toBe(2);
+	await expect(page.locator("#live-state")).toHaveText("Scenario failed: the calculation stopped in this browser");
+	await expect(page.locator("#live-run")).toBeEnabled();
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	expect(attempts).toBe(2);
+});
+
 test("a failed kernel download leaves the form usable and Run loads it again", async ({ page, isMobile }) => {
 	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);

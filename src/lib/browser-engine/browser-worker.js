@@ -20,17 +20,22 @@ const kernelLoad = () =>
 	}));
 
 // Reads started for the selection the form shows, before Run: {key, reads, stop}. One
-// prefetch downloads at a time; while it does, only the newest selection waits.
+// prefetch downloads at a time; while it does, only the newest selection waits. While a
+// Run reads and computes, the newest selection waits for it, so the two never download
+// together and share the memory budget.
 let ahead = null;
 let waiting = null;
+let waitingBase;
 let prefetching = false;
+let running = 0;
 async function prefetch(base, steps) {
 	waiting = steps;
-	if (prefetching) return;
+	waitingBase = base;
+	if (prefetching || running) return;
 	prefetching = true;
 	try {
 		const [data] = await Promise.all([load(base), kernelLoad()]);
-		while (waiting) {
+		while (waiting && !running) {
 			const planned = plan(data.meta, waiting);
 			waiting = null;
 			const key = readKey(planned);
@@ -44,8 +49,8 @@ async function prefetch(base, steps) {
 		}
 	} catch {
 		// a selection the form will refuse, or a failed load: Run reports either
-	} finally {
 		waiting = null;
+	} finally {
 		prefetching = false;
 	}
 }
@@ -53,6 +58,7 @@ async function prefetch(base, steps) {
 self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	if (steps) return prefetch(base, steps);
 	let threaded = false;
+	let counted = false;
 	try {
 		const loading = load(base);
 		// the kernel loads alongside the data; this message keeps its own load, since a
@@ -91,6 +97,8 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 				self.postMessage({ id, retrySingle: true });
 				return;
 			}
+			running++;
+			counted = true;
 			let used = ahead;
 			ahead = null;
 			if (used && used.key !== readKey(plan(data.meta, body.model_details))) {
@@ -115,5 +123,8 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 				error: "the calculation stopped in this browser, likely out of memory; choose a narrower selection",
 			});
 		else self.postMessage({ id, error: e.message });
+	} finally {
+		// the last Run out starts the selection that waited for it
+		if (counted && --running === 0 && waiting) prefetch(waitingBase, waiting);
 	}
 };
