@@ -7,6 +7,8 @@ import { correction, fold } from "../../../engine/pkg/ramascene_engine.js";
 // The export stores float32, so a pivot this close to zero, relative to the
 // system's scale, cannot be told apart from a singular system.
 const STORED_EPSILON = 2 ** -23;
+// Flow totals: 3 indicators × 49 producers × 15 sections.
+export const FLOW_TOTALS = 2205;
 // H rows read and folded into the flows at once.
 const H_BATCH = 256;
 
@@ -70,7 +72,7 @@ export function plan(meta, steps) {
 	if (!Array.isArray(steps) || !steps.length || steps.length > 10)
 		throw new Error("a scenario needs 1 to 10 interventions");
 	const C = meta.countries;
-	const F = 2205; // flow totals: 3 indicators × 49 producers × 15 sections
+	const F = FLOW_TOTALS;
 	const edits = steps.map((step) => selection(meta, step)).filter((s) => s.factor !== 1);
 	const technical = edits.filter((s) => !s.final);
 	const sorted = (list) => [...new Set(list)].sort((a, b) => a - b);
@@ -135,11 +137,6 @@ function change(a, technical, rows, columns) {
 	return a;
 }
 
-// Flows for the changed economy, indicator × producer × section × consumer, flat.
-// X' = X₀ + L[:,R] W with W = (I − ΔA L[K,R])⁻¹ ΔA X₀[K,:] = ΔA (I − L[K,R] ΔA)⁻¹ X₀[K,:],
-// solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
-// The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
-// flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
 // What a plan reads; two plans with the same key read the same slices.
 export const readKey = ({ rows, columns, finals, J, byRows }) => JSON.stringify([rows, columns, finals, J, byRows]);
 
@@ -166,6 +163,11 @@ export function startReads({ read }, { rows, columns, finals, J, byRows }, signa
 	return reads;
 }
 
+// Flows for the changed economy, indicator × producer × section × consumer, flat.
+// X' = X₀ + L[:,R] W with W = (I − ΔA L[K,R])⁻¹ ΔA X₀[K,:] = ΔA (I − L[K,R] ΔA)⁻¹ X₀[K,:],
+// solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
+// The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
+// flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
 // ahead: {key, reads} started before Run for the selection the form showed (readKey,
 // startReads); used when this run's plan reads the same slices.
 export async function scenarioFlows(data, steps, ahead = null, kernel = { correction, fold }) {
