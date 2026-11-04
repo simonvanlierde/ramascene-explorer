@@ -387,7 +387,7 @@ test("a phone puts the content first and the selection in a sheet", async ({ pag
 test("the honesty notes stay on screen: Published scenarios · not forecasts, and 'would have'", async ({ page }) => {
 	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
 	await ready(page);
-	await expect(page.locator(".pill.basis")).toContainText("Published scenarios · not forecasts");
+	await expect(page.locator(".pill.basis")).toContainText("2011 · Published scenarios · not forecasts");
 	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
 	await expect(page.locator("#headline")).toContainText("would have");
 });
