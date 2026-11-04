@@ -52,6 +52,22 @@ test("a prefetch sends the selection without an id, and a stopped client sends n
 	assert.equal(worker.sent.length, 1);
 });
 
+test("a worker script that does not load asks for a reload, one that throws does not", { timeout: 2000 }, async () => {
+	// after a deploy the tab's hashed worker files are gone, so the script never runs
+	const stale = browserClient();
+	const missing = stale.request();
+	FakeWorker.last.onerror(new Event("error"));
+	await assert.rejects(missing, /reload/i);
+	assert.equal(stale.outdated, true);
+
+	// a script that throws is a stopped worker, which a fresh one can replace
+	const client = browserClient();
+	const run = client.request();
+	FakeWorker.last.onerror(new ErrorEvent("error", { message: "startup failure" }));
+	await assert.rejects(run, /browser worker stopped/);
+	assert.equal(client.outdated, false);
+});
+
 test("a failed thread pool is terminated and pending requests retry on one thread", { timeout: 2000 }, async () => {
 	const client = browserClient();
 	const pool = FakeWorker.last;

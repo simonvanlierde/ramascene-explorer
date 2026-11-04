@@ -118,8 +118,10 @@ function connect({ quiet = false } = {}) {
 		},
 		(e) => {
 			if (attempt !== connection) return;
-			unreachable = true;
-			say(browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
+			// Try again would load the same missing worker files: only a reload helps
+			const outdated = browser && client?.outdated;
+			unreachable = !outdated;
+			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
 		},
 	);
 }

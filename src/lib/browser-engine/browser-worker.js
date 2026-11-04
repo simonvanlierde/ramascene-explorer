@@ -28,6 +28,13 @@ let waiting = null;
 let waitingBase;
 let prefetching = false;
 let running = 0;
+const sameReads = (meta, steps, key) => {
+	try {
+		return readKey(plan(meta, steps)) === key;
+	} catch {
+		return false; // a selection the form will refuse
+	}
+};
 async function prefetch(base, steps) {
 	waiting = steps;
 	waitingBase = base;
@@ -99,9 +106,12 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 			}
 			running++;
 			counted = true;
+			const key = readKey(plan(data.meta, body.model_details));
+			// a waiting selection this run reads already would only download again for nothing
+			if (waiting && sameReads(data.meta, waiting, key)) waiting = null;
 			let used = ahead;
 			ahead = null;
-			if (used && used.key !== readKey(plan(data.meta, body.model_details))) {
+			if (used && used.key !== key) {
 				// another selection's reads beside this run's could pass the memory budget together
 				used.stop();
 				await Promise.allSettled(Object.values(used.reads));

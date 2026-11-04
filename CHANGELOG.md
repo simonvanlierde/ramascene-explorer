@@ -6,6 +6,15 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- When one array of a browser run fails to load, the run stops its other downloads before
+  the page starts reading the next selection, so the two never download at the same time.
+- Running the selection that was queued to download ahead of Run no longer downloads it
+  again after the run.
+- A tab opened before a deploy says the page was updated and asks for a reload, instead of
+  offering Try again, which loaded the same missing worker file.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added

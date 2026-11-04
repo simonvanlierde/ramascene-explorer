@@ -73,6 +73,18 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 		await page.screenshot({ path: info.outputPath("browser-form.png"), fullPage: true });
 });
 
+test("a worker file gone after a deploy asks for a reload, not Try again", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	await page.route("**/assets/browser-worker-*.js", (route) => route.fulfill({ status: 404, body: "" }));
+	await page.goto("./");
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toContainText("This page was updated since it opened. Reload it");
+	await expect(page.locator("#live-retry")).toHaveCount(0);
+});
+
 test("after a trap stops the worker, the next Run computes in a fresh one", async ({ page, isMobile }) => {
 	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(90_000);
