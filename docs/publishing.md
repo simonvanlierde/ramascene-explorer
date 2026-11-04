@@ -96,7 +96,8 @@ WebKit. Only the first engine replays all 155 scenarios, which read the whole st
 the Worker, those reads count toward its daily request allowance. The pull request keeps the
 alias `pr-<number>`. Its version URL,
 `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
-shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
+shows on the pull request as the `cloudflare` environment's deployment; the bare
+`https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/` redirects there (`public/_redirects`). Preview builds add
 `X-Robots-Tag: noindex` to their `_headers`; production is indexed. Pull requests from
 forks get no secrets, so they get no preview.
 
