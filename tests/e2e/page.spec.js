@@ -602,6 +602,8 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	expect((await page.locator(".skip").boundingBox()).height).toBeGreaterThanOrEqual(44);
 	await page.locator(".dock .filters").click();
 	await expect(page.locator("#side")).toBeVisible();
+	// the sheet is visible from the start of its slide-in; measure once it has stopped
+	await page.locator("#side").evaluate((e) => Promise.all(e.getAnimations().map((a) => a.finished)));
 	const rail = await heights("#side .rail .t");
 	for (const [i, b] of rail.entries()) {
 		expect(b.h, `rail tab ${b.name}`).toBeGreaterThanOrEqual(36 - px);
