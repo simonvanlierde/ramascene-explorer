@@ -3,7 +3,8 @@
 // documents the layout; the footer's "ramascene" metadata names the runs,
 // countries, sections and indicators. No DOM here, so node --test covers it.
 
-import { asyncBufferFromUrl, parquetMetadataAsync, parquetRead } from "hyparquet";
+import { parquetMetadataAsync, parquetRead } from "hyparquet";
+import { fetchRange } from "./range.js";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
 // The footer is about 90 kB (run names, countries, checks, provenance);
@@ -45,11 +46,20 @@ export async function openEmbodied(file) {
 // byteLength (results.json's provenance.embodied.bytes) saves the HEAD request
 // that would otherwise learn the size before the footer can be read.
 export async function openEmbodiedUrl(url, byteLength) {
-	// No slice cache: the page keeps each decoded run, and a cache would keep a
-	// failed request too, so "pick it again" could never succeed. no-cache
-	// revalidates, so a redeploy never mixes old row groups with a new footer.
-	const open = async (n) =>
-		openEmbodied(await asyncBufferFromUrl({ url, byteLength: n, requestInit: { cache: "no-cache" } }));
+	const href = new URL(url, globalThis.location?.href).href;
+	// No slice cache: the page keeps each decoded run, and a cache would keep a failed
+	// request too, so "pick it again" could never succeed. fetchRange gives each read a
+	// stall timer and one retry, and checks the file size in Content-Range: a cached range
+	// of an older file of another size fails, not mixed with a new footer. The published
+	// file's URL carries its hash, so only a file next to the page can change in place.
+	const open = async (n) => {
+		if (n === undefined) {
+			const head = await fetch(href, { method: "HEAD", cache: "no-cache" });
+			if (!head.ok) throw new Error(`embodied flows: ${head.status}`);
+			n = Number(head.headers.get("Content-Length"));
+		}
+		return openEmbodied({ byteLength: n, slice: (start, end = n) => fetchRange(href, start, end, n) });
+	};
 	if (byteLength === undefined) return open();
 	// A size smaller than the file (results.json and the Parquet file from
 	// different runs) finds no footer; the server's own size then lets the page

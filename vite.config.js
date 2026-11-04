@@ -13,8 +13,8 @@ const staticFiles = {
 		for (const path of STATIC.filter((p) => existsSync(p))) cpSync(path, `${dir}/${path}`, { recursive: true });
 	},
 	// The synthetic fixtures never ship, but the preview serves them for the
-	// browser tests. The Parquet answers HEAD with its length and GET in full,
-	// which the reader falls back to when a server ignores Range.
+	// browser tests. The Parquet answers a single range, as every data host does:
+	// the reader refuses a server that ignores Range.
 	configurePreviewServer(server) {
 		for (const [path, type] of [
 			["tests/fixture.json", "application/json"],
@@ -23,8 +23,16 @@ const staticFiles = {
 			server.middlewares.use(`/${path}`, (req, res) => {
 				const body = readFileSync(path);
 				res.setHeader("Content-Type", type);
-				res.setHeader("Content-Length", body.length);
-				res.end(req.method === "HEAD" ? undefined : body);
+				const [, a, b] = req.headers.range?.match(/^bytes=(\d+)-(\d*)$/) ?? [];
+				if (a === undefined) {
+					res.setHeader("Content-Length", body.length);
+					res.end(req.method === "HEAD" ? undefined : body);
+					return;
+				}
+				const end = Math.min(b ? Number(b) + 1 : body.length, body.length);
+				res.statusCode = 206;
+				res.setHeader("Content-Range", `bytes ${a}-${end - 1}/${body.length}`);
+				res.end(body.subarray(Number(a), end));
 			});
 	},
 };

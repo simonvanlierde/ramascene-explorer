@@ -113,6 +113,9 @@ test("a failed range read can be retried", async () => {
 });
 
 // A fetch over the fixture's bytes that serves HEAD and range GETs and logs each request.
+// in the page, a relative URL resolves against the page's address
+const FIXTURE_URL = "https://example.test/data/fixture-embodied.parquet";
+
 function served() {
 	const bytes = readFileSync(path("./fixture-embodied.parquet"));
 	const log = [];
@@ -123,7 +126,8 @@ function served() {
 		const [, a, b] = new Headers(init.headers).get("Range").match(/bytes=(\d+)-(\d*)/);
 		const end = b ? Number(b) + 1 : bytes.length;
 		if (Number(a) >= bytes.length) return new Response(null, { status: 416 });
-		return new Response(bytes.subarray(Number(a), end), { status: 206 });
+		const headers = { "Content-Range": `bytes ${a}-${end - 1}/${bytes.length}` };
+		return new Response(bytes.subarray(Number(a), end), { status: 206, headers });
 	};
 	return { log, fetch, size: bytes.length };
 }
@@ -132,7 +136,7 @@ test("with the size from results.json the footer is the first request, without a
 	const server = served();
 	t.mock.method(globalThis, "fetch", server.fetch);
 	assert.equal(fixture.provenance.embodied.bytes, server.size);
-	const src = await openEmbodiedUrl("fixture-embodied.parquet", fixture.provenance.embodied.bytes);
+	const src = await openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes);
 	await readRun(src, "baseline");
 	assert.deepEqual(server.log, ["GET", "GET"]); // the footer, then the baseline
 });
@@ -140,10 +144,10 @@ test("with the size from results.json the footer is the first request, without a
 test("without a size, or with one too small for the file, the server is asked", async (t) => {
 	const server = served();
 	t.mock.method(globalThis, "fetch", server.fetch);
-	await openEmbodiedUrl("fixture-embodied.parquet");
+	await openEmbodiedUrl(FIXTURE_URL);
 	assert.deepEqual(server.log, ["HEAD", "GET"]);
 	server.log.length = 0;
-	const src = await openEmbodiedUrl("fixture-embodied.parquet", server.size - 1000);
+	const src = await openEmbodiedUrl(FIXTURE_URL, server.size - 1000);
 	assert.deepEqual(
 		src.meta.runs,
 		fixture.scenarios.map((s) => s.id),

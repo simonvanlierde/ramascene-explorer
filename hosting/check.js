@@ -60,9 +60,8 @@ const started = performance.now();
 const at = () => Math.round(performance.now() - started);
 // Records the page's and its workers' requests and console, so a failed wait prints what
 // the data reads were doing at that moment.
-function watch(page) {
+function watch(page, failed) {
 	const open = new Map();
-	const failed = [];
 	const odd = [];
 	const done = [];
 	const logs = [];
@@ -127,9 +126,10 @@ function watch(page) {
 for (const engine of names.map((n) => engines[n])) {
 	const browser = await engine.launch({ headless: true });
 	let dump = async () => {};
+	const failed = [];
 	try {
 		const page = await browser.newPage();
-		dump = watch(page);
+		dump = watch(page, failed);
 		await page.addInitScript(() => {
 			const Original = Worker;
 			const t0 = performance.now();
@@ -153,13 +153,13 @@ for (const engine of names.map((n) => engines[n])) {
 		});
 		await page.goto(url("").href);
 		assert.equal(await page.evaluate(() => crossOriginIsolated), true);
-		// a fresh preview's first load reads the flows from a cold edge
-		await expect(page.locator(".mapc .rg")).toHaveCount(49, { timeout: 30_000 });
+		// Every wait leaves room for one range read the data host leaves hanging: the page
+		// gives it 60 s, then tries it again (src/lib/range.js).
+		await expect(page.locator(".mapc .rg")).toHaveCount(49, { timeout: 90_000 });
 		await page.getByRole("button", { name: "What if…" }).first().click();
 		await page.locator("#live-open").click();
-		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 120_000 });
 		await page.locator("#live-run").click();
-		// the first Run reads its slices from a cold edge, slow from CI's runners
 		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1]);
 		await page.locator("#live-product").selectOption("5");
@@ -167,7 +167,7 @@ for (const engine of names.map((n) => engines[n])) {
 		await page.locator("#live-consumer").selectOption("5");
 		await page.locator("#live-consumed-reg").selectOption("1");
 		await page.locator("#live-run").click();
-		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 		const expected = await page.evaluate(() => Math.min(4, Math.max(1, (navigator.hardwareConcurrency || 2) - 1)));
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1, expected]);
 		if (engine !== engines[names[0]]) {
@@ -232,7 +232,7 @@ for (const engine of names.map((n) => engines[n])) {
 		if (engine === chromium) {
 			await page.close();
 			const fallback = await browser.newPage();
-			dump = watch(fallback);
+			dump = watch(fallback, failed);
 			await fallback.addInitScript(() => {
 				const Original = Worker;
 				globalThis.workerCount = 0;
@@ -257,7 +257,7 @@ for (const engine of names.map((n) => engines[n])) {
 			await fallback.getByRole("button", { name: "What if…" }).first().click();
 			await fallback.locator("#live-open").click();
 			await expect(fallback.locator("#live-state")).toHaveText("Ready to compute in this browser.", {
-				timeout: 60_000,
+				timeout: 120_000,
 			});
 			// The worker script has loaded. Interception also breaks the worker's cross-origin
 			// reads from the data host in Chromium, so it ends before the first one.
@@ -270,7 +270,7 @@ for (const engine of names.map((n) => engines[n])) {
 			])
 				await fallback.locator(`#live-${id}`).selectOption(value);
 			await fallback.locator("#live-run").click();
-			await expect(fallback.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+			await expect(fallback.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 			assert.deepEqual(await fallback.evaluate(() => [workerCount, lastThreads]), [expected > 1 ? 2 : 1, 1]);
 			console.log("chromium: failed pool terminated and calculation retried on one thread");
 		}
@@ -279,6 +279,8 @@ for (const engine of names.map((n) => engines[n])) {
 		await dump();
 		throw e;
 	} finally {
+		// a passing run lists the reads that failed and were tried again
+		for (const f of failed) console.log(`${engine.name()} request failed: ${f}`);
 		await browser.close();
 	}
 }

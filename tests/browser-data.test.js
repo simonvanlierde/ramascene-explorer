@@ -6,11 +6,11 @@ import "./engine-wasm.js";
 import {
 	arrayReader,
 	fetchEngine,
-	fetchRange,
 	matrixReader,
 	openEngine,
 	storeBase,
 } from "../src/lib/browser-engine/browser-data.js";
+import { fetchRange } from "../src/lib/range.js";
 
 const infos = JSON.parse(readFileSync(new URL("fixture-store/info.json", import.meta.url), "utf8"));
 const info = infos.M;
@@ -294,7 +294,7 @@ test("a slow body that keeps sending passes the stall timer, one that stops does
 	});
 	await assert.rejects(
 		fetchRange(url, 1, 3, 10, undefined, 20),
-		/\(TimeoutError: no data for 20 ms; \/A\/c\/0\/0 bytes 1-2, reading the body, after \d+ ms\)$/,
+		/\(TimeoutError: no data for 20 ms; \/A\/c\/0\/0 bytes 1-2, reading the body, after \d+ ms, second try\)$/,
 	);
 });
 
@@ -333,15 +333,42 @@ test("a range that stalls times out with its read named, and its own stop still 
 	});
 	await assert.rejects(
 		fetchRange(url, 1, 3, 10, undefined, 20),
-		/^Error: the browser data could not be read \(TimeoutError: .*; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms\)$/,
+		/^Error: the browser data could not be read \(TimeoutError: .*; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms, second try\)$/,
 	);
-	// a stall is not tried again: a second one would pass the page's deadline
-	assert.equal(stalls.mock.callCount(), 1);
+	assert.equal(stalls.mock.callCount(), 2);
 	await assert.rejects(fetchRange(url, 1, 3, 10, new AbortController().signal, 20), /TimeoutError: .*bytes 1-2/);
 	const controller = new AbortController();
 	const stopped = fetchRange(url, 1, 3, 10, controller.signal, 60_000);
 	controller.abort();
 	await assert.rejects(stopped, (e) => e === controller.signal.reason);
+});
+
+test("a request the host leaves unanswered, or answers without a body, is tried again", async (t) => {
+	const url = "https://example.test/A/c/0/0";
+	const ok = () => new Response("12", { status: 206, headers: { "Content-Range": "bytes 1-2/10" } });
+	const hang = (signal) =>
+		new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+	let calls = 0;
+	t.mock.method(globalThis, "fetch", (_url, { signal }) => (calls++ ? Promise.resolve(ok()) : hang(signal)));
+	assert.equal(new TextDecoder().decode(await fetchRange(url, 1, 3, 10, undefined, 20)), "12");
+	assert.equal(calls, 2);
+	// headers, then a body that never sends a byte
+	calls = 0;
+	t.mock.method(globalThis, "fetch", (_url, { signal }) =>
+		Promise.resolve(
+			calls++
+				? ok()
+				: new Response(
+						new ReadableStream({ start: (c) => signal.addEventListener("abort", () => c.error(signal.reason)) }),
+						{
+							status: 206,
+							headers: { "Content-Range": "bytes 1-2/10" },
+						},
+					),
+		),
+	);
+	assert.equal(new TextDecoder().decode(await fetchRange(url, 1, 3, 10, undefined, 20)), "12");
+	assert.equal(calls, 2);
 });
 
 test("rows from chunks of several rows come back in the order asked, with columns", async () => {
