@@ -213,6 +213,9 @@ test("a live run never inherits the published calculation checks", async ({ page
 	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	// the flow check covers the precomputed flows, not the job's
+	await expect(page.locator("#checks")).toBeVisible();
+	await expect(page.locator("#checks")).not.toContainText("flows the map draws");
 	await page.keyboard.press("Escape");
 	// the basis popover names the job API, not the precomputed file, as the source
 	await page.locator("#status .pill.basis").click();

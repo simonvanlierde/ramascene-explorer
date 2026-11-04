@@ -302,7 +302,7 @@ async function copyLink() {
 				</dl>
 			</section>
 		{/if}
-		<Provenance {data} {meta} {scenario} />
+		<Provenance {data} {meta} {scenario} {live} />
 	</div>
 
 </div>

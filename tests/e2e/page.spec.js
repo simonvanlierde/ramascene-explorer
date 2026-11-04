@@ -406,10 +406,25 @@ test("the basis pill says where the numbers come from, and Escape returns to it"
 	await page.keyboard.press("Escape");
 	await expect(pop).toHaveCount(0);
 	await expect(pill).toBeFocused();
+	// focus leaving the pill and its note closes the note
 	await pill.press("Enter");
+	await expect(pop).toBeVisible();
+	await pill.focus();
+	await page.keyboard.press("Shift+Tab");
+	await expect(pop).toHaveCount(0);
+	// a second press on the open pill closes it
+	await pill.click();
+	await pill.click();
+	await expect(pop).toHaveCount(0);
+	await pill.click();
+	// Safari moves focus to nothing on a mousedown on a button or link, which must not close
+	// the note before the click lands; Playwright's WebKit focuses them, so blur stands in
+	await page.evaluate(() => document.activeElement.blur());
+	await expect(pop).toBeVisible();
 	await pop.getByRole("button", { name: "Method and checks" }).click();
 	await expect(pop).toHaveCount(0);
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expect(page.locator("#checks")).toContainText("The flows the map draws add up to the engine's country totals");
 	// Details holds no footer of its own; Method keeps the reproduction details
 	await expect(page.locator(".pan footer")).toHaveCount(0);
 	await expect(page.locator("#provenance-panel")).toBeAttached();

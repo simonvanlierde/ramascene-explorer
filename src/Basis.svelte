@@ -33,16 +33,18 @@ function toMethod() {
 
 <svelte:window
 	onkeydown={(e) => open && e.key === "Escape" && (e.stopPropagation(), close())}
-	onclick={(e) => open && !e.target.closest(".basis-w") && close(false)}
+	onpointerdown={(e) => open && !e.target.closest(".basis-w") && close(false)}
 />
 
-<span class="basis-w">
+<!-- Focus leaving the pill and its note closes the note, so it never covers what has focus.
+     Safari does not focus a clicked button or link (relatedTarget is null), so a click
+     closes it only from outside, by the pointerdown above. -->
+<span class="basis-w" onfocusout={(e) => open && e.relatedTarget && !e.relatedTarget.closest(".basis-w") && close(false)}>
 	<button type="button" class="pill basis" bind:this={pill} aria-expanded={open} aria-controls="basis-pop" onclick={toggle}>
 		<span class="bx"><span class="ds">{d.name} · {data.base_year} · </span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
 		<svg class="chev" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 	</button>
 	{#if open}
-		<!-- Tab out of the popover closes it, so it never covers what has focus -->
 		<div
 			class="basis-pop"
 			id="basis-pop"
@@ -50,7 +52,6 @@ function toMethod() {
 			aria-labelledby="basis-title"
 			tabindex="-1"
 			bind:this={box}
-			onfocusout={(e) => !e.relatedTarget?.closest?.(".basis-w") && close(false)}
 		>
 			{#if live}
 				<p class="bt" id="basis-title">This run: {live.source.status}</p>
@@ -62,7 +63,7 @@ function toMethod() {
 				<p class="bt" id="basis-title">Where these numbers come from</p>
 				<dl>
 					<dt>Dataset</dt>
-					<dd>{d.name}, {d.year} · <a href="https://doi.org/{d.doi}" {...away}>doi:{d.doi}{newTab}</a></dd>
+					<dd>{d.name}, {d.year}{#if d.doi} · <a href="https://doi.org/{d.doi}" {...away}>doi:{d.doi}{newTab}</a>{/if}</dd>
 					<dt>Engine</dt>
 					<dd>RaMa-Scene {p.engine.label ?? shortCommit(p.engine.commit)}</dd>
 					<dt>Model</dt>

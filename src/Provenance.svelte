@@ -3,7 +3,8 @@ import { runSummary } from "./lib/explorer.js";
 
 // meta: the embodied flows' metadata, for their own check
 // scenario: the shown one, or the excluded record whose parameters are listed
-let { data, meta, scenario } = $props();
+// live: set while a custom run is on screen; the flows' own check does not cover it
+let { data, meta, scenario, live = null } = $props();
 
 const p = $derived(data.provenance);
 const e = $derived(p.engine);
@@ -71,7 +72,7 @@ const checks = $derived.by(() => {
 		],
 	];
 	// precompute writes no flows that fail this, so it is listed only when the flows recorded it
-	const flows = data.data_kind === "exiobase-v3" ? meta.checks?.producer_by_country : null;
+	const flows = !live && data.data_kind === "exiobase-v3" ? meta.checks?.producer_by_country : null;
 	if (flows) rows.push([flows.passed, "The flows the map draws add up to the engine's country totals within relative 1e-9."]);
 	if (run) rows.push([!run.failed, `${runSummary(run)}.`, run.failed ? `${run.failed} excluded` : "Passed"]);
 	return rows.map(([ok, text, verdict]) => [ok, text, verdict ?? (ok ? "Passed" : "Not passed")]);
