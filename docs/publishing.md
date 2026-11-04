@@ -169,20 +169,20 @@ Set up once:
 2. Caching → Cache Rules → hostname equals `ramascene-data.simonvanlierde.com`, Eligible for
    cache, edge TTL from the origin. Cloudflare caches only some file types by default, and the
    shards have no extension.
-3. Set the bucket's CORS rule:
-   `pnpm exec wrangler r2 bucket cors set ramascene-explorer-data --file hosting/r2-cors.json`.
-4. Rules → Transform Rules → Modify Response Header → hostname equals
-   `ramascene-data.simonvanlierde.com`: set `Access-Control-Allow-Origin` to `*` and
-   `Access-Control-Expose-Headers` to `Content-Range, ETag`. Then Caching → Configuration →
-   Purge Everything for that hostname (Custom Purge → Hostname).
+3. Rules → Overview → Create rule → Response Header Transform Rule (not the request-header
+   kind) → hostname equals `ramascene-data.simonvanlierde.com`: Set static
+   `Access-Control-Allow-Origin` to `*` and `Access-Control-Expose-Headers` to
+   `Content-Range, ETag`. Leave the bucket without a CORS policy.
+4. Caching → Configuration → Custom Purge → Hostname → `ramascene-data.simonvanlierde.com`.
 5. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
    `gh workflow run cloudflare.yml --ref main`.
 
-R2 adds CORS headers only when it answers a read itself, and the edge caches a copy per
-`Origin` value. A copy cached without the headers stays for a year, and the page cannot read
-that file; it broke production once. The response-header rule adds the headers to every
-answer, cached ones included. `hosting/check.js` reads each data file without `Origin`, with
-the version's origin and with production's, and fails on a missing header.
+R2 adds CORS headers only when it answers a read itself, and the edge can serve a copy cached
+without them for a year; that broke production once. The response-header rule sets the
+headers on every answer, cached ones included, so the CORS headers have one source. The page
+sends no preflight requests (single-range reads need none), so R2 never has to answer
+`OPTIONS`. `hosting/check.js` reads each data file without `Origin`, with the version's
+origin and with production's, and fails on a missing header.
 To go back to the Worker, delete the variable and run the workflow again: every version still
 ships the store, and the Worker still serves the Parquet.
 Cache misses are R2 reads (Class B operations). A second input-output database is a new
