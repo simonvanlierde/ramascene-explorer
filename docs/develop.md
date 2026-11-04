@@ -80,3 +80,9 @@ pnpm bench   # the page's per-selection work, with Vitest
 The benchmarks run on the small test fixtures and take microseconds, so CI
 doesn't run them: runner noise is bigger than any change they could show. Run
 them before and after a change to the code they cover.
+
+To compare two trees, check each out in its own worktree and run `pnpm bench`
+in both. Alternate the order each round (old, new, then new, old) for at least
+five rounds, and compare medians of the `mean` column, not single runs. When a
+tree has new fixtures or new benchmarks, run the old code on the new fixtures
+too, or a slowdown may only be the bigger input.
