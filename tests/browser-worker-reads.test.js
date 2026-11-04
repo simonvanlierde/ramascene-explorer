@@ -23,7 +23,8 @@ globalThis.fetch = async (url, { headers, signal } = {}) => {
 	if (!headers?.Range) return new Response(readFileSync(path));
 	fetches++;
 	const [start, end] = /bytes=(\d+)-(\d+)/.exec(headers.Range).slice(1).map(Number);
-	if (signal) await new Promise((resolve, reject) => held.push({ signal, resolve, reject }));
+	// posted: the worker's replies so far, to tell reads started before a Run's reply from after
+	if (signal) await new Promise((resolve, reject) => held.push({ signal, resolve, reject, posted: posted.length }));
 	if (!files.has(path)) files.set(path, openSync(path, "r"));
 	const fd = files.get(path);
 	const bytes = new Uint8Array(end - start + 1);
@@ -75,4 +76,28 @@ test("Run stops another selection's read-ahead and waits for it before reading i
 	const run = posted.find((m) => m.id === 1);
 	assert.ok(run?.value, run?.error);
 	assert.ok(fetches > before, "Run read nothing of its own");
+});
+
+test("a selection made while Run computes starts its reads after Run", {
+	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
+}, async (t) => {
+	t.after(release);
+	self.onmessage({ data: { base, ahead: step(5, 1, 5, 2) } });
+	await settle();
+	assert.ok(held.length > 0, "the read-ahead holds no reads");
+	const running = self.onmessage({ data: { id: 2, base, body: { model_details: step(180, 1, 5, 1) } } });
+	await settle();
+	// the form moves on while Run waits for the read-ahead it stopped
+	self.onmessage({ data: { base, ahead: step(5, 1, 5, 1) } });
+	await settle();
+	release();
+	await running;
+	const done = posted.length;
+	assert.ok(posted.find((m) => m.id === 2)?.value);
+	await settle();
+	assert.ok(held.length > 0, "the waiting selection never started");
+	assert.ok(
+		held.every((r) => r.posted >= done),
+		"the waiting selection read beside Run",
+	);
 });
