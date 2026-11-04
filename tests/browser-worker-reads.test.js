@@ -10,7 +10,7 @@ const directory = process.env.BROWSER_ENGINE_DATA;
 const posted = [];
 globalThis.self = { postMessage: (message) => posted.push(message) };
 mock.module(new URL("../src/lib/browser-engine/browser-kernel.js", import.meta.url).href, {
-	namedExports: { loadKernel: async () => single, useThreads: () => false },
+	exports: { loadKernel: async () => single, useThreads: () => false },
 });
 const base = "https://example.test/data/browser-engine/";
 const files = new Map();
@@ -51,7 +51,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let id = 0;
 const run = async (steps) => {
 	const mine = id++;
-	await self.onmessage({ data: { id: mine, base, body: { model_details: steps }, single: true } });
+	await self.onmessage({ data: { id: mine, base, body: { model_details: steps } } });
 	return posted.find((m) => m.id === mine);
 };
 
@@ -62,14 +62,14 @@ test("Run gets no aborted read when the selection changes while the prefetch dow
 	const steps = [step(180, 1, 198, 2), step(5, 1, 198, 2), step(5, 1, 5, 2), step(5, 1, 5, 1)];
 	const failures = [];
 	for (let trial = 0; trial < 10; trial++) {
-		// a seeded generator, so a failing trial replays
+		// seeded, so each trial asks for the same delays and gaps
 		let seed = trial + 1;
 		const random = () => {
 			seed = (seed * 16807) % 2147483647;
 			return seed / 2147483647;
 		};
 		delay = () => random() * 40;
-		const first = await run(step(180, 1, 198, 2));
+		const first = await run(steps[0]);
 		assert.ok(first.value, first.error);
 		// prefetches for some of the selections, at uneven gaps, then Run
 		for (const s of steps) {
