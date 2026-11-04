@@ -48,6 +48,8 @@ let catalog = $state.raw(null);
 let message = $state("");
 let failed = $state(false);
 let unreachable = $state(false);
+// the worker files did not load: Run would fail the same way until a reload
+let outdated = $state(false);
 let running = $state(false);
 let elapsed = $state(0);
 // set by Cancel, so the stopped run's error stays quiet
@@ -101,6 +103,7 @@ function say(text, bad = false) {
 function connect({ quiet = false } = {}) {
 	const attempt = ++connection;
 	unreachable = false;
+	outdated = false;
 	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
 	const connecting = browser
 		? import("./lib/browser-engine/browser-client.js").then(({ browserClient }) => {
@@ -119,7 +122,7 @@ function connect({ quiet = false } = {}) {
 		(e) => {
 			if (attempt !== connection) return;
 			// Try again would load the same missing worker files: only a reload helps
-			const outdated = browser && client?.outdated;
+			outdated = browser && client?.outdated === true;
 			unreachable = !outdated;
 			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
 		},
@@ -245,7 +248,7 @@ async function submit(event) {
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			{#if download}<p class="hint" id="live-download">{download}</p>{/if}
-			<button type="submit" class="go" id="live-run" disabled={unreachable || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : download ? "live-download" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
+			<button type="submit" class="go" id="live-run" disabled={unreachable || outdated || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : download ? "live-download" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
 			{#if running}
 				<p class="hint live-elapsed">
 					<!-- the status line announces the start and the result; the count is for sighted readers -->

@@ -57,7 +57,7 @@ test("a worker script that does not load asks for a reload, one that throws does
 	const stale = browserClient();
 	const missing = stale.request();
 	FakeWorker.last.onerror(new Event("error"));
-	await assert.rejects(missing, /reload/i);
+	await assert.rejects(missing, /could not load\. Reload the page/);
 	assert.equal(stale.outdated, true);
 
 	// a script that throws is a stopped worker, which a fresh one can replace

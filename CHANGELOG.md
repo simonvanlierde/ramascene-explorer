@@ -12,8 +12,9 @@ follow [Semantic Versioning](https://semver.org/).
   the page starts reading the next selection, so the two never download at the same time.
 - Running the selection that was queued to download ahead of Run no longer downloads it
   again after the run.
-- A tab opened before a deploy says the page was updated and asks for a reload, instead of
-  offering Try again, which loaded the same missing worker file.
+- When the browser worker file does not load, for example in a tab opened before a deploy,
+  the page asks for a reload and turns Run off, instead of offering Try again, which loaded
+  the same missing file.
 
 ## [0.6.0] - 2026-11-04
 

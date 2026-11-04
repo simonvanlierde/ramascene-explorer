@@ -30,7 +30,11 @@ export function browserClient() {
 			// of its imports did not load: after a deploy, the hashed file names this tab knows
 			// are gone.
 			outdated = !(event instanceof ErrorEvent);
-			close(outdated ? "This page was updated since it opened. Reload it to compute in the browser." : undefined);
+			close(
+				outdated
+					? "The browser worker could not load. Reload the page; it may have been updated since you opened it."
+					: undefined,
+			);
 		};
 	}
 	start();
