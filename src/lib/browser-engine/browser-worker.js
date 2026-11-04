@@ -105,6 +105,7 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 			self.postMessage({ id, value }, [value.result.flows.baseline.buffer, flows.buffer]);
 		}
 	} catch (e) {
+		console.error("run failed", e?.name, e?.message, e?.stack);
 		// A trap (out of memory, or a panic) leaves the kernel's memory held and its state
 		// unknown, so the page stops this worker; a threaded run gets one try on one thread.
 		if (e instanceof WebAssembly.RuntimeError && threaded) self.postMessage({ id, retrySingle: true });

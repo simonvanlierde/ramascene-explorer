@@ -54,6 +54,10 @@ for (const engine of names.map((n) => engines[n])) {
 	const browser = await engine.launch({ headless: true });
 	try {
 		const page = await browser.newPage();
+		page.on("requestfailed", (r) => console.log("FAILED", r.url().slice(-100), r.headers().range ?? "", r.failure()?.errorText));
+		page.on("response", (r) => r.url().includes("ramascene-data") && r.status() !== 206 && console.log("STATUS", r.status(), r.url().slice(-100)));
+		page.on("console", (m) => console.log("CONSOLE", m.type(), m.text().slice(0, 500)));
+		page.on("worker", (w) => w.on("console", (m) => console.log("WORKER", m.type(), m.text().slice(0, 1500))));
 		await page.addInitScript(() => {
 			const Original = Worker;
 			globalThis.workerUrls = [];
