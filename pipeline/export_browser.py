@@ -31,7 +31,6 @@ SHARD_ROWS = 200
 # X and Y load a country's 200 rows at once, from one shard file each, so a
 # scenario reads one shard index for them; the other arrays load single rows.
 CHUNK_ROWS = {"X": 200, "Y": 200}
-WHOLE = {"X", "Y"}
 
 
 def catalog(db):
@@ -174,7 +173,7 @@ def export(data, db, out):
     arrays = {}
     for name, matrix in {"A": A, "L": L, "LC": L.T, "H": H, "X": X, "Y": Y}.items():
         arrays[name] = write_array(
-            staging, name, matrix, CHUNK_ROWS.get(name, 1), len(matrix) if name in WHOLE else SHARD_ROWS
+            staging, name, matrix, CHUNK_ROWS.get(name, 1), len(matrix) if name in CHUNK_ROWS else SHARD_ROWS
         )
         print(f"{name}: {sum(arrays[name]['shard_bytes'])} bytes", flush=True)
     sha = store_hash(staging)

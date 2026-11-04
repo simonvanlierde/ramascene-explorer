@@ -386,7 +386,7 @@ export const taper = (t) => 0.16 + 0.84 * cubicOut(Math.min(1, t / 0.6));
 // get no band on either map: the fill shows them, and a band that short reads
 // as a smudge on the border. Partners further away get one wherever it fits
 // outside the collar (bandGeometry), so zooming in makes room for more of them.
-export const NEAR = (5 * Math.PI) / 180;
+const NEAR = (5 * Math.PI) / 180;
 // The partners in ks that get a band. at: [lon, lat] of each region's anchor;
 // who: the selected region.
 export const bandPartners = (ks, who, at) => ks.filter((k) => geoDistance(at[k], at[who]) >= NEAR);

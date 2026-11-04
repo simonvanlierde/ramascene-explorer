@@ -1,5 +1,6 @@
 import { decode } from "../../../engine/pkg/ramascene_engine.js";
 import { DATA_ORIGIN } from "../data-origin.js";
+import { FLOW_TOTALS } from "./browser-engine.js";
 
 // The browser export is a float32 Zarr v3 store (pipeline/export_browser.py): each array
 // is sharded by producing country, with gzip chunks of whole rows and a shard
@@ -12,7 +13,14 @@ const GAP = 64 * 1024;
 const MAX_RANGE = 1024 ** 2;
 const PARALLEL = 64;
 
-const SHAPES = { A: [9800, 9800], L: [9800, 9800], LC: [9800, 9800], H: [9800, 2205], X: [9800, 49], Y: [9800, 49] };
+const SHAPES = {
+	A: [9800, 9800],
+	L: [9800, 9800],
+	LC: [9800, 9800],
+	H: [9800, FLOW_TOTALS],
+	X: [9800, 49],
+	Y: [9800, 49],
+};
 
 // readRange(shard, start, end) resolves to that byte range of the shard file.
 export function arrayReader(info, readRange, { cacheBytes = 16 * 1024 ** 2 } = {}) {
