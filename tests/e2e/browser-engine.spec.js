@@ -136,6 +136,8 @@ test("a selection too broad for the browser says so before Run, and search narro
 	// the published runs fold to the chosen one, so the form sits higher
 	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	// the preselected steel scenario reads about 2 MB, too little to mention
+	await expect(page.locator("#live-download")).toHaveCount(0);
 	// every product from every country, used by electricity
 	await page.locator("#live-product").selectOption("1");
 	await page.locator("#live-consumer").selectOption("5");
@@ -158,6 +160,9 @@ test("a selection too broad for the browser says so before Run, and search narro
 	await expect(page.locator("#live-origin")).toHaveValue("27");
 	await expect(page.locator("#live-broad")).toBeEmpty();
 	await expect(page.locator("#live-run")).toBeEnabled();
+	// every product from the Netherlands is about 10 MB: the form says so, and Run points to it
+	await expect(page.locator("#live-download")).toHaveText("Run downloads about 10.5 MB of data.");
+	await expect(page.locator("#live-run")).toHaveAttribute("aria-describedby", "live-download");
 	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
 	const { violations } = await new AxeBuilder({ page })
 		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
