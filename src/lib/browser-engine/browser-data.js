@@ -246,7 +246,13 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 		let timer;
 		const wait = () => {
 			clearTimeout(timer);
-			timer = setTimeout(() => stall.abort(new DOMException(`no data for ${timeoutMs} ms`, "TimeoutError")), timeoutMs);
+			const due = performance.now() + timeoutMs;
+			timer = setTimeout(() => {
+				// A timer this late means a calculation held the worker's thread, so data may
+				// have arrived unread: wait again.
+				if (performance.now() - due > 1000) wait();
+				else stall.abort(new DOMException(`no data for ${timeoutMs} ms`, "TimeoutError"));
+			}, timeoutMs);
 		};
 		try {
 			wait();
@@ -300,7 +306,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 			if (signal?.aborted || !(e instanceof TypeError || ["AbortError", "TimeoutError"].includes(e.name))) throw e;
 			// Firefox sometimes aborts a body read the page never stopped, so such a failure gets
 			// one more try. A stall does not: the host already sent nothing for a minute.
-			if (!retried && e.name !== "TimeoutError") continue;
+			if (!retried && !stall.signal.aborted) continue;
 			const ms = Math.round(performance.now() - began);
 			throw new Error(
 				`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms${retried ? ", second try" : ""})`,

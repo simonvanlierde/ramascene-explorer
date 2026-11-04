@@ -69,6 +69,14 @@ export function browserClient() {
 			const id = next++;
 			return new Promise((resolve, reject) => {
 				const task = { resolve, reject, body: structuredClone(body) };
+				// Range reads have their own stall timer; the manifest and kernel loads behind
+				// the first, body-less request do not.
+				if (!body)
+					task.timeout = setTimeout(() => {
+						pending.delete(id);
+						reject(new Error("the browser data took over two minutes to load"));
+						close();
+					}, 120_000);
 				pending.set(id, task);
 				worker.postMessage({ id, base, body: task.body, single });
 			});

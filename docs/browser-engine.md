@@ -30,8 +30,10 @@ While a scenario runs, the form shows the seconds elapsed and a Cancel button, w
 stops the worker and starts a fresh one. A worker that runs out of memory is replaced
 the same way, and its error stays on screen. A range read that gets no data for a
 minute fails the run, with the file and range in the error. The minute starts again with
-every chunk that arrives, so a slow link that keeps sending finishes. A read that fails any other way, without the page stopping it, is tried
-once more first: Firefox sometimes aborts a body read by itself.
+every chunk that arrives, so a slow link that keeps sending finishes. A read that fails
+any other way, without the page stopping it, is tried once more first: Firefox
+sometimes aborts a body read by itself. The first load, the manifest and the kernel,
+fails after two minutes.
 
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.

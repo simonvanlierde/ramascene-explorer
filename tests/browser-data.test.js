@@ -289,6 +289,33 @@ test("a slow body that keeps sending passes the stall timer, one that stops does
 	);
 });
 
+test("a stall timer that fires late, because a calculation held the thread, waits again", async (t) => {
+	let release;
+	t.mock.method(globalThis, "fetch", async (_url, { signal }) =>
+		ranged(
+			new ReadableStream({
+				start(controller) {
+					signal.addEventListener("abort", () => controller.error(signal.reason));
+				},
+				async pull(controller) {
+					await new Promise((resolve) => {
+						release = resolve;
+					});
+					controller.enqueue(new TextEncoder().encode("12"));
+					controller.close();
+				},
+			}),
+		),
+	);
+	const read = fetchRange("https://example.test/A/c/0/0", 1, 3, 10, undefined, 20);
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	// hold the thread past the 20 ms timer by over a second, as a long kernel call does
+	const until = performance.now() + 1100;
+	while (performance.now() < until);
+	setTimeout(() => release(), 0);
+	assert.equal(new TextDecoder().decode(await read), "12");
+});
+
 test("a range that stalls times out with its read named, and its own stop still wins", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	// a server that never answers: only an abort ends the request, as in a browser

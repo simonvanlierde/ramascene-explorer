@@ -121,3 +121,15 @@ test("a threaded call that hangs retries once on one thread; downloads and one t
 	assert.equal(await queued, 20);
 	client.close();
 });
+
+test("a first load that hangs fails after two minutes and stops the worker", { timeout: 2000 }, async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const client = browserClient();
+	const worker = FakeWorker.last;
+	const loading = client.request();
+	t.mock.timers.tick(119_000);
+	assert.equal(worker.terminated, false);
+	t.mock.timers.tick(1_000);
+	await assert.rejects(loading, /took over two minutes to load/);
+	assert.equal(worker.terminated, true);
+});
