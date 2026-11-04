@@ -8,6 +8,12 @@ const home = await fetch(url(""));
 assert.equal(home.status, 200);
 assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
+// a workers.dev link without the prefix lands on the page; production's root is not this Worker's
+if (new URL(base).hostname.endsWith(".workers.dev")) {
+	const root = await fetch(new URL("/", base), { redirect: "manual" });
+	assert.equal(root.status, 302);
+	assert.equal(new URL(root.headers.get("Location"), base).pathname, new URL(base).pathname);
+}
 const results = await (await fetch(url("data/results.json"))).json();
 const manifest = await (await fetch(url("data/browser-engine/manifest-v3.json"))).json();
 // With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
