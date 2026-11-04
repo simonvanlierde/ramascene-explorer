@@ -2,16 +2,16 @@
   "@context": "https://w3id.org/codemeta/3.0",
   "type": "SoftwareSourceCode",
   "name": "RaMa-Scene Explorer",
-  "description": "RaMa-Scene Explorer traces the supply chains behind consumption using EXIOBASE v3.3.sm data for 2011. It maps where greenhouse-gas emissions, employment and metal-ore extraction occur across 49 countries and regions, grouped into 15 industry sections. Readers can trace a footprint, inspect its flows and compare 155 published scenarios. Custom scenarios can run in the browser or through an optional RaMa-Scene job API. The model changes monetary final demand or inputs per unit of output, with prices and other coefficients fixed. The results describe the 2011 economy, not forecasts. Methods, assumptions, provenance and numerical checks accompany the results. The code is MIT-licensed; derived EXIOBASE data is shared under CC BY 4.0.",
-  "version": "0.5.0",
+  "description": "RaMa-Scene Explorer traces the supply chains behind consumption using EXIOBASE v3.3.sm data for 2011. It maps where greenhouse-gas emissions, employment and metal-ore extraction occur across 49 countries and regions, grouped into 15 industry sections. Readers can trace a footprint, inspect its flows and compare 155 published scenarios. Custom scenarios compute on the reader's device, in WebAssembly, or through an optional RaMa-Scene job API. The model changes monetary final demand or inputs per unit of output, with prices and other coefficients fixed. The results describe the 2011 economy, not forecasts. Methods, assumptions, provenance and numerical checks accompany the results. The code is MIT-licensed; derived EXIOBASE data is shared under CC BY 4.0.",
+  "version": "0.6.0",
   "dateCreated": "2026-09-26",
-  "datePublished": "2026-11-01",
+  "datePublished": "2026-11-04",
   "license": "https://spdx.org/licenses/MIT",
   "identifier": "https://doi.org/10.5281/zenodo.23461260",
   "url": "https://simonvanlierde.com/ramascene-explorer/",
   "codeRepository": "https://github.com/simonvanlierde/ramascene-explorer",
   "issueTracker": "https://github.com/simonvanlierde/ramascene-explorer/issues",
-  "programmingLanguage": ["JavaScript", "Svelte", "Python"],
+  "programmingLanguage": ["JavaScript", "Svelte", "Rust", "Python"],
   "keywords": ["input-output analysis", "EXIOBASE", "consumption-based accounting", "embodied emissions", "scenario analysis", "data visualization"],
   "author": [
     {
@@ -21,5 +21,5 @@
       "familyName": "van Lierde"
     }
   ],
-  "softwareRequirements": ["Node.js 26 (build and development)", "pnpm", "Python 3.12+ (data preparation)"]
+  "softwareRequirements": ["Node.js 26 (build and development)", "pnpm", "Python 3.12+ (data preparation)", "Rust (the WebAssembly kernel)"]
 }

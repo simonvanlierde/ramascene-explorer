@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-04
+
 ### Added
 
 - Two published scenarios: industry in China uses 20% less coal power, and final demand in
@@ -18,7 +20,7 @@ follow [Semantic Versioning](https://semver.org/).
   A pause before letting go, or reduced motion, stops it where you released it
   ([page.md](docs/page.md#navigate-and-share)).
 - The globe is shaded faintly toward its edge, so it reads as a sphere.
-- Above 5 MB, the custom-scenario card says how much Run will download
+- Above 5 MB, the custom-scenario card says how much the selection downloads
   ([page.md](docs/page.md#custom-scenarios)).
 
 ### Changed
@@ -43,8 +45,8 @@ follow [Semantic Versioning](https://semver.org/).
 - The direction buttons read **Consumption** and **Production**.
 - What if… opens on three featured scenarios: coal power in China, steel in Asia-Pacific and
   construction demand in Europe. The three original interventions still open from their links.
-- The README is a short introduction; the development steps moved to [develop.md](docs/develop.md),
-  with the README's View, Build, Data, Test and Benchmark sections.
+- The development steps (View, Build, Data, Test, Benchmark) moved from the README to
+  [develop.md](docs/develop.md). The README is now a short introduction.
 - The page says "scenario" instead of "intervention", and Details → Method opens with a plain
   explanation of what the map and the scenarios show.
 - While a custom result is shown, links to other sites open in a new tab and say so, since the
@@ -69,7 +71,7 @@ follow [Semantic Versioning](https://semver.org/).
   end at the edge ([page.md](docs/page.md#navigate-and-share)).
 - Firefox sometimes stopped a custom scenario's data download by itself, failing the run. Such a
   read is now tried once more, and a failed read names the file and byte range in its message.
-- A download that stalls fails the custom scenario after a minute, naming the read, instead of
+- A data read that takes over a minute fails the custom scenario, naming the read, instead of
   waiting for the two-minute limit ([browser-engine.md](docs/browser-engine.md)).
 - Changing the selection while a custom scenario ran could start its download beside the run.
   It now waits for the run to finish.
@@ -301,7 +303,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.0...v0.3.1
