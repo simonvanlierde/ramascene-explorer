@@ -213,7 +213,12 @@ test("a live run never inherits the published calculation checks", async ({ page
 	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
-	await expect(page.locator(".pf .vf")).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	// the basis popover names the job API, not the precomputed file, as the source
+	await page.locator("#status .pill.basis").click();
+	await expect(page.locator("#basis-pop")).toContainText("This run: computed by the job API");
+	await expect(page.locator("#basis-pop")).toContainText(`${API} · job`);
+	await expect(page.locator("#basis-pop")).not.toContainText("Generated");
 	await page.keyboard.press("Escape");
 	// back to a precomputed run: checks passed again
 	await page.getByRole("button", { name: "Flows, 2011" }).first().click();

@@ -289,6 +289,81 @@ button.pill:hover {
   border-color: currentColor;
 }
 
+/* the basis pill opens where the numbers come from (Basis.svelte) */
+.basis-w {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.pill.basis {
+  max-width: 100%;
+}
+.pill.basis .bx {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pill.basis .chev {
+  flex: none;
+  transition: transform 0.2s;
+}
+.pill.basis[aria-expanded="true"] {
+  color: var(--ink);
+  background: var(--tint);
+}
+.pill.basis[aria-expanded="true"] .chev {
+  transform: rotate(180deg);
+}
+.basis-pop {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0; /* the pill sits right of centre; a phone anchors it left instead */
+  width: min(360px, calc(100vw - 24px));
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--pop);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+}
+.basis-pop:focus {
+  outline: none;
+}
+.basis-pop .bt {
+  margin: 0 0 8px;
+  font: 400 16px / 1.25 var(--serif);
+  color: var(--ink);
+}
+.basis-pop dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 3px 12px;
+  margin: 0 0 10px;
+}
+.basis-pop dt {
+  color: var(--mut);
+}
+.basis-pop dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.basis-pop p {
+  margin: 0 0 10px;
+  color: var(--mut);
+}
+.basis-pop .ba {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
 /* --- sidebar --------------------------------------------------------------------- */
 .side {
   background: var(--card);
@@ -1185,7 +1260,7 @@ svg.map.live .rg {
   top: calc(var(--top) + var(--banner-h, 0px));
   right: 0;
   bottom: 0;
-  width: min(640px, calc(100vw - var(--side)));
+  width: min(768px, calc(100vw - var(--side)));
   background: var(--card);
   border-left: 1px solid var(--rule);
   box-shadow: -18px 0 40px -26px rgb(31 42 51 / 35%);
@@ -1195,7 +1270,7 @@ svg.map.live .rg {
     transform 0.32s cubic-bezier(0.2, 0.7, 0.2, 1),
     visibility 0s linear 0.32s;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   z-index: 17;
 }
 .pan.on {
@@ -1423,26 +1498,6 @@ td.neg {
 td.pos {
   color: var(--pos);
 }
-.pf {
-  border-top: 1px solid var(--rule);
-  background: var(--ground);
-  padding: 10px 20px 12px;
-  font-size: 12px;
-  color: var(--mut);
-  line-height: 1.45;
-}
-.pf p {
-  margin: 0;
-}
-.pf .vf {
-  color: var(--ok);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 3px;
-}
-
 /* method tab (Provenance.svelte) */
 .part h2 {
   font: 400 18px var(--serif);
@@ -1495,25 +1550,6 @@ details.more summary {
   overflow-wrap: anywhere;
   color: var(--mut);
 }
-.titleblock {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid var(--rule);
-  font-size: 12px;
-}
-.titleblock .cell {
-  margin: 0;
-}
-.titleblock dt {
-  color: var(--mut);
-}
-.titleblock dd {
-  margin: 0;
-}
-
 /* a retry inside a status line */
 .hint .chipb,
 .fn .chipb {
@@ -1700,6 +1736,10 @@ details.more summary {
   .mnote {
     display: none;
   }
+  /* the caveat keeps its room; the dataset name is in the popover */
+  .top .basis .ds {
+    display: none;
+  }
 }
 
 /* --- phones: content first, the selection in a bottom sheet ---------------------
@@ -1733,26 +1773,29 @@ details.more summary {
   .brand h1 {
     font-size: 13px;
   }
-  /* the caveat and the trust pill both stay; the dataset name goes */
+  /* the caveat and the trust pill both stay; the dataset name went at 1100 px */
   .top {
     flex-wrap: wrap;
     height: auto;
     padding: 0 12px 8px;
     row-gap: 6px;
   }
+  /* the basis pill and the trust pill sit on two rows; 14 px apart, each one's
+     44 px hit area keeps the 5 px next to it (the hit areas reach 7 px out) */
   .top .rt {
     margin-left: 0;
     flex: 1 1 100%;
     flex-wrap: wrap;
-    row-gap: 6px;
+    row-gap: 14px;
     justify-content: space-between;
   }
   /* a long basis (a live job's) takes its own row rather than lose its end */
-  .top .basis {
+  .top .basis-w {
     max-width: 100%;
   }
-  .top .basis .ds {
-    display: none;
+  .basis-pop {
+    right: auto;
+    left: 0;
   }
   .top .pill {
     height: 32px;

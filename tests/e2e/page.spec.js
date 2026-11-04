@@ -103,9 +103,15 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	const dialog = page.getByRole("dialog");
 	await expect(dialog.locator(".sk .lk").first()).toBeVisible();
 	if (isMobile) {
-		// on a phone the panel covers the page and is modal: Tab cycles inside it
-		for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
-		expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")))).toBe(true);
+		// on a phone the panel covers the page and is modal: Tab cycles inside it, with one stop
+		// on the browser's own controls (the body) between rounds, and never reaches the page
+		for (let i = 0; i < 8; i++) {
+			await page.keyboard.press("Tab");
+			const inside = await page.evaluate(
+				() => document.activeElement === document.body || Boolean(document.activeElement?.closest("[role=dialog]")),
+			);
+			expect(inside, `Tab ${i + 1}`).toBe(true);
+		}
 	} else {
 		// beside it, the sidebar stays usable and the panel follows the selection
 		await page.getByRole("button", { name: "Production", exact: true }).click();
@@ -383,6 +389,30 @@ test("the honesty notes stay on screen: Published scenarios · not forecasts, an
 	await expect(page.locator(".pill.basis")).toContainText("Published scenarios · not forecasts");
 	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
 	await expect(page.locator("#headline")).toContainText("would have");
+});
+
+test("the basis pill says where the numbers come from, and Escape returns to it", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	const pill = page.locator("#status .pill.basis");
+	await pill.click();
+	const pop = page.getByRole("dialog", { name: "Where these numbers come from" });
+	await expect(pop).toBeVisible();
+	await expect(pill).toHaveAttribute("aria-expanded", "true");
+	await expect(pop).toContainText("doi:10.5281/zenodo.3533196");
+	await expect(pop).toContainText("Demand-pull Leontief");
+	await expect(pop).toContainText("not what will happen");
+	await expectNoAxeViolations(page);
+	await page.keyboard.press("Escape");
+	await expect(pop).toHaveCount(0);
+	await expect(pill).toBeFocused();
+	await pill.press("Enter");
+	await pop.getByRole("button", { name: "Method and checks" }).click();
+	await expect(pop).toHaveCount(0);
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	// Details holds no footer of its own; Method keeps the reproduction details
+	await expect(page.locator(".pan footer")).toHaveCount(0);
+	await expect(page.locator("#provenance-panel")).toBeAttached();
 });
 
 test("with reduced motion the replay jumps to the run", async ({ page }) => {

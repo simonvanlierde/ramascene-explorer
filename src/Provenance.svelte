@@ -1,8 +1,9 @@
 <script>
-import { runSummary, shortCommit } from "./lib/explorer.js";
+import { runSummary } from "./lib/explorer.js";
 
+// meta: the embodied flows' metadata, for their own check
 // scenario: the shown one, or the excluded record whose parameters are listed
-let { data, scenario, away = {} } = $props();
+let { data, meta, scenario } = $props();
 
 const p = $derived(data.provenance);
 const e = $derived(p.engine);
@@ -69,6 +70,9 @@ const checks = $derived.by(() => {
 				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")}).` : "."),
 		],
 	];
+	// precompute writes no flows that fail this, so it is listed only when the flows recorded it
+	const flows = data.data_kind === "exiobase-v3" ? meta.checks?.producer_by_country : null;
+	if (flows) rows.push([flows.passed, "The flows the map draws add up to the engine's country totals within relative 1e-9."]);
 	if (run) rows.push([!run.failed, `${runSummary(run)}.`, run.failed ? `${run.failed} excluded` : "Passed"]);
 	return rows.map(([ok, text, verdict]) => [ok, text, verdict ?? (ok ? "Passed" : "Not passed")]);
 });
@@ -101,13 +105,3 @@ const checks = $derived.by(() => {
 		</dl>
 	</details>
 </section>
-
-<!-- the colophon: only values the run recorded -->
-<footer>
-	<div class="titleblock colophon" id="footer">
-		<dl class="cell"><dt>Engine commit</dt><dd>{shortCommit(e.commit)}</dd></dl>
-		{#if d.doi}<dl class="cell"><dt>Dataset DOI</dt><dd><a href="https://doi.org/{d.doi}" {...away}>{d.doi}{#if away.target} (opens in new tab){/if}</a></dd></dl>{/if}
-		{#if p.generated_at}<dl class="cell"><dt>Generated</dt><dd>{p.generated_at}</dd></dl>{/if}
-		<dl class="cell"><dt>Built by</dt><dd>Simon van Lierde · <a href="https://github.com/simonvanlierde/ramascene-explorer" {...away}>source{#if away.target} (opens in new tab){/if}</a></dd></dl>
-	</div>
-</footer>
