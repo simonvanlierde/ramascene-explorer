@@ -23,12 +23,14 @@ last changed, so Run waits only for what is still loading. A new percentage read
 same rows, so it starts nothing new. One selection downloads at a time; while it does,
 only the newest waits, so quick changes waste at most one download. Run on a
 selection other than the one downloading stops that download first, so the two
-never share the memory budget. A selection changed while Run computes waits for Run to
-finish before it downloads.
+never share the memory budget. Above 5 MB, the form says how much Run will download.
+A selection changed while Run computes waits for Run to finish before it downloads.
 
 While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
 stops the worker and starts a fresh one. A worker that runs out of memory, or passes
-the two-minute limit, is replaced the same way, and its error stays on screen.
+the two-minute limit, is replaced the same way, and its error stays on screen. A
+single range read that takes more than a minute fails the run, with the file and range
+in the error.
 
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.

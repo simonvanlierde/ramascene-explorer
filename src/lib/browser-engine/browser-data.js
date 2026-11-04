@@ -229,7 +229,11 @@ export async function fetchEngine(base, origin = DATA_ORIGIN) {
 	);
 }
 
-export async function fetchRange(url, start, end, byteLength, signal) {
+// A range that takes longer than this has stalled: the run fails with that read named,
+// well before the page's 120 s deadline for the whole calculation.
+const RANGE_TIMEOUT_MS = 60_000;
+
+export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
 	const began = performance.now();
@@ -237,7 +241,11 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 	const where = `${new URL(url).pathname} bytes ${start}-${end - 1}`;
 	let phase = "before the response";
 	try {
-		const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
+		const timeout = AbortSignal.timeout(timeoutMs);
+		const response = await fetch(url, {
+			headers: { Range: `bytes=${start}-${end - 1}` },
+			signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+		});
 		if (response.status === 404) {
 			await response.body?.cancel();
 			// The manifest names the store by its hash: next to the page, a 404 means a newer
@@ -261,8 +269,9 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 		return buffer;
 	} catch (e) {
 		// A read the read-ahead stopped keeps its AbortError. Any other fetch failure, an
-		// AbortError the signal did not cause included, also says when it failed.
-		if (signal?.aborted || !(e instanceof TypeError || e.name === "AbortError")) throw e;
+		// AbortError the signal did not cause and the range's own timeout included, also says
+		// when it failed.
+		if (signal?.aborted || !(e instanceof TypeError || ["AbortError", "TimeoutError"].includes(e.name))) throw e;
 		const ms = Math.round(performance.now() - began);
 		throw new Error(
 			`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms)`,
