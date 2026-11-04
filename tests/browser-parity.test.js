@@ -8,9 +8,10 @@ import { localRange } from "./local-range.js";
 
 const directory = process.env.BROWSER_ENGINE_DATA;
 test("all 155 browser scenarios match the shipped engine results at relative 1e-6", {
-	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
+	skip: !directory && !process.env.CI && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async () => {
-	assert.ok(existsSync(`${directory}/manifest-v3.json`));
+	assert.ok(directory, "BROWSER_ENGINE_DATA is not set; fetch the browser store, see docs/browser-engine.md");
+	assert.ok(existsSync(`${directory}/manifest-v3.json`), `no manifest-v3.json in ${directory}`);
 	const meta = JSON.parse(readFileSync(`${directory}/manifest-v3.json`, "utf8"));
 	const data = openEngine(meta, localRange(directory, meta));
 	await assert.rejects(
