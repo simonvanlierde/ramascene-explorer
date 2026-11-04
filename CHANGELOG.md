@@ -24,7 +24,8 @@ follow [Semantic Versioning](https://semver.org/).
   published, and stop if it is not.
 
 - Details is 768 px wide on a desktop, up from 640 px, and never wider than the space beside
-  the sidebar. The Sankey uses the extra width for longer bands, not bigger text.
+  the sidebar. The Sankey uses the extra width for longer bands, shared evenly between its two
+  stages, not bigger text.
 - Details no longer has a footer. The dataset, engine and generated date are in the header
   pill's note; the flow check is listed with the other checks under Method.
 - Below 1100 px the header pill drops the dataset name, so the "not forecasts" caveat stays
