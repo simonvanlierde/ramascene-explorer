@@ -21,7 +21,7 @@ mock.module(at("../src/lib/browser-engine/browser-engine.js"), {
 });
 mock.module(at("../src/lib/browser-engine/browser-kernel.js"), {
 	exports: {
-		loadKernel: async (single = false) => ({ single, thread_count: () => (single ? 1 : 4) }),
+		loadKernel: async (single = false) => ({ single, thread_count: () => (single ? 1 : 4), fold: () => {} }),
 		useThreads: () => true,
 	},
 });
@@ -44,6 +44,19 @@ test("a trap in a threaded calculation asks the page to retry on one thread", as
 	};
 	assert.deepEqual(await run(undefined), [{ id: 7, retrySingle: true }]);
 	assert.deepEqual(kernels, [false]);
+});
+
+test("only a threaded kernel call tells the page it is computing", async () => {
+	scenarioFlows = async (_data, _steps, _ahead, maths) => {
+		maths.fold();
+		throw new Error("stop here");
+	};
+	assert.deepEqual(await run(undefined), [
+		{ id: 7, computing: true },
+		{ id: 7, computing: false },
+		{ id: 7, error: "stop here" },
+	]);
+	assert.deepEqual(await run(true), [{ id: 7, error: "stop here" }]);
 });
 
 test("a trap on one thread stops the worker", async () => {
