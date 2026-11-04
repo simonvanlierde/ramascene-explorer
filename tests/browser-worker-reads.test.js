@@ -65,6 +65,7 @@ const step = (product, originReg, consumedBy, consumedReg) => [
 test("Run stops another selection's read-ahead and waits for it before reading its own", {
 	skip: !directory && !process.env.CI && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async (t) => {
+	assert.ok(directory, "BROWSER_ENGINE_DATA is not set; fetch the browser store, see docs/browser-engine.md");
 	t.after(release);
 	await self.onmessage({ data: { id: 0, base } });
 	assert.ok(posted.at(-1).value, posted.at(-1).error);
@@ -90,6 +91,7 @@ test("Run stops another selection's read-ahead and waits for it before reading i
 test("a selection made while Run computes starts its reads after Run", {
 	skip: !directory && !process.env.CI && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async (t) => {
+	assert.ok(directory, "BROWSER_ENGINE_DATA is not set; fetch the browser store, see docs/browser-engine.md");
 	t.after(release);
 	self.onmessage({ data: { base, ahead: step(5, 1, 5, 2) } });
 	await settle();

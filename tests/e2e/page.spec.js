@@ -486,11 +486,11 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const started = new Promise((resolve) => {
 		aStarted = resolve;
 	});
-	const heldUrls = new Set();
+	const heldRequests = [];
 	await page.route("**/*.parquet", async (route) => {
 		if (!hold) return route.continue();
 		held++;
-		heldUrls.add(route.request().url());
+		heldRequests.push(route.request());
 		aStarted();
 		await gate;
 		await route.continue();
@@ -505,11 +505,9 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const headline = page.locator("#headline");
 	await expect(headline).toContainText(CONSTRUCTION);
 	expect(held).toBeGreaterThan(0);
-	// let A's request finish and the page settle: B must stay
-	// A's held requests answer, the body read to its end, then the page has a few frames to apply them
-	const answered = page.waitForResponse((r) => heldUrls.has(r.url()));
+	// let all of A's held requests finish, bodies read to the end, and the page settle: B must stay
 	release();
-	await (await answered).finished();
+	await Promise.all(heldRequests.map(async (request) => (await request.response()).finished()));
 	await mapAtRest(page);
 	await expect(headline).toContainText(CONSTRUCTION);
 	await expect(headline).not.toContainText("Asia-Pacific");

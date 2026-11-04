@@ -21,22 +21,27 @@ export const test = base.extend({
 	],
 });
 
-// Resolves once the map's markup has not changed for 30 frames in a row: a turn,
-// morph or glide redraws it every frame, so a still map is a finished one. The
-// frames are counted inside the page, as browsers.spec.js explains.
+// Resolves once the map's markup has not changed for half a second: a turn, morph or
+// glide redraws it every frame, so a still map is a finished one. The check runs on
+// frames, so a runner that stalls them cannot look still, and inside the page, as
+// browsers.spec.js explains. The markup is compared every 50 ms, not every frame.
 export async function mapAtRest(page) {
 	const rested = await page.locator("svg.map").evaluate(
 		(svg) =>
 			new Promise((done) => {
-				const giveUp = performance.now() + 8000;
+				const giveUp = performance.now() + 20_000;
 				let last = svg.innerHTML;
-				let still = 0;
-				const tick = () => {
-					const now = svg.innerHTML;
-					still = now === last ? still + 1 : 0;
-					last = now;
-					if (still >= 30) return done(true);
-					if (performance.now() > giveUp) return done(false);
+				let sampled = performance.now();
+				let changed = sampled;
+				const tick = (now) => {
+					if (now - sampled >= 50) {
+						const markup = svg.innerHTML;
+						if (markup !== last) changed = now;
+						last = markup;
+						sampled = now;
+					}
+					if (now - changed >= 500) return done(true);
+					if (now > giveUp) return done(false);
 					requestAnimationFrame(tick);
 				};
 				requestAnimationFrame(tick);
