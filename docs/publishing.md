@@ -171,12 +171,18 @@ Set up once:
    shards have no extension.
 3. Set the bucket's CORS rule:
    `pnpm exec wrangler r2 bucket cors set ramascene-explorer-data --file hosting/r2-cors.json`.
-4. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
+4. Rules → Transform Rules → Modify Response Header → hostname equals
+   `ramascene-data.simonvanlierde.com`: set `Access-Control-Allow-Origin` to `*` and
+   `Access-Control-Expose-Headers` to `Content-Range, ETag`. Then Caching → Configuration →
+   Purge Everything for that hostname (Custom Purge → Hostname).
+5. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
    `gh workflow run cloudflare.yml --ref main`.
 
-Set the CORS rule before the page reads the host: a copy cached before it exists has no CORS
-headers. With the rule, the edge keeps separate copies for reads with and without `Origin`,
-and `hosting/check.js` reads each data file without and then with `Origin` to check that.
+R2 adds CORS headers only when it answers a read itself, and the edge caches a copy per
+`Origin` value. A copy cached without the headers stays for a year, and the page cannot read
+that file; it broke production once. The response-header rule adds the headers to every
+answer, cached ones included. `hosting/check.js` reads each data file without `Origin`, with
+the version's origin and with production's, and fails on a missing header.
 To go back to the Worker, delete the variable and run the workflow again: every version still
 ships the store, and the Worker still serves the Parquet.
 Cache misses are R2 reads (Class B operations). A second input-output database is a new
