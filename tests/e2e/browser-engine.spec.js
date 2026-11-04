@@ -23,6 +23,8 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 	await expect(page.locator("#live-news")).toHaveText("Ready to compute in this browser.");
+	// links to other sites stay in the tab until a custom run would be lost by leaving
+	await expect(page.locator(".brand .by a")).not.toHaveAttribute("target");
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
 	await expect(page.locator("#live-news")).toContainText("Computed in this browser in");
@@ -32,6 +34,11 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator(".ph")).toContainText("It does not include this custom result.");
 	// the totals by region are in Details, not in the sidebar
 	await expect(page.locator(".pan #live-table tbody tr")).toHaveCount(49);
+	const doi = page.locator(".pan .pf a");
+	await expect(doi).toHaveAttribute("target", "_blank");
+	await expect(doi).toHaveAttribute("rel", "noopener");
+	await expect(doi).toContainText("(opens in new tab)");
+	await expect(page.locator(".brand .by a")).toHaveAccessibleName("Simon van Lierde (opens in new tab)");
 	await expect(page.locator("#side .live-totals")).toHaveCount(0);
 	await page.keyboard.press("Escape");
 	expect(external).toEqual([]);
