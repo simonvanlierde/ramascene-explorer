@@ -92,8 +92,8 @@ without serving it, then runs `hosting/check.js` against that version's preview 
 the Playwright image. On `main`, only a version that passes the check goes on the
 production routes. Each pull request from this repository stops after the check, which
 runs in Chromium only (`CHECK_BROWSERS`); the run on `main` uses Chromium, Firefox and
-WebKit, because each engine replays all 155 scenarios through the Worker and the
-requests count toward its daily allowance. The pull request keeps the
+WebKit. Only the first engine replays all 155 scenarios, which read the whole store: through
+the Worker, those reads count toward its daily request allowance. The pull request keeps the
 alias `pr-<number>`. Its version URL,
 `https://pr-<number>-ramascene-explorer.<subdomain>.workers.dev/ramascene-explorer/`,
 shows on the pull request as the `cloudflare` environment's deployment. Preview builds add
@@ -143,10 +143,54 @@ Set up once:
    Scripts Write and Workers R2 Storage Write, and to the simonvanlierde.com zone with
    Workers Routes Write. Local OAuth login does not configure GitHub Actions.
 
+## Data host
+
+The Worker counts every request it runs, refused ones included, and the free plan allows
+100,000 a day. One custom scenario reads about 270 byte ranges, so serving the data through
+the Worker caps how many scenarios a day the site can run. The data can come from R2
+directly instead, with no Worker in the path:
+
+- `cloudflare.yml` uploads the Parquet file as `embodied/<sha256>.parquet` and the browser
+  store as `browser-engine/store-<hash>/...`, both with an immutable `Cache-Control`. A store
+  goes up once: the `.complete` marker, written last, tells later runs it is all there.
+- The page needs CORS, because it is cross-origin isolated. The data is public, so any origin
+  may read it, previews on `workers.dev` included.
+- With the repository variable `DATA_ORIGIN` set (for example
+  `https://ramascene-data.simonvanlierde.com/`), the build bakes it in as
+  `VITE_DATA_ORIGIN`. The page then reads both files from that host by their hashes, and
+  `hosting/check.js` checks ranges, CORS and caching there. `results.json` and the store's
+  manifest still ship with the page, so each deployment names its own data.
+- Without the variable, the page reads the data next to itself, through the Worker, as above.
+
+Set up once:
+
+1. R2 → `ramascene-explorer-data` → Settings → Custom Domains → add
+   `ramascene-data.simonvanlierde.com`.
+2. Caching → Cache Rules → hostname equals `ramascene-data.simonvanlierde.com`, Eligible for
+   cache, edge TTL from the origin. Cloudflare caches only some file types by default, and the
+   shards have no extension.
+3. Set the bucket's CORS rule:
+   `pnpm exec wrangler r2 bucket cors set ramascene-explorer-data --file hosting/r2-cors.json`.
+4. After a `main` run has uploaded the store, set the `DATA_ORIGIN` variable and run
+   `gh workflow run cloudflare.yml --ref main`.
+
+Set the CORS rule before the page reads the host: a copy cached before it exists has no CORS
+headers. With the rule, the edge keeps separate copies for reads with and without `Origin`,
+and `hosting/check.js` reads each data file without and then with `Origin` to check that.
+To go back to the Worker, delete the variable and run the workflow again: every version still
+ships the store, and the Worker still serves the Parquet.
+Cache misses are R2 reads (Class B operations). A second input-output database is a new
+upload under its own keys, with no change to the Worker.
+
+Old stores stay in the bucket too, about 770 MB each. To delete one the live manifest does not
+name, delete its `browser-engine/store-<hash>/.complete` marker first, so a later run uploads
+it again in full, then the objects under that prefix.
+
 Release files are checksum-verified before upload. CI runs `hosting/check.js` against the
 local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
 covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
-isolation, the map and a custom calculation in Chromium, Firefox and WebKit. To run it
+isolation, the map and a custom calculation in Chromium, Firefox and WebKit, and the 155
+published scenarios in the first of them. To run it
 yourself, build the kernel and the site, then:
 
 ```sh

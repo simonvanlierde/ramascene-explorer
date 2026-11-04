@@ -1,4 +1,5 @@
 import { decode } from "../../../engine/pkg/ramascene_engine.js";
+import { DATA_ORIGIN } from "../data-origin.js";
 
 // The browser export is a float32 Zarr v3 store (pipeline/export_browser.py): each array
 // is sharded by producing country, with gzip chunks of whole rows and a shard
@@ -213,13 +214,18 @@ export function shardPath(meta, name, shard) {
 	return `store-${meta.store}/${name}/c/${shard}/0`;
 }
 
-export async function fetchEngine(base) {
+// The manifest ships with the page and names the store by its hash; the shards come from
+// the data origin when one is set (data-origin.js), else from next to the manifest.
+export const storeBase = (base, origin) => (origin ? new URL("browser-engine/", origin) : base);
+
+export async function fetchEngine(base, origin = DATA_ORIGIN) {
 	// Revalidated, so a deploy's new store is not paired with a cached manifest.
 	const response = await fetch(new URL("manifest-v3.json", base), { cache: "no-cache" });
 	if (!response.ok) throw new Error(`browser dataset: ${response.status}`);
 	const meta = await response.json();
+	const store = storeBase(base, origin);
 	return openEngine(meta, (name, shard, start, end, signal) =>
-		fetchRange(new URL(shardPath(meta, name, shard), base), start, end, meta.arrays[name].shard_bytes[shard], signal),
+		fetchRange(new URL(shardPath(meta, name, shard), store), start, end, meta.arrays[name].shard_bytes[shard], signal),
 	);
 }
 
@@ -229,7 +235,9 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
 	if (response.status === 404) {
 		await response.body?.cancel();
-		// The manifest names the store by its hash, so a 404 means a newer deploy.
+		// The manifest names the store by its hash: next to the page, a 404 means a newer
+		// deploy; on the data host, a store that was never uploaded, which hosting/check.js
+		// catches before main promotes a version.
 		throw new Error("the browser data was updated: reload the page");
 	}
 	if (response.status !== 206 || response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`) {

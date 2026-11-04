@@ -19,6 +19,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- With the `DATA_ORIGIN` variable set, the page reads the flows and the browser store from R2
+  on its own hostname, not through the Worker, so custom scenarios no longer count toward the
+  Worker's daily requests ([data host](docs/publishing.md#data-host)).
+- The deployment check replays the 155 published scenarios in one browser, not all three.
 - The page modules moved to `src/lib/`, the Python pipeline to `pipeline/` and the measurement
   scripts to `scripts/`, so the repository root holds only configuration and project files.
 - Dense custom scenarios can use up to four browser threads on a host that enables shared

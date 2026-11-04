@@ -17,6 +17,14 @@ export const embodiedUrl = (dataPath) =>
 		? dataPath.replace(/results\.json$/, "embodied.parquet")
 		: dataPath.replace(/\.json$/, "-embodied.parquet");
 
+// Where to read the flows for a loaded results document: from the data origin by the
+// checksum the document records, for the published results; next to it otherwise.
+export function flowsUrl(dataPath, data, origin) {
+	const sha = data?.provenance?.embodied?.sha256;
+	if (!origin || dataPath !== "data/results.json" || !/^[a-f0-9]{64}$/.test(sha ?? "")) return embodiedUrl(dataPath);
+	return new URL(`embodied/${sha}.parquet`, origin).href;
+}
+
 // {file, metadata, meta, groups: [[rowStart, rowEnd]] per run}
 export async function openEmbodied(file) {
 	const metadata = await parquetMetadataAsync(file, { initialFetchSize: INITIAL_FETCH });

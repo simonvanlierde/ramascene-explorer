@@ -2,7 +2,8 @@
 import { tick } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "./lib/explorer.js";
-import { embodiedUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
+import { DATA_ORIGIN } from "./lib/data-origin.js";
+import { embodiedUrl, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun } from "./lib/live.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
@@ -47,7 +48,7 @@ async function load() {
 	}
 	if (banner(data).synthetic) document.title = `${banner(data).text} · ${document.title}`;
 	try {
-		src = await openEmbodiedUrl(embodiedUrl(dataPath), data.provenance?.embodied?.bytes);
+		src = await openEmbodiedUrl(flowsUrl(dataPath, data, DATA_ORIGIN), data.provenance?.embodied?.bytes);
 	} catch {
 		flowsError = "missing";
 		return;
@@ -290,11 +291,11 @@ $effect(() => {
 				<pre>uv run python precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
 				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
-			{:else if flowsError === "missing"}
+			{:else if flowsError === "missing" && !DATA_ORIGIN}
 				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
 				<pre>gh release download data-2011-r2 --pattern embodied.parquet --dir data</pre>
-			{:else if flowsError === "failed"}
-				<p role="alert"><strong>The 2011 flows could not be loaded.</strong> The connection may have dropped while reading <code>{embodiedUrl(dataPath)}</code>. Reload the page to try again.</p>
+			{:else if flowsError === "failed" || flowsError === "missing"}
+				<p role="alert"><strong>The 2011 flows could not be loaded.</strong> The connection may have dropped while reading <code>{flowsUrl(dataPath, data, DATA_ORIGIN)}</code>. Reload the page to try again.</p>
 			{:else}
 				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
 			{/if}
