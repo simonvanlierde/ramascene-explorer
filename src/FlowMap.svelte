@@ -20,6 +20,7 @@ import {
 	amountText,
 	arc,
 	bandGeometry,
+	horizonBands,
 	bandPartners,
 	changeArm,
 	divBand,
@@ -141,21 +142,43 @@ const geom = $derived.by(() => {
 	if (!shapes.length) return { R: 0, bands: [], B: [0, 0] };
 	const self = shapes[ui.who].at;
 	const B = proj(self);
+	const shown = visible(self);
 	const lines = [];
 	for (const k of bandPartners(sum.bands, ui.who, anchors)) {
 		const A = shapes[k].at;
 		let P;
+		let ts;
 		if (alpha > 0.5) {
+			// only the stretch of the great circle in view is drawn: a projected point
+			// behind the globe is not clipped, it lands mirrored on the front
 			const ip = geoInterpolate(A, self);
-			// a partner over the horizon: its band starts where the great circle comes into view
-			const t0 = STEPS.find((t) => visible(ip(t))) ?? 1;
-			P = STEPS.map((t) => proj(ip(t0 + (1 - t0) * t)));
+			const seen = STEPS.filter((t) => visible(ip(t)));
+			if (!seen.length) continue;
+			const a = horizon(ip, seen[0], -1);
+			const b = horizon(ip, seen.at(-1), 1);
+			ts = STEPS.map((t) => a + (b - a) * t);
+			P = ts.map((t) => proj(ip(t)));
 		} else P = arc(proj(A), B);
 		if (P.some((p) => !p)) continue;
-		lines.push({ k, v: sum.vals[k], P });
+		lines.push({ k, v: sum.vals[k], P, ts });
 	}
-	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown: visible(self) };
+	// with the selection behind the globe, the bands end at the horizon, without the ring
+	if (!shown) return { R: 0, bands: horizonBands(lines, { k: widthK, dir: ui.dir }), B, shown };
+	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown };
 });
+// The t nearest the horizon between the step t, in view, and the next step toward
+// sign, found by halving the gap: a visible stretch of a short great circle is one piece.
+function horizon(ip, t, sign) {
+	let inside = t;
+	let outside = t + sign / (STEPS.length - 1);
+	if (outside < 0 || outside > 1) return t;
+	for (let i = 0; i < 8; i++) {
+		const m = (inside + outside) / 2;
+		if (visible(ip(m))) inside = m;
+		else outside = m;
+	}
+	return inside;
+}
 // The boxes of what floats on the map (the chips, the zoom, the legend and the
 // note), in view px, so no label goes under them.
 let mapv = $state();
@@ -425,29 +448,31 @@ function move(e) {
 	const d = drag;
 	d.frame ||= requestAnimationFrame(() => {
 		nudge();
-		if (alpha > 0.5) spin(d.dx, d.dy);
-		else off = clampOff([off[0] + d.dx, off[1] + d.dy]);
+		(alpha > 0.5 ? spin : pan)(d.dx, d.dy);
 		d.dx = d.dy = d.frame = 0;
 	});
 }
+const pan = (dx, dy) => (off = clampOff([off[0] + dx, off[1] + dy]));
 const spin = (dx, dy) =>
 	(rot = [rot[0] + (dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (dy * 0.35) / zk))]);
-// A flick lets the globe glide on a little: at most about 34°, gone in a few
-// hundred ms. A pause before the release, a new press, a turn or a morph stops it.
+// A flick lets the globe turn, or the zoomed flat map pan, glide on a little: at most
+// about 34° or 96 px, gone in a few hundred ms. A pause before the release, a new
+// press, a turn or a morph stops it.
 const GLIDE_MS = 80; // decay time constant
 const GLIDE_MAX = 1.2; // px per ms
 function glide(d, at) {
 	const [vx, vy] = d.v ?? [0, 0];
 	const speed = Math.hypot(vx, vy);
 	// a running Flat/Globe morph (a tween that is no turn) keeps going, without a glide
-	if (alpha < 0.5 || d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
+	if (d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
 	let v = [(vx / speed) * Math.min(speed, GLIDE_MAX), (vy / speed) * Math.min(speed, GLIDE_MAX)];
 	let last = performance.now();
+	const step = alpha > 0.5 ? spin : pan;
 	const frame = (now) => {
 		// a frame can start before the release that asked for it
 		const k = Math.exp(-Math.max(0, now - last) / GLIDE_MS);
 		// the distance covered since the last frame under exponential decay
-		spin(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
+		step(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
 		nudge();
 		v = [v[0] * k, v[1] * k];
 		last = now;
@@ -583,6 +608,15 @@ const unit = $derived(wording(ui.indicator).unit);
 					/>
 				{/each}
 			</g>
+			<!-- shading toward the globe's edge, fading in with the morph; flat at the centre,
+			     so the selected country's fill and the legend's colours match there -->
+			{#if alpha > 0.5}
+				<radialGradient id="limb-g" class="limb">
+					<stop offset="0.6" stop-opacity="0" />
+					<stop offset="1" />
+				</radialGradient>
+				<path class="limb" d={sphere} fill="url(#limb-g)" opacity={(alpha - 0.5) * 2} />
+			{/if}
 			{#if reveal < 1}
 				<defs>
 					<radialGradient id="reveal-g" gradientUnits="userSpaceOnUse" cx={geom.B[0]} cy={geom.B[1]} r={revealR}>
