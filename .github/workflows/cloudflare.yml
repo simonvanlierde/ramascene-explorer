@@ -135,10 +135,12 @@ jobs:
           set -euo pipefail
           test -z "$(find "$ARTIFACT" ! -type f ! -type d -print -quit)" \
             || { echo "The artifact holds a link or special file"; exit 1; }
-          test -d "$ARTIFACT/site" && test -d "$ARTIFACT/data/browser-engine" \
-            && test -f "$ARTIFACT/data/embodied.parquet" && test -f "$ARTIFACT/data/results.json" \
-            && test -f "$ARTIFACT/data/browser-engine/manifest-v3.json" \
-            || { echo "The artifact lacks site/ or a data file"; exit 1; }
+          for d in site data/browser-engine; do
+            test -d "$ARTIFACT/$d" || { echo "The artifact lacks $d/"; exit 1; }
+          done
+          for f in data/embodied.parquet data/results.json data/browser-engine/manifest-v3.json; do
+            test -f "$ARTIFACT/$f" || { echo "The artifact lacks $f"; exit 1; }
+          done
           rm -rf site data/browser-engine
           mkdir -p data
           cp -R "$ARTIFACT/site" site
