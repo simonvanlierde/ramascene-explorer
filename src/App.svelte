@@ -235,7 +235,7 @@ $effect(() => {
 	<!-- on a wide screen Details sits beside the header and the sidebar, so both stay live; on a phone it is modal -->
 	<header class="top" inert={ui.panel !== null && !wide.current} bind:offsetHeight={headerH}>
 		<div class="brand">
-			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
+			<svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--acc)" /><path d="M8.6 19.6Q16 2 28 21.5a3 3 0 0 1-6 0Q17.5 7.5 10.6 20.6Z" fill="#fff" /><circle cx="7.5" cy="23" r="3.4" fill="none" stroke="#fff" stroke-width="2.4" /></svg>
 			<h1>RaMa-Scene Explorer</h1>
 			<span class="by">by <a href="https://simonvanlierde.com" {...away}>Simon van Lierde{#if away.target}<span class="sr-only"> (opens in new tab)</span>{/if}</a></span>
 		</div>

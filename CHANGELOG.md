@@ -17,6 +17,8 @@ follow [Semantic Versioning](https://semver.org/).
   missed. Drafts and bot pull requests get no preview ([publishing.md](docs/publishing.md#cloudflare)).
 - `data.yml` puts a `data-*` release's files in the R2 bucket, each object written once and
   never deleted ([publishing.md](docs/publishing.md#publish-the-data)).
+- The page has a browser-tab icon and a home-screen icon: a band arching from one place to
+  another, the mark that now also sits in the header.
 
 ### Changed
 
@@ -30,6 +32,7 @@ follow [Semantic Versioning](https://semver.org/).
   pill's note; the flow check is listed with the other checks under Method.
 - Below 1100 px the header pill drops the dataset name, so the "not forecasts" caveat stays
   readable.
+- The link preview image and the README screenshots show the current page, with the globe.
 
 ### Fixed
 
