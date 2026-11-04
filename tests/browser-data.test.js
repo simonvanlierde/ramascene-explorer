@@ -169,6 +169,23 @@ test("range reads refuse a full download, a wrong offset and truncated data", as
 	await assert.rejects(fetchRange(url, 1, 3, 10), /updated: reload the page/);
 });
 
+test("a failed range read names its file and range unless its own signal stopped it", async (t) => {
+	const url = "https://example.test/A/c/0/0";
+	const aborted = () => Promise.reject(new DOMException("The operation was aborted. ", "AbortError"));
+	t.mock.method(globalThis, "fetch", aborted);
+	await assert.rejects(fetchRange(url, 1, 3, 10), {
+		message: "the browser data could not be read (AbortError: The operation was aborted.; /A/c/0/0 bytes 1-2)",
+	});
+	t.mock.method(globalThis, "fetch", () =>
+		Promise.reject(new TypeError("NetworkError when attempting to fetch resource.")),
+	);
+	await assert.rejects(fetchRange(url, 1, 3, 10), /could not be read \(TypeError: NetworkError .*bytes 1-2\)/);
+	const controller = new AbortController();
+	controller.abort();
+	t.mock.method(globalThis, "fetch", aborted);
+	await assert.rejects(fetchRange(url, 1, 3, 10, controller.signal), { name: "AbortError" });
+});
+
 test("rows from chunks of several rows come back in the order asked, with columns", async () => {
 	const p = infos.P;
 	const files = p.shard_bytes.map((_, i) => readFileSync(new URL(`fixture-store/P/c/${i}/0`, import.meta.url)));

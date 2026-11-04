@@ -232,6 +232,21 @@ export async function fetchEngine(base, origin = DATA_ORIGIN) {
 export async function fetchRange(url, start, end, byteLength, signal) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
+	try {
+		return await readResponse(url, start, end, byteLength, signal);
+	} catch (e) {
+		// A read the read-ahead stopped keeps its AbortError. Any other fetch failure,
+		// an AbortError the signal did not cause included, names the file and range, so a
+		// failed run says which read broke.
+		if (signal?.aborted || !(e instanceof TypeError || e?.name === "AbortError")) throw e;
+		throw new Error(
+			`the browser data could not be read (${e.name}: ${e.message.trim()}; ${new URL(url).pathname} bytes ${start}-${end - 1})`,
+			{ cause: e },
+		);
+	}
+}
+
+async function readResponse(url, start, end, byteLength, signal) {
 	const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
 	if (response.status === 404) {
 		await response.body?.cancel();
