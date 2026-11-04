@@ -97,6 +97,6 @@ Only `data.yml` writes to R2, with a token scoped to the one bucket, on the `dat
 environment, which takes `data-*` tags only. It writes each object once and never deletes.
 A Worker's R2 binding can always write, so preview Workers get none and read the data host.
 The production Worker keeps its binding to serve the Parquet file; only reviewed code on
-`main` deploys it, and an R2 bucket lock on `embodied/` and `browser-engine/` would make
-write-once hold for it too. `data.yml` compares each existing object's ETag, which R2
+`main` deploys it. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
+overwrite or delete there for 365 days after an upload, whoever writes. `data.yml` compares each existing object's ETag, which R2
 computes from the bytes, so it notices a replaced object.
