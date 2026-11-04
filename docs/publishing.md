@@ -89,8 +89,8 @@ production, and the domain's other pages still come from GitHub Pages through th
 
 `cloudflare.yml` deploys it on every push to `main`. A `build` job with no secrets runs
 `pnpm install` and the build, and hands `site/` and the data files to the jobs that hold the
-deploy token as an artifact; those jobs install wrangler without lifecycle scripts and run
-nothing else from the repository. Each run first uploads a version
+deploy token as an artifact; those jobs install without install scripts and run wrangler
+with the repository's config. Each run first uploads a version
 without serving it, then runs `hosting/check.js` against that version's preview URL in
 the Playwright image. On `main`, only a version that passes the check goes on the
 production routes. Each pull request from this repository stops after the check, which

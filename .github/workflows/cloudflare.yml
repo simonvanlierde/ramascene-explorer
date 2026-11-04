@@ -114,16 +114,36 @@ jobs:
       - id: playwright
         run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: site
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
-      # Only wrangler runs here. --ignore-scripts keeps lifecycle scripts out of this job; the
-      # lockfile fixes every version and hash, so this is the wrangler the other jobs resolve.
-      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Only wrangler runs here. --ignore-scripts and --ignore-pnpmfile keep install scripts and
+      # .pnpmfile.cjs out of this job; the lockfile fixes every version and hash, so this is the
+      # wrangler the other jobs resolve. The install comes before the artifact is unpacked.
+      - run: pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
+      # The artifact is built by a job that runs repository code, so it lands outside the checkout
+      # and only the four paths the publish step needs are copied in, as plain files and folders.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+          path: ${{ runner.temp }}/artifact
+      - name: place the build output
+        env:
+          ARTIFACT: ${{ runner.temp }}/artifact
+        run: |
+          set -euo pipefail
+          test -z "$(find "$ARTIFACT" ! -type f ! -type d -print -quit)" \
+            || { echo "The artifact holds a link or special file"; exit 1; }
+          test -d "$ARTIFACT/site" && test -d "$ARTIFACT/data/browser-engine" \
+            && test -f "$ARTIFACT/data/embodied.parquet" && test -f "$ARTIFACT/data/results.json" \
+            && test -f "$ARTIFACT/data/browser-engine/manifest-v3.json" \
+            || { echo "The artifact lacks site/ or a data file"; exit 1; }
+          rm -rf site data/browser-engine
+          mkdir -p data
+          cp -R "$ARTIFACT/site" site
+          cp -R "$ARTIFACT/data/browser-engine" data/browser-engine
+          cp "$ARTIFACT/data/embodied.parquet" "$ARTIFACT/data/results.json" data/
       - name: publish
         id: publish
         env:
@@ -138,7 +158,7 @@ jobs:
           # The key is the file's own hash: a results.json from another run must not
           # overwrite an immutable object under its name.
           sha=$(sha256sum data/embodied.parquet | cut -d' ' -f1)
-          test "$sha" = "$(node -p 'require("./data/results.json").provenance.embodied.sha256')" \
+          test "$sha" = "$(jq -r .provenance.embodied.sha256 data/results.json)" \
             || { echo "data/results.json names other embodied flows than data/embodied.parquet"; exit 1; }
           key="embodied/$sha.parquet"
           immutable="public, max-age=31536000, immutable"
@@ -217,8 +237,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26"
-      # The deploy token is in scope here: only wrangler runs, so no install scripts.
-      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # The deploy token is in scope here: no install scripts and no .pnpmfile.cjs.
+      - run: pnpm install --frozen-lockfile --ignore-scripts --ignore-pnpmfile
       - name: serve the checked version
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
