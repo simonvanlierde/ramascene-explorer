@@ -30,7 +30,8 @@ In scope:
   `?api=` parameters.
 - `pipeline/` (`precompute.py`, `compare_data.py`) and the browser calculation and data reader modules in `src/lib/`.
 - The workflows in `.github/workflows/`, including the Cloudflare deploy (`cloudflare.yml`),
-  which publishes production only from `main` and previews from this repository's branches.
+  which publishes production only from `main` and previews from this repository's branches,
+  and the data upload (`data.yml`), which runs only for `data-*` releases.
 
 Out of scope:
 

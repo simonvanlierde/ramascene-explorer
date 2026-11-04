@@ -12,8 +12,16 @@ follow [Semantic Versioning](https://semver.org/).
   numbers come from: the dataset and its DOI, the engine, the model, the date the results were
   generated, and why a scenario is not a forecast, with links to Method and the source code.
   For a custom run it names that run's own source ([page.md](docs/page.md#units-and-calculation-checks)).
+- Each ready pull request gets its own preview Worker, which is deleted, and checked gone,
+  when the pull request closes, merges or turns draft. A daily sweep catches any that were
+  missed. Drafts and bot pull requests get no preview ([publishing.md](docs/publishing.md#cloudflare)).
+- `data.yml` puts a `data-*` release's files in the R2 bucket, each object written once and
+  never deleted ([publishing.md](docs/publishing.md#publish-the-data)).
 
 ### Changed
+
+- Deploys and previews no longer write to R2. They check that the data their commit names is
+  published, and stop if it is not.
 
 - Details is 768 px wide on a desktop, up from 640 px, and never wider than the space beside
   the sidebar. The Sankey uses the extra width for longer bands, not bigger text.
@@ -40,8 +48,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Security
 
-- The Cloudflare workflow builds the site in a job with no secrets. The jobs that hold the
-  deploy token only download the result and run wrangler.
+- The deploy token needs no R2 access any more; only `data.yml` writes to the bucket, with a
+  token scoped to it. The production promote installs without install scripts.
 - `undici` is held at 7.30.1 or later through wrangler, which clears eight advisories. They
   reached `wrangler dev` and CI only.
 

@@ -88,7 +88,10 @@ itself is public, read-only, on its own hostname, with CORS for any origin: keep
 public data, keyed by hash, in it. Zarr store reads use the
 Cache API for byte ranges; all other assets go directly through static hosting.
 R2 credentials stay on Cloudflare or in the deployment environment, never in the browser.
-The deploy token is a secret on the `cloudflare` GitHub environment. The environment allows
-every branch, because pull requests deploy previews, so any workflow on a branch of this
-repository could name it and read the token. Pull requests from forks never receive it.
-The deploy job builds without the Cargo cache, so a poisoned cache cannot reach the token.
+The deploy token is a secret on the `cloudflare` GitHub environment and can change Workers
+only. The environment allows every branch, because pull requests deploy previews, so any
+workflow on a branch of this repository could name it and read the token. Pull requests
+from forks, draft pull requests and bot pull requests never receive it. The deploy job
+builds without the Cargo cache, so a poisoned cache cannot reach the token.
+Only `data.yml` writes to R2, with a token scoped to the one bucket, on the `data`
+environment, which takes `data-*` tags only. It writes each object once and never deletes.

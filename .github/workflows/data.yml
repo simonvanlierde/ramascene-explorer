@@ -1,0 +1,95 @@
+name: data
+
+# Publishes a data release's files to the R2 bucket the site reads. cloudflare.yml never
+# writes there: it checks this ran first (docs/publishing.md#publish-the-data).
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The data-* release to publish
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: publish data
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'data-')
+    runs-on: ubuntu-latest
+    environment: data
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Only a file this commit's checksum names goes up. A release asset with another
+      # digest is skipped (an older file on the same release); the download is checked too.
+      - name: fetch and verify the release files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          [[ $TAG =~ ^data-[A-Za-z0-9._-]+$ ]] || { echo "Not a data release tag: $TAG"; exit 1; }
+          assets=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq .assets)
+          found=0
+          for pair in embodied.parquet:embodied.sha256 ramascene-browser-engine-zarr.tar:browser-engine-zarr.sha256; do
+            name=${pair%%:*} sums=data/${pair#*:}
+            want=$(cut -d' ' -f1 "$sums")
+            # empty: no such asset; "none": GitHub stored no digest for it
+            digest=$(jq -r --arg n "$name" '.[] | select(.name == $n) | .digest // "none"' <<<"$assets")
+            if [ -z "$digest" ]; then
+              echo "$TAG has no $name"
+            elif [ "$digest" != none ] && [ "$digest" != "sha256:$want" ]; then
+              echo "::notice::$TAG has a $name with another checksum than $sums, so it is skipped"
+            else
+              gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$name" --dir data
+              sha256sum --check "$sums"
+              found=1
+            fi
+          done
+          test "$found" = 1 || { echo "::error::$TAG has none of the files this commit's checksums name"; exit 1; }
+
+      # Keys and headers match what the Worker, the page and hosting/check.js read. Every
+      # object is written once and never deleted; the store's .complete marker goes last.
+      - name: upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID || secrets.R2_ACCOUNT_ID }}
+          AWS_DEFAULT_REGION: auto
+          # R2 does not take every checksum that newer AWS CLIs add by default
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          BUCKET: ramascene-explorer-data
+        run: |-
+          set -euo pipefail
+          for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ACCOUNT_ID; do
+            test -n "${!v}" || { echo "Set $v on the data environment"; exit 1; }
+          done
+          export AWS_ENDPOINT_URL="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          aws --version
+          put=.github/scripts/r2-put-once.sh
+          immutable="public, max-age=31536000, immutable"
+          if [ -f data/embodied.parquet ]; then
+            "$put" "embodied/$(cut -d' ' -f1 data/embodied.sha256).parquet" data/embodied.parquet \
+              application/vnd.apache.parquet "$immutable"
+          fi
+          if [ -f data/ramascene-browser-engine-zarr.tar ]; then
+            tar -xf data/ramascene-browser-engine-zarr.tar -C data
+            store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
+            [[ $store =~ ^store-[0-9a-f]{64}$ ]] || { echo "The manifest names no valid store: $store"; exit 1; }
+            test -d "data/browser-engine/$store" || { echo "The tar has no $store/"; exit 1; }
+            (cd data/browser-engine && find "$store" -type f) | xargs -P 8 -I{} \
+              "$put" "browser-engine/{}" "data/browser-engine/{}" application/octet-stream "$immutable"
+            printf '%s\n' "$store" > "$RUNNER_TEMP/complete"
+            "$put" "browser-engine/$store/.complete" "$RUNNER_TEMP/complete" text/plain
+          fi

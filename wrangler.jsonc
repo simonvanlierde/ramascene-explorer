@@ -1,8 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   // The live site: simonvanlierde.com/ramascene-explorer. The domain's other pages stay on
-  // GitHub Pages. Pull requests upload versions of this Worker with a preview alias; their
-  // version URLs on workers.dev serve the same paths (docs/publishing.md#cloudflare).
+  // GitHub Pages. cloudflare.yml uploads each main build as a version and checks it on its
+  // version URL before serving it. Pull request previews are their own Workers, from
+  // wrangler.preview.jsonc (docs/publishing.md#cloudflare).
   "name": "ramascene-explorer",
   "main": "hosting/worker.js",
   "compatibility_date": "2026-10-13",

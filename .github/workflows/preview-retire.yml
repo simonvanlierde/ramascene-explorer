@@ -1,0 +1,51 @@
+name: retire preview
+
+# Deletes the preview Worker of a pull request that closes or turns draft, and sweeps
+# daily for any that were missed (docs/publishing.md#cloudflare).
+on:
+  pull_request:
+    types: [closed, converted_to_draft]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      prs:
+        description: Pull request numbers to retire, separated by spaces. Leave empty to run the daily sweep.
+        required: false
+
+permissions:
+  contents: read
+
+# Shares cloudflare.yml's preview group, so a retire waits for a deploy in flight.
+concurrency:
+  group: preview-${{ github.event.pull_request.number || github.run_id }}
+
+jobs:
+  retire:
+    name: retire
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: cloudflare
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read # the sweep reads each pull request's state
+    steps:
+      # The base branch's script: a closed pull request may have no merge ref left.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      # The script is a copy of the project-templates one. It never names the production
+      # Worker: it deletes only ramascene-explorer-pr-<number>.
+      - name: delete the preview Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SLUG: ramascene-explorer
+          PRS: ${{ github.event.pull_request.number || inputs.prs }}
+        run: .github/scripts/preview-retire.sh
