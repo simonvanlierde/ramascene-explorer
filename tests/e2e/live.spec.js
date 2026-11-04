@@ -221,9 +221,9 @@ test("a live run never inherits the published calculation checks", async ({ page
 });
 
 test("the change field holds to the job API's range", async ({ page }) => {
-	let posted = null;
+	const posts = [];
 	await routeJob(page, job, (body) => {
-		posted = body;
+		posts.push(body);
 	});
 	// a range other than the page's own default, so the field must have read it from the catalog
 	// (the route registered last answers first)
@@ -240,12 +240,12 @@ test("the change field holds to the job API's range", async ({ page }) => {
 	await change.fill("-60");
 	await page.locator("#live-run").click();
 	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);
-	await page.waitForTimeout(300);
-	expect(posted).toBe(null);
 	await change.fill("-20");
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in");
-	expect(posted?.model_details[0].techChange).toEqual([-20]);
+	// only the in-range run was posted: the -60 click sent nothing
+	expect(posts).toHaveLength(1);
+	expect(posts[0].model_details[0].techChange).toEqual([-20]);
 });
 
 test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {

@@ -8,7 +8,7 @@ import { localRange } from "./local-range.js";
 
 const directory = process.env.BROWSER_ENGINE_DATA;
 test("all 155 browser scenarios match the shipped engine results at relative 1e-6", {
-	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
+	skip: !directory && !process.env.CI && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async () => {
 	assert.ok(existsSync(`${directory}/manifest-v3.json`));
 	const meta = JSON.parse(readFileSync(`${directory}/manifest-v3.json`, "utf8"));
