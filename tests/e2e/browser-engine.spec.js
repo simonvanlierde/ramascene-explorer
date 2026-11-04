@@ -41,12 +41,18 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator(".ph")).toContainText("It does not include this custom result.");
 	// the totals by region are in Details, not in the sidebar
 	await expect(page.locator(".pan #live-table tbody tr")).toHaveCount(49);
-	const doi = page.locator(".pan .pf a");
-	await expect(doi).toHaveAttribute("target", "_blank");
-	await expect(doi).toHaveAttribute("rel", "noopener");
-	await expect(doi).toContainText("(opens in new tab)");
 	await expect(page.locator(".brand .by a")).toHaveAccessibleName("Simon van Lierde (opens in new tab)");
 	await expect(page.locator("#side .live-totals")).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	// the basis popover names this run's source, and its link leaves in a new tab
+	await page.locator("#status .pill.basis").click();
+	const pop = page.locator("#basis-pop");
+	await expect(pop).toContainText("This run: computed in this browser");
+	await expect(pop).toContainText("Float64 Woodbury");
+	const source = pop.getByRole("link");
+	await expect(source).toHaveAttribute("target", "_blank");
+	await expect(source).toHaveAttribute("rel", "noopener");
+	await expect(source).toContainText("(opens in new tab)");
 	await page.keyboard.press("Escape");
 	expect(external).toEqual([]);
 	expect(matrixBytes).toBeGreaterThan(0);

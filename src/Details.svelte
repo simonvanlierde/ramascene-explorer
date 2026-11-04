@@ -2,8 +2,7 @@
 import { tick } from "svelte";
 // The slide-over: the selection taken apart as a Sankey (released in →
 // industry → consumed in), the same flows as a sortable table, and the
-// method with every check. Provenance and the verification stay in its footer.
-import { shortCommit } from "./lib/explorer.js";
+// method with every check. Where the numbers come from is in the header's basis popover.
 import {
 	amount,
 	amountText,
@@ -25,8 +24,7 @@ import Provenance from "./Provenance.svelte";
 import { ui, wide } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause; live: {source, text, rows, job} for a run that is not precomputed, else null
-// away: the attributes for links to other sites (App: a new tab while a custom run is held)
-let { data, meta, sum, whatif, run, text, live, away = {} } = $props();
+let { data, meta, sum, whatif, run, text, live } = $props();
 
 const TABS = [
 	["sankey", "Sankey"],
@@ -68,7 +66,11 @@ function tabKeys(e, i) {
 }
 
 // --- Sankey -------------------------------------------------------------------
-const lay = $derived(open && ui.panel === "sankey" ? sankeyLayout(meta, sum, ui) : null);
+// A wide panel draws the Sankey at most at SK_SCALE: past that, the layout
+// widens instead, so the extra room lengthens the bands rather than enlarging the text.
+const SK_SCALE = 600 / 452;
+let skW = $state(0);
+const lay = $derived(open && ui.panel === "sankey" ? sankeyLayout(meta, sum, ui, { width: Math.max(452, Math.floor(skW / SK_SCALE)) }) : null);
 const heads = $derived(
 	ui.dir === "in"
 		? [
@@ -85,7 +87,6 @@ const heads = $derived(
 const fmtV = (v) => amount(v, ui.indicator)[0];
 // A Sankey drawn narrower than its layout scales its text down with it; k sets
 // the text back to its own size (in layout units), and labels need that much room.
-let skW = $state(0);
 const k = $derived(lay && skW ? Math.max(1, lay.width / skW) : 1);
 const room = $derived(7 * k);
 
@@ -151,11 +152,6 @@ async function copyLink() {
 	copyTimer = setTimeout(() => (copied = ""), 2500);
 }
 
-// --- footer ---------------------------------------------------------------------
-const d = $derived(data.provenance.dataset);
-const e = $derived(data.provenance.engine);
-// only a passed check on engine output earns the green line
-const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer_by_country?.passed === true ? meta.checks.producer_by_country : null);
 </script>
 
 <!-- on a wide screen focus can be in the sidebar; the panel's own handler stops Escape first -->
@@ -306,16 +302,7 @@ const check = $derived(meta.data_kind === "exiobase-v3" && meta.checks?.producer
 				</dl>
 			</section>
 		{/if}
-		<Provenance {data} {scenario} {away} />
+		<Provenance {data} {meta} {scenario} {live} />
 	</div>
 
-	<footer class="pf">
-		<p>{d.name} {d.year} (<a href="https://doi.org/{d.doi}" {...away}>doi:{d.doi}{#if away.target} (opens in new tab){/if}</a>) · RaMa-Scene engine {e.label ?? shortCommit(e.commit)} · demand-pull Leontief model · {w.noun}</p>
-		{#if check && !live}
-			<p class="vf">
-				<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-				Flow check passed: country totals match the engine (relative tolerance 1e-9)
-			</p>
-		{/if}
-	</footer>
 </div>

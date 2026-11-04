@@ -6,6 +6,22 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The header's "Published scenarios · not forecasts" pill opens a short note on where the
+  numbers come from: the dataset and its DOI, the engine, the model, the date the results were
+  generated, and why a scenario is not a forecast, with links to Method and the source code.
+  For a custom run it names that run's own source ([page.md](docs/page.md#units-and-calculation-checks)).
+
+### Changed
+
+- Details is 768 px wide on a desktop, up from 640 px, and never wider than the space beside
+  the sidebar. The Sankey uses the extra width for longer bands, not bigger text.
+- Details no longer has a footer. The dataset, engine and generated date are in the header
+  pill's note; the flow check is listed with the other checks under Method.
+- Below 1100 px the header pill drops the dataset name, so the "not forecasts" caveat stays
+  readable.
+
 ### Fixed
 
 - A custom scenario on a slow link no longer fails at one minute while its data is still

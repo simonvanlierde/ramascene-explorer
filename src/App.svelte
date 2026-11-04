@@ -7,6 +7,7 @@ import { embodiedUrl, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun } from "./lib/live.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
+import Basis from "./Basis.svelte";
 import Details from "./Details.svelte";
 import FlowMap from "./FlowMap.svelte";
 import Sentence from "./Sentence.svelte";
@@ -241,7 +242,7 @@ $effect(() => {
 			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
 			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
 			{#if data}
-				<span class="pill basis"><span class="ds">{data.provenance.dataset.name} · {data.base_year} · </span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
+				<Basis {data} {live} {away} />
 				{#if live}
 					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
 				{:else if verified}
@@ -277,7 +278,7 @@ $effect(() => {
 			<Strip {meta} {sum} {conts} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
-		<Details {data} {meta} {sum} {whatif} {run} {text} {live} {away} />
+		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />
 		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
 			<div class="seg big" role="group" aria-label="Mode">
 				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>

@@ -22,7 +22,7 @@ A region's fill also counts flows that are too small or too close to draw as a b
 Select an industry section on the rail to look at it alone. Select more sections to combine them.
 Every total follows that selection. The rail's heights show each section's share of the 2011 flows.
 
-Choose **Details** for the same flows as a Sankey diagram or a sortable table. On a wide screen the sidebar stays usable beside it, and the diagram follows the selection.
+Choose **Details** for the same flows as a Sankey diagram or a sortable table. On a wide screen it is up to 768 px wide, the sidebar stays usable beside it, and the diagram follows the selection.
 The diagram runs from producer to industry to consumer.
 **Download CSV** saves the table at full precision, in its displayed unit.
 The filename records the year, region, indicator, direction, sections and scenario,
@@ -67,6 +67,10 @@ fewer jobs, for example, is not a benefit.
 - **Employment:** the people employed to meet the demand, shown as “jobs”. It is not full-time equivalents or new jobs.
 
 The source data records these in kg CO₂-eq, kilotonnes and thousands of people.
+The **Published scenarios · not forecasts** pill in the header opens a short note:
+the dataset and its DOI, the engine version, the model, when the results were generated,
+and links to the method and the source code. For a custom scenario it names where that run
+was computed instead. Escape closes it.
 **Details → Method** explains the model and the numerical checks.
 **Checks passed** means those calculation checks passed. It does not mean that a scenario is realistic.
 
