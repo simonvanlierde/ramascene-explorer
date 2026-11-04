@@ -233,6 +233,8 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
 	const began = performance.now();
+	// every failure names its read, so a failed run says which file and range broke
+	const where = `${new URL(url).pathname} bytes ${start}-${end - 1}`;
 	let phase = "before the response";
 	try {
 		const response = await fetch(url, { headers: { Range: `bytes=${start}-${end - 1}` }, signal });
@@ -241,27 +243,29 @@ export async function fetchRange(url, start, end, byteLength, signal) {
 			// The manifest names the store by its hash: next to the page, a 404 means a newer
 			// deploy; on the data host, a store that was never uploaded, which hosting/check.js
 			// catches before main promotes a version.
-			throw new Error("the browser data was updated: reload the page");
+			throw new Error(`the browser data was updated: reload the page (${where})`);
 		}
 		if (
 			response.status !== 206 ||
 			response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`
 		) {
 			await response.body?.cancel();
-			throw new Error("browser scenario data needs a server with HTTP range support");
+			throw new Error(
+				`browser scenario data needs a server with HTTP range support (${where}, status ${response.status})`,
+			);
 		}
 		phase = "reading the body";
 		const buffer = await response.arrayBuffer();
-		if (buffer.byteLength !== end - start) throw new Error("truncated matrix range");
+		if (buffer.byteLength !== end - start)
+			throw new Error(`truncated matrix range (${where}, ${buffer.byteLength} bytes)`);
 		return buffer;
 	} catch (e) {
-		// A read the read-ahead stopped keeps its AbortError. Any other fetch failure,
-		// an AbortError the signal did not cause included, names the file, range and when it
-		// failed, so a failed run says which read broke.
+		// A read the read-ahead stopped keeps its AbortError. Any other fetch failure, an
+		// AbortError the signal did not cause included, also says when it failed.
 		if (signal?.aborted || !(e instanceof TypeError || e.name === "AbortError")) throw e;
 		const ms = Math.round(performance.now() - began);
 		throw new Error(
-			`the browser data could not be read (${e.name}: ${e.message.trim()}; ${new URL(url).pathname} bytes ${start}-${end - 1}, ${phase}, after ${ms} ms)`,
+			`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms)`,
 			{ cause: e },
 		);
 	}

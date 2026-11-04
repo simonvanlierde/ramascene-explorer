@@ -169,7 +169,7 @@ test("range reads refuse a full download, a wrong offset and truncated data", as
 	await assert.rejects(fetchRange(url, 1, 3, 10), /updated: reload the page/);
 });
 
-test("a failed range read names its file, range and phase unless its own signal stopped it", async (t) => {
+test("a failed range read names its file and range, and a failed fetch its phase, unless its own signal stopped it", async (t) => {
 	const url = "https://example.test/A/c/0/0";
 	const abort = new DOMException("The operation was aborted. ", "AbortError");
 	t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
@@ -191,7 +191,19 @@ test("a failed range read names its file, range and phase unless its own signal 
 	);
 	// the read's own errors keep their message
 	t.mock.method(globalThis, "fetch", async () => new Response("gone", { status: 404 }));
-	await assert.rejects(fetchRange(url, 1, 3, 10), { message: "the browser data was updated: reload the page" });
+	await assert.rejects(fetchRange(url, 1, 3, 10), {
+		message: "the browser data was updated: reload the page (/A/c/0/0 bytes 1-2)",
+	});
+	t.mock.method(globalThis, "fetch", async () => new Response("0123456789"));
+	await assert.rejects(fetchRange(url, 1, 3, 10), {
+		message: "browser scenario data needs a server with HTTP range support (/A/c/0/0 bytes 1-2, status 200)",
+	});
+	t.mock.method(
+		globalThis,
+		"fetch",
+		async () => new Response("1", { status: 206, headers: { "Content-Range": "bytes 1-2/10" } }),
+	);
+	await assert.rejects(fetchRange(url, 1, 3, 10), { message: "truncated matrix range (/A/c/0/0 bytes 1-2, 1 bytes)" });
 	const controller = new AbortController();
 	controller.abort();
 	t.mock.method(globalThis, "fetch", () => Promise.reject(abort));
