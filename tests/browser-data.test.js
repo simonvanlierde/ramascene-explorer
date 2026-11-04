@@ -210,6 +210,23 @@ test("a failed range read names its file and range, and a failed fetch its phase
 	await assert.rejects(fetchRange(url, 1, 3, 10, controller.signal), (e) => e === abort);
 });
 
+test("a range that stalls times out with its read named, and its own stop still wins", async (t) => {
+	const url = "https://example.test/A/c/0/0";
+	// a server that never answers: only an abort ends the request, as in a browser
+	t.mock.method(globalThis, "fetch", (_url, { signal }) => {
+		return new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason)));
+	});
+	await assert.rejects(
+		fetchRange(url, 1, 3, 10, undefined, 20),
+		/^Error: the browser data could not be read \(TimeoutError: .*; \/A\/c\/0\/0 bytes 1-2, before the response, after \d+ ms\)$/,
+	);
+	await assert.rejects(fetchRange(url, 1, 3, 10, new AbortController().signal, 20), /TimeoutError: .*bytes 1-2/);
+	const controller = new AbortController();
+	const stopped = fetchRange(url, 1, 3, 10, controller.signal, 60_000);
+	controller.abort();
+	await assert.rejects(stopped, (e) => e === controller.signal.reason);
+});
+
 test("rows from chunks of several rows come back in the order asked, with columns", async () => {
 	const p = infos.P;
 	const files = p.shard_bytes.map((_, i) => readFileSync(new URL(`fixture-store/P/c/${i}/0`, import.meta.url)));
