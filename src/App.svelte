@@ -232,7 +232,8 @@ $effect(() => {
 
 <a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
 <div class="shell" style:--header-h={headerH ? `${headerH}px` : null} style:--banner-h={bannerH ? `${bannerH}px` : null}>
-	<header class="top" inert={ui.panel !== null} bind:offsetHeight={headerH}>
+	<!-- on a wide screen Details sits beside the header and the sidebar, so both stay live; on a phone it is modal -->
+	<header class="top" inert={ui.panel !== null && !wide.current} bind:offsetHeight={headerH}>
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect width="22" height="22" rx="6" fill="var(--acc)" /><path d="M4 16C8 7 13 6 18 6" fill="none" stroke="#fff" stroke-width="3.2" /><path d="M4 16C8 9 13 8 18 8" fill="none" stroke="#fff" stroke-width=".9" /></svg>
 			<h1>RaMa-Scene Explorer</h1>

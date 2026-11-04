@@ -392,6 +392,29 @@ test("the honesty notes stay on screen: Published scenarios · not forecasts, an
 	await expect(page.locator("#headline")).toContainText("would have");
 });
 
+test("on a wide screen the header works while Details is open, and Escape in the basis note leaves Details open", async ({
+	page,
+	isMobile,
+}) => {
+	test.skip(isMobile, "on a phone Details is modal, so the header is inert behind it");
+	await page.goto("?panel=sankey");
+	await ready(page);
+	const details = page.locator(".pan.on");
+	await expect(details).toBeVisible();
+	const dark = page.getByRole("button", { name: "Dark theme" });
+	const before = await dark.getAttribute("aria-pressed");
+	await dark.click();
+	await expect(dark).not.toHaveAttribute("aria-pressed", before);
+	await page.locator("#status .pill.basis").click();
+	const pop = page.getByRole("dialog", { name: "Where these numbers come from" });
+	await expect(pop).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(pop).toHaveCount(0);
+	await expect(details).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(details).toHaveCount(0);
+});
+
 test("the basis pill says where the numbers come from, and Escape returns to it", async ({ page }) => {
 	await page.goto("");
 	await ready(page);
