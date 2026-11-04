@@ -229,8 +229,9 @@ export async function fetchEngine(base, origin = DATA_ORIGIN) {
 	);
 }
 
-// A range read that takes longer than this fails the run with that read named. The
-// time counts from the fetch, so it includes waiting behind the run's other reads.
+// A range read that gets no data for this long fails the run with that read named. The
+// timer restarts on every chunk of the body, so a slow link that keeps sending passes;
+// before the response it also counts the wait behind the run's other reads.
 const RANGE_TIMEOUT_MS = 60_000;
 
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
@@ -241,11 +242,17 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 	for (let retried = false; ; retried = true) {
 		const began = performance.now();
 		let phase = "before the response";
+		const stall = new AbortController();
+		let timer;
+		const wait = () => {
+			clearTimeout(timer);
+			timer = setTimeout(() => stall.abort(new DOMException(`no data for ${timeoutMs} ms`, "TimeoutError")), timeoutMs);
+		};
 		try {
-			const timeout = AbortSignal.timeout(timeoutMs);
+			wait();
 			const response = await fetch(url, {
 				headers: { Range: `bytes=${start}-${end - 1}` },
-				signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+				signal: signal ? AbortSignal.any([signal, stall.signal]) : stall.signal,
 			});
 			if (response.status === 404) {
 				await response.body?.cancel();
@@ -269,23 +276,38 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 				);
 			}
 			phase = "reading the body";
-			const buffer = await response.arrayBuffer();
-			if (buffer.byteLength !== end - start)
-				throw new Error(`truncated matrix range (${where}, ${buffer.byteLength} bytes)`);
-			return buffer;
+			const bytes = new Uint8Array(end - start);
+			let length = 0;
+			if (!response.body) throw new Error(`truncated matrix range (${where}, 0 bytes)`);
+			const reader = response.body.getReader();
+			for (;;) {
+				wait();
+				const { done, value } = await reader.read();
+				if (done) break;
+				if (length + value.length > bytes.length) {
+					await reader.cancel();
+					throw new Error(`oversized matrix range (${where}, over ${bytes.length} bytes)`);
+				}
+				bytes.set(value, length);
+				length += value.length;
+			}
+			if (length !== bytes.length) throw new Error(`truncated matrix range (${where}, ${length} bytes)`);
+			return bytes.buffer;
 		} catch (e) {
 			// A read the read-ahead stopped keeps its AbortError. Any other fetch failure, an
 			// AbortError the signal did not cause and the range's own timeout included, also says
 			// when it failed.
 			if (signal?.aborted || !(e instanceof TypeError || ["AbortError", "TimeoutError"].includes(e.name))) throw e;
 			// Firefox sometimes aborts a body read the page never stopped, so such a failure gets
-			// one more try. A timeout does not: a second minute would pass the page's deadline.
+			// one more try. A stall does not: the host already sent nothing for a minute.
 			if (!retried && e.name !== "TimeoutError") continue;
 			const ms = Math.round(performance.now() - began);
 			throw new Error(
 				`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms${retried ? ", second try" : ""})`,
 				{ cause: e },
 			);
+		} finally {
+			clearTimeout(timer);
 		}
 	}
 }

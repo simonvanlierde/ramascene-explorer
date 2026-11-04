@@ -6,6 +6,15 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A custom scenario on a slow link no longer fails at one minute while its data is still
+  arriving: a data read now fails only after a minute with no data at all
+  ([browser-engine.md](docs/browser-engine.md)).
+- The two-minute limit now times only the threaded calculation, not the download, and a
+  run on one thread is no longer downloaded twice and then failed when it passes two
+  minutes.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added

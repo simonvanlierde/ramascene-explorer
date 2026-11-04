@@ -55,6 +55,22 @@ async function prefetch(base, steps) {
 	}
 }
 
+// A trap in a pool thread leaves the threaded call waiting instead of throwing, so the
+// page times each call from these messages (browser-client.js). Downloads are not timed.
+function timed(kernel, id) {
+	const watch =
+		(f) =>
+		(...args) => {
+			self.postMessage({ id, computing: true });
+			try {
+				return f(...args);
+			} finally {
+				self.postMessage({ id, computing: false });
+			}
+		};
+	return { ...kernel, correction: watch(kernel.correction), fold: watch(kernel.fold) };
+}
+
 self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 	if (steps) return prefetch(base, steps);
 	let threaded = false;
@@ -90,7 +106,7 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 			try {
 				if (broad && !single) {
 					compute ??= loadKernel();
-					maths = await compute;
+					maths = timed(await compute, id);
 					threaded = true;
 				} else maths = await loadKernel(true);
 			} catch {

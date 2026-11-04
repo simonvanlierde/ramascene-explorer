@@ -33,8 +33,8 @@ inside a shard whose size the manifest records, and a server that ignores Range
 is refused. Shard indexes must point inside their shard. The WebAssembly
 kernel decodes each chunk and stops one byte past the row's size, and the
 chunk's gzip size field and CRC-32 must match, so a crafted chunk cannot grow
-past one row. The worker stops after a two-minute request
-timeout. The data archive is pinned by `data/browser-engine-zarr.sha256` in CI
+past one row. A range read that gets no data for a minute fails, and a threaded
+calculation call that runs over two minutes is retried once on one thread. The data archive is pinned by `data/browser-engine-zarr.sha256` in CI
 and publishing.
 
 ## What `?api=` accepts

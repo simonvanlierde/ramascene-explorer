@@ -27,10 +27,10 @@ never share the memory budget. Above 5 MB, the form says how much the selection 
 A selection changed while Run computes waits for Run to finish before it downloads.
 
 While a scenario runs, the form shows the seconds elapsed and a Cancel button, which
-stops the worker and starts a fresh one. A worker that runs out of memory, or passes
-the two-minute limit, is replaced the same way, and its error stays on screen. A
-single range read that takes more than a minute fails the run, with the file and range
-in the error. A read that fails any other way, without the page stopping it, is tried
+stops the worker and starts a fresh one. A worker that runs out of memory is replaced
+the same way, and its error stays on screen. A range read that gets no data for a
+minute fails the run, with the file and range in the error. The minute starts again with
+every chunk that arrives, so a slow link that keeps sending finishes. A read that fails any other way, without the page stopping it, is tried
 once more first: Firefox sometimes aborts a body read by itself.
 
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
@@ -255,10 +255,12 @@ The pool has at most four threads and leaves one reported CPU core available.
 Hosts without isolation, and devices reporting two cores or fewer, use the existing
 single-thread build. A failed pool startup or its 15-second deadline terminates the
 worker and retries pending requests once in a fresh single-thread worker. So does a
-trap during a threaded calculation, and a calculation still running after 120 seconds:
-a trap in a pool thread leaves the calling thread waiting rather than throwing. A second
-failure on one thread stops the worker; the page shows the error and starts a fresh
-worker for the next Run.
+trap during a threaded calculation, and a threaded kernel call still running after 120
+seconds: a trap in a pool thread leaves the calling thread waiting rather than throwing.
+The worker tells the page when each threaded call starts and ends, so the 120 seconds
+never count downloads, and a run on one thread has no time limit. A second failure on
+one thread stops the worker; the page shows the error and starts a fresh worker for the
+next Run.
 
 The build uses the nightly pinned in `engine/threads/rust-toolchain.toml` because
 WebAssembly atomics require rebuilding Rust's standard library. `pnpm engine` builds

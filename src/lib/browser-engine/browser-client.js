@@ -8,12 +8,18 @@ export function browserClient() {
 	function start() {
 		worker = new Worker(new URL("./browser-worker.js", import.meta.url), { type: "module" });
 		const active = worker;
-		worker.onmessage = ({ data: { id, value, error, fatal, retrySingle } }) => {
+		worker.onmessage = ({ data: { id, value, error, fatal, retrySingle, computing } }) => {
 			if (active !== worker) return;
 			const task = pending.get(id);
 			if (!task) return;
 			if (retrySingle) {
 				retryOnOneThread();
+				return;
+			}
+			if (computing !== undefined) {
+				clearTimeout(task.timeout);
+				// a threaded call still running after this gets one try on one thread
+				if (computing) task.timeout = setTimeout(retryOnOneThread, 120_000);
 				return;
 			}
 			clearTimeout(task.timeout);
@@ -36,9 +42,7 @@ export function browserClient() {
 		single = true;
 		start();
 		for (const [waiting, task] of pending) {
-			// replayed requests get a full deadline on the new worker
 			clearTimeout(task.timeout);
-			task.timeout = task.arm();
 			worker.postMessage({ id: waiting, base, body: task.body, single });
 		}
 	}
@@ -65,18 +69,6 @@ export function browserClient() {
 			const id = next++;
 			return new Promise((resolve, reject) => {
 				const task = { resolve, reject, body: structuredClone(body) };
-				task.arm = () =>
-					setTimeout(() => {
-						// a trap in a pool thread leaves the call waiting, so a hang gets one try on one thread
-						if (!single) {
-							retryOnOneThread();
-							return;
-						}
-						pending.delete(id);
-						reject(new Error("browser computation timed out"));
-						close();
-					}, 120_000);
-				task.timeout = task.arm();
 				pending.set(id, task);
 				worker.postMessage({ id, base, body: task.body, single });
 			});
