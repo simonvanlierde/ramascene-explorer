@@ -141,8 +141,11 @@ const geom = $derived.by(() => {
 	if (!shapes.length) return { R: 0, bands: [], B: [0, 0] };
 	const self = shapes[ui.who].at;
 	const B = proj(self);
+	const shown = visible(self);
 	const lines = [];
-	for (const k of bandPartners(sum.bands, ui.who, anchors)) {
+	// the bands meet at the selection: behind the globe, they would cross the far side
+	// (a projected point is not clipped), so none is drawn, like the ring
+	for (const k of shown ? bandPartners(sum.bands, ui.who, anchors) : []) {
 		const A = shapes[k].at;
 		let P;
 		if (alpha > 0.5) {
@@ -154,7 +157,7 @@ const geom = $derived.by(() => {
 		if (P.some((p) => !p)) continue;
 		lines.push({ k, v: sum.vals[k], P });
 	}
-	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown: visible(self) };
+	return { ...bandGeometry(lines, B, { k: widthK, dir: ui.dir }), B, shown };
 });
 // The boxes of what floats on the map (the chips, the zoom, the legend and the
 // note), in view px, so no label goes under them.
@@ -425,29 +428,31 @@ function move(e) {
 	const d = drag;
 	d.frame ||= requestAnimationFrame(() => {
 		nudge();
-		if (alpha > 0.5) spin(d.dx, d.dy);
-		else off = clampOff([off[0] + d.dx, off[1] + d.dy]);
+		(alpha > 0.5 ? spin : pan)(d.dx, d.dy);
 		d.dx = d.dy = d.frame = 0;
 	});
 }
+const pan = (dx, dy) => (off = clampOff([off[0] + dx, off[1] + dy]));
 const spin = (dx, dy) =>
 	(rot = [rot[0] + (dx * 0.35) / zk, Math.max(-60, Math.min(60, rot[1] - (dy * 0.35) / zk))]);
-// A flick lets the globe glide on a little: at most about 34°, gone in a few
-// hundred ms. A pause before the release, a new press, a turn or a morph stops it.
+// A flick lets the globe turn, or the zoomed flat map pan, glide on a little: at most
+// about 34° or 96 px, gone in a few hundred ms. A pause before the release, a new
+// press, a turn or a morph stops it.
 const GLIDE_MS = 80; // decay time constant
 const GLIDE_MAX = 1.2; // px per ms
 function glide(d, at) {
 	const [vx, vy] = d.v ?? [0, 0];
 	const speed = Math.hypot(vx, vy);
 	// a running Flat/Globe morph (a tween that is no turn) keeps going, without a glide
-	if (alpha < 0.5 || d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
+	if (d.pinched || (tween && !turning) || reducedMotion() || at - d.t > 50 || speed < 0.3) return;
 	let v = [(vx / speed) * Math.min(speed, GLIDE_MAX), (vy / speed) * Math.min(speed, GLIDE_MAX)];
 	let last = performance.now();
+	const step = alpha > 0.5 ? spin : pan;
 	const frame = (now) => {
 		// a frame can start before the release that asked for it
 		const k = Math.exp(-Math.max(0, now - last) / GLIDE_MS);
 		// the distance covered since the last frame under exponential decay
-		spin(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
+		step(v[0] * GLIDE_MS * (1 - k), v[1] * GLIDE_MS * (1 - k));
 		nudge();
 		v = [v[0] * k, v[1] * k];
 		last = now;
