@@ -185,7 +185,7 @@ jobs:
         env:
           URL: ${{ needs.upload.outputs.url }}
           # previews check one engine; main checks all three before promote
-          CHECK_BROWSERS: chromium,firefox,webkit
+          CHECK_BROWSERS: ${{ github.event_name == 'pull_request' && 'chromium' || 'chromium,firefox,webkit' }}
           DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
         run: node hosting/check.js "$URL"
 
