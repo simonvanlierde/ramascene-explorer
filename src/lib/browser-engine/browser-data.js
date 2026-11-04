@@ -236,46 +236,51 @@ const RANGE_TIMEOUT_MS = 60_000;
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
-	const began = performance.now();
 	// every failure names its read, so a failed run says which file and range broke
 	const where = `${new URL(url).pathname} bytes ${start}-${end - 1}`;
-	let phase = "before the response";
-	try {
-		const timeout = AbortSignal.timeout(timeoutMs);
-		const response = await fetch(url, {
-			headers: { Range: `bytes=${start}-${end - 1}` },
-			signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
-		});
-		if (response.status === 404) {
-			await response.body?.cancel();
-			// The manifest names the store by its hash: next to the page, a 404 means a newer
-			// deploy; on the data host, a store that was never uploaded, which hosting/check.js
-			// catches before main promotes a version.
-			throw new Error(`the browser data was updated: reload the page (${where})`);
-		}
-		if (
-			response.status !== 206 ||
-			response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`
-		) {
-			await response.body?.cancel();
+	for (let retried = false; ; retried = true) {
+		const began = performance.now();
+		let phase = "before the response";
+		try {
+			const timeout = AbortSignal.timeout(timeoutMs);
+			const response = await fetch(url, {
+				headers: { Range: `bytes=${start}-${end - 1}` },
+				signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+			});
+			if (response.status === 404) {
+				await response.body?.cancel();
+				// The manifest names the store by its hash: next to the page, a 404 means a newer
+				// deploy; on the data host, a store that was never uploaded, which hosting/check.js
+				// catches before main promotes a version.
+				throw new Error(`the browser data was updated: reload the page (${where})`);
+			}
+			if (
+				response.status !== 206 ||
+				response.headers.get("Content-Range") !== `bytes ${start}-${end - 1}/${byteLength}`
+			) {
+				await response.body?.cancel();
+				throw new Error(
+					`browser scenario data needs a server with HTTP range support (${where}, status ${response.status})`,
+				);
+			}
+			phase = "reading the body";
+			const buffer = await response.arrayBuffer();
+			if (buffer.byteLength !== end - start)
+				throw new Error(`truncated matrix range (${where}, ${buffer.byteLength} bytes)`);
+			return buffer;
+		} catch (e) {
+			// A read the read-ahead stopped keeps its AbortError. Any other fetch failure, an
+			// AbortError the signal did not cause and the range's own timeout included, also says
+			// when it failed.
+			if (signal?.aborted || !(e instanceof TypeError || ["AbortError", "TimeoutError"].includes(e.name))) throw e;
+			// Firefox sometimes aborts a body read the page never stopped, so such a failure gets
+			// one more try. A timeout does not: a second minute would pass the page's deadline.
+			if (!retried && e.name !== "TimeoutError") continue;
+			const ms = Math.round(performance.now() - began);
 			throw new Error(
-				`browser scenario data needs a server with HTTP range support (${where}, status ${response.status})`,
+				`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms${retried ? ", second try" : ""})`,
+				{ cause: e },
 			);
 		}
-		phase = "reading the body";
-		const buffer = await response.arrayBuffer();
-		if (buffer.byteLength !== end - start)
-			throw new Error(`truncated matrix range (${where}, ${buffer.byteLength} bytes)`);
-		return buffer;
-	} catch (e) {
-		// A read the read-ahead stopped keeps its AbortError. Any other fetch failure, an
-		// AbortError the signal did not cause and the range's own timeout included, also says
-		// when it failed.
-		if (signal?.aborted || !(e instanceof TypeError || ["AbortError", "TimeoutError"].includes(e.name))) throw e;
-		const ms = Math.round(performance.now() - began);
-		throw new Error(
-			`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms)`,
-			{ cause: e },
-		);
 	}
 }
