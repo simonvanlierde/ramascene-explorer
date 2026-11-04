@@ -76,7 +76,8 @@ for (const engine of names.map((n) => engines[n])) {
 		});
 		await page.goto(url("").href);
 		assert.equal(await page.evaluate(() => crossOriginIsolated), true);
-		await expect(page.locator(".mapc .rg")).toHaveCount(49);
+		// a fresh preview's first load reads the flows from a cold edge
+		await expect(page.locator(".mapc .rg")).toHaveCount(49, { timeout: 30_000 });
 		await page.getByRole("button", { name: "What if…" }).first().click();
 		await page.locator("#live-open").click();
 		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
