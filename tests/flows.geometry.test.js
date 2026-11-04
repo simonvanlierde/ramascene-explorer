@@ -444,6 +444,16 @@ test("the Sankey draws into the box it is given", () => {
 	assert.equal(build({ who: 0, dir: "in", on: ALL }).lay.height, 420);
 });
 
+test("both stages of the Sankey get the same width for their links, however wide the box", () => {
+	for (const dir of ["in", "out"])
+		for (const width of [452, 600, 853]) {
+			const { lay } = build({ who: 0, dir, on: ALL }, { width, height: 420 });
+			const first = lay.x.M - (lay.x.L + lay.nw);
+			const second = lay.x.R - (lay.x.M + lay.nw);
+			assert.ok(Math.abs(first - second) <= 1, `${dir} at ${width}: ${first} vs ${second}`);
+		}
+});
+
 test("links leave a node one after another from its top, and arrive stacked the same way", () => {
 	fc.assert(
 		fc.property(layouts, (s) => {
