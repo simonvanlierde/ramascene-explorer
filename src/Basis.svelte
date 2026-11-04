@@ -41,7 +41,7 @@ function toMethod() {
      closes it only from outside, by the pointerdown above. -->
 <span class="basis-w" onfocusout={(e) => open && e.relatedTarget && !e.relatedTarget.closest(".basis-w") && close(false)}>
 	<button type="button" class="pill basis" bind:this={pill} aria-expanded={open} aria-controls="basis-pop" onclick={toggle}>
-		<span class="bx"><span class="ds">{d.name} · {data.base_year} · </span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
+		<span class="bx"><span class="ds">{d.name} · {data.base_year} ·{" "}</span>{live ? live.source.status : "Published scenarios · not forecasts"}</span>
 		<svg class="chev" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 	</button>
 	{#if open}

@@ -14,6 +14,16 @@ test("the head carries absolute share tags and the image is served", async ({ pa
 	const res = await request.get("./og.png");
 	expect(res.status()).toBe(200);
 	expect(res.headers()["content-type"]).toBe("image/png");
+
+	for (const [rel, type] of [
+		["icon", "image/svg+xml"],
+		["apple-touch-icon", "image/png"],
+	]) {
+		const href = await page.locator(`head link[rel="${rel}"]`).getAttribute("href");
+		const icon = await request.get(`./${href}`);
+		expect(icon.status(), href).toBe(200);
+		expect(icon.headers()["content-type"]).toBe(type);
+	}
 });
 
 test("without JavaScript the page says so and links the README and data", async ({ browser, baseURL }) => {

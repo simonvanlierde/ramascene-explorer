@@ -17,6 +17,9 @@ follow [Semantic Versioning](https://semver.org/).
   missed. Drafts and bot pull requests get no preview ([publishing.md](docs/publishing.md#cloudflare)).
 - `data.yml` puts a `data-*` release's files in the R2 bucket, each object written once and
   never deleted ([publishing.md](docs/publishing.md#publish-the-data)).
+- The explorer has a logo: the serif R of its sentence, underlined by a flow band. It is the
+  home-screen icon and heads the README. The browser tab and the header use the band alone, a
+  white ribbon on rust.
 
 ### Changed
 
@@ -30,6 +33,7 @@ follow [Semantic Versioning](https://semver.org/).
   pill's note; the flow check is listed with the other checks under Method.
 - Below 1100 px the header pill drops the dataset name, so the "not forecasts" caveat stays
   readable.
+- The link preview image and the README screenshots show the current page, with the globe.
 
 ### Fixed
 
