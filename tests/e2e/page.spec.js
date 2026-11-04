@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./test.js";
+import { expect, mapAtRest, test } from "./test.js";
 
 const FIXTURE = "?data=tests/fixture.json";
 // the featured runs' sentences, as the run cards and the headline show them
@@ -317,7 +317,8 @@ test("in the scrolling layout the wheel scrolls the page, not the map", async ({
 	await page.mouse.wheel(0, 300);
 	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
 	await page.mouse.wheel(0, -300);
-	await page.waitForTimeout(400);
+	// the page scrolled back up, so the wheel event was handled and did not zoom
+	await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
 	await expect(page).not.toHaveURL(/zoom=/);
 });
 
@@ -338,7 +339,7 @@ test("no flow label sits under the controls or the legend on the map", async ({ 
 	for (const url of ["", "?region=CN", "?region=BR&map=globe&zoom=2", "?region=CN&zoom=2.5,105,32"]) {
 		await page.goto(url);
 		await ready(page);
-		await page.waitForTimeout(400);
+		await mapAtRest(page);
 		const clash = await page.evaluate(() => {
 			const boxes = [...document.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote")]
 				.map((e) => e.getBoundingClientRect())
@@ -530,9 +531,11 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const started = new Promise((resolve) => {
 		aStarted = resolve;
 	});
+	const heldRequests = [];
 	await page.route("**/*.parquet", async (route) => {
 		if (!hold) return route.continue();
 		held++;
+		heldRequests.push(route.request());
 		aStarted();
 		await gate;
 		await route.continue();
@@ -547,9 +550,10 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const headline = page.locator("#headline");
 	await expect(headline).toContainText(CONSTRUCTION);
 	expect(held).toBeGreaterThan(0);
-	// let A's request finish and the page settle: B must stay
+	// let all of A's held requests finish, bodies read to the end, and the page settle: B must stay
 	release();
-	await page.waitForTimeout(800);
+	await Promise.all(heldRequests.map(async (request) => (await request.response()).finished()));
+	await mapAtRest(page);
 	await expect(headline).toContainText(CONSTRUCTION);
 	await expect(headline).not.toContainText("Asia-Pacific");
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(CONSTRUCTION);

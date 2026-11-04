@@ -2,8 +2,15 @@ import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./test.js";
 
+// CI downloads the dataset, so there a missing one fails the test rather than skipping it
+const needData = () => {
+	const here = existsSync("data/browser-engine/manifest-v3.json");
+	test.skip(!here && !process.env.CI, "Export or download the browser dataset first.");
+	expect(here, "data/browser-engine is missing; fetch the browser store, see docs/browser-engine.md").toBe(true);
+};
+
 test("a browser scenario draws its own flows without a job server", async ({ page, isMobile, baseURL }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(90_000);
 	const external = [];
 	const site = new URL(baseURL).origin;
@@ -56,7 +63,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 });
 
 test("Try again replaces a failed browser worker", async ({ page, isMobile }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(30_000);
 	let attempts = 0;
 	await page.route("**/assets/browser-worker-*.js", (route) => {
@@ -79,8 +86,44 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 		await page.screenshot({ path: info.outputPath("browser-form.png"), fullPage: true });
 });
 
-test("after a trap stops the worker, the next Run computes in a fresh one", async ({ page, isMobile }) => {
+test("a worker file gone after a deploy asks for a reload, not Try again", async ({ page, isMobile }) => {
 	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	await page.route("**/assets/browser-worker-*.js", (route) => route.fulfill({ status: 404, body: "" }));
+	await page.goto("./");
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toContainText("The browser worker could not load. Reload the page");
+	await expect(page.locator("#live-retry")).toHaveCount(0);
+	await expect(page.locator("#live-run")).toBeDisabled();
+});
+
+test("a worker file gone when a fresh worker starts turns Run off", async ({ page, isMobile }) => {
+	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	test.setTimeout(60_000);
+	// the first worker loads; the one Cancel starts finds its file gone, as after a deploy
+	let workers = 0;
+	await page.route("**/assets/browser-worker-*.js", (route) =>
+		++workers === 1 ? route.continue() : route.fulfill({ status: 404, body: "" }),
+	);
+	// the matrix reads never answer, so the run is still going when Cancel is pressed
+	await page.route("**/browser-engine/store-*/**", () => {});
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-run")).toHaveText("Running…");
+	await page.locator("#live-cancel").click();
+	await expect(page.locator("#live-state")).toContainText("The browser worker could not load. Reload the page");
+	await expect(page.locator("#live-run")).toBeDisabled();
+	await expect(page.locator("#live-retry")).toHaveCount(0);
+});
+
+test("after a trap stops the worker, the next Run computes in a fresh one", async ({ page, isMobile }) => {
+	needData();
 	test.setTimeout(90_000);
 	// the first worker answers Run as a trap does; the catalogue and read-ahead stay real
 	let attempts = 0;
@@ -113,7 +156,7 @@ self.onmessage = (e) =>
 });
 
 test("a failed kernel download leaves the form usable and Run loads it again", async ({ page, isMobile }) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(90_000);
 	let attempts = 0;
 	await page.route("**/*.wasm", (route) => {
@@ -139,7 +182,7 @@ test("a failed kernel download leaves the form usable and Run loads it again", a
 });
 
 test("a negligible custom change stays readable without claiming a hotspot", async ({ page, isMobile }, info) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(90_000);
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…" }).first().click();
@@ -172,7 +215,7 @@ test("a selection too broad for the browser says so before Run, and search narro
 	page,
 	isMobile,
 }) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(90_000);
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…" }).first().click();
@@ -221,7 +264,7 @@ test("a selection too broad for the browser says so before Run, and search narro
 });
 
 test("the open form reads its selection before Run, so Run downloads nothing more", async ({ page, isMobile }) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(90_000);
 	let reads = 0;
 	page.on("request", (request) => {
@@ -252,7 +295,7 @@ test("the open form reads its selection before Run, so Run downloads nothing mor
 });
 
 test("Cancel stops a running browser scenario and leaves the form ready", async ({ page, isMobile }) => {
-	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
+	needData();
 	test.setTimeout(60_000);
 	// the matrix reads never answer, so the run is still going when Cancel is pressed
 	await page.route("**/browser-engine/store-*/**", () => {});

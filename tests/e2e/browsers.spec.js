@@ -1,4 +1,4 @@
-import { expect, test } from "./test.js";
+import { expect, mapAtRest, test } from "./test.js";
 
 // NOTE: on the CI runners, Playwright's desktop WebKit left a frame the page asked for
 // after the test's own script returned unrun for seconds. The same tests pass in its
@@ -47,7 +47,7 @@ test("a globe drag during a turn is not undone by the turn", async ({ page }) =>
 	const pickSpain = async (steps) => {
 		await page.goto("?data=tests/fixture.json&map=globe");
 		await expect(page.locator(".mapc .rg")).toHaveCount(49);
-		await page.waitForTimeout(1000); // the turn to the opening country is over
+		await mapAtRest(page); // the turn to the opening country is over
 		return page.locator("svg.map").evaluate(async (svg, steps) => {
 			const frames = (ms) =>
 				new Promise((done) => {
@@ -95,7 +95,7 @@ for (const map of ["globe", "flat"])
 			await page.emulateMedia({ reducedMotion: reduce });
 			await page.goto(`?data=tests/fixture.json&map=${map}`);
 			await expect(page.locator(".mapc .rg")).toHaveCount(49);
-			await page.waitForTimeout(1000); // the turn to the opening country is over
+			await mapAtRest(page); // the turn to the opening country is over
 			if (map === "flat") await page.getByRole("button", { name: "Zoom in" }).click();
 			// the zoomed flat map pans at most half a view, about 200 px on a phone: a short
 			// drag leaves room for the glide
@@ -149,7 +149,7 @@ for (const map of ["globe", "flat"])
 test("the globe's bands end at the horizon while the selection is behind it", async ({ page }) => {
 	await page.goto("?map=globe");
 	await expect(page.locator(".bands path").first()).toBeVisible();
-	await page.waitForTimeout(1000); // the turn to the opening country is over
+	await mapAtRest(page); // the turn to the opening country is over
 	await page.locator("svg.map").evaluate(async (svg) => {
 		const r = svg.getBoundingClientRect();
 		const at = (type, dx) =>

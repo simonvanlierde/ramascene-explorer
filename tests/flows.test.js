@@ -254,6 +254,19 @@ test("the five continents split the selection, so their changes add up to the se
 	}
 });
 
+test("each continent's base is the selection's flow from its own countries", () => {
+	// the US consumes from three continents, so a swapped or merged name shows
+	const US = meta.country_codes.indexOf("US");
+	const sum = summarise(meta, base, null, sel({ who: US, on: new Set([0, 3]) }));
+	const by = Object.fromEntries(continents(meta, sum).map((r) => [r.name, r.base]));
+	const near = (a, b) => Math.abs(a - b) < 5e-5;
+	assert.ok(near(by.Europe, 3.5929), `Europe ${by.Europe}`);
+	assert.ok(near(by.America, 4.1744), `America ${by.America}`);
+	assert.ok(near(by["Asia-Pacific"], 1.2426), `Asia-Pacific ${by["Asia-Pacific"]}`);
+	assert.equal(by["Middle-East"], 0);
+	assert.equal(by.Africa, 0);
+});
+
 // Released in each continent, over every consumer: the run's continental
 // totals in results.json, from the same embodied flows.
 const REAL = path("../data/embodied.parquet");
