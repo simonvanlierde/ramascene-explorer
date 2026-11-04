@@ -1,7 +1,7 @@
 import { liveFlows } from "../live.js";
 
 export const BROWSER_STATUS = "computed in this browser";
-export const BROWSER_SOURCE = {
+const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
 	pill: "Browser method",
 	heading: "Custom calculation",
