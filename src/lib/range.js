@@ -1,10 +1,12 @@
 // Byte-range reads for the browser store and the embodied-flows Parquet file, with a
 // stall timer and one retry.
 
-// A range read that gets no data for this long fails the run with that read named. The
-// timer restarts on every chunk of the body, so a slow link that keeps sending passes;
-// before the response it also counts the wait behind the run's other reads.
+// A range read fails, with that read named, once the data host has sent nothing for this
+// long: to it or to any other read in this thread. The reads share one link, and on a
+// slow one the host can starve a small range for over a minute while large ones flow.
 const RANGE_TIMEOUT_MS = 60_000;
+// when any read here last got its headers or a chunk of its body
+let lastData = Number.NEGATIVE_INFINITY;
 
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
@@ -16,15 +18,17 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 		let phase = "before the response";
 		const stall = new AbortController();
 		let timer;
-		const wait = () => {
+		const wait = (ms = timeoutMs) => {
 			clearTimeout(timer);
-			const due = performance.now() + timeoutMs;
+			const due = performance.now() + ms;
 			timer = setTimeout(() => {
+				const idle = performance.now() - lastData;
 				// A timer this late means a calculation held the worker's thread, so data may
 				// have arrived unread: wait again.
 				if (performance.now() - due > 1000) wait();
+				else if (idle < timeoutMs) wait(timeoutMs - idle);
 				else stall.abort(new DOMException(`no data for ${timeoutMs} ms`, "TimeoutError"));
-			}, timeoutMs);
+			}, ms);
 		};
 		try {
 			wait();
@@ -32,6 +36,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 				headers: { Range: `bytes=${start}-${end - 1}` },
 				signal: signal ? AbortSignal.any([signal, stall.signal]) : stall.signal,
 			});
+			lastData = performance.now();
 			if (response.status === 404) {
 				await response.body?.cancel();
 				// The manifest names the store by its hash: next to the page, a 404 means a newer
@@ -62,6 +67,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 				wait();
 				const { done, value } = await reader.read();
 				if (done) break;
+				lastData = performance.now();
 				if (length + value.length > bytes.length) {
 					await reader.cancel();
 					throw new Error(`oversized matrix range (${where}, over ${bytes.length} bytes)`);

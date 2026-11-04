@@ -33,7 +33,7 @@ inside a shard whose size the manifest records, and a server that ignores Range
 is refused, for the matrices and the embodied-flows Parquet file alike. Shard indexes must point inside their shard. The WebAssembly
 kernel decodes each chunk and stops one byte past the row's size, and the
 chunk's gzip size field and CRC-32 must match, so a crafted chunk cannot grow
-past one row. A range read that gets no data for a minute is tried once more on a fresh request, then fails; the first load
+past one row. A range read fails once the data host has sent nothing, to it or to any other read, for a minute, after one more try on a fresh request; the first load
 fails after two minutes, and a threaded calculation call that runs over two minutes
 is retried once on one thread. The data archive is pinned by `data/browser-engine-zarr.sha256` in CI
 and publishing.

@@ -371,6 +371,51 @@ test("a request the host leaves unanswered, or answers without a body, is tried 
 	assert.equal(calls, 2);
 });
 
+test("a read that gets no bytes while another read's bytes arrive is not a stall", async (t) => {
+	const ranged = (stream) => new Response(stream, { status: 206, headers: { "Content-Range": "bytes 1-2/10" } });
+	let starvedCalls = 0;
+	let feed;
+	t.mock.method(globalThis, "fetch", (url, { signal }) => {
+		if (String(url).endsWith("/starved")) {
+			starvedCalls++;
+			// headers, then the body only once the busy read is done, as a host that serves
+			// the large ranges first does; an abort errors the body, as in a browser
+			return Promise.resolve(
+				ranged(
+					new ReadableStream({
+						start: (c) => {
+							feed = c;
+							signal.addEventListener("abort", () => c.error(signal.reason));
+						},
+					}),
+				),
+			);
+		}
+		let sent = 0;
+		return Promise.resolve(
+			ranged(
+				new ReadableStream({
+					async pull(c) {
+						await new Promise((resolve) => setTimeout(resolve, 10));
+						if (sent++ < 2) return c.enqueue(new Uint8Array([49]));
+						c.close();
+						setTimeout(() => {
+							feed.enqueue(new TextEncoder().encode("12"));
+							feed.close();
+						}, 10);
+					},
+				}),
+			),
+		);
+	});
+	// 30 ms without data would be a stall; the starved read waits about 40 ms in all
+	const starved = fetchRange("https://example.test/starved", 1, 3, 10, undefined, 30);
+	const busy = fetchRange("https://example.test/busy", 1, 3, 10, undefined, 30);
+	assert.equal(new TextDecoder().decode(await busy), "11");
+	assert.equal(new TextDecoder().decode(await starved), "12");
+	assert.equal(starvedCalls, 1);
+});
+
 test("rows from chunks of several rows come back in the order asked, with columns", async () => {
 	const p = infos.P;
 	const files = p.shard_bytes.map((_, i) => readFileSync(new URL(`fixture-store/P/c/${i}/0`, import.meta.url)));

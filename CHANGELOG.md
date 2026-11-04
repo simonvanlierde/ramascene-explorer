@@ -32,10 +32,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- A data read the data host leaves unanswered, or answers with headers and no body, is tried
-  again once after a minute with no data, instead of failing the run. The map's own reads of
-  the embodied flows get the same timer and retry; before, one such read left the map empty
-  for good ([security.md](docs/security.md)).
+- On a slow link, a small data read that gets no bytes while large ones arrive no longer fails
+  the custom scenario after a minute: a read fails only when the data host has sent nothing to
+  any read for a minute. A read the host leaves unanswered is then tried once more on a fresh
+  request. The map's reads of the embodied flows get the same timer and retry; before, one
+  such read left the map empty for good ([security.md](docs/security.md)).
 - A custom scenario on a slow link no longer fails at one minute while its data is still
   arriving: a data read now fails only after a minute with no data at all
   ([browser-engine.md](docs/browser-engine.md)).
