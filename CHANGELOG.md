@@ -14,8 +14,12 @@ follow [Semantic Versioning](https://semver.org/).
 - A [documentation index](docs/README.md) by reader: the results, the method, contributing.
 - A dark theme. It follows the system setting until you use the toggle in the header, and
   the browser keeps your choice ([page.md](docs/page.md#theme)).
-- A flick on the globe lets it glide on a little after you let go. A pause before letting go,
-  or reduced motion, stops it where you released it.
+- A flick on the globe, or on the zoomed flat map, lets it glide on a little after you let go.
+  A pause before letting go, or reduced motion, stops it where you released it
+  ([page.md](docs/page.md#navigate-and-share)).
+- The globe is shaded faintly toward its edge, so it reads as a sphere.
+- Above 5 MB, the custom-scenario card says how much Run will download
+  ([page.md](docs/page.md#custom-scenarios)).
 
 ### Changed
 
@@ -43,6 +47,8 @@ follow [Semantic Versioning](https://semver.org/).
   with the README's View, Build, Data, Test and Benchmark sections.
 - The page says "scenario" instead of "intervention", and Details → Method opens with a plain
   explanation of what the map and the scenarios show.
+- While a custom result is shown, links to other sites open in a new tab and say so, since the
+  link does not keep the result ([page.md](docs/page.md#custom-scenarios)).
 - The custom-scenario card is always in What if…; `?compute=1` is no longer needed. The page
   loads the browser data when the card opens ([page.md](docs/page.md#custom-scenarios)).
 - The custom-scenario lists are nested by section and region, sorted by name, and searchable
@@ -59,6 +65,14 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Turning the selected region behind the globe drew its bands across the far side. They now
+  end at the edge ([page.md](docs/page.md#navigate-and-share)).
+- Firefox sometimes stopped a custom scenario's data download by itself, failing the run. Such a
+  read is now tried once more, and a failed read names the file and byte range in its message.
+- A download that stalls fails the custom scenario after a minute, naming the read, instead of
+  waiting for the two-minute limit ([browser-engine.md](docs/browser-engine.md)).
+- Changing the selection while a custom scenario ran could start its download beside the run.
+  It now waits for the run to finish.
 - The data host served the production page a cached copy of the flows without CORS headers,
   so the map did not load. The deploy check now reads the data with production's origin too,
   and the setup adds the CORS headers at the edge ([data host](docs/publishing.md#data-host)).

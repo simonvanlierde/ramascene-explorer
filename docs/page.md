@@ -75,13 +75,15 @@ The source data records these in kg CO₂-eq, kilotonnes and thousands of people
 Select a region on the map, or type its name or code in the country selector.
 The map opens on the globe; switch between **Globe** and **Flat**. Zoom up to 8× with the zoom buttons, the scroll wheel or a pinch.
 Drag a zoomed flat map to pan it. Drag the globe to turn it.
+A flick glides on a little after you let go; a pause before letting go, or reduced motion, stops it there.
 On phones (760 px wide or less), scrolling moves the page:
 hold Ctrl or ⌘ to zoom with the wheel. One finger scrolls past the unzoomed flat map.
 **Reset zoom** shows the whole map again.
 
 Partners within 5° (about 550 km) of the selected region get no band, but their fill still shows the flow.
 Other bands appear when they fit outside the collar around the selected region,
-and zooming in can show more of them. On the globe, a flow from beyond the horizon starts at the edge.
+and zooming in can show more of them. On the globe, a flow from beyond the horizon starts at the edge,
+and when the selected region turns out of view, its bands end at the edge.
 Labels keep clear of the map controls and the legend.
 
 **Copy link** shares the filters, the map position and the selected published scenario.
@@ -112,10 +114,13 @@ is one product from one producing country. Manufacturing from every country used
 and the card says so before you run it. Choose a narrower product, fewer producing countries, or
 fewer industries or regions that use it, or use the job API.
 
+Above 5 MB, the card says how much Run will download.
 While it runs, the card shows the seconds elapsed and a **Cancel** button.
 A finished custom scenario replaces the map's scenario, with its own baseline and provenance.
 **Details → Method** lists its totals by producing region.
 Choose a published scenario to return to the stored results.
+While a custom result is shown, links to other sites open in a new tab and say so, since leaving
+the page would lose the result.
 
 ## Live scenarios (optional)
 
