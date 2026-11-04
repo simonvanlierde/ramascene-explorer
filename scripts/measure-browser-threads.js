@@ -95,6 +95,8 @@ for (let pair = -1; pair < repetitions; pair++) {
 							new Promise((resolve, reject) => {
 								const deadline = setTimeout(() => reject(new Error("measurement exceeded 90 seconds")), 90_000);
 								w.onmessage = ({ data }) => {
+									// computing messages only mark a threaded kernel call's start and end
+									if ("computing" in data) return;
 									clearTimeout(deadline);
 									if (data.error || data.retrySingle) reject(new Error(data.error ?? "thread pool failed"));
 									else resolve(data.value);

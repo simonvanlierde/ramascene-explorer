@@ -6,6 +6,38 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The header's "Published scenarios · not forecasts" pill opens a short note on where the
+  numbers come from: the dataset and its DOI, the engine, the model, the date the results were
+  generated, and why a scenario is not a forecast, with links to Method and the source code.
+  For a custom run it names that run's own source ([page.md](docs/page.md#units-and-calculation-checks)).
+
+### Changed
+
+- Details is 768 px wide on a desktop, up from 640 px, and never wider than the space beside
+  the sidebar. The Sankey uses the extra width for longer bands, not bigger text.
+- Details no longer has a footer. The dataset, engine and generated date are in the header
+  pill's note; the flow check is listed with the other checks under Method.
+- Below 1100 px the header pill drops the dataset name, so the "not forecasts" caveat stays
+  readable.
+
+### Fixed
+
+- A custom scenario on a slow link no longer fails at one minute while its data is still
+  arriving: a data read now fails only after a minute with no data at all
+  ([browser-engine.md](docs/browser-engine.md)).
+- The two-minute limit now times only the threaded calculation, not the download, and a
+  run on one thread is no longer downloaded twice and then failed when it passes two
+  minutes.
+- When one array of a browser run fails to load, the run stops its other downloads before
+  the page starts reading the next selection, so the two never download at the same time.
+- Running the selection that was queued to download ahead of Run no longer downloads it
+  again after the run.
+- When the browser worker file does not load, for example in a tab opened before a deploy,
+  the page asks for a reload and turns Run off, instead of offering Try again, which loaded
+  the same missing file.
+
 ## [0.6.0] - 2026-11-04
 
 ### Added

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./test.js";
+import { expect, mapAtRest, test } from "./test.js";
 
 const FIXTURE = "?data=tests/fixture.json";
 // the featured runs' sentences, as the run cards and the headline show them
@@ -103,9 +103,15 @@ test("Details opens the Sankey and the table, and Escape closes it", async ({ pa
 	const dialog = page.getByRole("dialog");
 	await expect(dialog.locator(".sk .lk").first()).toBeVisible();
 	if (isMobile) {
-		// on a phone the panel covers the page and is modal: Tab cycles inside it
-		for (let i = 0; i < 8; i++) await page.keyboard.press("Tab");
-		expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[role=dialog]")))).toBe(true);
+		// on a phone the panel covers the page and is modal: Tab cycles inside it, with one stop
+		// on the browser's own controls (the body) between rounds, and never reaches the page
+		for (let i = 0; i < 8; i++) {
+			await page.keyboard.press("Tab");
+			const inside = await page.evaluate(
+				() => document.activeElement === document.body || Boolean(document.activeElement?.closest("[role=dialog]")),
+			);
+			expect(inside, `Tab ${i + 1}`).toBe(true);
+		}
 	} else {
 		// beside it, the sidebar stays usable and the panel follows the selection
 		await page.getByRole("button", { name: "Production", exact: true }).click();
@@ -311,7 +317,8 @@ test("in the scrolling layout the wheel scrolls the page, not the map", async ({
 	await page.mouse.wheel(0, 300);
 	await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
 	await page.mouse.wheel(0, -300);
-	await page.waitForTimeout(400);
+	// the page scrolled back up, so the wheel event was handled and did not zoom
+	await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
 	await expect(page).not.toHaveURL(/zoom=/);
 });
 
@@ -332,7 +339,7 @@ test("no flow label sits under the controls or the legend on the map", async ({ 
 	for (const url of ["", "?region=CN", "?region=BR&map=globe&zoom=2", "?region=CN&zoom=2.5,105,32"]) {
 		await page.goto(url);
 		await ready(page);
-		await page.waitForTimeout(400);
+		await mapAtRest(page);
 		const clash = await page.evaluate(() => {
 			const boxes = [...document.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote")]
 				.map((e) => e.getBoundingClientRect())
@@ -383,6 +390,45 @@ test("the honesty notes stay on screen: Published scenarios · not forecasts, an
 	await expect(page.locator(".pill.basis")).toContainText("Published scenarios · not forecasts");
 	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
 	await expect(page.locator("#headline")).toContainText("would have");
+});
+
+test("the basis pill says where the numbers come from, and Escape returns to it", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	const pill = page.locator("#status .pill.basis");
+	await pill.click();
+	const pop = page.getByRole("dialog", { name: "Where these numbers come from" });
+	await expect(pop).toBeVisible();
+	await expect(pill).toHaveAttribute("aria-expanded", "true");
+	await expect(pop).toContainText("doi:10.5281/zenodo.3533196");
+	await expect(pop).toContainText("Demand-pull Leontief");
+	await expect(pop).toContainText("not what will happen");
+	await expectNoAxeViolations(page);
+	await page.keyboard.press("Escape");
+	await expect(pop).toHaveCount(0);
+	await expect(pill).toBeFocused();
+	// focus leaving the pill and its note closes the note
+	await pill.press("Enter");
+	await expect(pop).toBeVisible();
+	await pill.focus();
+	await page.keyboard.press("Shift+Tab");
+	await expect(pop).toHaveCount(0);
+	// a second press on the open pill closes it
+	await pill.click();
+	await pill.click();
+	await expect(pop).toHaveCount(0);
+	await pill.click();
+	// Safari moves focus to nothing on a mousedown on a button or link, which must not close
+	// the note before the click lands; Playwright's WebKit focuses them, so blur stands in
+	await page.evaluate(() => document.activeElement.blur());
+	await expect(pop).toBeVisible();
+	await pop.getByRole("button", { name: "Method and checks" }).click();
+	await expect(pop).toHaveCount(0);
+	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
+	await expect(page.locator("#checks")).toContainText("The flows the map draws add up to the engine's country totals");
+	// Details holds no footer of its own; Method keeps the reproduction details
+	await expect(page.locator(".pan footer")).toHaveCount(0);
+	await expect(page.locator("#provenance-panel")).toBeAttached();
 });
 
 test("with reduced motion the replay jumps to the run", async ({ page }) => {
@@ -485,9 +531,11 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const started = new Promise((resolve) => {
 		aStarted = resolve;
 	});
+	const heldRequests = [];
 	await page.route("**/*.parquet", async (route) => {
 		if (!hold) return route.continue();
 		held++;
+		heldRequests.push(route.request());
 		aStarted();
 		await gate;
 		await route.continue();
@@ -502,9 +550,10 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 	const headline = page.locator("#headline");
 	await expect(headline).toContainText(CONSTRUCTION);
 	expect(held).toBeGreaterThan(0);
-	// let A's request finish and the page settle: B must stay
+	// let all of A's held requests finish, bodies read to the end, and the page settle: B must stay
 	release();
-	await page.waitForTimeout(800);
+	await Promise.all(heldRequests.map(async (request) => (await request.response()).finished()));
+	await mapAtRest(page);
 	await expect(headline).toContainText(CONSTRUCTION);
 	await expect(headline).not.toContainText("Asia-Pacific");
 	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(CONSTRUCTION);
@@ -557,6 +606,8 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	expect((await page.locator(".skip").boundingBox()).height).toBeGreaterThanOrEqual(44);
 	await page.locator(".dock .filters").click();
 	await expect(page.locator("#side")).toBeVisible();
+	// the sheet is visible from the start of its slide-in; measure once it has stopped
+	await page.locator("#side").evaluate((e) => Promise.all(e.getAnimations().map((a) => a.finished)));
 	const rail = await heights("#side .rail .t");
 	for (const [i, b] of rail.entries()) {
 		expect(b.h, `rail tab ${b.name}`).toBeGreaterThanOrEqual(36 - px);

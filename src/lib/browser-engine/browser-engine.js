@@ -168,8 +168,8 @@ export function startReads({ read }, { rows, columns, finals, J, byRows }, signa
 // solved in whichever form is smaller. X₀ = X + L[:,F] ΔY for final-demand rows F.
 // The flows are G X' for the page's grouping G, and H[j] = (G L[:,j])ᵀ, so
 // flows' = flows + Σⱼ H[j] ⊗ Z[j] with Z = ΔY on F plus W on R.
-// ahead: {key, reads} started before Run for the selection the form showed (readKey,
-// startReads); used when this run's plan reads the same slices.
+// ahead: {key, reads, stop} started before Run for the selection the form showed (readKey,
+// startReads); used when this run's plan reads the same slices. stop aborts those reads.
 export async function scenarioFlows(data, steps, ahead = null, kernel = { correction, fold }) {
 	const { meta, baseline } = data;
 	const C = meta.countries;
@@ -182,39 +182,51 @@ export async function scenarioFlows(data, steps, ahead = null, kernel = { correc
 	const position = new Map(J.map((j, i) => [j, i]));
 	const Z = new Float64Array(J.length * C);
 	const W = J.length;
-	const reads = ahead?.key === readKey(planned) ? ahead.reads : startReads(data, planned);
-	const demand = await reads.demand;
-	const before = Float64Array.from(demand);
-	const finalAt = new Map(finals.map((r, i) => [r, i]));
-	for (const s of edits.filter((s) => s.final))
-		for (const r of s.rows) for (const c of s.columns) demand[finalAt.get(r) * C + c] *= s.factor;
-	for (const [r, i] of finalAt)
-		for (let c = 0; c < C; c++) Z[position.get(r) * C + c] = demand[i * C + c] - before[i * C + c];
-	if (R) {
-		const [original, l, x] = await reads.technical;
-		const delta = change(original, technical, rows, columns);
-		// X₀[K,:] includes the final-demand changes.
-		for (const r of finals) {
-			const j = position.get(r);
-			for (let k = 0; k < K; k++) {
-				const v = l[k * W + j];
-				if (v) for (let c = 0; c < C; c++) x[k * C + c] += v * Z[j * C + c];
+	const controller = new AbortController();
+	const reused = ahead?.key === readKey(planned);
+	const reads = reused ? ahead.reads : startReads(data, planned, controller.signal);
+	try {
+		const demand = await reads.demand;
+		const before = Float64Array.from(demand);
+		const finalAt = new Map(finals.map((r, i) => [r, i]));
+		for (const s of edits.filter((s) => s.final))
+			for (const r of s.rows) for (const c of s.columns) demand[finalAt.get(r) * C + c] *= s.factor;
+		for (const [r, i] of finalAt)
+			for (let c = 0; c < C; c++) Z[position.get(r) * C + c] = demand[i * C + c] - before[i * C + c];
+		if (R) {
+			const [original, l, x] = await reads.technical;
+			const delta = change(original, technical, rows, columns);
+			// X₀[K,:] includes the final-demand changes.
+			for (const r of finals) {
+				const j = position.get(r);
+				for (let k = 0; k < K; k++) {
+					const v = l[k * W + j];
+					if (v) for (let c = 0; c < C; c++) x[k * C + c] += v * Z[j * C + c];
+				}
+			}
+			// T = L[K,R], K × R
+			const T = new Float64Array(K * R);
+			for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) T[k * R + r] = l[k * W + position.get(rows[r])];
+			const w = kernel.correction(delta, T, x, R, K, C, STORED_EPSILON);
+			for (let r = 0; r < R; r++) {
+				const j = position.get(rows[r]);
+				for (let c = 0; c < C; c++) Z[j * C + c] += w[r * C + c];
 			}
 		}
-		// T = L[K,R], K × R
-		const T = new Float64Array(K * R);
-		for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) T[k * R + r] = l[k * W + position.get(rows[r])];
-		const w = kernel.correction(delta, T, x, R, K, C, STORED_EPSILON);
-		for (let r = 0; r < R; r++) {
-			const j = position.get(rows[r]);
-			for (let c = 0; c < C; c++) Z[j * C + c] += w[r * C + c];
+		for (let start = 0; start < J.length; start += H_BATCH) {
+			const batch = J.slice(start, start + H_BATCH);
+			const h = await (start ? data.read("H", batch, undefined, controller.signal) : reads.firstH);
+			kernel.fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 		}
+		if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
+		return out;
+	} catch (e) {
+		// A failed read or calculation stops this run's other downloads and waits for them, so
+		// they never run beside the read-ahead the worker starts next. The prefetch started
+		// reused reads with its own signal. e stays the first failure: nothing aborted before it.
+		controller.abort();
+		if (reused) ahead.stop?.();
+		await Promise.allSettled(Object.values(reads));
+		throw e;
 	}
-	for (let start = 0; start < J.length; start += H_BATCH) {
-		const batch = J.slice(start, start + H_BATCH);
-		const h = await (start ? data.read("H", batch) : reads.firstH);
-		kernel.fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
-	}
-	if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
-	return out;
 }

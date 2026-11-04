@@ -52,15 +52,16 @@ test("What if… adds the change columns and the run to the name", () => {
 
 test("names with a comma are quoted, jobs scale to the table's unit, and sections and direction name the file", () => {
 	const tiny = { countries: ["Korea, Republic of", 'The "Rest"'], country_codes: ["KR", "WX"] };
-	const vals = new Float64Array([3e6, 1e6]);
+	// the larger flow comes second, so the file's order is the sort's work
+	const vals = new Float64Array([1e6, 3e6]);
 	const sum = { vals, total: 4e6, dv: null, cell: (k, q) => (q === 3 ? vals[k] : 0) };
-	const s = { id: 3, who: 0, dir: "out", on: new Set([3, 5]) };
+	const s = { id: 3, who: 0, dir: "out", on: new Set([5, 3]) };
 	const { name, text } = flowsCsv(tiny, sum, s, { data: { data_kind: "exiobase-v3", base_year: 2011 } });
 	assert.equal(name, "ramascene-2011-KR-employment-production-manufacturing-construction.csv");
 	assert.equal(
 		text,
 		"region_code,region_name,flow_million_jobs,share_pct,largest_section\r\n" +
-			'KR,"Korea, Republic of",3,75,Manufacturing\r\n' +
-			'WX,"The ""Rest""",1,25,Manufacturing\r\n',
+			'WX,"The ""Rest""",3,75,Manufacturing\r\n' +
+			'KR,"Korea, Republic of",1,25,Manufacturing\r\n',
 	);
 });
