@@ -30,7 +30,8 @@ jobs:
     # Run workflow offers every branch; only main publishes production.
     if: >-
       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]'))
+        && !github.event.pull_request.draft && !endsWith(github.event.pull_request.user.login, '[bot]')
+        && !endsWith(github.actor, '[bot]'))
       || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
     # shares preview-retire.yml's group, so a retire waits for a deploy in flight
     concurrency:
@@ -110,7 +111,7 @@ jobs:
           store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
           [[ $store =~ ^store-[0-9a-f]{64}$ ]] || { echo "The manifest names no valid store: $store"; exit 1; }
           for key in "embodied/$(cut -d' ' -f1 data/embodied.sha256).parquet" "browser-engine/$store/.complete"; do
-            code=$(curl -sS -o /dev/null -I -w '%{http_code}' "${DATA_ORIGIN%/}/$key?run=$GITHUB_RUN_ID" || true)
+            code=$(curl -sS --max-time 30 -o /dev/null -I -w '%{http_code}' "${DATA_ORIGIN%/}/$key?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" || true)
             if [ "$code" != 200 ]; then
               echo "::error::${DATA_ORIGIN%/}/$key answers HTTP $code: the data for this commit is not published: publish its data release first (data.yml)"
               exit 1

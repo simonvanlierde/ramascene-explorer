@@ -88,7 +88,7 @@ jobs:
             store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
             [[ $store =~ ^store-[0-9a-f]{64}$ ]] || { echo "The manifest names no valid store: $store"; exit 1; }
             test -d "data/browser-engine/$store" || { echo "The tar has no $store/"; exit 1; }
-            (cd data/browser-engine && find "$store" -type f) | xargs -P 8 -I{} \
+            (cd data/browser-engine && find "$store" -type f -print0) | xargs -0 -P 8 -I{} \
               "$put" "browser-engine/{}" "data/browser-engine/{}" application/octet-stream "$immutable"
             printf '%s\n' "$store" > "$RUNNER_TEMP/complete"
             "$put" "browser-engine/$store/.complete" "$RUNNER_TEMP/complete" text/plain

@@ -169,7 +169,9 @@ Set up once:
 
 `data.yml` puts a data release's files in the `ramascene-explorer-data` bucket. It runs when
 a `data-*` release is published, or by hand:
-`gh workflow run data.yml --ref <tag> -f tag=<tag>`. It checks the release files against the
+`gh workflow run data.yml --ref <tag> -f tag=<tag>`. The tag's commit must contain
+`data.yml`: `data-2011` and `data-2011-r2` predate it, so their data, already in the bucket,
+can only be published again through a new `data-*` release. It checks the release files against the
 committed `data/embodied.sha256` and `data/browser-engine-zarr.sha256` of the commit it runs
 on, and skips a release file with another checksum, such as an older Parquet on the same
 release. It then uploads through R2's S3 API:

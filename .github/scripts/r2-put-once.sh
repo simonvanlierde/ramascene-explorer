@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Upload FILE to KEY in the bucket, once. R2 refuses the write when KEY already holds an
 # object (If-None-Match: *, answered with 412). That is fine when the object there has
-# FILE's size and, if it stores one, FILE's SHA-256; anything else fails.
+# FILE's size and MD5 (its ETag); anything else fails.
 # Usage: r2-put-once.sh KEY FILE CONTENT_TYPE [CACHE_CONTROL]
 # Needs BUCKET, AWS_ENDPOINT_URL and the AWS credentials in the environment.
 set -euo pipefail
@@ -20,12 +20,14 @@ if ! grep -q PreconditionFailed <<<"$err"; then
   echo "::error::Could not write $key: $err"
   exit 1
 fi
-# Objects from before this script have no sha256 metadata; their size is all there is to check.
+# R2 computes the ETag of a single-part PUT from the bytes (their MD5), so unlike the sha256
+# metadata a writer cannot choose it. Objects put by the old deploy are single-part too.
 head=$(aws s3api head-object --bucket "$BUCKET" --key "$key" --output json)
 have_size=$(jq -r .ContentLength <<<"$head")
-have_sha=$(jq -r '.Metadata.sha256 // empty' <<<"$head")
-if [ "$have_size" != "$size" ] || { [ -n "$have_sha" ] && [ "$have_sha" != "$sha" ]; }; then
-  echo "::error::$key already holds another object ($have_size bytes, sha256 ${have_sha:-not stored}), not this $size-byte file (sha256 $sha)"
+have_md5=$(jq -r '.ETag | gsub("\""; "")' <<<"$head")
+md5=$(md5sum "$file" | cut -d' ' -f1)
+if [ "$have_size" != "$size" ] || [ "$have_md5" != "$md5" ]; then
+  echo "::error::$key already holds another object ($have_size bytes, ETag $have_md5), not this $size-byte file (MD5 $md5)"
   exit 1
 fi
 echo "kept $key: already there"

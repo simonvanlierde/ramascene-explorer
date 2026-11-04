@@ -82,7 +82,8 @@ for (const engine of names.map((n) => engines[n])) {
 		await page.locator("#live-open").click();
 		await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 		await page.locator("#live-run").click();
-		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+		// the first Run reads its slices from a cold edge, slow from CI's runners
+		await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 120_000 });
 		assert.deepEqual(await page.evaluate(() => threadCounts), [1]);
 		await page.locator("#live-product").selectOption("5");
 		await page.locator("#live-origin").selectOption("1");

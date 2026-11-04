@@ -95,3 +95,8 @@ from forks, draft pull requests and bot pull requests never receive it. The depl
 builds without the Cargo cache, so a poisoned cache cannot reach the token.
 Only `data.yml` writes to R2, with a token scoped to the one bucket, on the `data`
 environment, which takes `data-*` tags only. It writes each object once and never deletes.
+A Worker's R2 binding can always write, so preview Workers get none and read the data host.
+The production Worker keeps its binding to serve the Parquet file; only reviewed code on
+`main` deploys it, and an R2 bucket lock on `embodied/` and `browser-engine/` would make
+write-once hold for it too. `data.yml` compares each existing object's ETag, which R2
+computes from the bytes, so it notices a replaced object.

@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // Pull request previews only. cloudflare.yml always deploys this file with
   // --name ramascene-explorer-pr-<number>, so the name below is never used. Production is
-  // wrangler.jsonc; keep the two in step apart from the name, routes and the two URL settings.
+  // wrangler.jsonc; keep the two in step apart from the name, routes, R2 binding and URL settings.
   "name": "ramascene-explorer-preview",
   "main": "hosting/worker.js",
   "compatibility_date": "2026-10-13",
@@ -13,15 +13,9 @@
   "assets": {
     "directory": "site",
     "binding": "ASSETS",
-    "run_worker_first": [
-      "/ramascene-explorer/data/embodied.parquet",
-      "/ramascene-explorer/data/browser-engine/store-*/*"
-    ],
     "not_found_handling": "none"
   },
-  // read only: the Worker serves the Parquet from here, and data.yml writes it
-  "r2_buckets": [
-    { "binding": "EMBODIED", "bucket_name": "ramascene-explorer-data" }
-  ],
+  // No R2 binding: a binding can always write, and a preview reads its data from
+  // DATA_ORIGIN, which cloudflare.yml requires. So preview code cannot touch the bucket.
   "vars": { "BASE_PATH": "/ramascene-explorer" }
 }

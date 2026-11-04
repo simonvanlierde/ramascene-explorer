@@ -23,7 +23,12 @@ concurrency:
 jobs:
   retire:
     name: retire
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Bot pull requests never get a preview, so the sweep covers them, and their workflow
+    # files never run with the token.
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.head.repo.full_name == github.repository
+        && !endsWith(github.event.pull_request.user.login, '[bot]'))
     runs-on: ubuntu-latest
     environment: cloudflare
     timeout-minutes: 15
