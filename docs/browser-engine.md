@@ -133,8 +133,9 @@ covers every file's path and SHA-256, and `manifest-v3.json` names it. Changed
 data therefore gets different URLs. The reader refuses the earlier row layouts,
 and version 3 uses a new manifest name, so a cached older manifest cannot reach
 the new reader. The worker revalidates the manifest, and a tab that still holds
-an older one gets a 404 for the removed store and asks for a reload. The export
-takes about 10 s with 8 threads.
+an older one gets a 404 for the removed store and asks for a reload. A tab
+whose worker script does not load, such as one opened before a deploy, also asks
+for a reload. The export takes about 10 s with 8 threads.
 
 The store is a separate `data-2011` release asset, 803 MB. The earlier
 `ramascene-browser-engine*.tar` assets remain for the older layouts. Move any
