@@ -28,6 +28,13 @@ let waiting = null;
 let waitingBase;
 let prefetching = false;
 let running = 0;
+const sameReads = (meta, steps, key) => {
+	try {
+		return readKey(plan(meta, steps)) === key;
+	} catch {
+		return false; // a selection the form will refuse
+	}
+};
 async function prefetch(base, steps) {
 	waiting = steps;
 	waitingBase = base;
@@ -53,6 +60,22 @@ async function prefetch(base, steps) {
 	} finally {
 		prefetching = false;
 	}
+}
+
+// A trap in a pool thread leaves the threaded call waiting instead of throwing, so the
+// page times each call from these messages (browser-client.js). Downloads are not timed.
+function timed(kernel, id) {
+	const watch =
+		(f) =>
+		(...args) => {
+			self.postMessage({ id, computing: true });
+			try {
+				return f(...args);
+			} finally {
+				self.postMessage({ id, computing: false });
+			}
+		};
+	return { ...kernel, correction: watch(kernel.correction), fold: watch(kernel.fold) };
 }
 
 self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
@@ -90,7 +113,7 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 			try {
 				if (broad && !single) {
 					compute ??= loadKernel();
-					maths = await compute;
+					maths = timed(await compute, id);
 					threaded = true;
 				} else maths = await loadKernel(true);
 			} catch {
@@ -99,9 +122,12 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 			}
 			running++;
 			counted = true;
+			const key = readKey(plan(data.meta, body.model_details));
+			// a waiting selection this run reads already would only download again for nothing
+			if (waiting && sameReads(data.meta, waiting, key)) waiting = null;
 			let used = ahead;
 			ahead = null;
-			if (used && used.key !== readKey(plan(data.meta, body.model_details))) {
+			if (used && used.key !== key) {
 				// another selection's reads beside this run's could pass the memory budget together
 				used.stop();
 				await Promise.allSettled(Object.values(used.reads));

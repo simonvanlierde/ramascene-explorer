@@ -52,6 +52,22 @@ test("a prefetch sends the selection without an id, and a stopped client sends n
 	assert.equal(worker.sent.length, 1);
 });
 
+test("a worker script that does not load asks for a reload, one that throws does not", { timeout: 2000 }, async () => {
+	// after a deploy the tab's hashed worker files are gone, so the script never runs
+	const stale = browserClient();
+	const missing = stale.request();
+	FakeWorker.last.onerror(new Event("error"));
+	await assert.rejects(missing, /could not load\. Reload the page/);
+	assert.equal(stale.outdated, true);
+
+	// a script that throws is a stopped worker, which a fresh one can replace
+	const client = browserClient();
+	const run = client.request();
+	FakeWorker.last.onerror(new ErrorEvent("error", { message: "startup failure" }));
+	await assert.rejects(run, /browser worker stopped/);
+	assert.equal(client.outdated, false);
+});
+
 test("a failed thread pool is terminated and pending requests retry on one thread", { timeout: 2000 }, async () => {
 	const client = browserClient();
 	const pool = FakeWorker.last;
@@ -81,15 +97,27 @@ test("a failed thread pool is terminated and pending requests retry on one threa
 	}
 });
 
-test("a threaded calculation that hangs retries once on one thread", { timeout: 2000 }, async (t) => {
+test("a threaded call that hangs retries once on one thread; downloads and one thread are not timed", {
+	timeout: 2000,
+}, async (t) => {
 	t.mock.timers.enable({ apis: ["setTimeout"] });
 	const client = browserClient();
 	const pool = FakeWorker.last;
 	const hung = client.request({ n: 1 });
-	t.mock.timers.tick(60_000);
 	const queued = client.request({ n: 2 });
-	// a trap in a pool thread leaves the calling thread waiting instead of throwing
-	t.mock.timers.tick(60_000);
+	const first = pool.sent[0].id;
+	// a slow download before the calculation starts is not timed
+	t.mock.timers.tick(300_000);
+	assert.equal(FakeWorker.last, pool);
+	// nor is a threaded call that finishes
+	pool.answer({ id: first, computing: true });
+	t.mock.timers.tick(100_000);
+	pool.answer({ id: first, computing: false });
+	t.mock.timers.tick(100_000);
+	assert.equal(pool.terminated, false);
+	// a trap in a pool thread leaves the call waiting instead of throwing
+	pool.answer({ id: first, computing: true });
+	t.mock.timers.tick(120_000);
 	const fallback = FakeWorker.last;
 	assert.equal(pool.terminated, true);
 	assert.notEqual(fallback, pool);
@@ -100,15 +128,24 @@ test("a threaded calculation that hangs retries once on one thread", { timeout: 
 			[{ n: 2 }, true],
 		],
 	);
-	// the replayed request's deadline starts again on the new worker
-	t.mock.timers.tick(60_000);
+	// on one thread nothing is timed: the run waits for its reads, however slow
+	t.mock.timers.tick(600_000);
+	assert.equal(fallback.terminated, false);
 	fallback.answer({ id: fallback.sent[0].id, value: 10 });
 	fallback.answer({ id: fallback.sent[1].id, value: 20 });
 	assert.equal(await hung, 10);
 	assert.equal(await queued, 20);
+	client.close();
+});
 
-	const again = client.request({ n: 3 });
-	t.mock.timers.tick(120_000);
-	await assert.rejects(again, /timed out/);
-	assert.equal(fallback.terminated, true);
+test("a first load that hangs fails after two minutes and stops the worker", { timeout: 2000 }, async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const client = browserClient();
+	const worker = FakeWorker.last;
+	const loading = client.request();
+	t.mock.timers.tick(119_000);
+	assert.equal(worker.terminated, false);
+	t.mock.timers.tick(1_000);
+	await assert.rejects(loading, /took over two minutes to load/);
+	assert.equal(worker.terminated, true);
 });

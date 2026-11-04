@@ -213,7 +213,15 @@ test("a live run never inherits the published calculation checks", async ({ page
 	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
-	await expect(page.locator(".pf .vf")).toHaveCount(0);
+	// the flow check covers the precomputed flows, not the job's
+	await expect(page.locator("#checks")).toBeVisible();
+	await expect(page.locator("#checks")).not.toContainText("flows the map draws");
+	await page.keyboard.press("Escape");
+	// the basis popover names the job API, not the precomputed file, as the source
+	await page.locator("#status .pill.basis").click();
+	await expect(page.locator("#basis-pop")).toContainText("This run: computed by the job API");
+	await expect(page.locator("#basis-pop")).toContainText(`${API} · job`);
+	await expect(page.locator("#basis-pop")).not.toContainText("Generated");
 	await page.keyboard.press("Escape");
 	// back to a precomputed run: checks passed again
 	await page.getByRole("button", { name: "Flows, 2011" }).first().click();
@@ -221,9 +229,9 @@ test("a live run never inherits the published calculation checks", async ({ page
 });
 
 test("the change field holds to the job API's range", async ({ page }) => {
-	let posted = null;
+	const posts = [];
 	await routeJob(page, job, (body) => {
-		posted = body;
+		posts.push(body);
 	});
 	// a range other than the page's own default, so the field must have read it from the catalog
 	// (the route registered last answers first)
@@ -240,12 +248,12 @@ test("the change field holds to the job API's range", async ({ page }) => {
 	await change.fill("-60");
 	await page.locator("#live-run").click();
 	expect(await change.evaluate((el) => el.validity.rangeUnderflow)).toBe(true);
-	await page.waitForTimeout(300);
-	expect(posted).toBe(null);
 	await change.fill("-20");
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in");
-	expect(posted?.model_details[0].techChange).toEqual([-20]);
+	// only the in-range run was posted: the -60 click sent nothing
+	expect(posts).toHaveLength(1);
+	expect(posts[0].model_details[0].techChange).toEqual([-20]);
 });
 
 test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {
