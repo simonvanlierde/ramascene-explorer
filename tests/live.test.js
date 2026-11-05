@@ -16,6 +16,7 @@ import {
 	liveFlows,
 	liveProvenance,
 	liveText,
+	rootNamed,
 	scenarioBody,
 	unreachableMessage,
 	waitForJob,
@@ -289,4 +290,18 @@ test("filterTree keeps the matches and their parents, and marks the matches", ()
 		[8],
 	);
 	assert.deepEqual(filterTree(tree, "nothing like this"), []);
+});
+
+test("rootNamed names a catalog's Total root for the pickers and leaves the rest as it is", () => {
+	const regions = [
+		{ id: 1, name: "Total", leaves: [0, 1] },
+		{ id: 7, name: "Austria", leaves: [0] },
+	];
+	const named = rootNamed(regions, "World");
+	assert.deepEqual(
+		named.map((r) => r.name),
+		["World", "Austria"],
+	);
+	assert.equal(regions[0].name, "Total");
+	assert.deepEqual(rootNamed(undefined, "World"), []);
 });

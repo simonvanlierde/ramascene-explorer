@@ -162,6 +162,10 @@ export function catalogTree(items = []) {
 
 // The items whose short or full name contains the query, with their ancestors
 // for context; match marks the items that matched themselves.
+// The product and region catalogs both call their root "Total"; the pickers name what it holds.
+// liveText still reads the catalog itself, where "Total" means no regional scope.
+export const rootNamed = (items = [], name) => items.map((v) => (v.name === "Total" ? { ...v, name } : v));
+
 export function filterTree(tree, query) {
 	const q = query.trim().toLowerCase();
 	if (!q) return tree;
