@@ -53,6 +53,21 @@ test("the synthetic banner never covers the header, and Details opens below both
 	expect((await box(".pan")).top).toBeGreaterThanOrEqual((await box(".top")).bottom - 0.5);
 });
 
+test("What if… leads with the world's change, the same figure the run list gives", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	const world = page.locator(".wstrip .world");
+	await expect(world).toContainText("World total");
+	await expect(world).toContainText("all countries and industries");
+	const figure = (await world.locator(".kv").textContent()).split(/[A-Za-z]/)[0].trim();
+	await openSelection(page);
+	// the run list's "world −x Mt" for the chosen run
+	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(`world ${figure}`);
+	// the region split still names the selected country and keeps its five cells
+	await expect(page.locator(".regions .gl")).toContainText("’s change, by where it is released");
+	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
+});
+
 test("What if… loads a run, keeps it in the URL and survives a reload", async ({ page }) => {
 	await page.goto(FIXTURE);
 	await ready(page);

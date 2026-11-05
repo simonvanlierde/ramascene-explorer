@@ -45,7 +45,9 @@ used by every industry of one of five world regions, cut by 10%, 20% or 50%.
 [What each scenario changes](scenarios.md) gives the exact definition of every one.
 
 The bands keep their 2011 width. Their colour shows the change from the 2011 baseline, in percent.
-The five world-region summaries show where that change occurs.
+Under the sentence, **World total** comes first: the change in the whole world's emissions (or jobs,
+or ores), over every country's consumption and every industry, whatever sections or country you
+picked. Beside it, the selected country's own change is split over the five world regions where it occurs.
 The scrubber moves between the baseline and the scenario, and replays when you pick another scenario.
 
 The colour scale fits the flows on screen and uses a square-root scale.

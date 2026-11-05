@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "./lib/explorer.js";
-import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording } from "./lib/flows.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording, worldTotal } from "./lib/flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -40,14 +40,11 @@ function pickGrid(key, value) {
 	setRun(t.id);
 }
 
-// world change of a run, all sections, from the run's continental totals
 const w = $derived(wording(ui.indicator));
+// a run's world change, every industry, in the scenario list
 function worldChange(id) {
-	const b = data.results.baseline?.[String(ui.indicator)];
-	const r = data.results[id]?.[String(ui.indicator)];
-	if (!b || !r) return "";
-	const d = Object.keys(b).reduce((s, k) => s + (r[k] - b[k]), 0) * w.factor;
-	return `world ${d > 0 ? "+" : ""}${amountShort(d, ui.indicator)}`;
+	const t = worldTotal(data.results, id, ui.indicator);
+	return t ? `world ${t.delta > 0 ? "+" : ""}${amountShort(t.delta, ui.indicator)}` : "";
 }
 
 // radio group: arrow keys move and select, as native radios do

@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- What if… leads with the scenario's world total, over every country's consumption and every
+  industry, before the selected country's split over the five world regions. A custom run's
+  world total is against its own baseline ([page.md](docs/page.md#compare-a-scenario)).
 - The header's "Published scenarios · not forecasts" pill opens a short note on where the
   numbers come from: the dataset and its DOI, the engine, the model, the date the results were
   generated, and why a scenario is not a forecast, with links to Method and the source code.
