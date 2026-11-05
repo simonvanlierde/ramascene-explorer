@@ -4,8 +4,8 @@ import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "./lib/explorer.js";
 import { DATA_ORIGIN } from "./lib/data-origin.js";
 import { embodiedUrl, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
-import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording } from "./lib/flows.js";
-import { apiUrl, ignoredApi, jobRun } from "./lib/live.js";
+import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording, worldTotal } from "./lib/flows.js";
+import { apiUrl, ignoredApi, jobRun, liveData } from "./lib/live.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Basis from "./Basis.svelte";
 import Details from "./Details.svelte";
@@ -199,6 +199,10 @@ const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
 const conts = $derived(ready && whatif ? continents(meta, sum) : null);
+// a custom run's world total is against its own baseline, as everything else it shows
+const world = $derived(
+	ready && whatif ? (live ? worldTotal(liveData(live.job).results, "live", ui.indicator) : worldTotal(data.results, run, ui.indicator)) : null,
+);
 // Checks passed only for engine output whose every published run passed every check,
 // and never while a run those checks did not cover is on screen
 const verified = $derived(
@@ -276,7 +280,7 @@ $effect(() => {
 		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
-			<Strip {meta} {sum} {conts} {whatif} {extent} />
+			<Strip {meta} {sum} {conts} {world} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />

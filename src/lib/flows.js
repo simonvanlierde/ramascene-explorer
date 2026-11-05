@@ -188,6 +188,21 @@ export function amount(v, id) {
 	return [fmt(v), "jobs"];
 }
 export const amountText = (v, id) => amount(v, id).join(" ");
+
+// A run's change summed over every region, every industry and every country's consumption,
+// with the baseline it is against, both in the indicator's display unit. results is a results
+// file's or a job's {baseline, [run]: {[indicator]: {[region]: value}}}; null when either is missing.
+export function worldTotal(results, run, id) {
+	const b = results.baseline?.[String(id)];
+	const r = results[run]?.[String(id)];
+	if (!b || !r) return null;
+	const f = wording(id).factor;
+	const keys = Object.keys(b);
+	return {
+		base: f * keys.reduce((s, k) => s + b[k], 0),
+		delta: f * keys.reduce((s, k) => s + (r[k] - b[k]), 0),
+	};
+}
 // The same with the unit cut to "Mt" or "k jobs", where space is short (map
 // labels, legend, run cards); the full unit is stated nearby.
 const SHORT_UNIT = {

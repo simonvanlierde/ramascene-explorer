@@ -876,6 +876,61 @@ button.pill:hover {
 .kpis.k5 .kpi {
   padding: 9px 11px;
 }
+/* What if…: the world's change leads; the selected country's split over the five regions
+   shares one card, its cells divided by hairlines, so no card sits in a card */
+.wstrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3.6fr);
+  gap: 10px;
+}
+.wstrip > :only-child {
+  grid-column: 1 / -1;
+}
+.regions {
+  padding: 9px 0 9px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: var(--sh);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.regions .gl {
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.regions .kpis.k5 {
+  gap: 0;
+}
+.regions .kpis.k5 .kpi {
+  padding: 0 11px;
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: none;
+}
+.regions .kpis.k5 .kpi:first-child {
+  border-left: 0;
+  padding-left: 13px;
+}
+/* cells keep one top line when a subtitle wraps */
+.regions .kpis.k5 .kpi {
+  align-content: start;
+}
+.wstrip .world .ks {
+  white-space: normal;
+}
+/* a narrow cell puts a long unit ("thousand jobs") under its number, at the <wbr> */
+.regions .kpis.k5 .kv {
+  white-space: normal;
+}
+.regions .kpis.k5 .kv small {
+  white-space: nowrap;
+}
 .kpi .sw {
   width: 9px;
   height: 9px;
@@ -1733,6 +1788,12 @@ details.more summary {
   .kpis.k5 .kpi {
     padding: 8px 9px;
   }
+  .regions .kpis.k5 .kpi {
+    padding: 0 9px;
+  }
+  .wstrip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  }
   .mnote {
     display: none;
   }
@@ -1886,8 +1947,26 @@ details.more summary {
     border-top: 1px solid var(--rule);
     border-radius: 0 0 8px 8px;
   }
-  .kpis {
+  .kpis,
+  .wstrip {
     order: 3;
+  }
+  .wstrip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  /* the region cells two a row inside their card, divided by hairlines both ways */
+  .regions .kpis.k5 {
+    gap: 0;
+  }
+  .regions .kpis.k5 .kpi,
+  .regions .kpis.k5 .kpi:first-child {
+    padding: 8px 13px;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .regions .kpis.k5 .kpi:nth-child(even) {
+    border-left: 1px solid var(--rule);
   }
   /* two cards a row; an odd last card takes the whole row */
   .kpis.k3,

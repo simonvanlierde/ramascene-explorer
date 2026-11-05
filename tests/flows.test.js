@@ -32,6 +32,7 @@ import {
 	theName,
 	viewSearch,
 	wording,
+	worldTotal,
 } from "../src/lib/flows.js";
 
 const path = (p) => new URL(p, import.meta.url).pathname;
@@ -446,4 +447,17 @@ test("each theme's map ramps run from its own faint end to its strong end", () =
 		assert.equal(divBand(10, t)(-10), MAP[t].bandRamp(0), t);
 	}
 	assert.notEqual(seqScale(1, 1000, "dark")(1), seqScale(1, 1000)(1));
+});
+
+test("worldTotal sums a run's change over every region against the baseline, in display units", () => {
+	const results = {
+		baseline: { 5: { Europe: 2e12, Africa: 1e12 } },
+		cut: { 5: { Europe: 1.5e12, Africa: 1.1e12 } },
+	};
+	// kg CO2-eq to Mt: 3000 Mt baseline, a 400 Mt cut
+	const t = worldTotal(results, "cut", 5);
+	assert.ok(Math.abs(t.base - 3000) < 1e-9);
+	assert.ok(Math.abs(t.delta + 400) < 1e-9);
+	assert.equal(worldTotal(results, "missing", 5), null);
+	assert.equal(worldTotal(results, "cut", 3), null);
 });

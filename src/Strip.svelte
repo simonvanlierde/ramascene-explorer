@@ -1,10 +1,11 @@
 <script>
-// Three numbers under the sentence in Flows; in What if… the five world regions,
-// each its change in emissions (or jobs, or ores) released there.
-import { amount, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "./lib/flows.js";
+// Three numbers under the sentence in Flows. In What if… the world's change leads, every
+// country's consumption and every industry, then the selected country's change split over the
+// five world regions, each its change in emissions (or jobs, or ores) released there.
+import { amount, capitalise, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, wording } from "./lib/flows.js";
 import { themeName, ui } from "./view.svelte.js";
 
-let { meta, sum, conts, whatif, extent } = $props();
+let { meta, sum, conts, world, whatif, extent } = $props();
 
 const name = $derived(placeName(meta, ui.who));
 // inside a phrase: "the United States"
@@ -17,6 +18,9 @@ const abroad = $derived(amount(sum.total - sum.home, ui.indicator));
 const k = $derived(sum.others[0]);
 const largest = $derived(amount(sum.vals[k] ?? 0, ui.indicator));
 const fill = $derived(divFill(extent, themeName()));
+const wd = $derived(world ? displayChange(world.delta, world.base) : 0);
+const wa = $derived(amount(wd, ui.indicator));
+const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : "it is consumed");
 </script>
 
 {#if !whatif}
@@ -40,16 +44,28 @@ const fill = $derived(divFill(extent, themeName()));
 		</div>
 	</div>
 {:else}
-	<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the world region where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
-		{#each conts as c (c.name)}
-			{@const v = displayChange(c.change, sum.total)}
-			{@const p = c.base ? (v / c.base) * 100 : 0}
-			{@const a = amount(v, ui.indicator)}
-			<div class="kpi">
-				<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
-				<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<small>{a[1]}</small></div>
-				<div class="ks">{c.base ? `${pct(p)} relative to 2011` : "no 2011 flow"}</div>
+	<div class="wstrip">
+		{#if world}
+			<div class="kpi world">
+				<div class="kl">World total</div>
+				<div class="kv num">{wd > 0 ? "+" : ""}{wa[0]}<small>{wa[1]}</small></div>
+				<div class="ks">{world.base ? `${pct((wd / world.base) * 100)} relative to 2011` : "no 2011 total"}, all countries and industries</div>
 			</div>
-		{/each}
+		{/if}
+		<div class="regions">
+			<div class="gl">{capitalise(nameIn)}’s change, by where {where}</div>
+			<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the world region where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
+				{#each conts as c (c.name)}
+					{@const v = displayChange(c.change, sum.total)}
+					{@const p = c.base ? (v / c.base) * 100 : 0}
+					{@const a = amount(v, ui.indicator)}
+					<div class="kpi">
+						<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
+						<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<wbr /><small>{a[1]}</small></div>
+						<div class="ks">{c.base ? `${pct(p)} relative to 2011` : "no 2011 flow"}</div>
+					</div>
+				{/each}
+			</div>
+		</div>
 	</div>
 {/if}
