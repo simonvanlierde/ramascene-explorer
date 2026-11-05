@@ -35,6 +35,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read # the sweep reads each pull request's state
+      actions: read # the wait below lists this commit's cloudflare.yml runs
     steps:
       # The base branch's script: a closed pull request may have no merge ref left.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,6 +43,22 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           sparse-checkout: .github/scripts
           persist-credentials: false
+
+      # A pull request merged while its preview check runs would otherwise lose the Worker
+      # under that check, which then fails with a 404 on a merged pull request.
+      - name: wait for the preview's own deploy and check
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for _ in $(seq 40); do
+            busy=$(gh run list -R "$REPO" --workflow cloudflare.yml --commit "$SHA" --json status -q '[.[] | select(.status != "completed")] | length')
+            [ "$busy" = 0 ] && exit 0
+            sleep 15
+          done
+          echo "::warning::cloudflare.yml still runs for $SHA after 10 minutes; retiring the preview anyway"
 
       # The script is a copy of the project-templates one. It never names the production
       # Worker: it deletes only ramascene-explorer-pr-<number>.
