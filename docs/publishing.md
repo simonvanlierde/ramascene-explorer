@@ -110,7 +110,9 @@ A preview is live only while its pull request is open and not a draft:
 - Before it deploys, the job reads the pull request again, so a late run cannot bring back
   the preview of one that has closed or turned draft.
 - `preview-retire.yml` deletes the Worker through the Cloudflare API when the pull request
-  closes, merges or turns draft, and fails unless the address then answers 404. Its daily
+  closes, merges or turns draft, and fails unless the address then answers 404. It first
+  waits, up to 10 minutes, for that commit's `cloudflare.yml` run, so a preview check still
+  running is not left testing a deleted Worker. Its daily
   sweep deletes any `ramascene-explorer-pr-<number>` Worker whose pull request is no longer
   open and ready. To retire some by hand: `gh workflow run preview-retire.yml -f prs="12 13"`.
 
