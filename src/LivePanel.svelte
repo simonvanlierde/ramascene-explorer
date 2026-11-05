@@ -6,6 +6,7 @@ import { BROWSER_STATUS, browserProvenance } from "./lib/browser-engine/browser-
 import {
 	CHANGE_RANGE,
 	catalogTree,
+	rootNamed,
 	LIVE_STATUS,
 	liveProvenance,
 	liveText,
@@ -73,8 +74,8 @@ function toggle() {
 	}
 }
 const trees = $derived({
-	products: catalogTree(catalog?.products),
-	regions: catalogTree(catalog?.regions),
+	products: catalogTree(rootNamed(catalog?.products, "All products")),
+	regions: catalogTree(rootNamed(catalog?.regions, "World")),
 	consumers: catalogTree(catalog?.consumers),
 });
 const body = (techChange) =>

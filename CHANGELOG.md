@@ -26,6 +26,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The custom scenario's region lists start from **World** and the product list from
+  **All products**, where both said "Total".
 - Deploys and previews no longer write to R2. They check that the data their commit names is
   published, and stop if it is not.
 

@@ -244,7 +244,7 @@ test("a selection too broad for the browser says so before Run, and search narro
 	await page.getByRole("button", { name: "Search produced in" }).click();
 	await page.getByRole("searchbox", { name: "Search produced in" }).fill("netherl");
 	await expect(page.locator("#live-origin option")).toHaveText(
-		["Total", "Europe", "Netherlands"].map((t) => new RegExp(t)),
+		["World", "Europe", "Netherlands"].map((t) => new RegExp(t)),
 	);
 	await expect(page.locator("#live-origin")).toHaveValue("27");
 	await expect(page.locator("#live-broad")).toBeEmpty();
