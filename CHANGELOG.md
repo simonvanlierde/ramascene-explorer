@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- An accessibility statement: what the explorer supports, what the tests check, and how to
+  report a problem ([accessibility.md](docs/accessibility.md)).
+- Issue forms for bugs and feature requests, and a pull request template.
 - What if… leads with the scenario's world total, over every country's consumption and every
   industry, before the selected country's split over the five world regions. A custom run's
   world total is against its own baseline ([page.md](docs/page.md#compare-a-scenario)).

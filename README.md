@@ -1,6 +1,7 @@
 # <img src="docs/img/logo.svg" alt="" width="40" align="top"> RaMa-Scene Explorer
 
 [![ci](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/simonvanlierde/ramascene-explorer/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/simonvanlierde/ramascene-explorer)](https://github.com/simonvanlierde/ramascene-explorer/releases/latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23461260.svg)](https://doi.org/10.5281/zenodo.23461260)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/ramascene-explorer/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/ramascene-explorer)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16003/badge)](https://www.bestpractices.dev/projects/16003)
