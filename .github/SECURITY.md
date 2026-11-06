@@ -22,6 +22,14 @@ A fix ships in a new tagged release. When the release is out, I publish the GitH
 security advisory for it, with a CVE where one applies, and credit you unless you'd
 rather not be named. The CHANGELOG entry for that release links the advisory.
 
+## Supported versions
+
+Security fixes go to the live page at
+[simonvanlierde.com/ramascene-explorer](https://simonvanlierde.com/ramascene-explorer/) and to the
+latest release. A release stops getting security fixes on the day the next release comes out.
+Bug fixes follow the same rule. The `data-*` releases hold computed results, not code, and change
+only through a new data release.
+
 ## Scope
 
 In scope:
