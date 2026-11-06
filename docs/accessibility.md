@@ -8,14 +8,14 @@ Simon van Lierde builds RaMa-Scene Explorer and is responsible for this page.
 
 You can:
 
-- choose a country, an indicator and the sectors with only a keyboard: the sector list is one
-  Tab stop, and the arrow keys move inside it;
-- open Details and the "where these numbers come from" note with the keyboard, and close them
-  with Escape, which puts the focus back on the control that opened them;
+- choose a country, an indicator and the industry sections with only a keyboard. The list of
+  industry sections is one Tab stop, and the arrow keys move inside it;
+- open Details, and the note behind the header's "Published scenarios · not forecasts" label,
+  with the keyboard. Escape closes them and puts the focus back where you were;
 - read the flows the map draws as a table, in Details → Table;
 - use a dark theme, which follows your device's setting until you pick one in the header;
-- turn off the moving replay in What if…: with reduced motion set on your device, it jumps
-  straight to the result;
+- skip the animated replay in What if…: if your device asks for reduced motion, the page
+  shows the result at once;
 - use it on a phone, where the page does not scroll sideways.
 
 ## How accessible RaMa-Scene Explorer is
@@ -24,7 +24,7 @@ RaMa-Scene Explorer aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) at le
 standard for accessible websites.
 
 Its conformance is **not assessed**: nobody has checked RaMa-Scene Explorer against every WCAG 2.2
-rule yet. Simon van Lierde runs the checks below. No outside expert has tested it.
+rule yet. No outside expert has tested it.
 
 ## Known problems
 
@@ -48,12 +48,12 @@ format, ask and we'll send it.
 These automatic checks run on every proposed change to RaMa-Scene Explorer:
 
 - [axe-core](https://github.com/dequelabs/axe-core) scans the map, Details, the phone's selection
-  sheet, the source note and the custom scenario form for WCAG 2.0, 2.1 and 2.2 level A and AA
+  sheet, the header's note and the custom scenario form for WCAG 2.0, 2.1 and 2.2 level A and AA
   problems, in the light and the dark theme.
 - The same tests run in Chromium, Firefox and WebKit (the engine Safari uses), on desktop and
   phone screen sizes.
-- Tests drive the sector list, the country box, Details and the source note with the keyboard,
-  and check where the focus goes when a panel closes.
+- Tests use the keyboard on the industry sections, the country box, Details and the header's
+  note, and check where the focus goes when a panel closes.
 
 Automatic tools find only some problems, so passing them doesn't mean there are none. The tests
 are in [tests/e2e](https://github.com/simonvanlierde/ramascene-explorer/tree/main/tests/e2e).
