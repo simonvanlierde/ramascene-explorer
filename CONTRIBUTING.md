@@ -62,5 +62,5 @@ The `dco` workflow fails a pull request from a fork if a commit lacks it. Pull r
 ## Who maintains this
 
 Simon van Lierde ([@simonvanlierde](https://github.com/simonvanlierde)) maintains the
-project. How decisions are made, and what happens if he stops, is in
+project. Ask questions by email at [code@duinlab.nl](mailto:code@duinlab.nl). How decisions are made, and what happens if he stops, is in
 [GOVERNANCE.md](GOVERNANCE.md).

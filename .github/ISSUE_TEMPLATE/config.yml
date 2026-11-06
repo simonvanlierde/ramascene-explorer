@@ -1,9 +1,9 @@
-# Questions go to CONTRIBUTING.md, so the issue list holds bugs and feature requests only.
+# Questions go by email, so the issue list holds bugs and feature requests only.
 blank_issues_enabled: false
 contact_links:
   - name: Ask a question
-    url: https://github.com/simonvanlierde/ramascene-explorer/blob/main/CONTRIBUTING.md
-    about: How to set up, run the checks, and who maintains this.
+    url: https://github.com/simonvanlierde/ramascene-explorer/blob/main/CONTRIBUTING.md#who-maintains-this
+    about: Who maintains the explorer, and how to reach them.
   - name: Report a vulnerability
     url: https://github.com/simonvanlierde/ramascene-explorer/security/advisories/new
     about: Privately, as SECURITY.md says.

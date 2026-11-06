@@ -28,14 +28,17 @@ rule yet. Simon van Lierde runs the checks below. No outside expert has tested i
 
 ## Known problems
 
-None that we know of yet. The map and the Sankey diagram are pictures of the numbers; the table
-in Details holds the same flows as text.
+Turning the globe, or moving the zoomed flat map, needs a drag with a mouse or a finger.
+There are no keys for it. To bring a country into view, choose it in the country box: the
+map turns to it. The zoom buttons work with the keyboard. No fix planned.
+[2.1.1 Keyboard, 2.5.7 Dragging Movements]
 
 ## Tell us about a problem
 
-If any part of RaMa-Scene Explorer is hard or impossible for you to use,
-[open an issue](https://github.com/simonvanlierde/ramascene-explorer/issues/new/choose). Tell us
-what you tried to do, what happened, and which browser and assistive technology you use, if any.
+If any part of RaMa-Scene Explorer is hard or impossible for you to use, email
+[code@duinlab.nl](mailto:code@duinlab.nl). Tell us what you tried to do, what happened, and
+which browser and assistive technology you use, if any. If you have a GitHub account, you can also
+[open an issue](https://github.com/simonvanlierde/ramascene-explorer/issues/new/choose).
 
 We'll reply within 10 working days. If you need something from RaMa-Scene Explorer in another
 format, ask and we'll send it.

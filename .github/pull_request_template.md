@@ -1,5 +1,5 @@
 <!-- rumdl-disable MD041 -->
-<!-- The title becomes the squash commit subject: `type(scope): summary`, see CONTRIBUTING.md. -->
+<!-- The title becomes the squash commit subject: `type(scope): summary`, such as `fix(ui): keep the sheet open`. -->
 
 What this fixes or adds, and why, in a sentence or two.
 
