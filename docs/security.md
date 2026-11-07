@@ -95,14 +95,18 @@ Cache API for byte ranges; all other assets go directly through static hosting.
 R2 credentials stay on Cloudflare or in the deployment environment, never in the browser.
 The deploy token is a secret on the `cloudflare` GitHub environment and can change Workers
 only. The environment allows every branch, because pull requests deploy previews, so any
-workflow on a branch of this repository could name it and read the token. Pull requests
-from forks, draft pull requests and bot pull requests never receive it. The deploy job
-builds without the Cargo cache, so a poisoned cache cannot reach the token.
-Only `data.yml` writes to R2, with a token scoped to the one bucket, on the `data`
-environment, which takes `data-*` tags only. It writes each object once and never deletes.
-A Worker's R2 binding can always write, so preview Workers get none and read the data host.
-The production Worker keeps its binding to serve the Parquet file; only reviewed code on
-`main` deploys it. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
+workflow on a branch of this repository could name it and read the token. That includes the
+retire run when a pull request turns draft, which runs the branch's own `preview-retire.yml`.
+The workflows skip forks, drafts and bot pull requests, but a branch can change its own copy
+of them, so the real limit is write access to the repository. The token can also deploy a
+Worker bound to the R2 bucket, so a workflow holding it could write to the bucket; the bucket
+lock below is what protects the published data. The deploy job builds without the Cargo
+cache, so a poisoned cache cannot reach the token.
+`data.yml` is the only workflow meant to write to R2, with a token scoped to the one bucket,
+on the `data` environment, which takes `data-*` tags only. It writes each object once and
+never deletes. A Worker's R2 binding can always write, so preview Workers get none and read
+the data host. The production Worker keeps its binding to serve the Parquet file;
+`cloudflare.yml` promotes it only from `main`. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
 overwrite or delete there for 365 days after an upload, whoever writes. `data.yml` compares each existing object's ETag, which R2
 computes from the bytes, so it notices a replaced object.
 

@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-07
+
 ### Added
 
 - An accessibility statement: what the explorer supports, what the tests check, and how to
@@ -42,7 +44,6 @@ follow [Semantic Versioning](https://semver.org/).
   **All products**, where both said "Total".
 - Deploys and previews no longer write to R2. They check that the data their commit names is
   published, and stop if it is not.
-
 - Details is 768 px wide on a desktop, up from 640 px, and never wider than the space beside
   the sidebar. The Sankey uses the extra width for longer bands, shared evenly between its two
   stages, not bigger text.
@@ -62,10 +63,7 @@ follow [Semantic Versioning](https://semver.org/).
   the custom scenario after a minute: a read fails only when the data host has sent nothing to
   any read for a minute. A read the host leaves unanswered is then tried once more on a fresh
   request. The map's reads of the embodied flows get the same timer and retry; before, one
-  such read left the map empty for good ([security.md](docs/security.md)).
-- A custom scenario on a slow link no longer fails at one minute while its data is still
-  arriving: a data read now fails only after a minute with no data at all
-  ([browser-engine.md](docs/browser-engine.md)).
+  such read left the map empty for good ([browser-engine.md](docs/browser-engine.md)).
 - The two-minute limit now times only the threaded calculation, not the download, and a
   run on one thread is no longer downloaded twice and then failed when it passes two
   minutes.
@@ -79,8 +77,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Security
 
-- The deploy token needs no R2 access any more; only `data.yml` writes to the bucket, with a
-  token scoped to it. The production promote installs without install scripts.
+- The deploy token needs no R2 access any more; only `data.yml` is meant to write to the bucket,
+  with a token scoped to it ([security.md](docs/security.md#cloudflare)). The production promote installs without install scripts.
 - `undici` is held at 7.30.1 or later through wrangler, which clears eight advisories. They
   reached `wrangler dev` and CI only.
 - `minimatch` is held at 11.0.1 or later through Stryker, which clears GHSA-g3hv-75wg-m249.
@@ -383,7 +381,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.3.1...v0.4.0
