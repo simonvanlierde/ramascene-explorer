@@ -22,6 +22,20 @@ A fix ships in a new tagged release. When the release is out, I publish the GitH
 security advisory for it, with a CVE where one applies, and credit you unless you'd
 rather not be named. The CHANGELOG entry for that release links the advisory.
 
+## How fast findings get fixed
+
+These deadlines cover a known advisory in a dependency (Dependabot, dependency review) and a
+CodeQL alert:
+
+- High or critical, in code the page or a release ships: fixed within 30 days, and before the
+  next release.
+- Anything else: fixed, or dismissed with a reason, before the next release.
+- An advisory that has no fixed version and can't reach the page or a release goes in
+  `osv-scanner.toml` with the reason and a date to look again.
+
+Dependency review blocks a pull request that adds a dependency with a known advisory, and
+CodeQL alerts of high or above block a merge.
+
 ## Supported versions
 
 Security fixes go to the live page at

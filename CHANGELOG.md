@@ -12,6 +12,10 @@ follow [Semantic Versioning](https://semver.org/).
   report a problem ([accessibility.md](docs/accessibility.md)).
 - Issue forms for bugs and feature requests, and a pull request template.
 - SECURITY.md says which versions get security fixes: the live page and the latest release.
+  It also sets how fast dependency advisories and CodeQL alerts get fixed
+  ([SECURITY.md](.github/SECURITY.md#how-fast-findings-get-fixed)).
+- Each release carries a CycloneDX SBOM of the npm packages the page ships, attested against
+  the tarball, and its provenance as `.intoto.jsonl` ([publishing.md](docs/publishing.md#check-a-release-file)).
 - What if… leads with the scenario's world total, over every country's consumption and every
   industry, before the selected country's split over the five world regions. A custom run's
   world total is against its own baseline ([page.md](docs/page.md#compare-a-scenario)).
@@ -73,6 +77,8 @@ follow [Semantic Versioning](https://semver.org/).
   token scoped to it. The production promote installs without install scripts.
 - `undici` is held at 7.30.1 or later through wrangler, which clears eight advisories. They
   reached `wrangler dev` and CI only.
+- `minimatch` is held at 11.0.1 or later through Stryker, which clears GHSA-g3hv-75wg-m249.
+  It reached mutation runs only.
 
 ## [0.6.0] - 2026-11-04
 

@@ -1,0 +1,6 @@
+# Advisories with no fixed version that cannot reach the published site.
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-02-07
+reason = "deepmerge 4.3.1 via @sveltejs/vite-plugin-svelte, build time only: it merges the repo's own Svelte options, never user input. No fixed version exists."
