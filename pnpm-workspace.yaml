@@ -9,6 +9,9 @@ overrides:
   # 7.30.1 (it reaches wrangler dev and CI only). Drop once a wrangler that is past the
   # release-age wait ships miniflare with undici >=7.30.1 (wrangler 4.155.0 does).
   undici: "^7.30.1"
+  # Stryker 10.1.1 pins minimatch ~10.2.4, which has GHSA-g3hv-75wg-m249 (fixed in 11.0.1).
+  # Stryker uses only hasMagic() and match(), which 11 keeps. Drop once Stryker allows 11.
+  "@stryker-mutator/core>minimatch": "^11.0.1"
 # Both packages use binaries from optional dependencies; no install script is needed.
 allowBuilds:
   esbuild: false

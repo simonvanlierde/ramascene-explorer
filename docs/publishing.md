@@ -45,7 +45,9 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanl
 
 `release.yml` attests what a release ships: the `dist` tarball with its
 `SHA256SUMS` when a `v*` release is published, and `embodied.parquet` on
-`data-2011-r2` when run by hand from `main`. To check a downloaded file:
+`data-2011-r2` when run by hand from `main`. From v0.7.0 on, a release also carries
+`<tarball>.cdx.json`, a CycloneDX SBOM of the npm packages the page ships, attested
+against the tarball. To check a downloaded file:
 
 ```sh
 gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-workflow simonvanlierde/ramascene-explorer/.github/workflows/release.yml
