@@ -14,6 +14,10 @@ follow [Semantic Versioning](https://semver.org/).
 - SECURITY.md says which versions get security fixes: the live page and the latest release.
   It also sets how fast dependency advisories and CodeQL alerts get fixed
   ([SECURITY.md](.github/SECURITY.md#how-fast-findings-get-fixed)).
+- The page sends `Strict-Transport-Security`, and refuses to be framed by another site
+  ([security.md](docs/security.md#a-static-site)).
+- docs/security.md says how the Cloudflare tokens are scoped, stored and replaced, and
+  GOVERNANCE.md says how someone gets write access.
 - Each release carries a CycloneDX SBOM of the npm packages the page ships, attested against
   the tarball, and its provenance as `.intoto.jsonl` ([publishing.md](docs/publishing.md#check-a-release-file)).
 - What if… leads with the scenario's world total, over every country's consumption and every

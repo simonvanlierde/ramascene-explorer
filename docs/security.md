@@ -19,6 +19,11 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
+`public/_headers` adds `Content-Security-Policy: frame-ancestors 'none'` and
+`X-Frame-Options: DENY`, so no other site can frame the page, and
+`Strict-Transport-Security` for one year. `frame-ancestors` works only as a
+header, so it sits there and not in the `<meta>` tag.
+
 The `<meta>` policy covers the page, not the custom-scenario worker: a worker
 takes its policy from its own response, and the Worker sends none. The worker
 compiles the WebAssembly kernel, so a Content-Security-Policy header served for
@@ -100,3 +105,21 @@ The production Worker keeps its binding to serve the Parquet file; only reviewed
 `main` deploys it. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
 overwrite or delete there for 365 days after an upload, whoever writes. `data.yml` compares each existing object's ETag, which R2
 computes from the bytes, so it notices a replaced object.
+
+## Secrets
+
+The workflows hold three Cloudflare credentials, each as a secret on one GitHub environment:
+
+| Secret | Environment | Can change |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | `cloudflare` | Workers only |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | `data` | the one R2 bucket |
+
+Everything else uses GitHub's own short-lived token or, for attestations, the run's OIDC
+identity, so there is nothing else to rotate.
+
+- Each token gets an expiry date at Cloudflare of at most one year.
+- Replace a token before it expires, at once if it may have leaked, and when anyone who could
+  read it loses access. Make the new token with the same scope, update the environment secret,
+  run the workflow that uses it, then delete the old token at Cloudflare.
+- Only the maintainer can read or change the secrets.
