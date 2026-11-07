@@ -149,3 +149,16 @@ test("a first load that hangs fails after two minutes and stops the worker", { t
 	await assert.rejects(loading, /took over two minutes to load/);
 	assert.equal(worker.terminated, true);
 });
+
+test("a first load still pending when a run falls back to one thread keeps its two-minute timer", {
+	timeout: 2000,
+}, async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const client = browserClient();
+	const pool = FakeWorker.last;
+	const loading = client.request();
+	client.request({ n: 1 }).catch(() => {});
+	pool.answer({ id: pool.sent[1].id, retrySingle: true });
+	t.mock.timers.tick(120_000);
+	await assert.rejects(loading, /took over two minutes to load/);
+});

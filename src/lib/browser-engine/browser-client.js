@@ -53,7 +53,8 @@ export function browserClient() {
 		single = true;
 		start();
 		for (const [waiting, task] of pending) {
-			clearTimeout(task.timeout);
+			// a body-less load keeps its two-minute timer; a calculation's timer belongs to the old worker
+			if (task.body) clearTimeout(task.timeout);
 			worker.postMessage({ id: waiting, base, body: task.body, single });
 		}
 	}

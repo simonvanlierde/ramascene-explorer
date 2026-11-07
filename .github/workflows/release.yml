@@ -98,7 +98,7 @@ jobs:
       contents: write # add assets to the release
       id-token: write # Sigstore signs the attestation with the run's OIDC identity
       attestations: write # store the attestation on the repository
-      artifact-metadata: write # link the SBOM attestation to the tarball
+      artifact-metadata: write # actions/attest records where the attested file is stored
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:

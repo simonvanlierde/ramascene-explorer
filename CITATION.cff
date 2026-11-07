@@ -16,10 +16,10 @@ abstract: >-
   coefficients fixed. The results describe the 2011 economy, not forecasts.
   Methods, assumptions, provenance and numerical checks accompany the results.
   The code is MIT-licensed; derived EXIOBASE data is shared under CC BY 4.0.
-version: 0.6.0
+version: 0.7.0
 doi: 10.5281/zenodo.23461260
 url: "https://simonvanlierde.com/ramascene-explorer/"
-date-released: 2026-11-04
+date-released: 2026-11-07
 keywords:
   - input-output analysis
   - EXIOBASE

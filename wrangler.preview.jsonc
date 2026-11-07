@@ -16,6 +16,6 @@
     "not_found_handling": "none"
   },
   // No R2 binding: a binding can always write, and a preview reads its data from
-  // DATA_ORIGIN, which cloudflare.yml requires. So preview code cannot touch the bucket.
+  // DATA_ORIGIN, which cloudflare.yml requires. So preview code has no binding to the bucket.
   "vars": { "BASE_PATH": "/ramascene-explorer" }
 }
