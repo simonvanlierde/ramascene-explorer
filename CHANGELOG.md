@@ -54,6 +54,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Panning or zooming the zoomed-in map no longer redraws every country once more when it stops.
+  That redraw changed nothing on screen and cost about 2% of the CPU a pan uses.
 - On a wide screen the header's buttons work while Details is open: the theme switch, the
   source link, the basis pill and the checks pill. On a phone Details is still modal.
 - On a slow link, a small data read that gets no bytes while large ones arrive no longer fails

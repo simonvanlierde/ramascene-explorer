@@ -113,7 +113,10 @@ const centre = () => [-rot[0] * alpha, -rot[1] * alpha];
 // One threshold for both: at alpha 0.5 the bands must take the globe's path, or horizonBands gets no ts.
 const onGlobe = () => alpha >= 0.5;
 const visible = (ll) => !onGlobe() || geoDistance(ll, centre()) < Math.PI / 2 - 0.04;
-const regionPaths = $derived((view, shapes.map((s) => path(moving && zk < 2 ? s.lite : s.feature) ?? "")));
+// A derived boolean wakes regionPaths only when it flips, so a zoomed drag, which never
+// thins, does not redraw all regions again when it stops.
+const thinned = $derived(moving && zk < 2);
+const regionPaths = $derived((view, shapes.map((s) => path(thinned ? s.lite : s.feature) ?? "")));
 const sphere = $derived((view, path({ type: "Sphere" })));
 
 // --- colour -------------------------------------------------------------------
