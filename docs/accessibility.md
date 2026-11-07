@@ -1,0 +1,73 @@
+# Accessibility statement
+
+This page covers RaMa-Scene Explorer at
+[simonvanlierde.com/ramascene-explorer](https://simonvanlierde.com/ramascene-explorer/).
+Simon van Lierde builds RaMa-Scene Explorer and is responsible for this page.
+
+## Using RaMa-Scene Explorer
+
+You can:
+
+- choose a country, an indicator and the industry sections with only a keyboard. The list of
+  industry sections is one Tab stop, and the arrow keys move inside it;
+- open Details, and the note behind the header's "Published scenarios · not forecasts" label,
+  with the keyboard. Escape closes them and puts the focus back where you were;
+- read the flows the map draws as a table, in Details → Table;
+- use a dark theme, which follows your device's setting until you pick one in the header;
+- skip the animated replay in What if…: if your device asks for reduced motion, the page
+  shows the result at once;
+- use it on a phone, where the page does not scroll sideways.
+
+## How accessible RaMa-Scene Explorer is
+
+RaMa-Scene Explorer aims to meet [WCAG 2.2](https://www.w3.org/TR/WCAG22/) at level AA, the usual
+standard for accessible websites.
+
+Its conformance is **not assessed**: nobody has checked RaMa-Scene Explorer against every WCAG 2.2
+rule yet. No outside expert has tested it.
+
+## Known problems
+
+Turning the globe, or moving the zoomed flat map, needs a drag with a mouse or a finger.
+There are no keys for it. To bring a country into view, choose it in the country box: the
+map turns to it. The zoom buttons work with the keyboard. No fix planned.
+[2.1.1 Keyboard, 2.5.7 Dragging Movements]
+
+## Tell us about a problem
+
+If any part of RaMa-Scene Explorer is hard or impossible for you to use, email
+[code@duinlab.nl](mailto:code@duinlab.nl). Tell us what you tried to do, what happened, and
+which browser and assistive technology you use, if any. If you have a GitHub account, you can also
+[open an issue](https://github.com/simonvanlierde/ramascene-explorer/issues/new/choose).
+
+We'll reply within 10 working days. If you need something from RaMa-Scene Explorer in another
+format, ask and we'll send it.
+
+## How we check
+
+These automatic checks run on every proposed change to RaMa-Scene Explorer:
+
+- [axe-core](https://github.com/dequelabs/axe-core) scans the map, Details, the phone's selection
+  sheet, the header's note and the custom scenario form for WCAG 2.0, 2.1 and 2.2 level A and AA
+  problems, in the light and the dark theme.
+- The same tests run in Chromium, Firefox and WebKit (the engine Safari uses), on desktop and
+  phone screen sizes.
+- Tests use the keyboard on the industry sections, the country box, Details and the header's
+  note, and check where the focus goes when a panel closes.
+
+Automatic tools find only some problems, so passing them doesn't mean there are none. The tests
+are in [tests/e2e](https://github.com/simonvanlierde/ramascene-explorer/tree/main/tests/e2e).
+
+Simon van Lierde tried the explorer by touch on an iPhone and an Android phone on 4 November 2026.
+Nobody has tested it by hand with only a keyboard or with a screen reader yet.
+RaMa-Scene Explorer needs HTML, CSS and JavaScript to work.
+
+## About this statement
+
+Prepared: 6 November 2026
+
+Last reviewed: 6 November 2026
+
+Next review: within 12 months of the last review, or at the next major release if that comes first.
+
+Method: self-assessment, using the checks under How we check.

@@ -1,0 +1,40 @@
+name: Bug report
+description: Something does not work as the docs say
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Report a vulnerability as SECURITY.md says, not here.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      description: The link to the view where it happens, from the address bar or the Share button.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: What you clicked or typed, one step per line. If the bug is in a command or code, give that instead.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Name and version, for example Firefox 130 on Windows 11.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit
+      description: If you run the explorer locally, the commit you used.

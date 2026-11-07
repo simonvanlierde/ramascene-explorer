@@ -6,6 +6,7 @@ For anyone using the explorer.
 
 - [Read the map](page.md): what the map, the headline and the scenarios show, the units, and how to share a view.
 - [What each scenario changes](scenarios.md): the exact change behind every published scenario.
+- [Accessibility](accessibility.md): what you can do with a keyboard or on a phone, what is checked, and how to report a problem.
 
 ## Check the method
 
