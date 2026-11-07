@@ -12,6 +12,19 @@ RaMa-Scene Explorer has one maintainer: Simon van Lierde
   changes, or says no with a reason.
 - The maintainer enforces the [code of conduct](CODE_OF_CONDUCT.md).
 
+## Getting write access
+
+Write access is for someone who has already contributed: a few pull requests merged
+after review, over some months. The maintainer invites them; nobody gets access by
+asking alone.
+
+- Their GitHub account must use two-factor authentication.
+- They get the Write role, never Admin, so the branch rules still apply to them.
+  Write still lets them push a branch whose workflow uses the Workers deploy token
+  ([security.md](docs/security.md#cloudflare)), so they are trusted with that token too.
+- Once a year the maintainer checks who has access, and removes anyone who hasn't
+  contributed in that year.
+
 ## If the maintainer is unavailable
 
 A successor can take over the GitHub repository and publish it with their own Cloudflare
