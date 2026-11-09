@@ -12,30 +12,12 @@ Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.jso
 `wasm-bindgen-cli` for the browser kernel, and prek for the git hooks
 (`uv tool install prek`, then `prek install`).
 
-```sh
-pnpm install
-pnpm engine
-gh release download data-2011-r2 --pattern embodied.parquet --dir data
-pnpm dev
-```
-
-[docs/develop.md](docs/develop.md#view) has the full steps, including the `curl` form of the download.
+[docs/develop.md](docs/develop.md#view) has the commands, including the data download.
 
 ## Run the checks before you push
 
-These are the checks CI runs ([docs/publishing.md](docs/publishing.md) describes them):
-
-```sh
-prek run -a
-uv run ruff check && uv run ruff format --check && uv run ty check
-uv run pytest --cov=precompute --cov=compare_data
-pnpm exec biome ci .
-pnpm test
-pnpm build && pnpm exec playwright test   # once: pnpm exec playwright install chromium firefox webkit
-```
-
-A change in `engine/` also needs the Rust checks in
-[docs/develop.md](docs/develop.md#test). `pnpm mutation` (about 4 minutes) fails when the mutation score of `src/lib/flows.js` is below 75%.
+[docs/develop.md](docs/develop.md#test) lists the checks CI runs ([docs/publishing.md](docs/publishing.md)
+describes them). Run them before you push.
 
 New behaviour comes with a test, and a bug fix with a test that fails without it. Page
 logic tests go in `tests/*.test.js`, browser tests in `tests/e2e/`, Python tests in `tests/`.

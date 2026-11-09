@@ -1,15 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../src/lib/embodied.js";
+import { readRun } from "../src/lib/embodied.js";
 import { flowsCsv, SECTION_SHORT, summarise, tableRows } from "../src/lib/flows.js";
+import { base, path, src } from "./fixtures.js";
 
-const path = (p) => new URL(p, import.meta.url).pathname;
 const data = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
-const src = await openEmbodied(await asyncBufferFromFile(path("./fixture-embodied.parquet")));
 const { meta } = src;
-const base = await readRun(src, "baseline");
 const delta = await readRun(src, "cement-in-construction");
 const ALL = new Set(SECTION_SHORT.keys());
 const DE = meta.country_codes.indexOf("DE");

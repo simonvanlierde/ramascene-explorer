@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../src/lib/embodied.js";
 import {
 	arc,
 	bandGeometry,
@@ -13,17 +11,13 @@ import {
 	taper,
 	taperGlyph,
 } from "../src/lib/flows.js";
+import { base, close, src } from "./fixtures.js";
 
 // Same pinned seed as the property tests, so Stryker sees the same inputs every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });
 
-const src = await openEmbodied(
-	await asyncBufferFromFile(new URL("./fixture-embodied.parquet", import.meta.url).pathname),
-);
 const { meta } = src;
-const base = await readRun(src, "baseline");
 const ALL = new Set(SECTION_SHORT.keys());
-const close = (a, b, tol = 1e-9) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(a), Math.abs(b));
 const nums = (s) => s.match(/-?\d+(?:\.\d+)?/g).map(Number);
 const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);

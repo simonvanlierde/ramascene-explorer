@@ -18,11 +18,11 @@ import {
 	summarise,
 	tableRows,
 } from "../../src/lib/flows.js";
+import { path } from "../fixtures.js";
 
-const path = (p) => new URL(p, import.meta.url).pathname;
-const fixture = JSON.parse(readFileSync(path("../fixture.json"), "utf8"));
+const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
 // Held in memory, so the benchmarks measure the decoding and not the disk.
-const bytes = readFileSync(path("../fixture-embodied.parquet"));
+const bytes = readFileSync(path("./fixture-embodied.parquet"));
 const file = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 const src = await openEmbodied(file);
 const { meta } = src;

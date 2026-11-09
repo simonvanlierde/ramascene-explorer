@@ -34,18 +34,15 @@ import {
 	wording,
 	worldTotal,
 } from "../src/lib/flows.js";
+import { base, close, path, src } from "./fixtures.js";
 
-const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
-const src = await openEmbodied(await asyncBufferFromFile(path("./fixture-embodied.parquet")));
 const { meta } = src;
-const base = await readRun(src, "baseline");
 const delta = await readRun(src, "steel-europe-50");
 const mixedRun = await readRun(src, "cement-asia-pacific-20");
 const ALL = new Set(SECTION_SHORT.keys());
 const DE = meta.country_codes.indexOf("DE");
 const sel = (over) => ({ ind: 0, id: 5, who: DE, dir: "in", on: ALL, ...over });
-const close = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
 test("a region has one name on the page, with 'the' where English needs it", () => {
 	const meta = {

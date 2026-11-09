@@ -1,17 +1,9 @@
-import AxeBuilder from "@axe-core/playwright";
-import { expect, mapAtRest, test } from "./test.js";
+import { expect, expectNoAxeViolations, mapAtRest, test } from "./test.js";
 
 const FIXTURE = "?data=tests/fixture.json";
 // the featured runs' sentences, as the run cards and the headline show them
 const CONSTRUCTION = "European final demand for construction work fell by 20%";
 const STEEL_AP = /Asia-Pacific required 20% less basic iron/i;
-
-async function expectNoAxeViolations(page) {
-	const { violations } = await new AxeBuilder({ page })
-		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-		.analyze();
-	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
-}
 
 const ready = (page) => expect(page.locator(".mapc .rg")).toHaveCount(49);
 

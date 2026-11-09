@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { asyncBufferFromFile } from "hyparquet";
-import { openEmbodied, readRun } from "../src/lib/embodied.js";
+import { readRun } from "../src/lib/embodied.js";
 import {
 	continents,
 	FEATURED,
@@ -13,18 +12,15 @@ import {
 	summarise,
 	viewSearch,
 } from "../src/lib/flows.js";
+import { base, close, src } from "./fixtures.js";
 
 // Stryker pins the seed so a mutant is killed or not the same way on every run
 if (process.env.FC_SEED) fc.configureGlobal({ seed: Number(process.env.FC_SEED) });
 
-const path = (p) => new URL(p, import.meta.url).pathname;
-const src = await openEmbodied(await asyncBufferFromFile(path("./fixture-embodied.parquet")));
 const { meta } = src;
-const base = await readRun(src, "baseline");
 const delta = await readRun(src, "steel-europe-50");
 const codes = meta.country_codes;
 const named = meta.runs.filter((r) => r !== "baseline");
-const close = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
 // String(-0) is "0", so a -0 coordinate cannot survive a link
 const noNegZero = (x) => x + 0;
