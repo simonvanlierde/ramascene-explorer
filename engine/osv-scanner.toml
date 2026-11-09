@@ -1,0 +1,6 @@
+# Advisories with no fix that cannot reach the published page. Mirrors deny.toml's ignore list.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0436"
+ignoreUntil = 2027-05-09
+reason = "paste 1.0.15 is unmaintained, not vulnerable: a compile-time macro under faer's gemm crates, with no replacement upstream yet."

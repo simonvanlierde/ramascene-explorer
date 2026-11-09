@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- `engine/osv-scanner.toml` lists RUSTSEC-2024-0436 (`paste`, unmaintained, no fix), as `engine/deny.toml`
+  already does, so OSV-based scanners skip it.
+
 ## [0.7.0] - 2026-11-07
 
 ### Added
