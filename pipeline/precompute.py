@@ -1132,7 +1132,6 @@ def peak_rss_bytes():
 
 # --- the real engine, Celery-free ---------------------------------------------
 
-ROUTE_THREE = "route_three"  # tasks.execute_calc: Hotspot x Geographic
 LEGACY_VOCABULARY = {
     "Consumption": "Contribution",
     "Production": "Hotspot",
