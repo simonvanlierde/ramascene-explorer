@@ -6,6 +6,17 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A data host that sends no `Content-Length` for the embodied flows now gives that as the
+  error, not "invalid matrix byte range".
+- When the embodied flows cannot be read, the page no longer asks the host for the file size
+  and waits a second time: it does so only when the file is not the size `results.json` gives.
+- A Run whose calculation kernel never finishes downloading now fails after two minutes,
+  instead of showing "Running…" until Cancel. The next Run loads the kernel again.
+- The release's software bill of materials names its root component `ramascene-explorer`
+  with the release version, not `unknown 0.0.0`.
+
 ### Security
 
 - `engine/osv-scanner.toml` lists RUSTSEC-2024-0436 (`paste`, unmaintained, no fix), as `engine/deny.toml`

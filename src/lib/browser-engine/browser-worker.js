@@ -105,7 +105,18 @@ self.onmessage = async ({ data: { id, base, body, single, ahead: steps } }) => {
 				},
 			});
 		else {
-			await kernel;
+			// A download that never answers would leave Run waiting until Cancel; a failed one
+			// already rejects, and either way the next Run loads the kernel again.
+			let timer;
+			await Promise.race([
+				kernel,
+				new Promise((_, reject) => {
+					timer = setTimeout(() => {
+						if (engine === kernel) engine = null;
+						reject(new Error("the calculation kernel took over two minutes to load; press Run to try again"));
+					}, 120_000);
+				}),
+			]).finally(() => clearTimeout(timer));
 			const start = performance.now();
 			// Diagnostics can force either build; the client leaves single unset until fallback.
 			const broad = useThreads(plan(data.meta, body.model_details), single === false);

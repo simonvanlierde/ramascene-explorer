@@ -4,7 +4,7 @@
 // countries, sections and indicators. No DOM here, so node --test covers it.
 
 import { parquetMetadataAsync, parquetRead } from "hyparquet";
-import { fetchRange } from "./range.js";
+import { fetchRange, SizeMismatch } from "./range.js";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
 // The footer is about 90 kB (run names, countries, checks, provenance);
@@ -57,14 +57,18 @@ export async function openEmbodiedUrl(url, byteLength) {
 			const head = await fetch(href, { method: "HEAD", cache: "no-cache" });
 			if (!head.ok) throw new Error(`embodied flows: ${head.status}`);
 			n = Number(head.headers.get("Content-Length"));
+			if (!Number.isSafeInteger(n) || n <= 0) throw new Error("embodied flows: the data host sent no Content-Length");
 		}
 		return openEmbodied({ byteLength: n, slice: (start, end = n) => fetchRange(href, start, end, n) });
 	};
 	if (byteLength === undefined) return open();
 	// A size smaller than the file (results.json and the Parquet file from
 	// different runs) finds no footer; the server's own size then lets the page
-	// tell a mismatched file from a missing one.
-	return open(byteLength).catch(() => open());
+	// tell a mismatched file from a missing one. Any other failure would only fail again.
+	return open(byteLength).catch((e) => {
+		if (e instanceof SizeMismatch) return open();
+		throw e;
+	});
 }
 
 // Index into a dense run: indicator (position in meta.indicators), producer,

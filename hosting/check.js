@@ -4,20 +4,30 @@ import { chromium, expect, firefox, webkit } from "@playwright/test";
 const base = process.argv[2];
 if (!base) throw new Error("Usage: node hosting/check.js https://simonvanlierde.com/ramascene-explorer/");
 const url = (path) => new URL(path, base);
-const home = await fetch(url(""));
+// A request the host never answers would otherwise hang for undici's 5 minutes; a thrown
+// fetch is tried once more, as the page does (src/lib/range.js).
+async function get(href, init) {
+	try {
+		return await fetch(href, { ...init, signal: AbortSignal.timeout(30_000) });
+	} catch (e) {
+		console.log(`${href}: ${e.message}; fetching it again`);
+		return fetch(href, { ...init, signal: AbortSignal.timeout(30_000) });
+	}
+}
+const home = await get(url(""));
 assert.equal(home.status, 200);
 assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
 // a workers.dev link without the prefix lands on the page; production's root is not this Worker's
 if (new URL(base).hostname.endsWith(".workers.dev")) {
-	const root = await fetch(new URL("/", base), { redirect: "manual" });
+	const root = await get(new URL("/", base), { redirect: "manual" });
 	assert.equal(root.status, 302);
 	assert.equal(new URL(root.headers.get("Location"), base).pathname, new URL(base).pathname);
 }
 // A bad answer is logged with its status and cf-ray, then fetched once more; a second bad
 // answer fails the check.
 async function json(path, retried = false) {
-	const res = await fetch(url(path));
+	const res = await get(url(path));
 	const text = await res.text();
 	try {
 		assert.equal(res.status, 200);
@@ -48,11 +58,11 @@ for (const [href, size] of [
 	const cors = data ? { Origin: origin } : {};
 	// A read without Origin first: if the edge cached that answer, without CORS headers,
 	// for later CORS reads, the page could not read the file and the check below fails.
-	if (data) await (await fetch(href, { headers: { Range: "bytes=0-1" } })).arrayBuffer();
-	const head = await fetch(href, { method: "HEAD", headers: cors });
+	if (data) await (await get(href, { headers: { Range: "bytes=0-1" } })).arrayBuffer();
+	const head = await get(href, { method: "HEAD", headers: cors });
 	assert.equal(head.status, 200, path);
 	assert.equal(Number(head.headers.get("Content-Length")), size, path);
-	const res = await fetch(href, { headers: { ...cors, Range: "bytes=0-1" } });
+	const res = await get(href, { headers: { ...cors, Range: "bytes=0-1" } });
 	assert.equal(res.status, 206, path);
 	assert.equal(res.headers.get("Content-Range"), `bytes 0-1/${size}`, path);
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
@@ -60,7 +70,7 @@ for (const [href, size] of [
 	// The edge caches a copy per Origin value, so the production page's origin gets its own
 	// read: a preview's origin passing says nothing about the copy production is served.
 	if (data) {
-		const live = await fetch(href, { headers: { Origin: PRODUCTION, Range: "bytes=0-1" } });
+		const live = await get(href, { headers: { Origin: PRODUCTION, Range: "bytes=0-1" } });
 		await live.arrayBuffer();
 		assert.ok(["*", PRODUCTION].includes(live.headers.get("Access-Control-Allow-Origin")), `${path} for ${PRODUCTION}`);
 	}
@@ -193,8 +203,11 @@ for (const engine of names.map((n) => engines[n])) {
 			const reference = await (await fetch(new URL("data/results.json", base))).json();
 			const meta = await (await fetch(new URL("data/browser-engine/manifest-v3.json", base))).json();
 			const w = new Worker(workerUrls[0], { type: "module" });
+			// A trap in a pool thread leaves a call waiting, and page.evaluate with it, so dump()
+			// would never run. The slowest scenario in docs/browser-engine.md takes about 10 s.
 			const call = (body) =>
 				new Promise((resolve, reject) => {
+					setTimeout(() => reject(new Error("a parity call took over 5 minutes")), 300_000);
 					// computing messages only mark a threaded kernel call's start and end
 					w.onmessage = ({ data }) =>
 						"computing" in data

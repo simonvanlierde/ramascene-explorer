@@ -26,7 +26,8 @@ mock.module(at("../src/lib/browser-engine/browser-kernel.js"), {
 	},
 });
 mock.module(at("../src/lib/browser-engine/browser-results.js"), { exports: { browserResult: () => ({}) } });
-mock.module(at("../engine/pkg/ramascene_engine.js"), { exports: { default: async () => {} } });
+let initKernel = async () => {};
+mock.module(at("../engine/pkg/ramascene_engine.js"), { exports: { default: () => initKernel() } });
 await import("../src/lib/browser-engine/browser-worker.js");
 
 const base = "https://example.test/";
@@ -35,6 +36,23 @@ const run = async (single, steps = []) => {
 	await self.onmessage({ data: { id: 7, base, body: { model_details: steps }, single } });
 	return posted;
 };
+
+// first: the worker keeps the kernel once it has loaded
+test("a kernel download that never answers fails Run after two minutes, and Run loads it again", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	initKernel = () => new Promise(() => {});
+	const hung = run(true);
+	await new Promise((resolve) => setImmediate(resolve));
+	t.mock.timers.tick(120_000);
+	assert.deepEqual(await hung, [
+		{ id: 7, error: "the calculation kernel took over two minutes to load; press Run to try again" },
+	]);
+	initKernel = async () => {};
+	scenarioFlows = async () => {
+		throw new Error("past the kernel");
+	};
+	assert.deepEqual(await run(true), [{ id: 7, error: "past the kernel" }]);
+});
 
 test("a trap in a threaded calculation asks the page to retry on one thread", async () => {
 	const kernels = [];
