@@ -2,16 +2,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { geoArea, geoOrthographic, geoPath } from "d3-geo";
-import { asyncBufferFromFile } from "hyparquet";
 import { merge } from "topojson-client";
-import { openEmbodied } from "../src/lib/embodied.js";
 import { REST_OF, regionForIso, thinTopology } from "../src/lib/map.js";
+import { path, src } from "./fixtures.js";
 
-const path = (p) => new URL(p, import.meta.url).pathname;
 const topo = JSON.parse(readFileSync(path("../geo/countries-110m.topo.json"), "utf8"));
 const features = topo.objects.countries.geometries.map((g) => g.properties);
 // the region codes as the page reads them, from the Parquet footer
-const { meta } = await openEmbodied(await asyncBufferFromFile(path("./fixture-embodied.parquet")));
+const { meta } = src;
 const codes = meta.country_codes;
 
 test("the footer has the 49 EXIOBASE regions over the five aggregates", () => {

@@ -2,6 +2,7 @@
 // of the page's own scripts ran, for `pnpm measure-coverage` to map back to the
 // Svelte files. Firefox and WebKit have no coverage API, so they run as usual.
 import { mkdir, writeFile } from "node:fs/promises";
+import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect } from "@playwright/test";
 
 export { expect };
@@ -48,4 +49,15 @@ export async function mapAtRest(page) {
 			}),
 	);
 	expect(rested, "the map came to rest").toBe(true);
+}
+
+// Fails on any WCAG 2.x A/AA violation, listed by rule and element.
+export async function expectNoAxeViolations(page) {
+	// a colour still mid-transition (the mode switch) is not the page's contrast
+	// a transition cancelled on the way rejects its promise; it is still over
+	await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
+	const { violations } = await new AxeBuilder({ page })
+		.withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+		.analyze();
+	expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }

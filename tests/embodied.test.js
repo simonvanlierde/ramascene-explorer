@@ -3,8 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
 import { at, embodiedUrl, flowsUrl, openEmbodied, openEmbodiedUrl, readRun } from "../src/lib/embodied.js";
+import { path } from "./fixtures.js";
 
-const path = (p) => new URL(p, import.meta.url).pathname;
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
 
 // An AsyncBuffer that counts the bytes it hands out.
