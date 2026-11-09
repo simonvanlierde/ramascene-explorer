@@ -155,6 +155,26 @@ test("without a size, or with one too small for the file, the server is asked", 
 	assert.deepEqual(server.log, ["GET", "HEAD", "GET"]);
 });
 
+test("a size the server does not send is an error, not a range", async (t) => {
+	t.mock.method(globalThis, "fetch", async () => new Response(null));
+	await assert.rejects(openEmbodiedUrl(FIXTURE_URL), {
+		message: "embodied flows: the data host sent no Content-Length",
+	});
+});
+
+test("a host that fails with the right size is not asked for the size", async (t) => {
+	const log = [];
+	t.mock.method(globalThis, "fetch", async (_url, init = {}) => {
+		log.push(init.method ?? "GET");
+		throw new TypeError("fetch failed");
+	});
+	await assert.rejects(
+		openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes),
+		/could not be read.*second try/,
+	);
+	assert.deepEqual(log, ["GET", "GET"]); // the footer and its one retry
+});
+
 test("the published flows come from the data origin by their checksum", async () => {
 	const sha = "a".repeat(64);
 	const data = { provenance: { embodied: { sha256: sha } } };

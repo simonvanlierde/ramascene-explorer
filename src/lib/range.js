@@ -8,6 +8,9 @@ const RANGE_TIMEOUT_MS = 60_000;
 // when any read here last got its headers or a chunk of its body
 let lastData = Number.NEGATIVE_INFINITY;
 
+// The file on the server is not the size the caller asked for: another copy of it.
+export class SizeMismatch extends Error {}
+
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
 		throw new Error("invalid matrix byte range");
@@ -48,6 +51,13 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 				await response.body?.cancel();
 				// The Worker answers a passing R2 or cache failure with 503; that is the host, not its setup.
 				throw new Error(`the data host failed: try again (${where}, status ${response.status})`);
+			}
+			const total = response.headers.get("Content-Range")?.match(/\/(\d+)$/)?.[1];
+			if (response.status === 416 || (response.status === 206 && total && Number(total) !== byteLength)) {
+				await response.body?.cancel();
+				throw new SizeMismatch(
+					`browser scenario data needs a server with HTTP range support (${where}, status ${response.status})`,
+				);
 			}
 			if (
 				response.status !== 206 ||
