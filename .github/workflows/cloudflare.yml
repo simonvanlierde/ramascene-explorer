@@ -69,8 +69,9 @@ jobs:
           test "$(jq -r .provenance.embodied.sha256 data/results.json)" = "$(cut -d' ' -f1 data/embodied.sha256)" \
             || { echo "data/results.json names other embodied flows than data/embodied.sha256"; exit 1; }
 
-      # The store ships with the page, and its manifest names the store the page reads. It is
-      # too large for git and lives on a release; the checksum pins the exact file.
+      # The store's manifest ships with the page and names the store the page reads from the
+      # data host. The store is too large for git and lives on a release; the checksum pins the
+      # exact file.
       - name: fetch the browser store
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,8 +87,9 @@ jobs:
         with:
           node-version: "26"
 
-      # The build copies results.json, the store and the map geometry into site/,
-      # and leaves out the synthetic fixture.
+      # The build copies results.json, the store and the map geometry into site/, and leaves
+      # out the synthetic fixture; public/.assetsignore keeps the Parquet and the shards out of
+      # the upload.
       - run: pnpm install --frozen-lockfile
       # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
       - uses: ./.github/actions/engine

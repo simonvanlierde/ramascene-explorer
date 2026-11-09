@@ -29,8 +29,8 @@ workflows' `pnpm/action-setup` steps read it.
 
 `cloudflare.yml` publishes the site ([Cloudflare](#cloudflare)). Commit the precompute
 output before you merge it. The workflow ships the bundled page and fonts, the map
-geometry, `results.json` and the browser dataset, whose release download is pinned by its
-checksum. `embodied.parquet` and the store go to R2 separately, through
+geometry, `results.json` and the browser store's manifest, whose release download is pinned
+by its checksum. `embodied.parquet` and the store go to R2 separately, through
 [`data.yml`](#publish-the-data). The deploy stops if `data/results.json` is missing or
 isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can never go out.
 
@@ -129,10 +129,10 @@ Paths in `_headers` are public paths, so they carry the prefix.
 
 The Worker serves static assets only and runs no code of its own, so its requests do not
 count toward the Workers request allowance. The app, fonts, maps, `results.json` and the
-browser dataset ship as assets. The Parquet file exceeds Cloudflare's 25 MiB asset limit, so
-`public/.assetsignore` excludes it. The page reads the Parquet file and the store's shards
-from the [data host](#data-host), so a deploy needs `DATA_ORIGIN`. Their keys include their
-checksums, so an older deployment keeps reading its own dataset.
+store's manifest ship as assets. The page reads the Parquet file and the store's shards from
+the [data host](#data-host), so a deploy needs `DATA_ORIGIN`, and `public/.assetsignore`
+keeps both out of the upload. Their keys include their checksums, so an older deployment
+keeps reading its own dataset.
 
 No workflow deletes those older objects, so each data change leaves one in the bucket
 (about 52 MB). Keep it while you might roll back to a version that reads it. After that,
