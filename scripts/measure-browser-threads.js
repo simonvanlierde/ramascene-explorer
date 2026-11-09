@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { chromium } from "@playwright/test";
 
-const origin = process.argv[2] ?? "http://127.0.0.1:4193/ramascene-explorer/";
+const origin = process.argv[2] ?? "http://127.0.0.1:4193/";
 const output = process.argv[3];
 const repetitions = Number(process.argv[4] ?? 3);
 // "threshold" times one thread against a forced pool on dense cases around useThreads' bound

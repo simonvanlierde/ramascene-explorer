@@ -204,22 +204,6 @@ jobs:
           name: test-results-${{ matrix.engine }}
           path: test-results/
           retention-days: 7
-      # in the shortest shard; check.js drives all three engines itself
-      - name: check Cloudflare range reads and isolation
-        if: matrix.engine == 'firefox'
-        run: |
-          set -euo pipefail
-          pnpm build:cloudflare
-          key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
-          pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
-          node node_modules/wrangler/bin/wrangler.js dev --port 4191 --ip 127.0.0.1 --local > /tmp/cloudflare.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-          for _ in {1..30}; do
-            if curl -fsS http://127.0.0.1:4191/ramascene-explorer/ > /dev/null; then break; fi
-            sleep 1
-          done
-          node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/ || { cat /tmp/cloudflare.log; exit 1; }
 
   # The ruleset requires this name; it passes only when every engine passed.
   browser-all:

@@ -58,7 +58,7 @@ jobs:
           done
           test "$found" = 1 || { echo "::error::$TAG has none of the files this commit's checksums name"; exit 1; }
 
-      # Keys and headers match what the Worker, the page and hosting/check.js read. Every
+      # Keys and headers match what the page and hosting/check.js read. Every
       # object is written once and never deleted; the store's .complete marker goes last.
       - name: upload to R2
         env:

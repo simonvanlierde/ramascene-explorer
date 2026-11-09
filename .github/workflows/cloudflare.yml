@@ -93,15 +93,15 @@ jobs:
       - uses: ./.github/actions/engine
         with:
           cache: "false"
-      # With the DATA_ORIGIN variable set, the page reads the Parquet and the store from that
-      # host (R2 on its own hostname) instead of through the Worker (docs/publishing.md#data-host).
+      # The page reads the Parquet and the store from DATA_ORIGIN (R2 on its own hostname); the
+      # Worker serves static assets only (docs/publishing.md#data-host).
       - run: pnpm build:cloudflare
         env:
           VITE_DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
 
-      # This workflow never writes to R2; data.yml publishes a data release there. The Worker
-      # and the data host both read the bucket, so the data must be in before anything serves
-      # this build. The query string skips an edge copy of a 404 from before the upload.
+      # This workflow never writes to R2; data.yml publishes a data release there. The page
+      # reads it from the data host, so the data must be in before anything serves this build.
+      # The query string skips an edge copy of a 404 from before the upload.
       - name: check the data is published
         env:
           DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}

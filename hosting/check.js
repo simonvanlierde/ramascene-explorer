@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { chromium, expect, firefox, webkit } from "@playwright/test";
 
 const base = process.argv[2];
-if (!base) throw new Error("Usage: node hosting/check.js https://simonvanlierde.com/ramascene-explorer/");
+// the data host the build baked in as VITE_DATA_ORIGIN
+const data = process.env.DATA_ORIGIN?.replace(/\/?$/, "/");
+if (!base || !data)
+	throw new Error(
+		"Usage: DATA_ORIGIN=https://data.example.org/ node hosting/check.js https://simonvanlierde.com/ramascene-explorer/",
+	);
 const url = (path) => new URL(path, base);
 // A request the host never answers would otherwise hang for undici's 5 minutes; a thrown
 // fetch is tried once more, as the page does (src/lib/range.js).
@@ -41,24 +46,21 @@ async function json(path, retried = false) {
 }
 const results = await json("data/results.json");
 const manifest = await json("data/browser-engine/manifest-v3.json");
-// With DATA_ORIGIN (the build's VITE_DATA_ORIGIN), the Parquet and the store come from that
-// host by their hashes, read across origins; without it, from next to the page.
-// When the variable is unset, the workflow passes an empty string.
-const data = process.env.DATA_ORIGIN ? process.env.DATA_ORIGIN.replace(/\/?$/, "/") : null;
+// The Parquet and the store come from the data host by their hashes, read across origins.
 const sha = results.provenance.embodied.sha256;
 // the origin of the production routes in wrangler.jsonc
 const PRODUCTION = "https://simonvanlierde.com";
 const shard = `browser-engine/store-${manifest.store}/A/c/0/0`;
 for (const [href, size] of [
-	[data ? new URL(`embodied/${sha}.parquet`, data) : url("data/embodied.parquet"), results.provenance.embodied.bytes],
-	[data ? new URL(shard, data) : url(`data/${shard}`), manifest.arrays.A.shard_bytes[0]],
+	[new URL(`embodied/${sha}.parquet`, data), results.provenance.embodied.bytes],
+	[new URL(shard, data), manifest.arrays.A.shard_bytes[0]],
 ]) {
 	const path = String(href);
 	const origin = new URL(base).origin;
-	const cors = data ? { Origin: origin } : {};
+	const cors = { Origin: origin };
 	// A read without Origin first: if the edge cached that answer, without CORS headers,
 	// for later CORS reads, the page could not read the file and the check below fails.
-	if (data) await (await get(href, { headers: { Range: "bytes=0-1" } })).arrayBuffer();
+	await (await get(href, { headers: { Range: "bytes=0-1" } })).arrayBuffer();
 	const head = await get(href, { method: "HEAD", headers: cors });
 	assert.equal(head.status, 200, path);
 	assert.equal(Number(head.headers.get("Content-Length")), size, path);
@@ -66,19 +68,16 @@ for (const [href, size] of [
 	assert.equal(res.status, 206, path);
 	assert.equal(res.headers.get("Content-Range"), `bytes 0-1/${size}`, path);
 	assert.equal((await res.arrayBuffer()).byteLength, 2, path);
-	if (data) assert.ok(["*", origin].includes(res.headers.get("Access-Control-Allow-Origin")), path);
+	assert.ok(["*", origin].includes(res.headers.get("Access-Control-Allow-Origin")), path);
 	// The edge caches a copy per Origin value, so the production page's origin gets its own
 	// read: a preview's origin passing says nothing about the copy production is served.
-	if (data) {
-		const live = await get(href, { headers: { Origin: PRODUCTION, Range: "bytes=0-1" } });
-		await live.arrayBuffer();
-		assert.ok(["*", PRODUCTION].includes(live.headers.get("Access-Control-Allow-Origin")), `${path} for ${PRODUCTION}`);
-	}
-	if (data || path.includes("store-")) assert.match(res.headers.get("Cache-Control") ?? "", /immutable/, path);
+	const live = await get(href, { headers: { Origin: PRODUCTION, Range: "bytes=0-1" } });
+	await live.arrayBuffer();
+	assert.ok(["*", PRODUCTION].includes(live.headers.get("Access-Control-Allow-Origin")), `${path} for ${PRODUCTION}`);
+	assert.match(res.headers.get("Cache-Control") ?? "", /immutable/, path);
 }
 // Each engine runs the page and its calculations; only the first replays the 155 published
-// scenarios, which read the whole store. Through the Worker, every read counts against its
-// daily request allowance.
+// scenarios, which read the whole store.
 const engines = { chromium, firefox, webkit };
 const names = (process.env.CHECK_BROWSERS ?? "chromium,firefox,webkit").split(",");
 const started = performance.now();
