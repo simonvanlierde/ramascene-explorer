@@ -33,8 +33,9 @@ minute fails the run, with the file and range in the error. The minute starts ag
 every chunk that arrives, so a slow link that keeps sending finishes. A read that the
 network drops, without the page stopping it, is tried once more first: Firefox sometimes
 aborts a body read by itself. A 5xx answer from the data host fails at once with "try
-again". The first load of the manifest fails after two minutes. The kernel loads beside it
-and is not timed: a failed kernel download leaves the form usable, and Run loads it again.
+again". The first load of the manifest fails after two minutes. The kernel loads beside it:
+a failed kernel download leaves the form usable, and Run loads it again. A Run that waits
+over two minutes for the kernel fails the same way.
 
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
 in CI. That checks the implementation, not a custom scenario's assumptions.

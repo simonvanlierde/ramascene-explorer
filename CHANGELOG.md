@@ -12,6 +12,8 @@ follow [Semantic Versioning](https://semver.org/).
   error, not "invalid matrix byte range".
 - When the embodied flows cannot be read, the page no longer asks the host for the file size
   and waits a second time: it does so only when the file is not the size `results.json` gives.
+- A Run whose calculation kernel never finishes downloading now fails after two minutes,
+  instead of showing "Running…" until Cancel. The next Run loads the kernel again.
 
 ### Security
 
