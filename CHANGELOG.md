@@ -14,6 +14,8 @@ follow [Semantic Versioning](https://semver.org/).
   and waits a second time: it does so only when the file is not the size `results.json` gives.
 - A Run whose calculation kernel never finishes downloading now fails after two minutes,
   instead of showing "Running…" until Cancel. The next Run loads the kernel again.
+- The release's software bill of materials names its root component `ramascene-explorer`
+  with the release version, not `unknown 0.0.0`.
 
 ### Security
 
