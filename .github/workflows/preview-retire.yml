@@ -45,7 +45,9 @@ jobs:
           persist-credentials: false
 
       # A pull request merged while its preview check runs would otherwise lose the Worker
-      # under that check, which then fails with a 404 on a merged pull request.
+      # under that check, which then fails with a 404 on a merged pull request. While this
+      # run holds the preview group, a run's preview job cannot start, so only runs whose
+      # preview job has completed are waited for; the others would wait for this one.
       - name: wait for the preview's own deploy and check
         if: github.event_name == 'pull_request'
         env:
@@ -54,7 +56,11 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           for _ in $(seq 40); do
-            busy=$(gh run list -R "$REPO" --workflow cloudflare.yml --commit "$SHA" --json status -q '[.[] | select(.status != "completed")] | length')
+            busy=0
+            for id in $(gh run list -R "$REPO" --workflow cloudflare.yml --commit "$SHA" --json databaseId,status -q '.[] | select(.status != "completed") | .databaseId'); do
+              deployed=$(gh run view "$id" -R "$REPO" --json jobs -q '[.jobs[] | select(.name == "preview" and .status == "completed")] | length')
+              [ "$deployed" != 0 ] && busy=1
+            done
             [ "$busy" = 0 ] && exit 0
             sleep 15
           done
