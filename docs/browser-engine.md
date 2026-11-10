@@ -117,7 +117,7 @@ the file (the Zarr sharding codec). X and Y are one file each, with one chunk
 per country. The reader fetches a shard's index once, then asks for the chunks
 it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
 request is one range, since many static hosts answer a request for several ranges
-with the whole file, and the Worker refuses them.
+with the whole file.
 
 ## Build or download the data
 
@@ -288,7 +288,8 @@ headers. A host without them keeps the single-thread path.
 The paired browser diagnostics are in [browser-engine-threads.json](measurements/browser-engine-threads.json).
 They include cold and repeated scenarios and peak RSS of a fresh Chromium process tree.
 Process-tree RSS counts shared mappings more than once; it is not the calculation's
-working-memory estimate. Reproduce with the Playwright image from package.json:
+working-memory estimate. Build the site with `pnpm build`, then reproduce with the Playwright
+image from package.json:
 
 ```sh
 OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash scripts/measure-browser-threads.sh 5

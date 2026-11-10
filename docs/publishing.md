@@ -29,16 +29,16 @@ workflows' `pnpm/action-setup` steps read it.
 
 `cloudflare.yml` publishes the site ([Cloudflare](#cloudflare)). Commit the precompute
 output before you merge it. The workflow ships the bundled page and fonts, the map
-geometry, `results.json` and the browser dataset, whose release download is pinned by its
-checksum. `embodied.parquet` and the store go to R2 separately, through
+geometry, `results.json` and the browser store's manifest, whose release download is pinned
+by its checksum. `embodied.parquet` and the store go to R2 separately, through
 [`data.yml`](#publish-the-data). The deploy stops if `data/results.json` is missing or
 isn't marked `data_kind: exiobase-v3`, so the synthetic fixture can never go out.
 
-To check that the site serves range requests, ask for two bytes. The answer
-must be `206`:
+To check that the [data host](#data-host) serves range requests, ask for two bytes. The
+answer must be `206`:
 
 ```sh
-curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' https://simonvanlierde.com/ramascene-explorer/data/embodied.parquet
+curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' "https://ramascene-data.simonvanlierde.com/embodied/$(cut -d' ' -f1 data/embodied.sha256).parquet"
 ```
 
 ## Check a release file
@@ -94,8 +94,8 @@ production, and the domain's other pages still come from GitHub Pages through th
 the data this commit names is [published](#publish-the-data), and uploads a version without
 serving it. It then runs `hosting/check.js` against that version's URL in the Playwright
 image, in Chromium, Firefox and WebKit. Only a version that passes goes on the production
-routes. Only the first engine replays all 155 scenarios, which read the whole store: through
-the Worker, those reads count toward its daily request allowance.
+routes. Only the first engine replays all 155 scenarios, which read the whole store from the
+data host.
 
 Each ready pull request from this repository gets its own preview Worker,
 `ramascene-explorer-pr-<number>`, deployed from `wrangler.preview.jsonc` and checked in
@@ -125,14 +125,14 @@ does not touch the production Worker.
 
 The site sends COOP and COEP headers so browsers can use shared memory. Broad dense
 calculations can use the [threaded kernel](browser-engine.md#browser-threads).
-Paths in `_headers` and `run_worker_first` are public paths, so they carry the prefix,
-and the Worker drops `BASE_PATH` before it matches the data paths.
+Paths in `_headers` are public paths, so they carry the prefix.
 
-The app, fonts, maps and browser dataset ship as static assets. The Parquet file
-exceeds Cloudflare's 25 MiB asset limit, so `public/.assetsignore` excludes it.
-The Worker streams it from the `ramascene-explorer-data` R2 bucket at the same
-`data/embodied.parquet` URL. Its R2 key includes the checksum from `results.json`,
-so an older deployment keeps reading its own dataset.
+The Worker serves static assets only and runs no code of its own, so its requests do not
+count toward the Workers request allowance. The app, fonts, maps, `results.json` and the
+store's manifest ship as assets. The page reads the Parquet file and the store's shards from
+the [data host](#data-host), so a deploy needs `DATA_ORIGIN`, and `public/.assetsignore`
+keeps both out of the upload. Their keys include their checksums, so an older deployment
+keeps reading its own dataset.
 
 No workflow deletes those older objects, so each data change leaves one in the bucket
 (about 52 MB). Keep it while you might roll back to a version that reads it. After that,
@@ -146,17 +146,6 @@ pnpm exec wrangler r2 object delete "ramascene-explorer-data/embodied/<old sha25
 
 Never delete the key the current `results.json` names: the live site reads it, and every
 deploy checks it is there.
-
-The local Workers asset server returns whole files for range requests.
-The Worker therefore routes Zarr store reads through Cloudflare's Cache API,
-which returns exact byte ranges from complete cached shards. A cold cache fetches
-a complete shard internally; the browser receives only the requested range.
-These reads and the Parquet reads invoke the Worker and count toward its request
-allowance. Other static files are served directly. Each Parquet range request
-uses one R2 GET (one Class B operation). A HEAD request, a range the Worker refuses
-and a request with `If-Range` read the object's size and ETag first, one more Class B
-operation. When R2 or the cache fails, the Worker answers 503 with `Retry-After`.
-Uploading the file uses one PUT (one Class A operation). R2 reads and storage have their own usage charges. See [Cloudflare's pricing](https://developers.cloudflare.com/r2/pricing/).
 
 Set up once:
 
@@ -205,21 +194,22 @@ Set up once:
 
 ## Data host
 
-The Worker counts every request it runs, refused ones included, and the free plan allows
-100,000 a day. One custom scenario reads about 270 byte ranges, so serving the data through
-the Worker caps how many scenarios a day the site can run. The data can come from R2
-directly instead, with no Worker in the path:
+The deployed page reads the Parquet file and the browser store straight from R2, on the
+bucket's own hostname, with no Worker in the path. One custom scenario reads about 270 byte
+ranges.
 
 - [`data.yml`](#publish-the-data) puts the Parquet file and the browser store in the bucket
   under their hashes.
 - The page needs CORS, because it is cross-origin isolated. The data is public, so any origin
   may read it, previews on `workers.dev` included.
-- With the repository variable `DATA_ORIGIN` set (for example
-  `https://ramascene-data.simonvanlierde.com/`), the build bakes it in as
+- The repository variable `DATA_ORIGIN` (for example
+  `https://ramascene-data.simonvanlierde.com/`) names the host, and the build bakes it in as
   `VITE_DATA_ORIGIN`. The page then reads both files from that host by their hashes, and
   `hosting/check.js` checks ranges, CORS and caching there. `results.json` and the store's
   manifest still ship with the page, so each deployment names its own data.
-- Without the variable, the page reads the data next to itself, through the Worker, as above.
+- Every deploy and preview needs the variable: without it, `cloudflare.yml` stops before it
+  uploads anything. A build without it, such as `pnpm build` for the tests, reads the data
+  next to the page.
 
 Set up once:
 
@@ -241,32 +231,24 @@ headers on every answer, cached ones included, so the CORS headers have one sour
 sends no preflight requests (single-range reads need none), so R2 never has to answer
 `OPTIONS`. `hosting/check.js` reads each data file without `Origin`, with the version's
 origin and with production's, and fails on a missing header.
-To go back to the Worker, drop `VITE_DATA_ORIGIN` from the build step in `cloudflare.yml` and
-run the workflow again: every version still ships the store, and the Worker still serves the
-Parquet. Keep the variable, which the published-data check reads.
-Cache misses are R2 reads (Class B operations). A second input-output database is a new
-upload under its own keys, with no change to the Worker.
+Cache misses are R2 reads (Class B operations); R2 reads and storage have their own
+[usage charges](https://developers.cloudflare.com/r2/pricing/). A second input-output
+database is a new upload under its own keys, with no change to the site's hosting.
 
 Old stores stay in the bucket too, about 770 MB each. To delete one the live manifest does not
 name, delete its `browser-engine/store-<hash>/.complete` marker first, so no deploy takes the
 store as whole while you delete it, then the objects under that prefix. To bring it back, run
 `data.yml` for its release again.
 
-CI runs `hosting/check.js` against the
-local Workers runtime with a local R2 object; it needs no Cloudflare credentials. The check
-covers HEAD and exact ranges for both data sources, immutable shard caching, cross-origin
+`cloudflare.yml` runs `hosting/check.js` against each preview and each uploaded version. The
+check covers HEAD, exact ranges, CORS and immutable caching on the data host, cross-origin
 isolation, the map and a custom calculation in Chromium, Firefox and WebKit, and the 155
-published scenarios in the first of them. To run it
-yourself, build the kernel and the site, then:
+published scenarios in the first of them. To check a deployment yourself:
 
 ```sh
-key=$(node -p '"embodied/" + require("./data/results.json").provenance.embodied.sha256 + ".parquet"')
-pnpm exec wrangler r2 object put "ramascene-explorer-data/$key" --file data/embodied.parquet --local
-pnpm exec wrangler dev --port 4191 --ip 127.0.0.1 --local
-node hosting/check.js http://127.0.0.1:4191/ramascene-explorer/   # in another terminal
+DATA_ORIGIN=https://ramascene-data.simonvanlierde.com/ node hosting/check.js <preview or version URL>
 ```
 
-Pass a preview's or a version's URL instead to check that deployment, as `cloudflare.yml` does.
 The compatibility date matches the runtime bundled with the pinned Wrangler release.
 
 SSL/TLS on the zone stays Full, not Full (strict): GitHub's certificate renewal can fail

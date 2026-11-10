@@ -4,8 +4,8 @@
   // GitHub Pages. cloudflare.yml uploads each main build as a version and checks it on its
   // version URL before serving it. Pull request previews are their own Workers, from
   // wrangler.preview.jsonc (docs/publishing.md#cloudflare).
+  // Static assets only: the page reads the large data from DATA_ORIGIN (docs/publishing.md#data-host).
   "name": "ramascene-explorer",
-  "main": "hosting/worker.js",
   "compatibility_date": "2026-10-13",
   "workers_dev": false,
   "preview_urls": true,
@@ -14,19 +14,10 @@
     { "pattern": "simonvanlierde.com/ramascene-explorer/*", "zone_name": "simonvanlierde.com" }
   ],
   // pnpm build:cloudflare builds into site/ramascene-explorer/, so asset paths are the
-  // public paths, and run_worker_first, _headers and the Worker match those.
+  // public paths, and _headers matches those.
   "assets": {
     "directory": "site",
-    "binding": "ASSETS",
-    "run_worker_first": [
-      "/ramascene-explorer/data/embodied.parquet",
-      "/ramascene-explorer/data/browser-engine/store-*/*"
-    ],
     "not_found_handling": "none"
   },
-  "r2_buckets": [
-    { "binding": "EMBODIED", "bucket_name": "ramascene-explorer-data" }
-  ],
-  "observability": { "enabled": true },
-  "vars": { "BASE_PATH": "/ramascene-explorer" }
+  "observability": { "enabled": true }
 }

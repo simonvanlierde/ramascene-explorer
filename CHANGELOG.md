@@ -6,6 +6,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The deployed site no longer serves data through its Cloudflare Worker, which now serves the
+  built files only. The page reads the embodied flows and the browser store from the data host
+  alone ([data host](docs/publishing.md#data-host)).
+
 ### Fixed
 
 - A data host that sends no `Content-Length` for the embodied flows now gives that as the

@@ -2,9 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // Pull request previews only. cloudflare.yml always deploys this file with
   // --name ramascene-explorer-pr-<number>, so the name below is never used. Production is
-  // wrangler.jsonc; keep the two in step apart from the name, routes, R2 binding and URL settings.
+  // wrangler.jsonc; keep the two in step apart from the name, routes and URL settings.
   "name": "ramascene-explorer-preview",
-  "main": "hosting/worker.js",
   "compatibility_date": "2026-10-13",
   // Version URLs off, so the workers.dev address is the Worker's only one, and
   // preview-retire.yml can check that one address after the delete.
@@ -12,10 +11,6 @@
   "preview_urls": false,
   "assets": {
     "directory": "site",
-    "binding": "ASSETS",
     "not_found_handling": "none"
-  },
-  // No R2 binding: a binding can always write, and a preview reads its data from
-  // DATA_ORIGIN, which cloudflare.yml requires. So preview code has no binding to the bucket.
-  "vars": { "BASE_PATH": "/ramascene-explorer" }
+  }
 }

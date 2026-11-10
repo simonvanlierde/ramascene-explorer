@@ -69,8 +69,9 @@ jobs:
           test "$(jq -r .provenance.embodied.sha256 data/results.json)" = "$(cut -d' ' -f1 data/embodied.sha256)" \
             || { echo "data/results.json names other embodied flows than data/embodied.sha256"; exit 1; }
 
-      # The store ships with the page, and its manifest names the store the page reads. It is
-      # too large for git and lives on a release; the checksum pins the exact file.
+      # The store's manifest ships with the page and names the store the page reads from the
+      # data host. The store is too large for git and lives on a release; the checksum pins the
+      # exact file.
       - name: fetch the browser store
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,22 +87,23 @@ jobs:
         with:
           node-version: "26"
 
-      # The build copies results.json, the store and the map geometry into site/,
-      # and leaves out the synthetic fixture.
+      # The build copies results.json, the store and the map geometry into site/, and leaves
+      # out the synthetic fixture; public/.assetsignore keeps the Parquet and the shards out of
+      # the upload.
       - run: pnpm install --frozen-lockfile
       # No cache: this job holds the deploy token, and a poisoned cache must not reach it.
       - uses: ./.github/actions/engine
         with:
           cache: "false"
-      # With the DATA_ORIGIN variable set, the page reads the Parquet and the store from that
-      # host (R2 on its own hostname) instead of through the Worker (docs/publishing.md#data-host).
+      # The page reads the Parquet and the store from DATA_ORIGIN (R2 on its own hostname); the
+      # Worker serves static assets only (docs/publishing.md#data-host).
       - run: pnpm build:cloudflare
         env:
           VITE_DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}
 
-      # This workflow never writes to R2; data.yml publishes a data release there. The Worker
-      # and the data host both read the bucket, so the data must be in before anything serves
-      # this build. The query string skips an edge copy of a 404 from before the upload.
+      # This workflow never writes to R2; data.yml publishes a data release there. The page
+      # reads it from the data host, so the data must be in before anything serves this build.
+      # The query string skips an edge copy of a 404 from before the upload.
       - name: check the data is published
         env:
           DATA_ORIGIN: ${{ vars.DATA_ORIGIN }}

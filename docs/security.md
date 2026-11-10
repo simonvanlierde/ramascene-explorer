@@ -5,10 +5,10 @@ This page covers the technical surface. To report a vulnerability, follow
 
 ## A static site
 
-The published page is static files, served by a Cloudflare Worker that only answers
-byte ranges ([publishing.md](publishing.md#cloudflare)). There is no database or login,
-and it stores nothing. Without `?api=` it fetches only its own files, and, with the
-[data host](publishing.md#data-host) set, the published data from that host by hash
+The published page is static files, served as a Cloudflare Worker's static assets with
+no Worker code ([publishing.md](publishing.md#cloudflare)). There is no database or login,
+and it stores nothing. Without `?api=` it fetches only its own files and the published
+data from the [data host](publishing.md#data-host) by hash
 ([page.md](page.md#live-scenarios-optional)). How those files are built and
 checked is in [publishing.md](publishing.md).
 
@@ -25,7 +25,7 @@ markup.
 header, so it sits there and not in the `<meta>` tag.
 
 The `<meta>` policy covers the page, not the custom-scenario worker: a worker
-takes its policy from its own response, and the Worker sends none. The worker
+takes its policy from its own response, and the host sends only `frame-ancestors`. The worker
 compiles the WebAssembly kernel, so a Content-Security-Policy header served for
 the whole site (for example from a host's `_headers` file) needs
 `'wasm-unsafe-eval'` in `script-src` for `browser-worker`'s script. Leave it out
@@ -87,26 +87,23 @@ The [Cloudflare deployment](publishing.md#cloudflare) and its pull-request previ
 the [threaded kernel](browser-engine.md#browser-threads) uses it for broad dense calculations.
 The app keeps its existing meta CSP.
 
-The hosting Worker exposes only the pinned Parquet object for GET and HEAD.
-It never accepts uploads or exposes arbitrary R2 keys. With the data host set, the bucket
-itself is public, read-only, on its own hostname, with CORS for any origin: keep only
-public data, keyed by hash, in it. Zarr store reads use the
-Cache API for byte ranges; all other assets go directly through static hosting.
+The hosting Worker runs no code and has no bindings: it serves the built files only. The
+bucket is public, read-only, on its own hostname, with CORS for any origin: keep only
+public data, keyed by hash, in it.
 R2 credentials stay on Cloudflare or in the deployment environment, never in the browser.
 The deploy token is a secret on the `cloudflare` GitHub environment and can change Workers
 only. The environment allows every branch, because pull requests deploy previews, so any
 workflow on a branch of this repository could name it and read the token. That includes the
 retire run when a pull request turns draft, which runs the branch's own `preview-retire.yml`.
 The workflows skip forks, drafts and bot pull requests, but a branch can change its own copy
-of them, so the real limit is write access to the repository. The token can also deploy a
-Worker bound to the R2 bucket, so a workflow holding it could write to the bucket; the bucket
-lock below is what protects the published data. The deploy job builds without the Cargo
-cache, so a poisoned cache cannot reach the token.
+of them, so the real limit is write access to the repository. Neither `wrangler.jsonc` nor
+`wrangler.preview.jsonc` binds the R2 bucket, but the token can still deploy a Worker with
+code and a binding to it, and a binding can always write, so a workflow holding the token
+could write to the bucket; the bucket lock below is what protects the published data. The
+deploy job builds without the Cargo cache, so a poisoned cache cannot reach the token.
 `data.yml` is the only workflow meant to write to R2, with a token scoped to the one bucket,
 on the `data` environment, which takes `data-*` tags only. It writes each object once and
-never deletes. A Worker's R2 binding can always write, so preview Workers get none and read
-the data host. The production Worker keeps its binding to serve the Parquet file;
-`cloudflare.yml` promotes it only from `main`. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
+never deletes. `cloudflare.yml` promotes a version to production only from `main`. Bucket lock rules on `embodied/` and `browser-engine/` refuse any
 overwrite or delete there for 365 days after an upload, whoever writes. `data.yml` compares each existing object's ETag, which R2
 computes from the bytes, so it notices a replaced object.
 
