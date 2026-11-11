@@ -35,6 +35,13 @@ The URL stores the filters and the published scenario. It does not store a custo
 result: a shared link opens the last published scenario.
 The [URL reference](interface.md#url-parameters) lists every parameter.
 
+## Social card
+
+`public/og.png` is rendered by `scripts/og-card.js`: it opens the built page on Germany, takes the
+globe, and sets it in a 1200 x 630 poster with the headline figure read from the page's own
+sentence. Run `pnpm build`, then `node scripts/og-card.js`, after the map's look or the sample
+numbers change. It needs `data/embodied.parquet`.
+
 ## Build
 
 `pnpm build` writes a static site to `dist/`, with `data/` and `geo/` copied in
