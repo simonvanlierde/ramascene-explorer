@@ -21,9 +21,9 @@ try {
 	await app.locator("svg.map path.limb").waitFor();
 	await app.waitForTimeout(3000); // the bands sweep in; wait until the map is at rest
 	const text = await app.locator("body").textContent();
-	const found = text.match(/(\w[\w ]*?)['’]s consumption was linked to .*?(\d+)% was released abroad/s);
+	const found = text.match(/(\w[\w ]*?)['’]s consumption was linked to .*? in (\d{4}) .*?(\d+)% was released abroad/s);
 	if (!found) throw new Error("the sentence did not match; update scripts/og-card.js");
-	const [, place, share] = found;
+	const [, place, year, share] = found;
 	await app.addStyleTag({
 		content: `*{background:transparent!important;box-shadow:none!important}
 body *{visibility:hidden}svg.map,svg.map *{visibility:visible}g.lbls{display:none}`,
@@ -48,12 +48,12 @@ img{position:absolute;left:260px;top:-10px;width:680px;height:680px}
  box-shadow:0 6px 24px rgb(31 42 51/.14);text-align:center}
 .top{top:26px;display:flex;align-items:center;gap:16px;padding:12px 28px 12px 16px;font-size:48px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
 .bot{bottom:26px;width:680px;padding:16px 10px 14px}
-.bot p{margin:0 auto;max-width:520px;font:400 42px/1.15 Sp,serif}.bot b{font-weight:600}
-.bot .u{margin-top:10px;font:600 36px/1 PS,sans-serif;color:#a8471c;letter-spacing:-.06em;white-space:nowrap}
+.bot p{margin:0 auto;max-width:640px;font:400 42px/1.15 Sp,serif;text-wrap:balance}.bot b{font-weight:600}
+.bot .u{margin-top:10px;font:600 32px/1 PS,sans-serif;color:#a8471c;letter-spacing:-.02em;white-space:nowrap}
 </style>
 <img src="data:image/png;base64,${globe.toString("base64")}" alt="">
 <div class="card top">${logo}<span>RaMa-Scene Explorer</span></div>
-<div class="card bot"><p><b>${share}%</b> of ${place}’s footprint is released abroad</p><div class="u">${SITE}</div></div>`;
+<div class="card bot"><p>In ${year}, <b>${share}%</b> of ${place}’s footprint was released abroad</p><div class="u">${SITE}</div></div>`;
 	const dir = await mkdtemp(join(tmpdir(), "og-"));
 	const file = join(dir, "card.html");
 	await writeFile(file, html);
