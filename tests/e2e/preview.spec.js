@@ -7,6 +7,9 @@ test("the head carries absolute share tags and the image is served", async ({ pa
 	await page.goto("./");
 	await expect(meta(page, "property", "og:title")).toHaveAttribute("content", "RaMa-Scene Explorer");
 	await expect(meta(page, "property", "og:image")).toHaveAttribute("content", `${SITE}og.png`);
+	await expect(meta(page, "property", "og:image:width")).toHaveAttribute("content", "1200");
+	await expect(meta(page, "property", "og:image:height")).toHaveAttribute("content", "630");
+	await expect(meta(page, "property", "og:image:alt")).toHaveAttribute("content", /globe.*Germany.*released abroad/);
 	await expect(meta(page, "property", "og:url")).toHaveAttribute("content", SITE);
 	await expect(meta(page, "name", "twitter:card")).toHaveAttribute("content", "summary_large_image");
 	await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute("href", SITE);
