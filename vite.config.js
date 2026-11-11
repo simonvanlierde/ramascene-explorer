@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, readFileSync } from "node:fs";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vite";
@@ -37,11 +38,18 @@ const staticFiles = {
 	},
 };
 
+// Platforms cache a preview by image URL, so the card URL carries the PNG's hash.
+const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
+const ogCardVersion = {
+	name: "og-card-version",
+	transformIndexHtml: (html) => html.replace('/og.png"', `/og.png?v=${ogVersion}"`),
+};
+
 export default defineConfig({
 	// relative, so the build works under the GitHub Pages subpath and from any file server
 	base: "./",
 	worker: { format: "es" },
-	plugins: [svelte(), staticFiles],
+	plugins: [svelte(), staticFiles, ogCardVersion],
 	// source maps only for pnpm measure-coverage, so the published build stays as it is
 	build: { outDir: "dist", sourcemap: !!process.env.COVERAGE },
 	preview: { host: "127.0.0.1", port: 4180, strictPort: true },
