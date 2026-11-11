@@ -46,13 +46,15 @@ body{width:1200px;height:630px;overflow:hidden;position:relative;background:#f4f
 img{position:absolute;left:260px;top:-10px;width:680px;height:680px}
 .card{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border:1px solid #e0e4e7;border-radius:12px;
  box-shadow:0 6px 24px rgb(31 42 51/.14);text-align:center}
-.top{top:26px;display:flex;align-items:center;gap:16px;padding:12px 28px 12px 16px;font-size:48px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.top{top:22px;display:flex;align-items:center;gap:16px;padding:10px 28px 12px 16px;text-align:left;white-space:nowrap}
+.top b{display:block;font-size:46px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.top span{display:block;font-size:30px;font-weight:600;color:#4a5864;line-height:1.2}
 .bot{bottom:26px;width:680px;padding:16px 10px 14px}
 .bot p{margin:0 auto;max-width:640px;font:400 42px/1.15 Sp,serif;text-wrap:balance}.bot b{font-weight:600}
 .bot .u{margin-top:10px;font:600 32px/1 PS,sans-serif;color:#a8471c;letter-spacing:-.02em;white-space:nowrap}
 </style>
 <img src="data:image/png;base64,${globe.toString("base64")}" alt="">
-<div class="card top">${logo}<span>RaMa-Scene Explorer</span></div>
+<div class="card top">${logo}<div><b>RaMa-Scene Explorer</b><span>Maps a country's footprint worldwide</span></div></div>
 <div class="card bot"><p>In ${year}, <b>${share}%</b> of ${place}’s footprint was released abroad</p><div class="u">${SITE}</div></div>`;
 	const dir = await mkdtemp(join(tmpdir(), "og-"));
 	const file = join(dir, "card.html");
