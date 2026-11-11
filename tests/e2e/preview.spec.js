@@ -1,12 +1,15 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { expect, test } from "./test.js";
 
 const SITE = "https://simonvanlierde.com/ramascene-explorer/";
+const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
 const meta = (page, attr, name) => page.locator(`head meta[${attr}="${name}"]`);
 
 test("the head carries absolute share tags and the image is served", async ({ page, request }) => {
 	await page.goto("./");
 	await expect(meta(page, "property", "og:title")).toHaveAttribute("content", "RaMa-Scene Explorer");
-	await expect(meta(page, "property", "og:image")).toHaveAttribute("content", `${SITE}og.png`);
+	await expect(meta(page, "property", "og:image")).toHaveAttribute("content", `${SITE}og.png?v=${ogVersion}`);
 	await expect(meta(page, "property", "og:image:width")).toHaveAttribute("content", "1200");
 	await expect(meta(page, "property", "og:image:height")).toHaveAttribute("content", "630");
 	await expect(meta(page, "property", "og:image:alt")).toHaveAttribute("content", /globe.*Germany.*released abroad/);
