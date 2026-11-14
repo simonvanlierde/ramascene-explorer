@@ -78,6 +78,9 @@ pnpm mutation                          # mutation score with Stryker (about 4 mi
 (cd engine && cargo fmt --check && cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings && cargo clippy --locked --features threads --all-targets -- -D warnings && RAYON_NUM_THREADS=4 cargo nextest run --locked --features threads && cargo deny check)  # the Rust kernel, as CI runs it
 ```
 
+The citesync hook requires a name, version, author, licence and DOI in both `CITATION.cff` and `codemeta.json`.
+[citesync.toml](../citesync.toml) lists the required fields.
+
 `pnpm mutation` mutates `src/lib/flows.js`, `src/lib/range.js` and
 `src/lib/browser-engine/browser-data.js` and `browser-engine.js`
 (`stryker.config.json` lists them).
