@@ -71,6 +71,6 @@ repos:
 
   # The citation files and package manifests must agree (CITATION.cff is the source).
   - repo: https://github.com/simonvanlierde/citesync
-    rev: a3c5a9794449e78a33583e456af41bb24ebd240e # frozen: v0.1.0
+    rev: 3f8fa2135399252c57d8ccd2c7aeca4cf5efe81b
     hooks:
       - id: citesync
