@@ -1263,6 +1263,11 @@ def region_leaves():
     return {rows[g].name: qm.clean_local_leafs(rows[g].leaf_children_local) for g in REGIONS}
 
 
+# One engine job takes seconds (about 6 s at 1.5 GiB); a worker past this is hung, and only its
+# scenario fails, not the whole offline run.
+WORKER_TIMEOUT_S = 600
+
+
 def worker_scenario(engine_dir, data_dir):
     """Return scenario(name, model_details, indicators), which runs one scenario in a worker.
 
@@ -1282,7 +1287,12 @@ def worker_scenario(engine_dir, data_dir):
         )
         command = [sys.executable, __file__, "--worker", "--engine", str(engine_dir), "--data", str(data_dir)]
         started = time.perf_counter()
-        done = subprocess.run(command, input=request, capture_output=True, text=True, check=False)
+        try:
+            done = subprocess.run(
+                command, input=request, capture_output=True, text=True, check=False, timeout=WORKER_TIMEOUT_S
+            )
+        except subprocess.TimeoutExpired as e:
+            raise ValueError(f"scenario {name}: worker still running after {WORKER_TIMEOUT_S} s") from e
         wall = time.perf_counter() - started
         if done.returncode != 0:
             tail = done.stderr.strip().splitlines()[-1:] or ["(no stderr)"]

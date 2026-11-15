@@ -130,9 +130,12 @@ the page would lose the result.
 
 ## Live scenarios (optional)
 
-The job API form sends one change and polls for its result.
+The card names the job API from the link. The page contacts it only when you open the form with
+**Set up**, which asks for `GET /catalog`; then the form sends one change and polls for its result.
 The allowed change comes from `GET /catalog`, or is −100% to +1000% if the API gives no range.
 If the API cannot be reached, the panel offers **Try again**, and the published scenarios stay available.
+A request with no answer fails after 30 s, and one failed poll does not give up on a running job.
+**Cancel** stops the page waiting; the job may still finish on the API.
 The result is labelled “computed by the job API”. Its provenance records the API origin,
 engine commit, dataset, duration and peak memory. Check the origin before you rely on its results.
 The published scenarios' checks do not cover that custom run.

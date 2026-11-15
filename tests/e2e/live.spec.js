@@ -77,8 +77,8 @@ test("the live panel runs one intervention and labels the result live", async ({
 	await page.route(`${API}/jobs/${job.id}`, (route) => route.fulfill({ json: job }));
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	expect(posted).toEqual({ label: "custom scenario", model_details: job.scenario.model_details });
@@ -132,8 +132,8 @@ test("a live job's flows light the map, labelled live", async ({ page }) => {
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await expect(page.locator('.bands path:not([data-region="US"])')).not.toHaveCount(0);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await page.locator("#live-run").click();
 
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
@@ -154,8 +154,8 @@ test("without flows in the job, the map keeps the precomputed run", async ({ pag
 	await page.route(`${API}/jobs/${job.id}`, (route) => route.fulfill({ json: job }));
 
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("finished in 60.0 s");
 	await expect(page.locator("#status .basis")).toContainText("Published scenarios · not forecasts");
@@ -194,8 +194,8 @@ test("a live run never inherits the published calculation checks", async ({ page
 	// the shipped data passes every check, so the page starts with checks passed
 	await page.goto(`?api=${API}`);
 	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await page.locator("#live-run").click();
 	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
 	await expect(page.locator("#status .pill.ok")).toHaveCount(0);
@@ -228,8 +228,8 @@ test("the change field holds to the job API's range", async ({ page }) => {
 		route.fulfill({ json: { ...catalog, tech_change_percent: { min: -50, max: 50 } } }),
 	);
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
-	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
 	const change = page.locator("#live-change");
 	await expect(change).toHaveAttribute("min", "-50");
 	await expect(change).toHaveAttribute("max", "50");
@@ -376,4 +376,35 @@ test("a new flow on a zero baseline has no percentage change", async ({ page }) 
 	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
 	await expect(page.locator("#headline")).toContainText("zero 2011 baseline");
 	await expect(page.locator("#headline")).not.toContainText("(0%)");
+});
+
+test("?api= contacts the job API only once the form is set up", async ({ page }) => {
+	let asked = 0;
+	await page.route(`${API}/catalog`, (route) => {
+		asked++;
+		return route.fulfill({ json: catalog });
+	});
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	await expect(page.locator("#live-title")).toBeAttached();
+	expect(asked).toBe(0);
+	await expect(page.locator(".live-card small")).toHaveText(`Calculated by the job API at ${API}`);
+	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	expect(asked).toBe(1);
+});
+
+test("Cancel stops waiting for a job-API run", async ({ page }) => {
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => route.fulfill({ json: { id: "slow", status: "queued" } }));
+	await page.route(`${API}/jobs/slow`, (route) => route.fulfill({ json: { id: "slow", status: "running" } }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toHaveText("Job slow: running…");
+	await page.locator("#live-cancel").click();
+	await expect(page.locator("#live-state")).toContainText("Cancelled. The job API may still finish the job");
+	await expect(page.locator("#live-run")).toHaveText("Run scenario");
+	await expect(page.locator("#live-run")).toBeFocused();
 });

@@ -8,12 +8,30 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- With `?api=`, the page contacts the job API only when the custom scenario form is opened
+  with Set up, not on load, and the card names the API's address.
+- Cancel now stops a run on the job API too. The page stops waiting; the job may still finish
+  on the server.
+- The page keeps the 20 most recently viewed runs in memory instead of every run viewed.
+- The social card is redrawn as a poster, and its URL carries a hash so shared links pick up a
+  new card.
 - The deployed site no longer serves data through its Cloudflare Worker, which now serves the
   built files only. The page reads the embodied flows and the browser store from the data host
   alone ([data host](docs/publishing.md#data-host)).
 
 ### Fixed
 
+- Map outlines that fail to load now show "The map outlines could not be loaded" with Try
+  again, instead of an empty map.
+- A `results.json` the host fails to send (an error other than 404, or no answer within 60 s)
+  now asks for a reload, instead of the "No precomputed data here yet" message for a checkout
+  without data.
+- The size check for the embodied flows and the browser data manifest now fail after 60 s
+  instead of waiting forever.
+- A job-API request that gets no answer fails after 30 s, and one failed status poll no longer
+  abandons a job that is still running: three failed polls in a row do.
+- An offline precompute run no longer hangs on a stuck engine worker: after 600 s that
+  scenario fails and the others carry on.
 - A data host that sends no `Content-Length` for the embodied flows now gives that as the
   error, not "invalid matrix byte range".
 - When the embodied flows cannot be read, the page no longer asks the host for the file size

@@ -260,14 +260,41 @@ export function jobRun(job, meta, apiOrigin, text) {
 	};
 }
 
-// Poll GET /jobs/{id} until it leaves queued/running. fetchJson is injected for tests.
-export async function waitForJob(fetchJson, url, { interval = 2000, timeout = 30 * 60 * 1000, onUpdate } = {}) {
+// Poll GET /jobs/{id} until it leaves queued/running. One failed poll (a tunnel blip) does not
+// abandon a job that is still running: only `retries` failures in a row, or the signal, stop it.
+// fetchJson is injected for tests.
+export async function waitForJob(
+	fetchJson,
+	url,
+	{ interval = 2000, timeout = 30 * 60 * 1000, retries = 3, signal, onUpdate } = {},
+) {
 	const deadline = Date.now() + timeout;
+	let failures = 0;
 	for (;;) {
-		const job = await fetchJson(url);
-		onUpdate?.(job);
-		if (job.status === "succeeded" || job.status === "failed") return job;
-		if (Date.now() > deadline) throw new Error(`job still ${job.status} after ${timeout / 1000} s`);
-		await new Promise((resolve) => setTimeout(resolve, interval));
+		signal?.throwIfAborted();
+		let job;
+		try {
+			job = await fetchJson(url);
+			failures = 0;
+		} catch (e) {
+			if (signal?.aborted || ++failures >= retries) throw e;
+		}
+		if (job) {
+			onUpdate?.(job);
+			if (job.status === "succeeded" || job.status === "failed") return job;
+			if (Date.now() > deadline) throw new Error(`job still ${job.status} after ${timeout / 1000} s`);
+		}
+		// the wait ends early on abort, so Cancel takes effect at once
+		await new Promise((resolve) => {
+			const timer = setTimeout(resolve, interval);
+			signal?.addEventListener(
+				"abort",
+				() => {
+					clearTimeout(timer);
+					resolve();
+				},
+				{ once: true },
+			);
+		});
 	}
 }

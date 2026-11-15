@@ -29,8 +29,12 @@ let connection = 0;
 onDestroy(() => { connection++; client?.close(); });
 const status = $derived(browser ? BROWSER_STATUS : LIVE_STATUS);
 
-async function fetchJson(url, init) {
-	const response = await fetch(url, { cache: "no-store", ...init });
+// A request that stalls (a half-open tunnel, a laptop waking from sleep) fails after 30 s;
+// a run's own signal also stops it, for Cancel. Without AbortSignal.any (Safari before 17.4),
+// a run's request keeps only Cancel.
+async function fetchJson(url, { signal, ...init } = {}) {
+	const timeout = AbortSignal.timeout(30_000);
+	const response = await fetch(url, { cache: "no-store", ...init, signal: signal && AbortSignal.any ? AbortSignal.any([signal, timeout]) : (signal ?? timeout) });
 	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
 		const detail = Array.isArray(body.detail)
@@ -55,6 +59,8 @@ let running = $state(false);
 let elapsed = $state(0);
 // set by Cancel, so the stopped run's error stays quiet
 let cancelled = false;
+// aborts a job-API run's requests; the job itself may still finish on the server
+let stopJob;
 let job = $state.raw(null);
 // false while the panel shows a finished job the map could not draw
 let mapped = $state(true);
@@ -129,10 +135,6 @@ function connect({ quiet = false } = {}) {
 		},
 	);
 }
-if (!browser) {
-	connected = true;
-	connect();
-}
 // While the form is open, the worker starts reading the selection it shows, so Run
 // waits only for what is left. Sent once per change, half a second after the last.
 let sent = "";
@@ -153,11 +155,17 @@ $effect(() => {
 	return () => clearTimeout(timer);
 });
 
-// Stops a browser run: a fresh worker replaces the busy one.
+// Stops a run: in the browser a fresh worker replaces the busy one; on the job API the page
+// stops waiting, and says the job may still finish there.
 function cancel() {
 	cancelled = true;
-	sent = "";
-	connect();
+	if (browser) {
+		sent = "";
+		connect();
+	} else {
+		stopJob?.abort();
+		say("Cancelled. The job API may still finish the job, and runs one job at a time.");
+	}
 	document.getElementById("live-run")?.focus();
 }
 
@@ -184,13 +192,18 @@ async function submit(event) {
 	const started = performance.now();
 	const tick = setInterval(() => (elapsed = (performance.now() - started) / 1000), 100);
 	say(browser ? "Computing the scenario in this browser…" : "Sending the scenario…");
+	const controller = new AbortController();
+	stopJob = controller;
+	const { signal } = controller;
 	try {
 		const submitted = browser ? null : await fetchJson(`${api}/jobs`, {
+			signal,
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(scenario),
 		});
-		const done = browser ? await client.request(scenario) : await waitForJob(fetchJson, `${api}/jobs/${submitted.id}`, {
+		const done = browser ? await client.request(scenario) : await waitForJob((url) => fetchJson(url, { signal }), `${api}/jobs/${submitted.id}`, {
+			signal,
 			onUpdate: (j) => say(`Job ${j.id}: ${j.status}…`),
 		});
 		if (done.status === "failed") throw new Error(done.error);
@@ -229,7 +242,7 @@ async function submit(event) {
 
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
-		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : "Calculated by the job API"}</small></span>
+		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : `Calculated by the job API at ${api}`}</small></span>
 		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={toggle}>{open ? "Close" : "Set up"}</button>
 	</div>
 	{#if !open}{@render state()}{/if}
@@ -254,7 +267,7 @@ async function submit(event) {
 				<p class="hint live-elapsed">
 					<!-- the status line announces the start and the result; the count is for sighted readers -->
 					<span aria-hidden="true">{elapsed.toFixed(1)} s</span>
-					{#if browser}<button type="button" class="chipb" id="live-cancel" onclick={cancel}>Cancel</button>{/if}
+					<button type="button" class="chipb" id="live-cancel" onclick={cancel}>Cancel</button>
 				</p>
 			{/if}
 		</form>

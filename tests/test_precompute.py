@@ -500,6 +500,17 @@ def test_a_worker_that_prints_nothing_fails_its_scenario_not_the_run(monkeypatch
         scenario("s1", [], [1])
 
 
+def test_a_hung_worker_fails_its_scenario_not_the_run(monkeypatch):
+    def hang(*a, **k):
+        assert k["timeout"] == precompute.WORKER_TIMEOUT_S
+        raise subprocess.TimeoutExpired(a[0], k["timeout"])
+
+    monkeypatch.setattr(precompute.subprocess, "run", hang)
+    scenario = precompute.worker_scenario("engine", "data")
+    with pytest.raises(ValueError, match="scenario s1: worker still running after 600 s"):
+        scenario("s1", [], [1])
+
+
 def test_cli_refuses_to_write_when_the_engine_checkout_moves_during_the_run(tmp_path, monkeypatch, capsys):
     engine_dir, out = git_repo(tmp_path / "engine"), tmp_path / "data" / "results.json"
     engine = fake_engine()
