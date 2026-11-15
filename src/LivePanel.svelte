@@ -1,7 +1,7 @@
 <script>
 // Custom form: computes in the browser, or on the job API with ?api=. This component alone contacts the job
 // API; its text is never rendered as markup.
-import { onDestroy } from "svelte";
+import { onDestroy, tick } from "svelte";
 import { BROWSER_STATUS, browserProvenance } from "./lib/browser-engine/browser-results.js";
 import {
 	CHANGE_RANGE,
@@ -9,6 +9,8 @@ import {
 	rootNamed,
 	LIVE_STATUS,
 	liveProvenance,
+	formChange,
+	liveClauses,
 	liveText,
 	minus,
 	scenarioBody,
@@ -21,7 +23,7 @@ import LiveTotals from "./LiveTotals.svelte";
 import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
 
-// onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
+// onflows(job, text, clauses): shows a finished job's flows on the map; true if it had flows to show
 // onnews(text, alert): every status message, for a live region outside the selection sheet
 let { api, browser = false, onflows, onnews } = $props();
 let client;
@@ -38,17 +40,36 @@ async function fetchJson(url, { signal, ...init } = {}) {
 	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
 		const detail = Array.isArray(body.detail)
-			? body.detail.map((d) => (typeof d === "string" ? d : `${d.loc?.join(".")}: ${d.msg}`)).join("; ")
+			? body.detail.map((d) => formChange(typeof d === "string" ? d : `${d.loc?.join(".")}: ${d.msg}`)).join("; ")
 			: body.detail;
 		throw new Error(`${response.status}: ${detail ?? response.statusText}`);
 	}
 	return body;
 }
 
+// The planner's cap on interventions (plan() throws above it)
+const MAX_LEVERS = 10;
 // The explorer's steel-into-vehicles scenario, preselected so one click reproduces it.
-let pick = $state({ product: "180", origin: "1", consumer: "198", consumedReg: "2" });
-// the form's change as typed, so the too-broad check plans what Run would send
-let change = $state("-20");
+// Each lever is one intervention; change is as typed, so the too-broad check plans what Run would send.
+let nextKey = 0;
+const lever = (from = { product: "180", origin: "1", consumer: "198", consumedReg: "2", change: "-20" }) => ({ ...from, key: nextKey++ });
+let levers = $state([lever()]);
+// lever 1 keeps the ids the first version had; later levers add their number
+const at = (name, i) => (i ? `live-${name}-${i + 1}` : `live-${name}`);
+async function addLever() {
+	levers.push(lever(levers.at(-1)));
+	await tick();
+	const first = document.getElementById(at("product", levers.length - 1));
+	first?.focus({ preventScroll: true });
+	first?.closest("fieldset")?.scrollIntoView({ block: "start" });
+}
+// focus goes to the previous lever (or the new first one), never to the removed row
+async function removeLever(i) {
+	levers.splice(i, 1);
+	say(`Change ${i + 1} removed.`);
+	await tick();
+	document.getElementById(at("product", Math.max(i - 1, 0)))?.focus();
+}
 let catalog = $state.raw(null);
 let message = $state("");
 let failed = $state(false);
@@ -84,13 +105,16 @@ const trees = $derived({
 	regions: catalogTree(rootNamed(catalog?.regions, "World")),
 	consumers: catalogTree(catalog?.consumers),
 });
-const body = (techChange) =>
-	scenarioBody({ product: pick.product, originReg: pick.origin, consumedBy: pick.consumer, consumedReg: pick.consumedReg, techChange }, range);
+const body = () =>
+	scenarioBody(
+		levers.map((l) => ({ product: l.product, originReg: l.origin, consumedBy: l.consumer, consumedReg: l.consumedReg, techChange: l.change })),
+		range,
+	);
 // a browser selection's plan before Run: what it downloads, or why it is too large
 const planned = $derived.by(() => {
 	if (!browser || !catalog) return {};
 	try {
-		return { download: plan({ catalog, ...catalog.size }, body(change).model_details).download };
+		return { download: plan({ catalog, ...catalog.size }, body().model_details).download };
 	} catch (e) {
 		// other errors surface on Run
 		return { tooBroad: e.message.startsWith("too broad") ? `This selection is ${e.message}` : "" };
@@ -142,7 +166,7 @@ $effect(() => {
 	if (!browser || !open || !catalog || running || tooBroad) return;
 	let scenario;
 	try {
-		scenario = body(change);
+		scenario = body();
 	} catch {
 		return;
 	}
@@ -181,7 +205,7 @@ async function submit(event) {
 	if (running) return;
 	let scenario;
 	try {
-		scenario = body(change);
+		scenario = body();
 	} catch (e) {
 		say(e.message, true);
 		return;
@@ -212,7 +236,7 @@ async function submit(event) {
 		const duration = done.duration_s < 0.1 ? "less than 0.1" : done.duration_s.toFixed(1);
 		let text = browser ? `Computed in this browser in ${duration} s.` : `Job ${done.id} finished in ${duration} s.`;
 		try {
-			mapped = onflows?.(done, liveText(done, catalog)) === true;
+			mapped = onflows?.(done, liveText(done, catalog), liveClauses(done, catalog)) === true;
 			if (mapped)
 				text += `${ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map."} Details → Method lists the totals by region.`;
 		} catch (e) {
@@ -249,16 +273,24 @@ async function submit(event) {
 	<div id="live-body" class="live-body" hidden={!open}>
 		<!-- the card already says where a browser run is computed -->
 		{#if !browser}<p class="live-label" id="live-label">Results are {status}.</p>{/if}
-		<p class="hint">{browser ? "One change to the 2011 economy, against the published baseline. Nothing is sent to a server." : "One change to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
+		<p class="hint">{browser ? "Changes to the 2011 economy, against the published baseline. Nothing is sent to a server." : "Changes to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
-			<Picker id="live-product" label="Product" tree={trees.products} bind:value={pick.product} />
-			<Picker id="live-origin" label="Produced in" tree={trees.regions} bind:value={pick.origin} />
-			<Picker id="live-consumer" label="Used by" tree={trees.consumers} bind:value={pick.consumer} />
-			<Picker id="live-consumed-reg" label="Used in" tree={trees.regions} bind:value={pick.consumedReg} />
-			<label for="live-change">Input or demand change, %</label>
-			<input id="live-change" type="number" step="any" min={range.min} max={range.max} value={change} required aria-describedby="live-change-h" oninput={(e) => (change = e.currentTarget.value)} />
-			<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>
+			{#each levers as l, i (l.key)}
+				<fieldset class="lever">
+					<legend>Change {i + 1}</legend>
+					<Picker id={at("product", i)} label="Product" tree={trees.products} bind:value={l.product} />
+					<Picker id={at("origin", i)} label="Produced in" tree={trees.regions} bind:value={l.origin} />
+					<Picker id={at("consumer", i)} label="Used by" tree={trees.consumers} bind:value={l.consumer} />
+					<Picker id={at("consumed-reg", i)} label="Used in" tree={trees.regions} bind:value={l.consumedReg} />
+					<label for={at("change", i)}>Input or demand change, %</label>
+					<input id={at("change", i)} type="number" step="any" min={range.min} max={range.max} value={l.change} oninput={(e) => (l.change = e.currentTarget.value)} required aria-describedby="live-change-h" />
+					{#if i === 0}<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>{/if}
+					{#if levers.length > 1}<button type="button" class="chipb remove" id={at("remove", i)} onclick={() => removeLever(i)}>Remove change {i + 1}</button>{/if}
+				</fieldset>
+			{/each}
+			<button type="button" class="chipb add" id="live-add" disabled={levers.length >= MAX_LEVERS} onclick={addLever}>Add a change{levers.length >= MAX_LEVERS ? ` (at most ${MAX_LEVERS})` : ""}</button>
+			{#if levers.length > 1}<small class="fh" id="live-overlap">Changes to the same input or spending multiply: two cuts of 20% leave 64%, not 60%.</small>{/if}
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			{#if download}<p class="hint" id="live-download">{download}</p>{/if}

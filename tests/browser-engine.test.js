@@ -239,6 +239,28 @@ test("scenarios across two countries agree with a direct solve per destination c
 	);
 });
 
+test("two levers that overlap on one column compose like sequential edits", async () => {
+	// lever 1 cuts row 0 into column 1 by 20%; lever 2 cuts both rows into column 1 by 50%: A[0][1] gets both
+	await fc.assert(
+		fc.asyncProperty(
+			fc.array(fc.double({ min: 0.01, max: 0.2, noNaN: true }), { minLength: 4, maxLength: 4 }),
+			fc.constantFrom(viaRows, viaColumns),
+			async ([a, b, c, d], arrays) => {
+				const data = tiny(a, b, c, d, arrays);
+				const got = await scenarioFlows(data, [step(), step({ product: [12], techChange: [-50] })]);
+				const want = direct([
+					[a, b * 0.8 * 0.5],
+					[c, d * 0.5],
+				]);
+				got.forEach((v, i) => {
+					close(v, want[i]);
+				});
+			},
+		),
+		{ numRuns: 50 },
+	);
+});
+
 test("overlapping edits compose, zero changes return the baseline, and inputs are validated", async () => {
 	const data = tiny(0.1, 0.2, 0.1, 0.1);
 	assert.deepEqual(await scenarioFlows(data, [step({ techChange: [0] })]), data.baseline);
@@ -323,7 +345,12 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 	// 8 rows are inside the broad selection, changed as an input and in final demand: counted once
 	await assert.rejects(
 		scenarioFlows(data, [{ ...broad, product: [82], consumedBy: [final.id] }, broad]),
-		/1,600 product–country pairs\. Choose/,
+		/1,600 product–country pairs\. Choose .* use it or remove a change; the limits apply to all changes together\./,
+	);
+	// one intervention has nothing to remove
+	assert.throws(
+		() => plan(meta, [broad]),
+		(e) => !e.message.includes("remove a change"),
 	);
 	// final demand for product 82 from every country: 41 pairs outside the broad selection
 	await assert.rejects(

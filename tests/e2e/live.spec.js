@@ -245,6 +245,24 @@ test("the change field holds to the job API's range", async ({ page }) => {
 	expect(posts[0].model_details[0].techChange).toEqual([-20]);
 });
 
+test("the live panel posts one model_details entry per lever", async ({ page }) => {
+	let posted = null;
+	await page.route(`${API}/catalog`, (route) => route.fulfill({ json: catalog }));
+	await page.route(`${API}/jobs`, (route) => {
+		posted = route.request().postDataJSON();
+		return route.fulfill({ json: { id: job.id, status: "queued" } });
+	});
+	await page.route(`${API}/jobs/${job.id}`, (route) => route.fulfill({ json: job }));
+	await page.goto(`?data=tests/fixture.json&api=${API}`);
+	await openLive(page);
+	await expect(page.locator("#live-state")).toHaveText(`Connected to ${API}.`);
+	await page.getByRole("button", { name: "Add a change" }).click();
+	await page.locator("#live-change-2").fill("5");
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("finished in");
+	expect(posted.model_details.map((step) => step.techChange)).toEqual([[-20], [5]]);
+});
+
 test("an unreachable job API says so, and Try again reconnects", async ({ page }) => {
 	await page.route(`${API}/catalog`, (route) => route.abort());
 	await page.goto(`?data=tests/fixture.json&api=${API}`);

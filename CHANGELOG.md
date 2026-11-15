@@ -6,6 +6,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A custom scenario can hold up to 10 changes at once, in the browser and on the job API. Add a
+  change (copied from the last) and Remove manage the list; changes that hit the same input
+  multiply, as in RaMa-Scene. The headline names up to two changes and counts more, with all of
+  them listed under Details. An error names the change it is about.
+
 ### Changed
 
 - With `?api=`, the page contacts the job API only when the custom scenario form is opened

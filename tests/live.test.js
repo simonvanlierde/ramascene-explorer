@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { browserProvenance } from "../src/lib/browser-engine/browser-results.js";
 import { at } from "../src/lib/embodied.js";
 import { compare } from "../src/lib/explorer.js";
 import {
@@ -9,9 +10,11 @@ import {
 	catalogName,
 	catalogTree,
 	filterTree,
+	formChange,
 	ignoredApi,
 	jobRun,
 	LIVE_STATUS,
+	liveClauses,
 	liveData,
 	liveFlows,
 	liveProvenance,
@@ -84,16 +87,91 @@ test("anything else is refused and reported", () => {
 });
 
 test("form values become the explorer's model_details format", () => {
-	const body = scenarioBody({ product: "180", originReg: "1", consumedBy: "198", consumedReg: "2", techChange: "-20" });
+	const body = scenarioBody([
+		{ product: "180", originReg: "1", consumedBy: "198", consumedReg: "2", techChange: "-20" },
+	]);
 	assert.deepEqual(body, { label: "custom scenario", model_details: job.scenario.model_details });
+});
+
+test("each lever becomes its own model_details entry, and one bad lever stops the run", () => {
+	const form = { product: "180", originReg: "1", consumedBy: "198", consumedReg: "2" };
+	const body = scenarioBody([
+		{ ...form, techChange: "-20" },
+		{ ...form, product: "181", consumedBy: "276", techChange: "5" },
+	]);
+	assert.deepEqual(
+		body.model_details.map((s) => [s.product, s.consumedBy, s.techChange]),
+		[
+			[[180], [198], [-20]],
+			[[181], [276], [5]],
+		],
+	);
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "" },
+			]),
+		/finite/,
+	);
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "2000" },
+			]),
+		/between/,
+	);
+	assert.throws(() => scenarioBody([]), /at least one/);
+	// the message names the form's 1-based change
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "2000" },
+			]),
+		/^Error: change 2: the change must be between/,
+	);
+	assert.throws(() => scenarioBody([{ ...form, product: "x", techChange: "1" }]), /^Error: change 1: not an id: x/);
+});
+
+test("the job API's 0-based model_details.N reads as the form's change N + 1", () => {
+	assert.equal(
+		formChange("model_details.3.techChange.0: Input should be >= -100"),
+		"change 4.techChange.0: Input should be >= -100",
+	);
+});
+
+test("liveText joins one clause per lever with and, and counts past two", () => {
+	const catalog = {
+		products: [{ id: 180, name: "Motor vehicles" }],
+		regions: [
+			{ id: 1, name: "Europe" },
+			{ id: 2, name: "Africa" },
+		],
+		consumers: [
+			{ id: 198, name: "Manufacture of motor vehicles" },
+			{ id: 276, name: "Y: Final Consumption", final: true },
+		],
+	};
+	const [first] = job.scenario.model_details;
+	const two = { scenario: { model_details: [first, { ...first, consumedBy: [276], techChange: [5] }] } };
+	assert.equal(
+		liveText(two, catalog),
+		"Manufacture of motor vehicles in Africa required 20% less motor vehicles from Europe per unit of output and final demand in Africa for motor vehicles from Europe rose by 5%",
+	);
+	const ten = { scenario: { model_details: Array.from({ length: 10 }, () => first) } };
+	assert.equal(liveText(ten, catalog), "10 changes were made together");
+	assert.equal(liveClauses(ten, catalog).length, 10);
+	assert.ok(liveText(ten, catalog).length < 40);
 });
 
 test("a change that is not a finite number never leaves the page", () => {
 	const form = { product: "180", originReg: "1", consumedBy: "198", consumedReg: "2" };
 	for (const techChange of ["", "abc", "Infinity", "NaN", "1e400"]) {
-		assert.throws(() => scenarioBody({ ...form, techChange }), /finite/, techChange);
+		assert.throws(() => scenarioBody([{ ...form, techChange }]), /finite/, techChange);
 	}
-	assert.throws(() => scenarioBody({ ...form, product: "1.5", techChange: "0" }), /not an id/);
+	assert.throws(() => scenarioBody([{ ...form, product: "1.5", techChange: "0" }]), /not an id/);
 });
 
 test("a change outside the job API's range never leaves the page", () => {
@@ -101,10 +179,10 @@ test("a change outside the job API's range never leaves the page", () => {
 	// the job API's own range (GET /catalog tech_change_percent) is the default
 	assert.deepEqual(CHANGE_RANGE, { min: -100, max: 1000 });
 	for (const techChange of ["-100.1", "-500", "1000.5"])
-		assert.throws(() => scenarioBody({ ...form, techChange }), /between −100 and 1000/, techChange);
-	for (const techChange of ["-100", "0", "1000"]) assert.doesNotThrow(() => scenarioBody({ ...form, techChange }));
+		assert.throws(() => scenarioBody([{ ...form, techChange }]), /between −100 and 1000/, techChange);
+	for (const techChange of ["-100", "0", "1000"]) assert.doesNotThrow(() => scenarioBody([{ ...form, techChange }]));
 	// a catalog that advertises a narrower range wins
-	assert.throws(() => scenarioBody({ ...form, techChange: "60" }, { min: -50, max: 50 }), /between −50 and 50/);
+	assert.throws(() => scenarioBody([{ ...form, techChange: "60" }], { min: -50, max: 50 }), /between −50 and 50/);
 });
 
 test("a live result is compared with its own job's baseline", () => {
@@ -351,4 +429,14 @@ test("rootNamed names a catalog's Total root for the pickers and leaves the rest
 	);
 	assert.equal(regions[0].name, "Total");
 	assert.deepEqual(rootNamed(undefined, "World"), []);
+});
+
+test("browser provenance lists one change per line, as the job API's does", () => {
+	const [first] = job.scenario.model_details;
+	const two = { duration_s: 1, scenario: { model_details: [first, { ...first, techChange: [5] }] } };
+	const rows = Object.fromEntries(browserProvenance(two));
+	assert.deepEqual(
+		rows["Scenario parameters"].split("\n").map((l) => JSON.parse(l).techChange),
+		[[-20], [5]],
+	);
 });

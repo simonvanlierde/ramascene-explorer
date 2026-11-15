@@ -41,30 +41,39 @@ export function unreachableMessage(api, error) {
 	return `Job API at ${api} answered with an error: ${error.message}`;
 }
 
-// Form values (strings from <select>/<input>) to a POST /jobs body in the
-// explorer's model_details format. Throws on a change that is not a finite number,
-// or outside range ({min, max} in percent, the job API's).
-export function scenarioBody({ product, originReg, consumedBy, consumedReg, techChange, label }, range = CHANGE_RANGE) {
-	const change = Number(techChange);
-	if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
-	if (change < range.min || change > range.max)
-		throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+// Form levers (strings from <select>/<input>) to a POST /jobs body in the
+// explorer's model_details format, one entry per lever. Throws on no lever, or a change
+// that is not a finite number or is outside range ({min, max} in percent, the job API's).
+export function scenarioBody(levers, range = CHANGE_RANGE) {
+	if (!levers.length) throw new Error("add at least one change");
 	const id = (v) => {
 		const n = Number(v);
 		if (!Number.isInteger(n)) throw new Error(`not an id: ${v}`);
 		return [n];
 	};
+	const step = ({ product, originReg, consumedBy, consumedReg, techChange }) => {
+		const change = Number(techChange);
+		if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
+		if (change < range.min || change > range.max)
+			throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+		return {
+			product: id(product),
+			originReg: id(originReg),
+			consumedBy: id(consumedBy),
+			consumedReg: id(consumedReg),
+			techChange: [change],
+		};
+	};
 	return {
-		label: label || "custom scenario",
-		model_details: [
-			{
-				product: id(product),
-				originReg: id(originReg),
-				consumedBy: id(consumedBy),
-				consumedReg: id(consumedReg),
-				techChange: [change],
-			},
-		],
+		label: "custom scenario",
+		model_details: levers.map((lever, n) => {
+			try {
+				return step(lever);
+			} catch (e) {
+				// the form's 1-based number, so the message names the change to fix
+				throw new Error(`change ${n + 1}: ${e.message}`);
+			}
+		}),
 	};
 }
 
@@ -179,9 +188,22 @@ export function filterTree(tree, query) {
 	return tree.filter((n) => keep.has(n.item.id)).map((n) => ({ ...n, match: matched.has(n.item.id) }));
 }
 
-// The form submits one intervention. Its description retains both regional scopes.
+// One clause per lever, each retaining both regional scopes.
+export const liveClauses = (job, catalog) => job.scenario.model_details.map((step) => leverText(step, catalog));
+
+// The "if …" clause of the headline: the changes' own words for one or two, a count for more,
+// so ten changes do not fill a phone's first screen. liveClauses lists them in full.
 export function liveText(job, catalog) {
-	const step = job.scenario.model_details[0];
+	const clauses = liveClauses(job, catalog);
+	return clauses.length <= 2
+		? new Intl.ListFormat("en", { type: "conjunction" }).format(clauses)
+		: `${clauses.length} changes were made together`;
+}
+
+// The job API's 422 text names a change as model_details.3 (0-based); the form says "change 4".
+export const formChange = (text) => text.replace(/model_details\.(\d+)/g, (_, n) => `change ${Number(n) + 1}`);
+
+function leverText(step, catalog) {
 	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);
 	const name = (list, ids) => catalogName(item(list, ids)) ?? `#${ids[0]}`;
 	const where = (prefix, ids) => (name("regions", ids) === "Total" ? "" : `${prefix}${name("regions", ids)}`);
