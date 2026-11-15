@@ -66,9 +66,10 @@ const plain = $derived.by(() => {
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
 		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${world ? `${tail[0]}in ${top}${tail[1]}` : out ? w.out.abroad : w.in.abroad}${noneAbroad || world ? "" : `, most in ${top}`}.`;
-	const detail = changed ? `, the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : dTot === 0 ? ", no change at the displayed precision" : "";
-	const d = dTot !== 0 || changed ? `, a change of ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
-	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${d}${detail}.`;
+	// the visible sentence's words, so the name a screen reader hears is what the page shows
+	const detail = changed ? ` The largest change ${out ? "was linked to consumption in" : "occurred in"} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}.` : dTot === 0 ? " No change at the displayed precision." : "";
+	const d = dTot !== 0 || changed ? `; a change of ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
+	return `In the ${year} economy, if ${text}: ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${capitalise(the)}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${ui.on.size === S ? "" : scope}${d}.${detail}`;
 });
 
 // --- the two popovers -----------------------------------------------------------

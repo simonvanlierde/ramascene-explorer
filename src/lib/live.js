@@ -200,8 +200,9 @@ export function liveText(job, catalog) {
 		: `${clauses.length} changes were made together`;
 }
 
-// The job API's 422 text names a change as model_details.3 (0-based); the form says "change 4".
-export const formChange = (text) => text.replace(/model_details\.(\d+)/g, (_, n) => `change ${Number(n) + 1}`);
+// The job API's 422 text names a change as model_details.3 or model_details[3] (0-based); the form says "change 4".
+export const formChange = (text) =>
+	text.replace(/model_details(?:\.(\d+)|\[(\d+)\])/g, (_, a, b) => `change ${Number(a ?? b) + 1}`);
 
 function leverText(step, catalog) {
 	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);
@@ -308,15 +309,15 @@ export async function waitForJob(
 		}
 		// the wait ends early on abort, so Cancel takes effect at once
 		await new Promise((resolve) => {
-			const timer = setTimeout(resolve, interval);
-			signal?.addEventListener(
-				"abort",
-				() => {
-					clearTimeout(timer);
-					resolve();
-				},
-				{ once: true },
-			);
+			const abort = () => {
+				clearTimeout(timer);
+				resolve();
+			};
+			const timer = setTimeout(() => {
+				signal?.removeEventListener("abort", abort);
+				resolve();
+			}, interval);
+			signal?.addEventListener("abort", abort, { once: true });
 		});
 	}
 }

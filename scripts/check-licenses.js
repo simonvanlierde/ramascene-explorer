@@ -87,6 +87,11 @@ const allowed = (expression) => {
 };
 
 const byLicense = JSON.parse(await text(process.stdin));
+// an empty list is a pnpm that listed nothing, not a pass
+if (!Object.values(byLicense).some((packages) => packages.length)) {
+	console.error("no packages listed: run `pnpm install` first, and check `pnpm licenses list --prod --json`.");
+	process.exit(1);
+}
 let failed = false;
 for (const [license, packages] of Object.entries(byLicense)) {
 	const names = packages.map((p) => `${p.name}@${p.versions.join(",")}`).join(", ");

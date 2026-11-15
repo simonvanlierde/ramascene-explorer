@@ -4,7 +4,7 @@
 // countries, sections and indicators. No DOM here, so node --test covers it.
 
 import { parquetMetadataAsync, parquetRead } from "hyparquet";
-import { fetchRange, SizeMismatch } from "./range.js";
+import { fetchRange, HostError, SizeMismatch } from "./range.js";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
 // The footer is about 90 kB (run names, countries, checks, provenance);
@@ -70,6 +70,14 @@ export async function openEmbodiedUrl(url, byteLength) {
 		throw e;
 	});
 }
+
+// Why openEmbodiedUrl failed, for the page: "failed" when the connection or the host broke
+// (a stall, a dropped request, a 5xx), which a reload may fix; "missing" for anything else.
+// fetchRange wraps a stall or a drop after its retry, so its cause carries the name.
+export const flowsFailure = (e) =>
+	e instanceof HostError || ["TimeoutError", "AbortError", "TypeError"].includes(e?.cause?.name ?? e?.name)
+		? "failed"
+		: "missing";
 
 // Index into a dense run: indicator (position in meta.indicators), producer,
 // section, consumer.

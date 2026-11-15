@@ -124,14 +124,12 @@ const WORDING = {
 			verb: " consumption was linked to",
 			abroad: "was released abroad",
 			would: " consumption would have been linked to",
-			where: "released in",
 		},
 		out: {
 			verb: " released",
 			abroad: "of it served consumption abroad",
 			would: "emissions released in ",
 			come: " would have come to",
-			where: "consumed in",
 		},
 	},
 	3: {
@@ -147,14 +145,12 @@ const WORDING = {
 			verb: " consumption was linked to",
 			abroad: "of them were abroad",
 			would: " consumption would have been linked to",
-			where: "in jobs in",
 		},
 		out: {
 			verb: " had",
 			abroad: "of them served consumption abroad",
 			would: "jobs in ",
 			come: " would have come to",
-			where: "serving consumption in",
 		},
 	},
 	7: {
@@ -175,14 +171,12 @@ const WORDING = {
 			verb: " consumption required",
 			abroad: "was extracted abroad",
 			would: " consumption would have required metal-ore extraction of",
-			where: "extracted in",
 		},
 		out: {
 			verb: " extracted",
 			abroad: "of it served consumption abroad",
 			would: "metal-ore extraction in ",
 			come: " would have come to",
-			where: "consumed in",
 		},
 	},
 };

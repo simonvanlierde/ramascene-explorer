@@ -1,5 +1,5 @@
-# Task runner: https://just.systems. `just` lists the recipes. CI runs `py`, `page` and
-# `rust` in ci.yml, so a recipe that passes here passes there.
+# Task runner: https://just.systems. `just` lists the recipes. CI runs `just py`, `just page`
+# and `just rust` as written (ci.yml); `test` and `e2e` are local only.
 
 # The browser store for the parity tests, when it is here (`just data store`). Empty
 # otherwise, so those tests skip.

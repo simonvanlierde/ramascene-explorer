@@ -140,6 +140,7 @@ test("the job API's 0-based model_details.N reads as the form's change N + 1", (
 		formChange("model_details.3.techChange.0: Input should be >= -100"),
 		"change 4.techChange.0: Input should be >= -100",
 	);
+	assert.equal(formChange("model_details[0].product: Field required"), "change 1.product: Field required");
 });
 
 test("liveText joins one clause per lever with and, and counts past two", () => {
@@ -262,6 +263,20 @@ test("an abort during the wait between polls stops polling at once", async () =>
 		name: "AbortError",
 	});
 	assert.ok(Date.now() - started < 1000);
+});
+
+test("each wait between polls removes its abort listener when the timer ends it", async () => {
+	let listeners = 0;
+	const signal = {
+		aborted: false,
+		throwIfAborted() {},
+		addEventListener: () => listeners++,
+		removeEventListener: () => listeners--,
+	};
+	let polls = 0;
+	const job = async () => ({ id: "j", status: ++polls < 4 ? "running" : "succeeded" });
+	await waitForJob(job, "u", { interval: 1, signal });
+	assert.equal(listeners, 0);
 });
 
 test("the custom panel's code loads on demand, and only it contacts the job API", () => {

@@ -3,9 +3,10 @@ import { tick } from "svelte";
 import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "./lib/explorer.js";
 import { DATA_ORIGIN } from "./lib/data-origin.js";
-import { embodiedUrl, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
+import { embodiedUrl, flowsFailure, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, WORLD, wording, worldTotal } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun, liveData } from "./lib/live.js";
+import { runCache } from "./lib/run-cache.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Basis from "./Basis.svelte";
 import Details from "./Details.svelte";
@@ -68,8 +69,7 @@ async function load() {
 	try {
 		src = await openEmbodiedUrl(flowsUrl(dataPath, data, DATA_ORIGIN), data.provenance?.embodied?.bytes);
 	} catch (e) {
-		// a stalled or dropped request is the connection; anything else, a file that is not there
-		flowsError = ["TimeoutError", "AbortError", "TypeError"].includes(e?.name) ? "failed" : "missing";
+		flowsError = flowsFailure(e);
 		return;
 	}
 	if (!sameRun(src.meta, data)) {
@@ -97,27 +97,7 @@ async function load() {
 }
 
 // --- runs: fetched once each, by range request -------------------------------------
-// A decoded run is about 864 KB (3 × 49 × 15 × 49 float64); keeping all 155 would hold
-// 135 MB on a phone. The baseline is kept apart, and a dropped run is one range read away.
-const cache = new Map();
-const CACHED_RUNS = 20;
-function fetchRun(run) {
-	if (cache.has(run)) {
-		// most recent last, so the first key is the one to drop
-		const hit = cache.get(run);
-		cache.delete(run);
-		cache.set(run, hit);
-	} else {
-		if (cache.size >= CACHED_RUNS) cache.delete(cache.keys().next().value);
-		// a failed read leaves the cache, unless an evicted read failed after a fresh one took its place
-		const reading = readRun(src, run).catch((e) => {
-			if (cache.get(run) === reading) cache.delete(run);
-			throw e;
-		});
-		cache.set(run, reading);
-	}
-	return cache.get(run);
-}
+const fetchRun = runCache((run) => readRun(src, run), 20);
 const precomputedRun = async (run) => ({ run, base, delta: await fetchRun(run) });
 const showRun = (run) => show(run, () => precomputedRun(run));
 
@@ -242,7 +222,7 @@ const mirror = $derived(
 );
 // a custom run's world total is against its own baseline, as everything else it shows;
 // with World selected the sentence already says it, so the card is left out
-const world = $derived(
+const worldCard = $derived(
 	ready && whatif && ui.who !== WORLD ? (live ? worldTotal(liveData(live.job).results, "live", ui.indicator) : worldTotal(data.results, run, ui.indicator)) : null,
 );
 // Checks passed only for engine output whose every published run passed every check,
@@ -273,6 +253,8 @@ $effect(() => {
 	{#await import("./LivePanel.svelte") then { default: LivePanel }}
 		{#if api}<LivePanel {api} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
 		{:else}<LivePanel browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+	{:catch}
+		<p role="alert">The custom scenario form could not load. Reload the page; it may have been updated since you opened it.</p>
 	{/await}
 {/snippet}
 
@@ -300,8 +282,8 @@ $effect(() => {
 			<span class="by">by <a href="https://simonvanlierde.com" {...away}>Simon van Lierde{#if away.target}<span class="sr-only"> (opens in new tab)</span>{/if}</a></span>
 		</div>
 		<div class="rt" id="status">
-			{#if ignored !== null}<span class="pill fail">ignored data={ignored}</span>{/if}
-			{#if refusedApi !== null}<span class="pill fail">ignored api={refusedApi}</span>{/if}
+			{#if ignored !== null}<span class="pill fail" title={`ignored data=${ignored}`}>ignored data={ignored}</span>{/if}
+			{#if refusedApi !== null}<span class="pill fail" title={`ignored api=${refusedApi}`}>ignored api={refusedApi}</span>{/if}
 			{#if data}
 				<Basis {data} {live} {away} />
 				{#if live}
@@ -325,7 +307,7 @@ $effect(() => {
 		</Sidebar>
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
-			<Strip {meta} {sum} {conts} {world} {whatif} {extent} />
+			<Strip {meta} {sum} {conts} {worldCard} {whatif} {extent} />
 			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => cueToWhatif()}>See what one change does <span aria-hidden="true">→</span> What if…</button></p>{/if}
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>

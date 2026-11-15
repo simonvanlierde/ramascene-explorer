@@ -1,3 +1,4 @@
+import { headlineFigures } from "../../scripts/og-headline.js";
 import { expect, expectNoAxeViolations, mapAtRest, test } from "./test.js";
 
 const FIXTURE = "?data=tests/fixture.json";
@@ -5,7 +6,12 @@ const FIXTURE = "?data=tests/fixture.json";
 const CONSTRUCTION = "European final demand for construction work fell by 20%";
 const STEEL_AP = /Asia-Pacific required 20% less basic iron/i;
 
-const ready = (page) => expect(page.locator(".mapc .rg")).toHaveCount(49);
+// the web fonts too: a layout check measured in a fallback font passes or fails by chance
+const fontsIn = (page) => page.evaluate(() => document.fonts.ready.then(() => {}));
+async function ready(page) {
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await fontsIn(page);
+}
 
 // On a phone the selection lives in a bottom sheet opened from the dock, which
 // shows once the data is in; on a wider screen it is the sidebar.
@@ -142,6 +148,7 @@ test("the Sankey's industry labels stay clear of the region columns in both dire
 			`?panel=sankey${dir.endsWith("out") ? "&dir=out" : ""}${dir.startsWith("world") ? "&region=world" : ""}`,
 		);
 		await expect(page.locator(".sk .lk").first()).toBeVisible();
+		await fontsIn(page);
 		const hits = await page.locator(".sk").evaluate((svg) => {
 			const r = (e) => e.getBoundingClientRect();
 			const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
@@ -470,6 +477,7 @@ test("on a tablet the header never runs off the side", async ({ page, isMobile }
 		await page.setViewportSize({ width: 900, height: 800 });
 		await page.goto(q);
 		await expect(page.locator(".pill.basis")).toBeVisible();
+		await fontsIn(page);
 		const bad = [];
 		for (let width = 855; width <= 900; width++) {
 			await page.setViewportSize({ width, height: 800 });
@@ -485,6 +493,32 @@ test("on a tablet the header never runs off the side", async ({ page, isMobile }
 	}
 });
 
+test("refused data and api links keep their pills whole, and the header stays on screen", async ({
+	page,
+	isMobile,
+}) => {
+	test.skip(isMobile, "tablet and desktop widths");
+	for (const width of [768, 1024, 1440]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto("?data=https://example.com/x.json&api=http://example.com");
+		await expect(page.locator(".pill.basis")).toBeVisible();
+		await fontsIn(page);
+		await expect(page.locator("#status .fail")).toHaveText([
+			"ignored data=https://example.com/x.json",
+			"ignored api=http://example.com",
+		]);
+		const r = await page.evaluate(() => ({
+			cut: [...document.querySelectorAll("#status .fail")]
+				.filter((p) => p.scrollWidth > p.clientWidth || p.getBoundingClientRect().right > innerWidth)
+				.map((p) => p.textContent),
+			over:
+				Math.max(...[...document.querySelectorAll(".top *")].map((e) => e.getBoundingClientRect().right)) >
+				innerWidth + 0.5,
+		}));
+		expect(r, `${width} px`).toEqual({ cut: [], over: false });
+	}
+});
+
 test("the table and the Sankey give every value in the caption's unit", async ({ page }) => {
 	await page.goto("?panel=table&indicator=3");
 	await expect(page.locator("#flows-table caption")).toContainText("million jobs");
@@ -495,6 +529,34 @@ test("the table and the Sankey give every value in the caption's unit", async ({
 	expect(values.length).toBeGreaterThan(5);
 	const rises = values.flatMap((v, i) => (i && v > values[i - 1] ? [`${values[i - 1]} → ${v}`] : []));
 	expect(rises).toEqual([]);
+});
+
+test("in What if… the headline and the region cells are named in the words they show", async ({ page }) => {
+	const words = (t) =>
+		t
+			.replace(/₂/g, "2")
+			.replace(/[^\p{L}\p{N}%+−]+/gu, " ")
+			.trim()
+			.toLowerCase();
+	for (const q of ["", "&dir=out", "&indicator=3", "&indicator=3&dir=out", "&indicator=7&dir=out"]) {
+		await page.goto(`?mode=whatif${q}`);
+		await ready(page);
+		await expect(page.locator(".wstrip")).toBeVisible();
+		const h = page.locator("#headline");
+		expect(words(await h.getAttribute("aria-label")), `headline ${q}`).toBe(words(await h.textContent()));
+		const where = (await page.locator(".regions .gl").textContent()).match(/by where (.*?) \(/)[1];
+		expect(await page.locator(".kpis.k5").getAttribute("aria-label"), `regions ${q}`).toMatch(
+			new RegExp(`where ${where}$`),
+		);
+	}
+});
+
+test("the link preview card takes Germany's figures from the headline, not the page around it", async ({ page }) => {
+	await page.goto("?region=DE");
+	await ready(page);
+	const { place, year, share } = await headlineFigures(page);
+	expect({ place, year }).toEqual({ place: "Germany", year: "2011" });
+	await expect(page.locator("#headline")).toContainText(`${share}%`);
 });
 
 test("the sentence's heading is named by its plain text, not its controls' labels", async ({ page }) => {
@@ -512,6 +574,7 @@ test("on a phone the Sankey's labels stay inside it and clear of each other", as
 			await page.setViewportSize({ width, height: 812 });
 			await page.goto(`?panel=sankey${q}`);
 			await expect(page.locator(".sk .lk").first()).toBeVisible();
+			await fontsIn(page);
 			const bad = await page.locator(".sk").evaluate((svg) => {
 				const s = svg.getBoundingClientRect();
 				const box = { left: Math.max(0, s.left), right: Math.min(innerWidth, s.right) };
