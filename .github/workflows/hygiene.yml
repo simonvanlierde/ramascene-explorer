@@ -49,3 +49,36 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          # Also fails a PR that adds a dependency under a license outside this list. The
+          # permissive ones and MPL-2.0 sit fine beside MIT code; OFL-1.1 covers the bundled
+          # fonts. LGPL-3.0-or-later (sharp's libvips, under wrangler) and CC-BY-4.0
+          # (caniuse-lite's data, under the build tools) reach dev tooling only; the
+          # licenses job below checks that nothing under them ships.
+          allow-licenses: >-
+            0BSD, Apache-2.0, BlueOak-1.0.0, BSD-2-Clause, BSD-3-Clause, BSL-1.0, CC0-1.0,
+            CC-BY-4.0, CDLA-Permissive-2.0, ISC, LGPL-3.0-or-later, MIT, MIT-0, MPL-2.0,
+            OFL-1.1, PSF-2.0, Python-2.0, Unicode-3.0, Unlicense, Zlib
+
+  licenses:
+    name: dependency licenses
+    # The whole tree of what ships, not only what a PR adds: the page's npm packages and
+    # the pipeline's Python packages. engine/deny.toml does the same for the Rust crates.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # The allow-list is in scripts/check-licenses.js.
+      - run: pnpm run licenses
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+      # licensecheck reads the installed metadata and fails on a license its table says
+      # MIT cannot take; the precompute group is what pipeline/ imports at run time.
+      - run: uv export --locked --no-default-groups --group precompute --no-hashes --no-annotate --no-header --no-emit-project -q -o "$RUNNER_TEMP/requirements.txt"
+      - run: uv run --locked --with licensecheck==2026.0.8 licensecheck -r "$RUNNER_TEMP/requirements.txt" --zero

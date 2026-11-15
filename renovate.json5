@@ -46,6 +46,13 @@
       matchStrings: ["(?<depName>cargo-nextest|cargo-deny|just)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       datasourceTemplate: "crate",
     },
+    // osv.yml runs the scanner image with docker run, which no manager reads.
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^\\.github\\/workflows\\/osv\\.yml$/"],
+      matchStrings: ["(?<depName>ghcr\\.io\\/google\\/osv-scanner):(?<currentValue>v[\\d.]+)@(?<currentDigest>sha256:[0-9a-f]{64})"],
+      datasourceTemplate: "docker",
+    },
   ],
 
   packageRules: [

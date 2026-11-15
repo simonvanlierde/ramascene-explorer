@@ -35,7 +35,9 @@ installs from the lockfiles unchanged, `engine/Cargo.lock` for the Rust kernel. 
 release-age rule is in `pnpm-workspace.yaml` and `pyproject.toml`; the Rust compiler is pinned
 in `engine/rust-toolchain.toml` and the cargo tools in `.github/workflows/ci.yml`, and
 `engine/deny.toml` checks the crates' advisories and licences. The update schedule is in
-[renovate.json5](renovate.json5), and the dependency review in `.github/workflows/hygiene.yml`.
+[renovate.json5](renovate.json5). `.github/workflows/hygiene.yml` reviews each pull request's new
+dependencies and checks the licenses of everything that ships (the allow-list is in
+`scripts/check-licenses.js`), and `.github/workflows/osv.yml` scans the lockfiles every week.
 
 ## Sign off your commits
 
