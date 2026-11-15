@@ -45,7 +45,8 @@ Every commit in a pull request carries a `Signed-off-by:` line, which says you w
 change or have the right to submit it under the MIT license: the
 [Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
 adds it. `git rebase --signoff upstream/main` (the branch you started from) adds it to commits you already made.
-The `dco` workflow fails a pull request from a fork if a commit lacks it. Pull requests from a branch in this repository skip it.
+The `dco` workflow fails any pull request with a commit that lacks it, the maintainer's
+included. Only commits a bot wrote in a bot's pull request (Renovate) are skipped.
 
 ## Who maintains this
 
