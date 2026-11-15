@@ -39,6 +39,25 @@ repos:
         types: [python]
         pass_filenames: false
 
+  # The JavaScript lint and format, as ci.yml's `biome ci` runs it. Runs from the
+  # project's node_modules, so hygiene.yml, which installs none, skips it.
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome check
+        entry: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+        language: system
+        types_or: [javascript, json]
+
+  # Scientific Python's repo-review; pyproject.toml [tool.repo-review.ignore] lists
+  # the checks skipped on purpose.
+  - repo: https://github.com/scientific-python/cookie
+    rev: 1589a99867d6cac494ac7545fe6a83108580a3ee # frozen: 2026.08.14
+    hooks:
+      - id: sp-repo-review
+        # Upstream leaves repo-review unpinned.
+        additional_dependencies: ["repo-review[cli]==1.3.0"]
+
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.38.0
     hooks:

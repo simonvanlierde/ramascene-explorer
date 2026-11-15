@@ -33,8 +33,9 @@ jobs:
         env:
           # betterleaks scans staged changes only, and CI stages nothing: GitHub
           # secret scanning is the server-side check.
-          # ty runs in ci.yml, which has the synced environment it needs.
-          SKIP: betterleaks,ty
+          # ty and biome run in ci.yml, which has the synced environment and the
+          # node_modules they need.
+          SKIP: betterleaks,ty,biome
           # Enables zizmor's online audits (impostor commits, known-vulnerable
           # actions). Read-only, like the workflow's permissions.
           GH_TOKEN: ${{ github.token }}

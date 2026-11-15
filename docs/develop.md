@@ -72,7 +72,7 @@ The [justfile](../justfile) holds the checks; ci.yml runs the same recipes. `jus
 
 ```sh
 just check                             # all of the below except e2e: what CI runs
-just hooks                             # the git hooks, including ruff and the formatters
+just hooks                             # the git hooks: ruff, biome, repo-review and the formatters
 just py                                # ty, pytest over the coverage floor, the README table
 just page                              # biome, the page logic over the coverage floor, the browser store
 just rust                              # the Rust kernel: fmt, clippy, nextest, cargo deny

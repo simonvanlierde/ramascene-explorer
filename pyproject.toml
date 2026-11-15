@@ -9,7 +9,7 @@ dependencies = ["numpy>=2", "django>=5.2,<6", "scipy>=1.15"]
 
 [dependency-groups]
 dev = [
-    "pytest>=8",
+    "pytest>=9",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
     "ty>=0.0.86",
@@ -27,9 +27,17 @@ exclude-newer = "7 days"
 # pyarrow writes data/embodied.parquet; the tests read it back
 default-groups = ["dev", "precompute"]
 
-[tool.pytest.ini_options]
+# pytest 9's native table. strict turns unknown config keys, unknown markers and an
+# xfail test that passes into errors; filterwarnings turns warnings into failures, so a
+# deprecation shows up in CI, not after the upgrade that removes it.
+[tool.pytest]
+minversion = "9"
 pythonpath = [".", "pipeline"]
 testpaths = ["tests"]
+addopts = ["-ra"]
+strict = true
+filterwarnings = ["error"]
+log_level = "INFO"
 
 [tool.coverage.report]
 # Applies when pytest runs with --cov, as CI does.
@@ -46,11 +54,11 @@ extra-paths = ["pipeline"]
 # Its own uv project, with the Brightway packages this environment lacks.
 exclude = ["brightway-check"]
 
+# No target-version: ruff reads it from requires-python.
 [tool.ruff]
 line-length = 120
 # the pipeline modules are imported by bare name, so they sort as first-party
 src = [".", "pipeline"]
-target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -77,3 +85,18 @@ pydocstyle.convention = "google"
 # The fake engine mirrors the real adapter's signatures and knobs.
 "tests/**" = ["S101", "D1", "INP001", "PLR2004", "FBT", "PLC0415", "ARG001", "C901", "PT018", "S603", "S607", "ARG002", "ARG005", "S108"]
 "tests/conftest.py" = ["D1", "INP001"]
+
+# Scientific Python repo-review checks this project skips on purpose. The
+# sp-repo-review git hook runs the rest.
+[tool.repo-review.ignore]
+PY007 = "just is the task runner: the justfile's recipes are what CI runs"
+PP002 = "not a package: [tool.uv] package = false, the pipeline runs from pipeline/ as scripts"
+PP003 = "no build-system table, so no wheel build dependency either"
+GH200 = "Renovate updates the actions and hook revs (renovate.json5)"
+PC140 = "ty runs as a local hook from the synced venv, and in ci.yml"
+PC160 = "no spell checker hook yet"
+PC170 = "no reStructuredText: the docs are Markdown"
+PC180 = "no Markdown formatter hook: the docs are wrapped by hand"
+PC901 = "the hooks run in hygiene.yml through prek, not on pre-commit.ci"
+PC902 = "the hooks run in hygiene.yml through prek, not on pre-commit.ci"
+PC903 = "the hooks run in hygiene.yml through prek, not on pre-commit.ci"
