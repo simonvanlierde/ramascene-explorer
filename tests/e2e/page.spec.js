@@ -452,6 +452,8 @@ test("the sentence never runs into the number strip, however short the window", 
 		await page.setViewportSize({ width, height });
 		await page.goto(`?mode=whatif${q}`);
 		await ready(page);
+		// the What if strip renders once the run is in, which can be a frame after ready
+		await expect(page.locator(".wstrip")).toBeVisible();
 		const gap = await page.evaluate(
 			() =>
 				document.querySelector(".wstrip").getBoundingClientRect().top -
