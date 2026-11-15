@@ -14,8 +14,8 @@ in `src/lib/live.js`.
 | `mode` | `flows`, `whatif` | `flows`; `whatif` when `mode` is absent and `scenario` names a run |
 | `scenario` | a precomputed run id, see [scenarios.md](scenarios.md) | the first run |
 | `indicator` | an indicator id from the data | the first indicator |
-| `region` | a country code from the data | `DE` |
-| `dir` | `in` (consumed by), `out` (released by) | `in` |
+| `region` | a country code from the data, or `world` for every region at once | `DE` |
+| `dir` | `in` (consumed by), `out` (released by); with `region=world`, which side the map colours | `in` |
 | `sections` | comma-separated section numbers | all sections |
 | `map` | `flat` (`globe` is accepted from older links) | the globe |
 | `zoom` | `k` on the globe, `k,lon,lat` on the flat map; `k` above 1 and up to 8 | none |

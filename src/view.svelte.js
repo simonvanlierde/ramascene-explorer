@@ -9,7 +9,7 @@ export const ui = $state({
 	mode: "flows", // "flows" | "whatif"
 	run: "",
 	indicator: 5, // global id
-	who: 0, // country index in the Parquet's order
+	who: 0, // country index in the Parquet's order, or WORLD (-1) for every region
 	dir: "in", // "in": consumed in who; "out": released in who
 	on: new Set(), // sections shown; replaced, never mutated, so it stays reactive
 	globe: true,

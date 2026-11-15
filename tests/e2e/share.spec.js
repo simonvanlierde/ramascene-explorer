@@ -46,3 +46,14 @@ test("without clipboard access, Copy link offers the URL selected to copy by han
 	await expect(field).toHaveValue(page.url());
 	expect(await field.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(page.url().length);
 });
+
+test("the World table downloads as world", async ({ page }) => {
+	await page.goto(`${TABLE}&region=world`);
+	await expect(page.locator("#flows-table tbody tr").first()).toBeVisible();
+	await expect(page.locator("#flows-table tbody tr.me")).toHaveCount(0);
+	const [download] = await Promise.all([
+		page.waitForEvent("download"),
+		page.getByRole("button", { name: "Download CSV" }).click(),
+	]);
+	expect(download.suggestedFilename()).toBe("ramascene-synthetic-2011-world-ghg-consumption-all-sections.csv");
+});

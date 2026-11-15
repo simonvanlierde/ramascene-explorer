@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { readRun } from "../src/lib/embodied.js";
-import { flowsCsv, SECTION_SHORT, summarise, tableRows } from "../src/lib/flows.js";
+import { flowsCsv, SECTION_SHORT, summarise, tableRows, WORLD } from "../src/lib/flows.js";
 import { base, path, src } from "./fixtures.js";
 
 const data = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
@@ -61,4 +61,17 @@ test("names with a comma are quoted, jobs scale to the table's unit, and section
 			'WX,"The ""Rest""",3,75,Manufacturing\r\n' +
 			'KR,"Korea, Republic of",1,25,Manufacturing\r\n',
 	);
+});
+
+test("the World table names its file with world, for both directions", () => {
+	for (const [dir, word] of [
+		["in", "consumption"],
+		["out", "production"],
+	]) {
+		const s = { ...sel, who: WORLD, dir };
+		const sum = summarise(meta, base, null, s);
+		const { name, text } = flowsCsv(meta, sum, s, { data });
+		assert.equal(name, `ramascene-synthetic-2011-world-ghg-${word}-all-sections.csv`);
+		assert.equal(parse(text).length - 1, tableRows(meta, sum, ALL).length);
+	}
 });

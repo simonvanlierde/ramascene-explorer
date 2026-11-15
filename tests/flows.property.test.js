@@ -11,6 +11,7 @@ import {
 	SECTION_SHORT,
 	summarise,
 	viewSearch,
+	WORLD,
 } from "../src/lib/flows.js";
 import { base, close, src } from "./fixtures.js";
 
@@ -40,7 +41,7 @@ const view = fc.record({
 	run: fc.constantFrom(...named),
 	// the indicator ids are the data's, so any positive ints, with the default 5 among them
 	indicator: fc.oneof(fc.constant(5), fc.integer({ min: 0, max: 40 })),
-	who: fc.integer({ min: 0, max: codes.length - 1 }),
+	who: fc.integer({ min: WORLD, max: codes.length - 1 }),
 	dir: fc.constantFrom("in", "out"),
 	on: sections,
 	globe: fc.boolean(),
@@ -77,7 +78,7 @@ test("parseView never throws and stays in range on any query string", () => {
 			assert.ok(["flows", "whatif"].includes(v.mode));
 			assert.ok(named.includes(v.run));
 			assert.ok(opts.indicators.includes(v.indicator));
-			assert.ok(v.who >= 0 && v.who < codes.length);
+			assert.ok(v.who >= WORLD && v.who < codes.length);
 			assert.ok(v.on.size > 0 && [...v.on].every((q) => q >= 0 && q < SECTION_SHORT.length));
 			assert.ok(v.zoom === null || (v.zoom[0] > 1 && v.zoom[0] <= 8));
 			assert.ok([null, "sankey", "table", "method"].includes(v.panel));
@@ -141,7 +142,7 @@ test("continent changes add up to the selection's change", () => {
 	const ALL = new Set(SECTION_SHORT.keys());
 	fc.assert(
 		fc.property(
-			fc.integer({ min: 0, max: codes.length - 1 }),
+			fc.integer({ min: WORLD, max: codes.length - 1 }),
 			fc.constantFrom("in", "out"),
 			sections,
 			(who, dir, on) => {
@@ -155,5 +156,17 @@ test("continent changes add up to the selection's change", () => {
 				);
 			},
 		),
+	);
+});
+
+test("World's total is the same in both directions, whatever the sections", () => {
+	fc.assert(
+		fc.property(sections, (on) => {
+			const [a, b] = ["in", "out"].map((dir) => summarise(meta, base, delta, { ind: 0, id: 5, who: WORLD, dir, on }));
+			assert.ok(close(a.total, b.total));
+			assert.ok(close(a.dTotal, b.dTotal));
+			assert.equal(a.home, 0);
+			assert.equal(a.bands.length, 0);
+		}),
 	);
 });

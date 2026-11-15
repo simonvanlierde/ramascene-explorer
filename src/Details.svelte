@@ -17,6 +17,7 @@ import {
 	share,
 	tableRows,
 	theName,
+	WORLD,
 	wording,
 } from "./lib/flows.js";
 import { BROWSER_STATUS } from "./lib/browser-engine/browser-results.js";
@@ -25,7 +26,8 @@ import Provenance from "./Provenance.svelte";
 import { ui, wide } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause; live: {source, text, rows, job} for a run that is not precomputed, else null
-let { data, meta, sum, whatif, run, text, live } = $props();
+// mirror: with World selected, the same selection in the other direction, for the Sankey's far column
+let { data, meta, sum, mirror, whatif, run, text, live } = $props();
 
 const TABS = [
 	["sankey", "Sankey"],
@@ -33,6 +35,7 @@ const TABS = [
 	["method", "Method"],
 ];
 const open = $derived(ui.panel !== null);
+const world = $derived(ui.who === WORLD);
 const name = $derived(placeName(meta, ui.who));
 // inside a phrase: "the United States"
 const nameIn = $derived(theName(meta, ui.who));
@@ -79,7 +82,7 @@ const k = $derived(skW ? Math.max(1, skWidth / skW) : 1);
 // selected country's total goes under its name. SK_LINE: a label's line height in px.
 const narrow = $derived(k > 1);
 const SK_LINE = 13;
-const meLines = $derived(narrow ? 2 : 1);
+const meLines = $derived(world ? 0 : narrow ? 2 : 1);
 const fmtV = (v) => amount(v, ui.indicator, sum.total)[0];
 // A label's width in px, in the Sankey's own type (name 600, value 400); measured again
 // once the web font is in, since the fallback runs narrower.
@@ -99,16 +102,23 @@ function labelPx(name, v) {
 const lay = $derived.by(() => {
 	if (!open || ui.panel !== "sankey") return null;
 	void fontsIn; // re-measure once the font is in
-	const opts = { width: skWidth, top: Math.round((11 + SK_LINE * meLines) * k + 6) };
+	const opts = { width: skWidth, top: Math.round((11 + SK_LINE * meLines) * k + 6), other: mirror };
 	const first = sankeyLayout(meta, sum, ui, opts);
-	const partners = ui.dir === "in" ? first.left : first.right;
+	const partners = world ? [...first.left, ...first.right] : ui.dir === "in" ? first.left : first.right;
 	const widest = (nodes, name) => Math.max(0, ...nodes.map((n) => labelPx(name(n), n.v)));
-	const edge = Math.max(132, Math.ceil((widest(partners, (n) => (narrow ? n.short : n.name)) + 4) * k) + 5);
+	// the world's five region names are short, and both outer columns need the room
+	const edge = Math.max(world ? 60 : 132, Math.ceil((widest(partners, (n) => (narrow ? n.short : n.name)) + 4) * k) + 5);
 	const room = Math.max(SANKEY_LABEL_ROOM, Math.ceil((widest(first.mid, (n) => n.name) + 4) * k) + 4);
 	return sankeyLayout(meta, sum, ui, { ...opts, edge, room });
 });
 const heads = $derived(
-	ui.dir === "in"
+	world
+		? [
+				[lay?.x.L + lay?.nw, "end", w.made.col],
+				[lay?.x.M, "start", "Industry"],
+				[lay?.x.R, "start", "Consumed in"],
+			]
+		: ui.dir === "in"
 		? [
 				[lay?.x.L + lay?.nw, "end", w.made.col],
 				[lay?.x.M, "start", "Industry"],
@@ -121,14 +131,38 @@ const heads = $derived(
 			],
 );
 const room = $derived(7 * k);
+// the section labels sit right of their column, except where the selected country is on the right
+const midIn = $derived(ui.dir === "in" || world);
 // a node is labelled where it is tall enough and its label clears the one above it
+// Where each region label sits: at its node's middle, pushed apart so five labels never overlap
+const labelY = $derived.by(() => {
+	const at = new Map();
+	for (const col of world && lay ? [lay.left, lay.right] : []) {
+		const y = col.map((n) => n.y + n.h / 2);
+		for (let i = 1; i < y.length; i++) y[i] = Math.max(y[i], y[i - 1] + SK_LINE * k);
+		const end = lay.height - SK_LINE * k * 0.5;
+		if (y.length && y.at(-1) > end) {
+			y[y.length - 1] = end;
+			for (let i = y.length - 2; i >= 0; i--) y[i] = Math.min(y[i], y[i + 1] - SK_LINE * k);
+		}
+		col.forEach((n, i) => at.set(n, y[i]));
+	}
+	return at;
+});
 const labelled = $derived.by(() => {
 	const shown = new Set();
 	for (const col of lay ? [lay.left, lay.mid, lay.right] : []) {
 		let last = -Infinity;
 		for (const n of col) {
 			const c = n.y + n.h / 2;
+			// the world's five region nodes are always named; labelY moves them apart
+			if (world && col !== lay.mid) {
+				shown.add(n);
+				continue;
+			}
 			if (n.me || n.h < room || c - last < SK_LINE * k) continue;
+			// only the section column may drop a label: a long name may not fit before the far column
+			if (world && col === lay.mid && labelPx(n.name, n.v) * k + 8 > lay.x.R - lay.x.M - lay.nw) continue;
 			shown.add(n);
 			last = c;
 		}
@@ -265,12 +299,12 @@ async function copyLink() {
 							{@const x = side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4}
 							<text class="me" {x} y={(11 + SK_LINE) * k} text-anchor={side === "L" ? "start" : "end"}>{n.name}{#if narrow}<tspan {x} dy={SK_LINE * k}>{amountText(n.v, ui.indicator)}</tspan>{:else} {amountText(n.v, ui.indicator)}{/if}</text>
 						{:else if labelled.has(n)}
-							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
+							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={(labelY.get(n) ?? n.y + n.h / 2) + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}
 					{/each}
 				{/each}
 				{#each lay.mid as n (n.q)}
-					{#if labelled.has(n)}<text class="halo" x={ui.dir === "in" ? lay.x.M + lay.nw + 4 : lay.x.M - 4} y={n.y + n.h / 2 + 3.5 * k} text-anchor={ui.dir === "in" ? "start" : "end"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
+					{#if labelled.has(n)}<text class="halo" x={midIn ? lay.x.M + lay.nw + 4 : lay.x.M - 4} y={n.y + n.h / 2 + 3.5 * k} text-anchor={midIn ? "start" : "end"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
 			</div>
@@ -319,6 +353,7 @@ async function copyLink() {
 				What we consume connects us to environmental impacts across global supply chains.
 				The map follows those links from final demand, what households, governments and investors buy, to the industries where {w.source}.
 				Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there.
+				World adds up every region: both directions give the same total, and the toggle only picks whether the map shows where it is released or where it is consumed.
 			</p>
 			<p>
 				What if… shows how changes in one place ripple through supply chains worldwide.
