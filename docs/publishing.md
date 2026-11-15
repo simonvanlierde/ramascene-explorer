@@ -1,9 +1,10 @@
 # CI and publishing
 
-`.github/workflows/ci.yml` runs ruff, ty, `uv run pytest --cov`,
+`.github/workflows/ci.yml` runs ty, `uv run pytest --cov`,
 `brightway-check/table.py --check`, `biome ci`,
 `pnpm test` and `pnpm exec playwright test`. None of them needs the engine or
-the EXIOBASE matrices, because the engine checks skip without `--engine`.
+the EXIOBASE matrices, because the engine checks skip without `--engine`. Ruff and the
+formatters run in `.github/workflows/hygiene.yml`, through prek.
 Both test steps fail below a line-coverage floor: `fail_under` in
 `pyproject.toml` for `pipeline/precompute.py` and `pipeline/compare_data.py`, and the `test`
 script in `package.json` for the JS modules (not the Svelte files).
@@ -125,7 +126,8 @@ does not touch the production Worker.
 
 The site sends COOP and COEP headers so browsers can use shared memory. Broad dense
 calculations can use the [threaded kernel](browser-engine.md#browser-threads).
-Paths in `_headers` are public paths, so they carry the prefix.
+Paths in `_headers` are public paths, so they carry the prefix. Built files under `assets/`
+carry a content hash in their names and are cached for a year; the map outlines for a day.
 
 The Worker serves static assets only and runs no code of its own, so its requests do not
 count toward the Workers request allowance. The app, fonts, maps, `results.json` and the

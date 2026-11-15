@@ -24,14 +24,18 @@ logic tests go in `tests/*.test.js`, browser tests in `tests/e2e/`, Python tests
 Browser tests import `test` and `expect` from `tests/e2e/test.js`, not `@playwright/test`,
 so `pnpm measure-coverage` counts them.
 
+The checks hold the code to these standards: ruff with every rule selected and ty for Python,
+biome for JavaScript, clippy with `-D warnings` for the Rust kernel, at least 80% line coverage
+for the page logic and the Python code, and Conventional Commits for commit messages.
+
 ## Dependencies
 
 Add one only when the standard library or an existing dependency can't do the job. CI
 installs from the lockfiles unchanged, `engine/Cargo.lock` for the Rust kernel. The
 release-age rule is in `pnpm-workspace.yaml` and `pyproject.toml`; the Rust compiler is pinned
 in `engine/rust-toolchain.toml` and the cargo tools in `.github/workflows/ci.yml`, and
-`engine/deny.toml` checks the crates' advisories and licences. The update schedule in [renovate.json5](renovate.json5), and the
-dependency review in `.github/workflows/hygiene.yml`.
+`engine/deny.toml` checks the crates' advisories and licences. The update schedule is in
+[renovate.json5](renovate.json5), and the dependency review in `.github/workflows/hygiene.yml`.
 
 ## Sign off your commits
 

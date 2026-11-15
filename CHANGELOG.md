@@ -22,6 +22,8 @@ follow [Semantic Versioning](https://semver.org/).
   instead of showing "Running…" until Cancel. The next Run loads the kernel again.
 - The release's software bill of materials names its root component `ramascene-explorer`
   with the release version, not `unknown 0.0.0`.
+- Built files are cached for a year and the map outlines for a day, so a returning visitor no
+  longer asks the host again for each script, stylesheet, font and the wasm kernel.
 
 ### Security
 
