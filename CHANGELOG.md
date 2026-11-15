@@ -30,6 +30,8 @@ follow [Semantic Versioning](https://semver.org/).
 - The deployed site no longer serves data through its Cloudflare Worker, which now serves the
   built files only. The page reads the embodied flows and the browser store from the data host
   alone ([data host](docs/publishing.md#data-host)).
+- `pipeline/export_browser.py` writes each gzip chunk with a zero timestamp, so the same inputs
+  give the same browser store, byte for byte ([browser-engine.md](docs/browser-engine.md)).
 
 ### Fixed
 

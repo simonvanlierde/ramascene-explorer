@@ -149,8 +149,9 @@ contains only the selected export.
 scripts/fetch-data.sh store   # downloads, checks data/browser-engine-zarr.sha256, unpacks into data/
 ```
 
-To publish a new export, pack it with fixed names, times and modes, so the same files give
-the same tar:
+The exporter writes each gzip chunk with a zero timestamp, so the same inputs give the same
+store, byte for byte. To publish a new export, pack it with fixed names, times and modes, so the
+same files give the same tar:
 
 ```sh
 tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode=u=rwX,go=rX --format=gnu \
