@@ -1,10 +1,17 @@
 # CI and publishing
 
-`.github/workflows/ci.yml` runs ty, `uv run pytest --cov`,
-`brightway-check/table.py --check`, `biome ci`,
-`pnpm test` and `pnpm exec playwright test`. None of them needs the engine or
-the EXIOBASE matrices, because the engine checks skip without `--engine`. Ruff and the
-formatters run in `.github/workflows/hygiene.yml`, through prek.
+`.github/workflows/ci.yml` runs the justfile's `py` recipe (ty, `uv run pytest --cov`,
+`brightway-check/table.py --check`), `page` (`biome ci`, `pnpm test`, the browser store
+check) and `rust` (the kernel), then `pnpm exec playwright test`. None of them needs the
+engine or the EXIOBASE matrices, because the engine checks skip without `--engine`. Ruff and
+the formatters run in `.github/workflows/hygiene.yml`, through prek, beside the dependency
+review and the license check; `osv.yml` scans the lockfiles every week and `cold-install.yml`
+sets the project up from nothing.
+
+The 12 tests in `tests/test_engine_plumbing.py` never run in CI: they need a RaMa-Scene
+checkout and its `db.sqlite3`, which CI does not have. This is an accepted gap. They check
+the adapter in `pipeline/precompute.py` against the real engine, so run
+`uv run pytest --engine="$ENGINE_DIR"` after changing that adapter or before a precompute run.
 Both test steps fail below a line-coverage floor: `fail_under` in
 `pyproject.toml` for `pipeline/precompute.py` and `pipeline/compare_data.py`, and the `test`
 script in `package.json` for the JS modules (not the Svelte files).

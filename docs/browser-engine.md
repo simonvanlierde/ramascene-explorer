@@ -290,10 +290,12 @@ working-memory estimate. Build the site with `pnpm build`, then reproduce with t
 image from package.json:
 
 ```sh
-OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash scripts/measure-browser-threads.sh 5
+docker run --rm --ipc=host -v "$PWD:/src" -w /src mcr.microsoft.com/playwright:v1.64.1-noble \
+  bash scripts/measure-browser-threads.sh 5
 ```
 
-The host's quiet gate and CPU slot keep this run separate from other heavy jobs.
+Run it on an otherwise idle machine, with its CPUs pinned (`--cpuset-cpus`), so other heavy
+jobs do not skew the timings.
 The harness discards a warm-up pair, alternates mode order and checks complete flow arrays
 against the single-thread result at relative 1e-8.
 
@@ -337,7 +339,7 @@ No scenario between 3.4×10<sup>8</sup> and 1.4×10<sup>9</sup> was measured, so
 crossover lies somewhere in that range. Repeated calculations gained 10–30 ms below
 10<sup>9</sup> on both CPU counts; all samples are in the JSON. Reproduce with
 `bash scripts/measure-browser-threads.sh 5 threshold` (add `4cpu` as a third argument under
-`taskset -c 0-3`) through `oss-bench`, as above.
+`taskset -c 0-3`) in the same container, as above.
 
 ### Eight and sixteen threads
 
@@ -369,7 +371,8 @@ would remove the largest dense case from the existing working-memory budget.
 Reproduce the scaling comparison with:
 
 ```sh
-OSS_BENCH_SLOTS='scale:0-23' OSS_BENCH_IMAGE=mcr.microsoft.com/playwright:v1.64.1-noble oss-bench "$PWD" bash scripts/measure-browser-threads.sh 5 1,4,8,16
+docker run --rm --ipc=host --cpuset-cpus=0-23 -v "$PWD:/src" -w /src \
+  mcr.microsoft.com/playwright:v1.64.1-noble bash scripts/measure-browser-threads.sh 5 1,4,8,16
 ```
 
 The harness changes the cap only in the benchmark's intercepted worker response,

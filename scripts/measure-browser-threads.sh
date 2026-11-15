@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run inside the browser test image through oss-bench, after pnpm build.
+# Run inside the Playwright browser test image (mcr.microsoft.com/playwright), after pnpm build.
 set -euo pipefail
 # vite preview serves dist/ with byte ranges; the headers give it the cross-origin
 # isolation the deployed site gets from _headers, which threads need.
