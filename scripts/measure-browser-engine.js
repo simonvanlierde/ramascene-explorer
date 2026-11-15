@@ -1,5 +1,6 @@
-// Diagnostics: node scripts/measure-browser-engine.js [output.json] [data-dir]
+// Diagnostics: node scripts/measure-browser-engine.js [--network] [output.json] [data-dir]
 // Each sample gets a fresh process. Pin the parent to fixed CPUs.
+// --network serves every read through a simulated link instead of straight from disk.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -42,17 +43,28 @@ const steps = {
 	"China final demand": { product: [1], originReg: [1], consumedBy: [276], consumedReg: [37], techChange: [-20] },
 };
 
-async function sample(workload, delayMs, directory) {
+// The simulated link: a fixed delay per request, then the bytes queue for a shared
+// 100 Mbit/s line, so parallel requests split the bandwidth as on a real connection.
+const LINK = { delayMs: 30, bytesPerMs: 100e6 / 8 / 1000 };
+
+async function sample(workload, delayMs, directory, network) {
 	const manifest = readFileSync(`${directory}/manifest-v3.json`, "utf8");
 	const meta = JSON.parse(manifest);
 	const local = localRange(directory, meta);
 	let bytes = 0;
 	let reads = 0;
+	let linkFree = 0;
+	const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 	const data = openEngine(meta, async (...args) => {
 		reads++;
-		if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+		if (delayMs) await wait(delayMs);
 		const buffer = await local(...args);
 		bytes += buffer.byteLength;
+		if (network) {
+			const start = Math.max(performance.now() + LINK.delayMs, linkFree);
+			linkFree = start + buffer.byteLength / LINK.bytesPerMs;
+			await wait(linkFree - performance.now());
+		}
 		return buffer;
 	});
 	const { rows, columns, J, byRows, download } = plan(meta, [steps[workload]]);
@@ -72,6 +84,7 @@ async function sample(workload, delayMs, directory) {
 	return {
 		workload,
 		delayMs,
+		network,
 		size: { rows: rows.length, columns: columns.length, flowColumns: J.length, lByRows: byRows, download },
 		datasetManifestSha256: createHash("sha256").update(manifest).digest("hex"),
 		trials,
@@ -81,19 +94,25 @@ async function sample(workload, delayMs, directory) {
 }
 
 if (process.argv[2] === "--sample") {
-	console.log(JSON.stringify(await sample(process.argv[3], Number(process.argv[4]), process.argv[5])));
+	const [workload, delayMs, directory, network] = process.argv.slice(3);
+	console.log(JSON.stringify(await sample(workload, Number(delayMs), directory, network === "network")));
 } else {
-	const directory = process.argv[3] ?? `${root}/data/browser-engine`;
+	const network = process.argv.includes("--network");
+	const [output, directory = `${root}/data/browser-engine`] = process.argv.slice(2).filter((a) => a !== "--network");
 	const results = [];
 	const cases = [...Object.keys(steps).map((w) => [w, 0]), ["default", 150]];
 	for (const [workload, delayMs] of cases)
 		for (let repeat = 0; repeat < 5; repeat++)
 			results.push(
 				JSON.parse(
-					execFileSync(process.execPath, [filename, "--sample", workload, String(delayMs), directory], {
-						cwd: root,
-						encoding: "utf8",
-					}),
+					execFileSync(
+						process.execPath,
+						[filename, "--sample", workload, String(delayMs), directory, network ? "network" : "disk"],
+						{
+							cwd: root,
+							encoding: "utf8",
+						},
+					),
 				),
 			);
 	const median = (values) => values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
@@ -104,6 +123,7 @@ if (process.argv[2] === "--sample") {
 			delayMs,
 			...runs[0].size,
 			firstMs: median(runs.map((r) => r.trials[0].ms)),
+			firstMsRange: [Math.min(...runs.map((r) => r.trials[0].ms)), Math.max(...runs.map((r) => r.trials[0].ms))],
 			repeatMs: median(runs.map((r) => r.trials[1].ms)),
 			firstBytes: runs[0].trials[0].bytes,
 			firstReads: runs[0].trials[0].reads,
@@ -127,18 +147,21 @@ if (process.argv[2] === "--sample") {
 		node: process.version,
 		cpu: cpus()[0]?.model,
 		date: new Date().toISOString().slice(0, 10),
+		link: network ? LINK : null,
 		sources,
 		summary,
 		results,
 	};
 	const out = `${JSON.stringify(report, null, 2)}\n`;
-	if (process.argv[2]) writeFileSync(process.argv[2], out);
+	if (output) writeFileSync(output, out);
 	else process.stdout.write(out);
 	console.table(
-		summary.map(({ workload, delayMs, firstMs, repeatMs, firstBytes }) => ({
+		summary.map(({ workload, delayMs, flowColumns, firstMs, firstMsRange, repeatMs, firstBytes }) => ({
 			workload,
 			delayMs,
+			pairs: flowColumns,
 			firstMs,
+			range: firstMsRange.map(Math.round).join("–"),
 			repeatMs,
 			MB: firstBytes / 1e6,
 		})),

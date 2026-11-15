@@ -231,7 +231,9 @@ The script runs five fresh Node processes per case, each with a first and a
 repeated calculation including flow aggregation, and records read bytes and
 requests, peak RSS and host load. One case adds 150 ms of synthetic latency per
 read. Files come from the warm OS cache, so it measures the numerical and data
-path, not browser painting or a CDN.
+path, not browser painting or a CDN. With `--network`, every read instead waits
+30 ms and then shares a simulated 100 Mbit/s link with the other open reads, so the
+download's share of a run shows.
 
 The [recorded diagnostics](measurements/browser-engine-wasm.json) used Node
 26.9.0 on an i9-14900KF, pinned to CPUs 30–31 on a shared machine, on
