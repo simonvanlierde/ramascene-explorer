@@ -6,3 +6,10 @@
   Strict-Transport-Security: max-age=31536000
   Content-Security-Policy: frame-ancestors 'none'
   X-Frame-Options: DENY
+
+# Vite names built files by their content hash, so a new build never reuses a name.
+/ramascene-explorer/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/ramascene-explorer/geo/*
+  Cache-Control: public, max-age=86400

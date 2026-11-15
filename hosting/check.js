@@ -23,6 +23,10 @@ const home = await get(url(""));
 assert.equal(home.status, 200);
 assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
+// hashed build files are cached for good, so a returning visitor asks for none of them again
+const script = (await home.text()).match(/assets\/[\w.-]+\.js/)?.[0];
+assert.ok(script, "the page names no built script");
+assert.match((await get(url(script))).headers.get("Cache-Control") ?? "", /\bimmutable\b/, script);
 // a workers.dev link without the prefix lands on the page; production's root is not this Worker's
 if (new URL(base).hostname.endsWith(".workers.dev")) {
 	const root = await get(new URL("/", base), { redirect: "manual" });
