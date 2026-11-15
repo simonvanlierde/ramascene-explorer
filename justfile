@@ -2,7 +2,7 @@
 # `rust` in ci.yml, so a recipe that passes here passes there.
 
 # The browser store for the parity tests, when it is here (`just data store`). Empty
-# otherwise, so those tests skip outside CI.
+# otherwise, so those tests skip.
 export BROWSER_ENGINE_DATA := env("BROWSER_ENGINE_DATA", if path_exists("data/browser-engine") == "true" { "data/browser-engine" } else { "" })
 
 # List the recipes.
@@ -31,7 +31,7 @@ py:
 page:
     pnpm exec biome ci .
     pnpm test
-    node brightway-check/browser_check.js "$BROWSER_ENGINE_DATA"
+    [ -z "$BROWSER_ENGINE_DATA" ] || node brightway-check/browser_check.js "$BROWSER_ENGINE_DATA"
 
 # ci.yml's engine job: the Rust kernel, linted for wasm32 too, where its JavaScript exports compile. Needs cargo-nextest and cargo-deny.
 [working-directory('engine')]
