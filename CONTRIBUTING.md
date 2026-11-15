@@ -7,10 +7,10 @@ vulnerability as [.github/SECURITY.md](.github/SECURITY.md) says, not in an issu
 
 ## Set up
 
-Use Node 26 with pnpm (the version is pinned in `packageManager` in `package.json`),
-[uv](https://docs.astral.sh/uv/) for the Python side, Rust through rustup with
-`wasm-bindgen-cli` for the browser kernel, and prek for the git hooks
-(`uv tool install prek`, then `prek install`).
+Use the Node version in `.node-version` with pnpm (the version is pinned in `packageManager`
+in `package.json`), [uv](https://docs.astral.sh/uv/) for the Python side, Rust through rustup
+with `wasm-bindgen-cli` for the browser kernel, [just](https://just.systems) for the task
+recipes, and prek for the git hooks (`uv tool install prek`, then `prek install`).
 
 [docs/develop.md](docs/develop.md#view) has the commands, including the data download.
 

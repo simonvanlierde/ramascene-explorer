@@ -34,10 +34,13 @@ jobs:
           enable-cache: true
 
       - run: uv sync --locked
-      - run: uv run ty check
-      - run: uv run pytest --cov=precompute --cov=compare_data
-      # The routes need the EXIOBASE arrays; this checks the README table against their committed results.
-      - run: uv run python brightway-check/table.py --check
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+          fallback: none
+      # ty, pytest over the coverage floor, and the README table against the routes' committed
+      # results (the routes need the EXIOBASE arrays).
+      - run: just py
 
   page:
     name: page tests
@@ -54,7 +57,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "26"
+          node-version-file: .node-version
 
       # The real-data checks (flows against the engine's totals) need the
       # release assets; with CI set they fail rather than skip without them.
@@ -65,11 +68,13 @@ jobs:
         with:
           name: engine-pkg
           path: engine
-      - run: pnpm exec biome ci .
-      - run: pnpm test
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+          fallback: none
+      - run: just page
         env:
           BROWSER_ENGINE_DATA: data/browser-engine
-      - run: node brightway-check/browser_check.js data/browser-engine
 
   engine:
     name: engine tests
@@ -87,17 +92,11 @@ jobs:
       - uses: ./.github/actions/engine
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
-          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2
+          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2,just@1.59.0
           fallback: none
-      - run: cargo fmt --check
-      # --locked: the first build fails on a Cargo.lock that is missing or stale. The
-      # JavaScript exports compile only for wasm32, so lint there.
-      - run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
-      - run: cargo clippy --locked --features threads --all-targets -- -D warnings
-      - run: cargo nextest run --locked --features threads
-        env:
-          RAYON_NUM_THREADS: "4"
-      - run: cargo deny check
+      # fmt, clippy for both targets, nextest and cargo deny. --locked: the first build
+      # fails on a Cargo.lock that is missing or stale.
+      - run: just rust
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: engine-pkg
@@ -162,7 +161,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "26"
+          node-version-file: .node-version
 
       # The shipped-data test reads the embodied flows by range request, as the
       # live page does.

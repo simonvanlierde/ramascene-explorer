@@ -30,7 +30,7 @@
   "pre-commit": { enabled: true },
 
   // Pins Renovate has no manager for: the Rust compiler in engine/rust-toolchain.toml
-  // and the cargo tools CI installs by version.
+  // and the cargo tools and just that CI installs by version.
   customManagers: [
     {
       customType: "regex",
@@ -42,8 +42,8 @@
     },
     {
       customType: "regex",
-      managerFilePatterns: ["/^\\.github\\/workflows\\/ci\\.yml$/"],
-      matchStrings: ["(?<depName>cargo-nextest|cargo-deny)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      managerFilePatterns: ["/^\\.github\\/workflows\\/(ci|cold-install)\\.yml$/"],
+      matchStrings: ["(?<depName>cargo-nextest|cargo-deny|just)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       datasourceTemplate: "crate",
     },
   ],

@@ -1,0 +1,49 @@
+name: cold install
+
+# Sets the project up from nothing, as docs/develop.md says, on a fresh runner with no
+# cache, so a setup step the docs leave out, or a lockfile that no longer installs,
+# fails here before it fails a new contributor.
+on:
+  schedule:
+    - cron: "47 5 * * 1" # Mondays, 05:47 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: setup from scratch
+    runs-on: ubuntu-latest
+    # the threaded kernel builds std from source on a pinned nightly, with no cache
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+          fallback: none
+
+      - run: uv sync --locked
+      - run: pnpm install --frozen-lockfile
+      # rustup and wasm-bindgen-cli at the locked version, then engine/build.sh (`pnpm engine`).
+      - uses: ./.github/actions/engine
+        with:
+          cache: "false"
+      - run: just data embodied
+      - run: pnpm build
