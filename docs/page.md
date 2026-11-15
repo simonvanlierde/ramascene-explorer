@@ -110,11 +110,13 @@ The lists are nested: each industry section holds its divisions, and each divisi
 the world holds its continents, and each continent its countries. A list of more than ten items
 has a search button next to its label. A search keeps the matches and the groups they belong to.
 
-**Add a change** adds a second set of lists, copied from the last, and **Remove change** drops
-one; a scenario holds up to 10, the planner's limit, and focus moves to the change before the
-removed one. Changes that hit the same input multiply: two cuts of 20% leave 64%, not 60%,
-as RaMa-Scene applies interventions one after another. The headline joins one clause per
-change with "and".
+**Add a change** adds another set of lists, copied from the last (percentage included), and
+**Remove change** drops one; a scenario holds up to 10, the planner's limit, and focus moves
+to the change before the removed one. Changes to the same input or spending multiply: two cuts
+of 20% leave 64%, not 60%, as RaMa-Scene applies interventions one after another. The headline
+names one or two changes in full; for more it says how many, and **Details** lists each. The
+browser's limits apply to all changes together, so a selection that is too broad may need a
+change removed as well as narrowed. An error names the change it is about.
 
 For an industry, the percentage changes how much of the product it uses per unit of output.
 For **Final demand**, it changes the spending on the product.
@@ -124,7 +126,7 @@ Your device calculates within [download, memory and arithmetic budgets](browser-
 is one product from one producing country. Manufacturing from every country used by electricity
 (85 × 49 = 4,165 pairs) fits, and takes several seconds; every product from every country does not,
 and the card says so before you run it. Choose a narrower product, fewer producing countries, or
-fewer industries or regions that use it, or use the job API.
+fewer industries or regions that use it (or remove a change), or use the job API.
 
 Above 5 MB, the card says how much the selection downloads.
 While it runs, the card shows the seconds elapsed and a **Cancel** button.

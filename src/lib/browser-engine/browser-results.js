@@ -13,7 +13,7 @@ export function browserProvenance(job) {
 		["Status", BROWSER_STATUS],
 		["Dataset", "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
 		["Method", "Float64 Woodbury update on float32 matrices, computed in a worker on this device"],
-		["Scenario parameters", JSON.stringify(job.scenario.model_details)],
+		["Scenario parameters", job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
 		["Computed", `${job.duration_s < 0.01 ? "less than 0.01" : job.duration_s.toFixed(2)} s including data reads`],
 	];
 }

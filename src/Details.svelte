@@ -321,8 +321,8 @@ async function copyLink() {
 				Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there.
 			</p>
 			<p>
-				What if… shows how one change in one place ripples through supply chains worldwide.
-				A scenario changes the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain.
+				What if… shows how changes in one place ripple through supply chains worldwide.
+				Each change alters the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain.
 				Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound.
 				These are scenarios for the 2011 economy, not forecasts.
 			</p>
@@ -344,7 +344,7 @@ async function copyLink() {
 				<dl id="live-run-provenance">
 					{#each live.rows as [term, desc]}
 						<dt>{term}</dt>
-						<dd>{#if term === "Scenario parameters"}<pre>{desc}</pre>{:else}{desc}{/if}</dd>
+						<dd>{#if term === "Scenario parameters" || term === "Changes"}<pre>{desc}</pre>{:else}{desc}{/if}</dd>
 					{/each}
 				</dl>
 			</section>

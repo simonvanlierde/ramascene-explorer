@@ -9,8 +9,9 @@ follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - A custom scenario can hold up to 10 changes at once, in the browser and on the job API. Add a
-  change and Remove manage the list; changes that hit the same input multiply, as in RaMa-Scene,
-  and the headline joins one clause per change with "and".
+  change (copied from the last) and Remove manage the list; changes that hit the same input
+  multiply, as in RaMa-Scene. The headline names up to two changes and counts more, with all of
+  them listed under Details. An error names the change it is about.
 
 ### Changed
 

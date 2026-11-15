@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { browserProvenance } from "../src/lib/browser-engine/browser-results.js";
 import { at } from "../src/lib/embodied.js";
 import { compare } from "../src/lib/explorer.js";
 import {
@@ -9,9 +10,11 @@ import {
 	catalogName,
 	catalogTree,
 	filterTree,
+	formChange,
 	ignoredApi,
 	jobRun,
 	LIVE_STATUS,
+	liveClauses,
 	liveData,
 	liveFlows,
 	liveProvenance,
@@ -120,9 +123,26 @@ test("each lever becomes its own model_details entry, and one bad lever stops th
 		/between/,
 	);
 	assert.throws(() => scenarioBody([]), /at least one/);
+	// the message names the form's 1-based change
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "2000" },
+			]),
+		/^Error: change 2: the change must be between/,
+	);
+	assert.throws(() => scenarioBody([{ ...form, product: "x", techChange: "1" }]), /^Error: change 1: not an id: x/);
 });
 
-test("liveText joins one clause per lever with and", () => {
+test("the job API's 0-based model_details.N reads as the form's change N + 1", () => {
+	assert.equal(
+		formChange("model_details.3.techChange.0: Input should be >= -100"),
+		"change 4.techChange.0: Input should be >= -100",
+	);
+});
+
+test("liveText joins one clause per lever with and, and counts past two", () => {
 	const catalog = {
 		products: [{ id: 180, name: "Motor vehicles" }],
 		regions: [
@@ -140,6 +160,10 @@ test("liveText joins one clause per lever with and", () => {
 		liveText(two, catalog),
 		"Manufacture of motor vehicles in Africa required 20% less motor vehicles from Europe per unit of output and final demand in Africa for motor vehicles from Europe rose by 5%",
 	);
+	const ten = { scenario: { model_details: Array.from({ length: 10 }, () => first) } };
+	assert.equal(liveText(ten, catalog), "10 changes were made together");
+	assert.equal(liveClauses(ten, catalog).length, 10);
+	assert.ok(liveText(ten, catalog).length < 40);
 });
 
 test("a change that is not a finite number never leaves the page", () => {
@@ -405,4 +429,14 @@ test("rootNamed names a catalog's Total root for the pickers and leaves the rest
 	);
 	assert.equal(regions[0].name, "Total");
 	assert.deepEqual(rootNamed(undefined, "World"), []);
+});
+
+test("browser provenance lists one change per line, as the job API's does", () => {
+	const [first] = job.scenario.model_details;
+	const two = { duration_s: 1, scenario: { model_details: [first, { ...first, techChange: [5] }] } };
+	const rows = Object.fromEntries(browserProvenance(two));
+	assert.deepEqual(
+		rows["Scenario parameters"].split("\n").map((l) => JSON.parse(l).techChange),
+		[[-20], [5]],
+	);
 });

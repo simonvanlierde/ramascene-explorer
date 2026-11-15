@@ -345,7 +345,12 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 	// 8 rows are inside the broad selection, changed as an input and in final demand: counted once
 	await assert.rejects(
 		scenarioFlows(data, [{ ...broad, product: [82], consumedBy: [final.id] }, broad]),
-		/1,600 product–country pairs\. Choose/,
+		/1,600 product–country pairs\. Choose .* use it or remove a change; the limits apply to all changes together\./,
+	);
+	// one intervention has nothing to remove
+	assert.throws(
+		() => plan(meta, [broad]),
+		(e) => !e.message.includes("remove a change"),
 	);
 	// final demand for product 82 from every country: 41 pairs outside the broad selection
 	await assert.rejects(

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "./test.js";
+import { expect, expectNoAxeViolations, test } from "./test.js";
 
 // CI downloads the dataset, so there a missing one fails the test rather than skipping it
 const needData = () => {
@@ -70,12 +70,17 @@ test("two levers run as one scenario, and Remove hands focus to a sensible field
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
-	await expect(page.locator("#live-overlap")).toContainText("multiply");
+	// the overlap hint is for two or more changes
+	await expect(page.locator("#live-overlap")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: /^Remove change/ })).toHaveCount(0);
 	// a second lever copies the first, takes focus, and may overlap it
 	await page.getByRole("button", { name: "Add a change" }).click();
 	await expect(page.locator("#live-product-2")).toBeFocused();
 	await expect(page.locator("#live-product-2")).toHaveValue("180");
+	await expect(page.locator("#live-change-2")).toHaveValue("-20");
+	await expect(page.locator("#live-overlap")).toContainText("same input or spending multiply");
+	// the sheet's sticky header must not cover the previous change's buttons
+	await expectNoAxeViolations(page);
 	await page.locator("#live-change-2").fill("-30");
 	await page.locator("#live-run").click();
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
@@ -89,6 +94,7 @@ test("two levers run as one scenario, and Remove hands focus to a sensible field
 	await expect(page.locator("#live-product")).toBeFocused();
 	await expect(page.locator("#live-product-2")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: /^Remove change/ })).toHaveCount(0);
+	await expect(page.locator("#live-news")).toHaveText("Change 2 removed.");
 	// the planner's cap of 10
 	for (let i = 1; i < 10; i++) await page.locator("#live-add").click();
 	await expect(page.locator("#live-add")).toBeDisabled();
@@ -96,6 +102,15 @@ test("two levers run as one scenario, and Remove hands focus to a sensible field
 	await page.getByRole("button", { name: "Remove change 1", exact: true }).click();
 	await expect(page.locator("#live-product")).toBeFocused();
 	await expect(page.locator("#live-add")).toBeEnabled();
+	// past two changes the headline counts them, and Details lists each
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	await expect(page.locator("#headline")).toContainText("9 changes were made together");
+	await expect(page.locator("#headline")).not.toContainText("20% less");
+	await expect(page.locator(".fs")).toContainText("If 9 changes were made together");
+	await page.locator(".sel-chip button").first().click();
+	await page.locator("#tab-method").click();
+	await expect(page.locator("#live-run-provenance")).toContainText("required 20% less");
 });
 
 test("Try again replaces a failed browser worker", async ({ page, isMobile }, info) => {

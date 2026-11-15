@@ -124,10 +124,12 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
 // A reader who went back to Flows stays there; What if… has the job when they return.
-function showLive(job, text, browser = false) {
+function showLive(job, text, clauses, browser = false) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
 	const next = browser ? browserRun(job, meta, text) : jobRun(job, meta, api, text);
 	if (!next) return false;
+	// the headline says only how many changes there are; Details lists them
+	if (clauses.length > 2) next.live.rows.unshift(["Changes", clauses.join("\n")]);
 	if (ui.mode !== "whatif") {
 		show(next.run, async () => next);
 		return true;
@@ -256,8 +258,8 @@ $effect(() => {
 <!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
 {#snippet livePanel()}
 	{#await import("./LivePanel.svelte") then { default: LivePanel }}
-		{#if api}<LivePanel {api} onflows={showLive} onnews={(text, alert) => (news = { text, alert })} />
-		{:else}<LivePanel browser={true} onflows={(job, text) => showLive(job, text, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+		{#if api}<LivePanel {api} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
+		{:else}<LivePanel browser={true} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
 	{/await}
 {/snippet}
 

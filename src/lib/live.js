@@ -51,21 +51,28 @@ export function scenarioBody(levers, range = CHANGE_RANGE) {
 		if (!Number.isInteger(n)) throw new Error(`not an id: ${v}`);
 		return [n];
 	};
+	const step = ({ product, originReg, consumedBy, consumedReg, techChange }) => {
+		const change = Number(techChange);
+		if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
+		if (change < range.min || change > range.max)
+			throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+		return {
+			product: id(product),
+			originReg: id(originReg),
+			consumedBy: id(consumedBy),
+			consumedReg: id(consumedReg),
+			techChange: [change],
+		};
+	};
 	return {
 		label: "custom scenario",
-		model_details: levers.map(({ product, originReg, consumedBy, consumedReg, techChange }) => {
-			const change = Number(techChange);
-			if (techChange === "" || !Number.isFinite(change))
-				throw new Error("the change must be a finite number (percent)");
-			if (change < range.min || change > range.max)
-				throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
-			return {
-				product: id(product),
-				originReg: id(originReg),
-				consumedBy: id(consumedBy),
-				consumedReg: id(consumedReg),
-				techChange: [change],
-			};
+		model_details: levers.map((lever, n) => {
+			try {
+				return step(lever);
+			} catch (e) {
+				// the form's 1-based number, so the message names the change to fix
+				throw new Error(`change ${n + 1}: ${e.message}`);
+			}
 		}),
 	};
 }
@@ -181,10 +188,20 @@ export function filterTree(tree, query) {
 	return tree.filter((n) => keep.has(n.item.id)).map((n) => ({ ...n, match: matched.has(n.item.id) }));
 }
 
-// One clause per lever, joined with "and". Each retains both regional scopes.
+// One clause per lever, each retaining both regional scopes.
+export const liveClauses = (job, catalog) => job.scenario.model_details.map((step) => leverText(step, catalog));
+
+// The "if …" clause of the headline: the changes' own words for one or two, a count for more,
+// so ten changes do not fill a phone's first screen. liveClauses lists them in full.
 export function liveText(job, catalog) {
-	return job.scenario.model_details.map((step) => leverText(step, catalog)).join(" and ");
+	const clauses = liveClauses(job, catalog);
+	return clauses.length <= 2
+		? new Intl.ListFormat("en", { type: "conjunction" }).format(clauses)
+		: `${clauses.length} changes were made together`;
 }
+
+// The job API's 422 text names a change as model_details.3 (0-based); the form says "change 4".
+export const formChange = (text) => text.replace(/model_details\.(\d+)/g, (_, n) => `change ${Number(n) + 1}`);
 
 function leverText(step, catalog) {
 	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);

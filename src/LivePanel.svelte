@@ -9,6 +9,8 @@ import {
 	rootNamed,
 	LIVE_STATUS,
 	liveProvenance,
+	formChange,
+	liveClauses,
 	liveText,
 	minus,
 	scenarioBody,
@@ -21,7 +23,7 @@ import LiveTotals from "./LiveTotals.svelte";
 import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
 
-// onflows(job, text): shows a finished job's flows on the map; true if it had flows to show
+// onflows(job, text, clauses): shows a finished job's flows on the map; true if it had flows to show
 // onnews(text, alert): every status message, for a live region outside the selection sheet
 let { api, browser = false, onflows, onnews } = $props();
 let client;
@@ -38,7 +40,7 @@ async function fetchJson(url, { signal, ...init } = {}) {
 	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
 		const detail = Array.isArray(body.detail)
-			? body.detail.map((d) => (typeof d === "string" ? d : `${d.loc?.join(".")}: ${d.msg}`)).join("; ")
+			? body.detail.map((d) => formChange(typeof d === "string" ? d : `${d.loc?.join(".")}: ${d.msg}`)).join("; ")
 			: body.detail;
 		throw new Error(`${response.status}: ${detail ?? response.statusText}`);
 	}
@@ -50,18 +52,21 @@ const MAX_LEVERS = 10;
 // The explorer's steel-into-vehicles scenario, preselected so one click reproduces it.
 // Each lever is one intervention; change is as typed, so the too-broad check plans what Run would send.
 let nextKey = 0;
-const lever = (from = { product: "180", origin: "1", consumer: "198", consumedReg: "2" }) => ({ ...from, change: "-20", key: nextKey++ });
+const lever = (from = { product: "180", origin: "1", consumer: "198", consumedReg: "2", change: "-20" }) => ({ ...from, key: nextKey++ });
 let levers = $state([lever()]);
 // lever 1 keeps the ids the first version had; later levers add their number
 const at = (name, i) => (i ? `live-${name}-${i + 1}` : `live-${name}`);
 async function addLever() {
 	levers.push(lever(levers.at(-1)));
 	await tick();
-	document.getElementById(at("product", levers.length - 1))?.focus();
+	const first = document.getElementById(at("product", levers.length - 1));
+	first?.focus({ preventScroll: true });
+	first?.closest("fieldset")?.scrollIntoView({ block: "start" });
 }
 // focus goes to the previous lever (or the new first one), never to the removed row
 async function removeLever(i) {
 	levers.splice(i, 1);
+	say(`Change ${i + 1} removed.`);
 	await tick();
 	document.getElementById(at("product", Math.max(i - 1, 0)))?.focus();
 }
@@ -231,7 +236,7 @@ async function submit(event) {
 		const duration = done.duration_s < 0.1 ? "less than 0.1" : done.duration_s.toFixed(1);
 		let text = browser ? `Computed in this browser in ${duration} s.` : `Job ${done.id} finished in ${duration} s.`;
 		try {
-			mapped = onflows?.(done, liveText(done, catalog)) === true;
+			mapped = onflows?.(done, liveText(done, catalog), liveClauses(done, catalog)) === true;
 			if (mapped)
 				text += `${ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map."} Details → Method lists the totals by region.`;
 		} catch (e) {
@@ -285,7 +290,7 @@ async function submit(event) {
 				</fieldset>
 			{/each}
 			<button type="button" class="chipb add" id="live-add" disabled={levers.length >= MAX_LEVERS} onclick={addLever}>Add a change{levers.length >= MAX_LEVERS ? ` (at most ${MAX_LEVERS})` : ""}</button>
-			<small class="fh" id="live-overlap">Changes that hit the same input multiply: two cuts of 20% leave 64%, not 60%.</small>
+			{#if levers.length > 1}<small class="fh" id="live-overlap">Changes to the same input or spending multiply: two cuts of 20% leave 64%, not 60%.</small>{/if}
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			{#if download}<p class="hint" id="live-download">{download}</p>{/if}
