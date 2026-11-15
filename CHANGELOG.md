@@ -42,6 +42,20 @@ follow [Semantic Versioning](https://semver.org/).
   with the release version, not `unknown 0.0.0`.
 - Built files are cached for a year and the map outlines for a day, so a returning visitor no
   longer asks the host again for each script, stylesheet, font and the wasm kernel.
+- On tablets (761 to 1000 px) What if… no longer runs off the side: the world total takes its
+  own row and the five region cells go two to a row. The cells share one unit, given once in
+  their heading.
+- "Published scenarios · not forecasts" stays whole in the top bar at every width; only the
+  dataset name before it is shortened.
+- On a phone the Sankey's region labels fit (the two longest take short names) and no longer
+  overlap each other, and the selected country's total goes under its name.
+- On a phone the header takes two rows instead of three: the theme toggle and the source link
+  are at the end of the selection sheet.
+- The scrubber thumb and the custom form's search buttons are at least 24 px targets, and a
+  cut-short product name shows in full on hover.
+- In dark mode the shadows are tuned for the dark ground, and a region's colour swatch has an
+  edge, so a near-zero change no longer vanishes on its card.
+- The sentence is the page's heading (an `h2` under the title), for screen-reader navigation.
 
 ### Security
 

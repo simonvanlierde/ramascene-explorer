@@ -7,7 +7,8 @@ import { ui } from "./view.svelte.js";
 
 // live: {source, text, rows, job} while a run that is not precomputed is shown, else null
 // custom: a snippet for the run list's last card (the custom-scenario panel); retry reloads a run that failed
-let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom } = $props();
+// tools: the header's theme toggle and source link, which a phone shows at the sheet's end instead
+let { data, meta, sum, whatif, live = null, loadingRun, setMode, setRun, retry, sheet = false, onclose, inert = false, custom, tools } = $props();
 
 let done = $state();
 // a phone opens the panel as a sheet: focus its Done button
@@ -217,4 +218,11 @@ const directionHint = $derived(
 		<div class="lab"><span id="rail-l">Industry sections</span><small>share of the {whatif ? "2011 " : ""}flows</small></div>
 		<Rail {sum} labelledby="rail-l" />
 	</div>
+
+	{#if tools}
+		<div class="grp sheet-foot">
+			<div class="lab">Theme and source code</div>
+			<div class="icons">{@render tools()}</div>
+		</div>
+	{/if}
 </aside>

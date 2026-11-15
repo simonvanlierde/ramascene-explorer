@@ -28,6 +28,7 @@ async function toggle() {
 	}
 }
 // The closed select shows the picked option's text, so that one is not indented.
+const picked = $derived(tree.find((n) => String(n.item.id) === value));
 const indent = (n) => (String(n.item.id) === value ? "" : "   ".repeat(n.depth));
 </script>
 
@@ -52,7 +53,8 @@ const indent = (n) => (String(n.item.id) === value ? "" : "   ".repeat(n.dept
 	/>
 	{#if none}<small class="fh" role="status">No match for “{query.trim()}”.</small>{/if}
 {/if}
-<select {id} required {disabled} bind:value>
+<!-- a narrow select cuts the picked name short; its title keeps the whole -->
+<select {id} required {disabled} bind:value title={picked ? catalogName(picked.item) : undefined}>
 	{#each none ? tree.filter((n) => String(n.item.id) === value) : shown as n (n.item.id)}
 		<option value={String(n.item.id)} title={n.item.name}>{indent(n)}{catalogName(n.item)}</option>
 	{/each}

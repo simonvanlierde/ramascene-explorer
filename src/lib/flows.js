@@ -54,6 +54,8 @@ const ROW_NAME = {
 	WE: "Rest of Europe",
 };
 export const placeName = (meta, k) => ROW_NAME[meta.country_codes[k]] ?? meta.countries[k];
+// The two that are too long for the Sankey's partner column on a phone.
+const ROW_SHORT = { WA: "Rest of Asia–Pac.", WM: "Rest of Mid. East" };
 // The same name after "in" or "from", where these four take "the".
 const THE = new Set(["US", "GB", "NL", "CZ"]);
 export const theName = (meta, k) => (THE.has(meta.country_codes[k]) ? "the " : "") + placeName(meta, k);
@@ -178,11 +180,12 @@ export function wording(id) {
 	return WORDING[id];
 }
 
-// [number, unit] for an amount in the indicator's display unit.
-export function amount(v, id) {
+// [number, unit] for an amount in the indicator's display unit; ref picks the
+// unit (jobs, thousand or million jobs), so numbers that share one unit pass their largest.
+export function amount(v, id, ref = v) {
 	const w = wording(id);
 	if (w.unit !== "jobs") return [fmt(v), w.unit];
-	const a = Math.abs(v);
+	const a = Math.abs(ref);
 	if (a >= 1e6) return [fmt(v / 1e6), "million jobs"];
 	if (a >= 1e3) return [fmt(v / 1e3), "thousand jobs"];
 	return [fmt(v), "jobs"];
@@ -530,23 +533,27 @@ export function taperGlyph(v, widthK, x1, dir) {
 // selected country is one node on its side; the partners are the nine
 // largest plus one "other regions" node; the middle column is the sections in
 // the selection with any flow. Returns nodes and ribbon paths in a width ×
-// height box.
+// height box. top: where the nodes start, under the headings; edge: the room
+// for the partners' labels. Each partner has a short name for a narrow panel.
 // layout units the longest section label takes, with its 4-unit gap, on a 360 px
 // phone, where the text scales down least (164 measured for "Electricity, gas, water")
 export const SANKEY_LABEL_ROOM = 170;
 
-export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {}) {
+export function sankeyLayout(meta, sum, sel, { width = 452, height = 420, top = 30, edge = 132 } = {}) {
 	const { vals } = sum;
 	const secs = [...sel.on].filter((q) => sum.sec[q] > 0).sort((a, b) => sum.sec[b] - sum.sec[a]);
 	const partners = [...vals.keys()].filter((k) => vals[k] > 0).sort((a, b) => vals[b] - vals[a]);
-	const top = partners.slice(0, 9);
+	const largest = partners.slice(0, 9);
 	const rest = partners.slice(9);
-	const P = top.map((k) => ({
-		ks: [k],
-		name: k === sel.who ? `${placeName(meta, k)} (home)` : placeName(meta, k),
-		v: vals[k],
-	}));
-	if (rest.length) P.push({ ks: rest, name: `${rest.length} other regions`, v: rest.reduce((s, k) => s + vals[k], 0) });
+	const P = largest.map((k) => {
+		const home = k === sel.who ? " (home)" : "";
+		const short = ROW_SHORT[meta.country_codes[k]];
+		return { ks: [k], name: placeName(meta, k) + home, short: (short ?? placeName(meta, k)) + home, v: vals[k] };
+	});
+	if (rest.length) {
+		const name = `${rest.length} other regions`;
+		P.push({ ks: rest, name, short: name, v: rest.reduce((s, k) => s + vals[k], 0) });
+	}
 	const me = { ks: partners, name: placeName(meta, sel.who), v: sum.total, me: true };
 	const inDir = sel.dir === "in";
 	const left = inDir ? P : [me];
@@ -556,15 +563,15 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420 } = {})
 		name: SECTION_SHORT[q],
 		v: sum.sec[q],
 	}));
-	const top0 = 30;
+	const top0 = top;
 	const gap = 3;
 	const nw = 9;
 	// release mirrors consumption: the selected country is one node at the edge,
 	// and the industry labels face it, over the bands that fan into it. The
 	// sections sit midway, so both stages get the same width for their links,
 	// unless that leaves the labels less than SANKEY_LABEL_ROOM before the far column.
-	const xL = inDir ? 132 : 6;
-	const xR = inDir ? width - nw - 6 : width - 132 - nw;
+	const xL = inDir ? edge : 6;
+	const xR = inDir ? width - nw - 6 : width - edge - nw;
 	const midway = Math.round((xL + xR) / 2);
 	const xM = inDir ? Math.min(midway, xR - SANKEY_LABEL_ROOM - nw) : Math.max(midway, xL + nw + SANKEY_LABEL_ROOM);
 	const total = sum.total || 1;
