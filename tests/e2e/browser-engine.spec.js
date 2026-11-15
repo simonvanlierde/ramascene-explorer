@@ -38,7 +38,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator("#status .basis")).toContainText("computed in this browser");
 	// one name for a custom run: the card, the header pills and the sidebar count
 	await expect(page.locator("#live .live-card")).toContainText("Computed in this browser");
-	await expect(page.locator("#status .pill.live")).toContainText("computed in this browser");
+	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not checked");
 	await expect(page.locator("#status")).not.toContainText("Browser method");
 	await expect(page.locator("#side .lab.sub small")).toHaveText("Custom scenario shown");
 	await expect(page.locator(".bands path").first()).toBeVisible();
@@ -65,9 +65,29 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	expect(page.url()).not.toContain("browser-");
 	if (["light", "phone"].includes(info.project.name))
 		await page.screenshot({ path: info.outputPath("browser-engine.png"), fullPage: true });
-	// one step back to the last published scenario
+	// the caveat stays whole, "not forecasts" included, at the narrowest width
+	const size = page.viewportSize();
+	await page.setViewportSize({ width: 320, height: size.height });
+	await expect(page.locator(".pill.basis .cav")).toHaveText("computed in this browser · not forecasts");
+	const cut = await page.locator(".pill.basis").evaluate((pill) => {
+		const cav = pill.querySelector(".cav").getBoundingClientRect();
+		const box = pill.getBoundingClientRect();
+		return pill.scrollWidth > pill.clientWidth || cav.right > box.right || box.right > innerWidth;
+	});
+	expect(cut, "320 px").toBe(false);
+	await page.setViewportSize(size);
+	// one step back to the last published scenario, also with the list open
 	if (isMobile) await page.locator(".dock .filters").click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator("#run-list")).toBeVisible();
 	await page.getByRole("button", { name: "Back to published scenarios" }).click();
+	// the status lines no longer describe a result that is not on the map
+	await expect(page.locator("#live-state")).toHaveText(
+		"Back on the published scenario. Run again to see the custom result.",
+	);
+	await expect(page.locator("#live-news")).toHaveText(
+		"Back on the published scenario. Run again to see the custom result.",
+	);
 	await expect(page.locator("#status .pill.live")).toHaveCount(0);
 	await expect(page.locator("#side .lab.sub small")).toHaveText(/^\d+ published scenarios$/);
 	await expect(page.getByRole("button", { name: "Back to published scenarios" })).toHaveCount(0);
@@ -263,6 +283,9 @@ test("a negligible custom change stays readable without claiming a hotspot", asy
 	await expect(page.locator("#headline")).toContainText("No change at the displayed precision.");
 	await expect(page.locator("#headline")).not.toContainText("largest change");
 	await expect(page.locator("#headline")).not.toContainText("−0");
+	// nothing changed, so no cell or label is heavier
+	await expect(page.locator(".kpi.lead")).toHaveCount(0);
+	await expect(page.locator(".lbls text.lead")).toHaveCount(0);
 	await expect(page.locator(".lg")).not.toContainText("all decreases");
 	await expect(page.locator(".lg")).not.toContainText("e−12");
 	for (const card of await page.locator(".kpis.k5 .kv").all()) {
@@ -282,9 +305,11 @@ test("a selection too broad for the browser says so before Run, and search narro
 	await page.goto("./");
 	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
-	// What if… opens folded to the chosen run, so the form sits higher
-	await expect(page.locator("#run-list")).toHaveCount(0);
+	// What if… opens folded to the chosen run; opening the form folds an open list again
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator("#run-list")).toBeVisible();
 	await page.locator("#live-open").click();
+	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 	// the preselected steel scenario reads about 2 MB, too little to mention
 	await expect(page.locator("#live-download")).toHaveCount(0);

@@ -205,7 +205,13 @@ function setMode(mode) {
 	stop();
 	ui.mode = mode;
 	ui.s = 1;
-	if (mode === "whatif") shown?.live ? play() : showRun(ui.run);
+	if (mode === "whatif") return shown?.live ? play() : showRun(ui.run);
+}
+// the cue button goes with Flows: the headline takes focus once What if… has drawn
+function cueToWhatif() {
+	Promise.resolve(setMode("whatif"))
+		.then(tick)
+		.then(() => document.getElementById("headline")?.focus());
 }
 function setRun(run) {
 	stop();
@@ -265,8 +271,8 @@ $effect(() => {
 <!-- in What if… under the run list; on its own when the 2011 flows did not load, where a result stays in the panel -->
 {#snippet livePanel()}
 	{#await import("./LivePanel.svelte") then { default: LivePanel }}
-		{#if api}<LivePanel {api} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
-		{:else}<LivePanel browser={true} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+		{#if api}<LivePanel {api} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
+		{:else}<LivePanel browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
 	{/await}
 {/snippet}
 
@@ -320,7 +326,7 @@ $effect(() => {
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {world} {whatif} {extent} />
-			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => setMode("whatif")}>See what one change does → What if…</button></p>{/if}
+			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => cueToWhatif()}>See what one change does <span aria-hidden="true">→</span> What if…</button></p>{/if}
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {mirror} {whatif} {run} {text} {live} />

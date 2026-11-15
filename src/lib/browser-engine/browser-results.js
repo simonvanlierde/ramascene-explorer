@@ -3,7 +3,7 @@ import { liveFlows } from "../live.js";
 export const BROWSER_STATUS = "computed in this browser";
 const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
-	pill: "Not checked: computed in this browser",
+	pill: "Custom run: not checked",
 	heading: "Custom calculation",
 	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates on matrices stored as float32. All published scenarios match RaMa-Scene within relative 1e-6. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
 };

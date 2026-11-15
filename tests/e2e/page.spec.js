@@ -1163,10 +1163,12 @@ test("Flows says in plain words what the numbers are, and points to What if… o
 	await ready(page);
 	await expect(page.locator(".main .direction-cue")).toHaveText(/^Colours the map by where /);
 	// the link opens What if… and both lines go
-	const link = page.getByRole("button", { name: "See what one change does → What if…" });
+	const link = page.getByRole("button", { name: "See what one change does What if…" });
 	await expect(link).toBeVisible();
 	await link.click();
 	await expect(page).toHaveURL(/mode=whatif/);
+	// the button goes with Flows: the headline takes focus once What if… has drawn
+	await expect(page.locator("#headline")).toBeFocused();
 	await expect(page.locator(".main .direction-cue")).toHaveCount(0);
 	await expect(page.getByRole("button", { name: /^See what one change does/ })).toHaveCount(0);
 	await expectNoAxeViolations(page);
@@ -1179,6 +1181,18 @@ test("a change reads the same on the strip, the sentence and the map: tiny ones 
 		await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction${q}`);
 		await ready(page);
 		await expect(page.locator(".kpis.k5 .kpi.lead")).toHaveCount(1);
+		// the heaviest cell is the one with the largest change relative to 2011
+		const rel = await page
+			.locator(".kpis.k5 .kpi")
+			.evaluateAll((els) => els.map((e) => [e.classList.contains("lead"), e.querySelector(".ks").textContent]));
+		const size = rel.map(([, t]) => {
+			const m = t.match(/(<)?([\d.,]+)%/);
+			return m ? (m[1] ? 0.005 : Number(m[2].replace(",", ""))) : 0;
+		});
+		expect(size[rel.findIndex(([lead]) => lead)]).toBe(Math.max(...size));
+		// at most one map label is heavier than the rest (the world has none)
+		const labels = await page.locator(".lbls text.b").count();
+		await expect(page.locator(".lbls text.b.lead")).toHaveCount(labels ? 1 : 0);
 		const text = (await page.locator(".wstrip, .hl").allTextContents()).join(" ");
 		expect(text).not.toMatch(/<0\.01% (decrease|increase)/);
 		const weights = await page
@@ -1212,4 +1226,21 @@ test("What if… opens folded to the chosen scenario, with the filters above the
 		await page.getByRole("button", { name: "Change the scenario" }).click();
 		await expect(page.getByRole("radio").first()).toBeVisible();
 	}
+});
+
+test("What if… opens folded again after a trip to Flows", async ({ page, isMobile }) => {
+	await page.goto(`${FIXTURE}&mode=whatif`);
+	await ready(page);
+	await openSelection(page);
+	const side = page.locator("#side");
+	await side.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator("#run-list")).toBeVisible();
+	// a phone has the mode buttons in its dock, under the sheet
+	if (isMobile) await side.getByRole("button", { name: "Done", exact: true }).click();
+	const modes = isMobile ? page.locator(".dock") : side;
+	await modes.getByRole("button", { name: /^Flows, / }).click();
+	await modes.getByRole("button", { name: "What if…", exact: true }).click();
+	await openSelection(page);
+	await expect(page.locator("#run-list")).toHaveCount(0);
+	await expect(side.getByRole("button", { name: "Change the scenario" })).toBeVisible();
 });

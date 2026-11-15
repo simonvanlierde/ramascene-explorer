@@ -26,8 +26,10 @@ const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : wording
 // the five cells share one unit, stated once in their heading, so a narrow cell never wraps it
 const regionChanges = $derived(conts?.map((c) => (whatif ? displayChange(c.change, sum.total) : c.base)) ?? []);
 const regionRef = $derived(Math.max(0, ...regionChanges.map(Math.abs)));
-// the cell with the largest change is the heaviest
-const topCell = $derived(regionChanges.reduce((best, v, i) => (Math.abs(v) > Math.abs(regionChanges[best]) ? i : best), 0));
+// The heaviest cell: the largest |change relative to 2011| in What if… (the map's labels show
+// only that percentage), the largest amount in Flows. None when every cell is zero.
+const cellSize = $derived(regionChanges.map((v, i) => Math.abs(whatif ? (conts[i].base ? v / conts[i].base : 0) : v)));
+const topCell = $derived(cellSize.some((s) => s > 0) ? cellSize.indexOf(Math.max(...cellSize)) : -1);
 const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 </script>
 

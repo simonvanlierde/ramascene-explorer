@@ -78,6 +78,10 @@ function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
+// What if… always opens folded, also after Change was used before a trip to Flows
+$effect(() => {
+	if (ui.mode === "whatif") showRuns = false;
+});
 // a job arriving, or opening the custom form, folds the list
 $effect(() => {
 	if (live || ui.custom) showRuns = false;
@@ -88,8 +92,9 @@ const chosenSub = $derived(
 );
 // a custom run is not a run of the list: ui.run still holds the last published one
 function backToPublished() {
+	showRuns = false;
 	setRun(ui.run);
-	changeButton?.focus();
+	queueMicrotask(() => changeButton?.focus());
 }
 function chooseRun(v) {
 	gridRun = null;
@@ -129,9 +134,6 @@ function chooseRun(v) {
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
 					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the scenario" onclick={() => (showRuns = true)}>Change</button>
 				</div>
-				{#if live}
-					<button type="button" class="chipb back" onclick={backToPublished}>Back to published scenarios</button>
-				{/if}
 			{:else}
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
 				{#each runOptions as v (v)}
@@ -155,6 +157,9 @@ function chooseRun(v) {
 					</button>
 				{/each}
 			</div>
+			{/if}
+			{#if live}
+				<button type="button" class="chipb back" onclick={backToPublished}>Back to published scenarios</button>
 			{/if}
 			{#if onGrid && grid && showRuns}
 				<div class="gridpick">

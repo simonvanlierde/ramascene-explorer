@@ -34,7 +34,9 @@ Amounts use at most three significant figures, without padded zeros, and two bel
 changes use at most three significant figures and two decimal places; nonzero
 changes below 0.01% read "−<0.01%" or "+<0.01%" rather than rounding to a signed
 zero. The strip, the sentence and the map labels use these same rules, and the
-largest cell of the strip and the largest map label are set heaviest.
+heaviest strip cell and map label are the ones with the largest change: the largest
+amount in Flows, and in What if… the largest change relative to 2011, the only figure the
+map labels carry. When every cell is zero none is heavier.
 A change from a zero baseline has no percentage; the display says so.
 
 For display, differences no larger than a trillionth of the baseline are treated

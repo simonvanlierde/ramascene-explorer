@@ -234,7 +234,7 @@ const labels = $derived.by(() => {
 	}
 	// the largest label is the heaviest, as on the strip
 	const top = out.reduce((best, l) => (l.size > (best?.size ?? -1) ? l : best), null);
-	for (const l of out) l.lead = l === top;
+	for (const l of out) l.lead = l === top && l.size > 0;
 	return out;
 });
 

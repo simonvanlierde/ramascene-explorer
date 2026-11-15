@@ -25,7 +25,8 @@ import { ui } from "./view.svelte.js";
 
 // onflows(job, text, clauses): shows a finished job's flows on the map; true if it had flows to show
 // onnews(text, alert): every status message, for a live region outside the selection sheet
-let { api, browser = false, onflows, onnews } = $props();
+// onscreen: the custom run is the one the map shows
+let { api, browser = false, onscreen = false, onflows, onnews } = $props();
 let client;
 let connection = 0;
 onDestroy(() => { connection++; client?.close(); });
@@ -124,6 +125,15 @@ const tooBroad = $derived(planned.tooBroad ?? "");
 // said only above 5 MB, where the download is what a reader on a phone may wait for
 const download = $derived(planned.download > 5e6 ? `This selection downloads about ${fmt(planned.download / 1e6)} MB of data.` : "");
 
+// the map went back to a published scenario: the last result message no longer holds
+let wasOnscreen = false;
+$effect(() => {
+	if (onscreen) wasOnscreen = true;
+	else if (wasOnscreen) {
+		wasOnscreen = false;
+		say("Back on the published scenario. Run again to see the custom result.");
+	}
+});
 function say(text, bad = false) {
 	message = text;
 	failed = bad;
