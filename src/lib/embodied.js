@@ -55,7 +55,7 @@ export async function openEmbodiedUrl(url, byteLength) {
 	const open = async (n) => {
 		if (n === undefined) {
 			const head = await fetch(href, { method: "HEAD", cache: "no-cache", signal: AbortSignal.timeout(60_000) });
-			if (!head.ok) throw new Error(`embodied flows: ${head.status}`);
+			if (!head.ok) throw new (head.status >= 500 ? HostError : Error)(`embodied flows: ${head.status}`);
 			n = Number(head.headers.get("Content-Length"));
 			if (!Number.isSafeInteger(n) || n <= 0) throw new Error("embodied flows: the data host sent no Content-Length");
 		}

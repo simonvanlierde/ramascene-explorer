@@ -68,7 +68,7 @@ follow [Semantic Versioning](https://semver.org/).
   on with the others.
 - After a deploy, a custom form whose code is gone asks for a reload instead of offering Try
   again.
-- A refused `?data=` or `?api=` link shows in full in the header, not cut to a few letters.
+- A refused `?data=` or `?api=` link stays readable in the header, up to 40% of its width, not cut to a few letters.
 - Screen readers hear the What if… headline and the region cells in the same words the page
   shows.
 - A Run whose calculation kernel never finishes downloading now fails after two minutes,

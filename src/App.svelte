@@ -254,7 +254,7 @@ $effect(() => {
 		{#if api}<LivePanel {api} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
 		{:else}<LivePanel browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
 	{:catch}
-		<p role="alert">The custom scenario form could not load. Reload the page; it may have been updated since you opened it.</p>
+		<p role="alert">The custom scenario form could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.</p>
 	{/await}
 {/snippet}
 

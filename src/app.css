@@ -314,6 +314,10 @@ button.pill:hover {
   .top:has(.pill.fail) {
     min-height: 48px;
   }
+  /* the dataset name gives way first, as below 1100 px, so only the pills wrap */
+  .top:has(.pill.fail) .pill.basis .ds {
+    display: none;
+  }
   .top:has(.pill.fail) .rt {
     flex-wrap: wrap;
     justify-content: flex-end;

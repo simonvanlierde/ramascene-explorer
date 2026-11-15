@@ -194,6 +194,11 @@ test("a stalled or 5xx flows read is a failed load, which a reload may fix; a 40
 	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes)), "failed");
 	t.mock.method(globalThis, "fetch", async () => new Response("gone", { status: 404 }));
 	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes)), "missing");
+	// without a known size the page asks the host first, and a 5xx there is a failed load too
+	t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 503 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL)), "failed");
+	t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 404 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL)), "missing");
 });
 
 test("the published flows come from the data origin by their checksum", async () => {

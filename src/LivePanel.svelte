@@ -156,7 +156,7 @@ function connect({ quiet = false } = {}) {
 			return client.request();
 		}, () => {
 			gone = true;
-			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it.");
+			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.");
 		})
 		: fetchJson(`${api}/catalog`);
 	connecting.then(
