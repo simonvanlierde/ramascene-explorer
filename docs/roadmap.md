@@ -8,6 +8,8 @@ What is planned for the next year (to late 2027), in rough order. None of it has
   has the same 200 products and 49 regions as the v3.3.sm data used now, so the engine reads it once the arrays are converted. It is
   licensed CC BY-SA 4.0, so the derived data would be share-alike; later vintages need the
   publisher's permission to publish multipliers. The move waits on that licence question.
+- **A second database.** [Licences and data terms](databases.md) of BONSAI, GLORIA, FIGARO and physical tables.
+  Their regions differ from the fixed 49, so none can use the map yet.
 - **Final demand by category.** Split the Sankey's consumption side into households,
   government and investment. This needs a new Parquet layout and a fresh engine run, so it
   comes with the next data release.
