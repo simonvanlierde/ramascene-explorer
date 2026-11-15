@@ -1,5 +1,7 @@
 # Architecture
 
+Last reviewed: 2026-11-15
+
 The explorer has two halves. A Python script computes results once. A static
 page then reads those results in the browser. The published site needs no calculation server.
 Open it with `?api=` to connect an optional job API.
@@ -7,20 +9,32 @@ Open it with `?api=` to connect an optional job API.
 A worker computes custom scenarios from exported float32 matrices, in float64 arithmetic. It starts
 when a reader opens the custom-scenario form. [browser-engine.md](browser-engine.md) describes its data and checks.
 
-```text
-RaMa-Scene engine + EXIOBASE matrices
-        |  pipeline/precompute.py (run by hand, needs the engine)
-        v
-data/results.json        data/embodied.parquet  (release asset)
-        |                        |
-        +--- Cloudflare ---------+
-                   |  fetch + HTTP range requests
-                   v
-              the page (Svelte, in the browser)
-                   |  only with ?api=<origin>
-                   v
-              job API (ramascene-jobs), optional
+```mermaid
+flowchart TD
+  engine["RaMa-Scene engine + EXIOBASE v3.3.sm matrices"]
+  results["data/results.json<br/>(in git)"]
+  parquet["embodied.parquet<br/>(release data-2011-r2)"]
+  store["browser store, Zarr<br/>(release data-2011)"]
+  site["static host: a Cloudflare Worker serving assets only<br/>page, fonts, map geometry, results.json, store manifest"]
+  r2["R2 data host (DATA_ORIGIN)<br/>embodied/&lt;sha256&gt;.parquet, browser-engine/store-&lt;hash&gt;/"]
+  page["the page (Svelte, in the browser)<br/>and its Web Worker for custom scenarios"]
+  api["job API (ramascene-jobs), optional"]
+
+  engine -- "pipeline/precompute.py, by hand" --> results
+  engine -- "pipeline/precompute.py" --> parquet
+  engine -- "pipeline/export_browser.py" --> store
+  results -- "cloudflare.yml" --> site
+  store -- "manifest-v3.json, cloudflare.yml" --> site
+  parquet -- "data.yml" --> r2
+  store -- "shards, data.yml" --> r2
+  site -- "fetch" --> page
+  r2 -- "HTTP range requests" --> page
+  page -- "only with ?api=, from Set up" --> api
 ```
+
+The page and the small files come from the static host; the two large files come from the
+data host by their content hashes ([data host](publishing.md#data-host)). In development and
+the tests, `DATA_ORIGIN` is unset and the page reads both next to itself, from `data/`.
 
 Each part has its own page; [the docs index](README.md) links them all.
 
@@ -51,9 +65,9 @@ that worker or the job API. Both hand the same flow layout to the map.
 
 The page fetches `data/results.json`, then reads the Parquet footer using HTTP range requests.
 It uses the file size in `provenance.embodied.bytes`.
-If that record is missing or the footer is not found, it first requests the size with HEAD.
+If that record is missing or the file is not that size, it asks the host for the size with HEAD.
 It reads the baseline row group to draw the map, then loads the default scenario when the browser is idle.
-Other scenarios load once, on demand.
+Other scenarios load on demand; the page keeps the 20 most recently viewed in memory.
 
 The stylesheet (`src/app.css`) defines interface colours.
 Data colours and the scales that use them are in `src/lib/flows.js`.
@@ -61,11 +75,11 @@ Data colours and the scales that use them are in `src/lib/flows.js`.
 ## First-load size
 
 A cold first load of the live page, up to the default What if… run, transfers
-about 0.98 MB (980,407 bytes, headers included) and unpacks to 1.65 MB. Data is
-0.80 MB of that: `results.json` (77 KB gzipped), the map geometry (28 KB) and
-three range requests into `embodied.parquet` (the footer, 131 KB; the
-baseline, 342 KB; the default run, 222 KB). The rest is fonts (89 KB), the
-script (81 KB), CSS (6 KB) and HTML (2 KB). Measured on 2026-10-26, median of
+about 1.10 MB (1,100,025 bytes, headers included) and unpacks to 1.81 MB. Data is
+0.90 MB of that: `results.json` (64 KB compressed) and the map geometry (28 KB) from the
+static host, and three range requests into `embodied.parquet` on the data host (the
+footer, 132 KB; the baseline, 343 KB; the default run, 330 KB). The rest is the script
+(102 KB), fonts (91 KB), CSS (9 KB) and HTML (2 KB). Measured on 2026-11-15, median of
 three loads with the cache off:
 
 ```sh

@@ -5,19 +5,21 @@ and the checks to run before you push.
 
 ## View
 
-Use Node 26 and pnpm. Install once with `pnpm install`. The custom-scenario kernel
+Use the Node version in `.node-version`, pnpm and [just](https://just.systems). Install once
+with `pnpm install`. The custom-scenario kernel
 in `engine/` is Rust built to WebAssembly: with [rustup](https://rustup.rs/) and
 `wasm-bindgen-cli` at the version of the `wasm-bindgen` crate in `engine/Cargo.lock`
 (`cargo install wasm-bindgen-cli --version <that version> --locked`), run
 `pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/` and `engine/pkg-threads/`, which `pnpm dev`, `pnpm build` and `pnpm test` import. The threaded build installs
 the pinned nightly and `rust-src` declared in `engine/threads/rust-toolchain.toml`.
-It rebuilds the standard library with WebAssembly atomics. The map flows are a release
-asset, not in git, so fetch them into `data/`:
+It rebuilds the standard library with WebAssembly atomics. The map flows and the
+custom-scenario store are release assets, not in git. `scripts/fetch-data.sh` fetches
+them into `data/` with curl, checks them against `data/*.sha256`, and checks that
+`data/results.json` names the same embodied flows:
 
 ```sh
-gh release download data-2011-r2 --pattern embodied.parquet --dir data
-# or, without the GitHub CLI:
-curl -L -o data/embodied.parquet https://github.com/simonvanlierde/ramascene-explorer/releases/download/data-2011-r2/embodied.parquet
+scripts/fetch-data.sh embodied   # the map flows (52 MB); enough to view the page
+scripts/fetch-data.sh store      # the custom-scenario store (an 803 MB tar)
 ```
 
 Then:
@@ -66,17 +68,21 @@ Any dataset whose `data_kind` is not `exiobase-v3` gets a red
 
 ## Test
 
+The [justfile](../justfile) holds the checks; ci.yml runs the same recipes. `just` lists them.
+
 ```sh
-prek run -a                            # the git hooks, including ruff and the formatters
-uv run ty check                        # Python types
-uv run pytest --cov=precompute --cov=compare_data   # everything except the engine adapter
+just check                             # all of the below except e2e: what CI runs
+just hooks                             # the git hooks: ruff, biome, repo-review and the formatters
+just py                                # ty, pytest over the coverage floor, the README table
+just page                              # biome, the page logic over the coverage floor, the browser store
+just rust                              # the Rust kernel: fmt, clippy, nextest, cargo deny
+just e2e                               # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
+just test                              # the quick tests: pytest and pnpm test, no lint
 uv run pytest --engine="$ENGINE_DIR"   # adds checks that need the engine and EXIOBASE arrays
-pnpm exec biome ci .                   # lint and format the JavaScript
-pnpm test                              # the page logic, with the coverage floor
-pnpm build && pnpm exec playwright test   # the built page in six browser setups, with axe (once: pnpm exec playwright install chromium firefox webkit)
 pnpm mutation                          # mutation score with Stryker (about 4 minutes); fails below 75%
-(cd engine && cargo fmt --check && cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings && cargo clippy --locked --features threads --all-targets -- -D warnings && RAYON_NUM_THREADS=4 cargo nextest run --locked --features threads && cargo deny check)  # the Rust kernel, as CI runs it
 ```
+
+`just page` and the browser parity tests read the store: fetch it with `just data store`.
 
 The citesync hook requires a name, version, author, licence and DOI in both `CITATION.cff` and `codemeta.json`.
 [citesync.toml](../citesync.toml) lists the required fields.

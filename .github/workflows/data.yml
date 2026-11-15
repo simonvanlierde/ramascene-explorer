@@ -41,18 +41,17 @@ jobs:
           [[ $TAG =~ ^data-[A-Za-z0-9._-]+$ ]] || { echo "Not a data release tag: $TAG"; exit 1; }
           assets=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq .assets)
           found=0
-          for pair in embodied.parquet:embodied.sha256 ramascene-browser-engine-zarr.tar:browser-engine-zarr.sha256; do
-            name=${pair%%:*} sums=data/${pair#*:}
-            want=$(cut -d' ' -f1 "$sums")
+          for what in embodied:embodied.parquet:embodied.sha256 store:ramascene-browser-engine-zarr.tar:browser-engine-zarr.sha256; do
+            IFS=: read -r kind name sums <<<"$what"
+            want=$(cut -d' ' -f1 "data/$sums")
             # empty: no such asset; "none": GitHub stored no digest for it
             digest=$(jq -r --arg n "$name" '.[] | select(.name == $n) | .digest // "none"' <<<"$assets")
             if [ -z "$digest" ]; then
               echo "$TAG has no $name"
             elif [ "$digest" != none ] && [ "$digest" != "sha256:$want" ]; then
-              echo "::notice::$TAG has a $name with another checksum than $sums, so it is skipped"
+              echo "::notice::$TAG has a $name with another checksum than data/$sums, so it is skipped"
             else
-              gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$name" --dir data
-              sha256sum --check "$sums"
+              EMBODIED_TAG=$TAG STORE_TAG=$TAG scripts/fetch-data.sh "$kind"
               found=1
             fi
           done
@@ -83,8 +82,8 @@ jobs:
             "$put" "embodied/$(cut -d' ' -f1 data/embodied.sha256).parquet" data/embodied.parquet \
               application/vnd.apache.parquet "$immutable"
           fi
+          # fetch-data.sh has unpacked the tar into data/browser-engine/
           if [ -f data/ramascene-browser-engine-zarr.tar ]; then
-            tar -xf data/ramascene-browser-engine-zarr.tar -C data
             store="store-$(jq -r .store data/browser-engine/manifest-v3.json)"
             [[ $store =~ ^store-[0-9a-f]{64}$ ]] || { echo "The manifest names no valid store: $store"; exit 1; }
             test -d "data/browser-engine/$store" || { echo "The tar has no $store/"; exit 1; }

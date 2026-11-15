@@ -1,5 +1,5 @@
 // Bytes a cold first load downloads, per file type: pnpm measure-load [url] [runs]
-// See docs/page.md#first-load-size.
+// See docs/architecture.md#first-load-size.
 import { chromium } from "@playwright/test";
 
 const url = process.argv[2] ?? "https://simonvanlierde.com/ramascene-explorer/";

@@ -21,6 +21,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A release now checks that `data/results.json` names the embodied flows `data/embodied.sha256`
+  pins, as the deploy already did, so it cannot ship results and flows from different runs.
 - Map outlines that fail to load now show "The map outlines could not be loaded" with Try
   again, instead of an empty map.
 - A `results.json` the host fails to send (an error other than 404, or no answer within 60 s)

@@ -2,8 +2,8 @@ name: ci
 
 # Without the engine or the EXIOBASE matrices: pytest skips the real-engine
 # checks unless --engine is given. node --test and Playwright read the synthetic
-# fixtures and the shipped results, with the embodied flows downloaded from the
-# data-2011-r2 release and checked against their SHA-256.
+# fixtures and the shipped results, with the release data fetched and checked
+# against its SHA-256 by scripts/fetch-data.sh.
 
 on:
   push:
@@ -34,10 +34,13 @@ jobs:
           enable-cache: true
 
       - run: uv sync --locked
-      - run: uv run ty check
-      - run: uv run pytest --cov=precompute --cov=compare_data
-      # The routes need the EXIOBASE arrays; this checks the README table against their committed results.
-      - run: uv run python brightway-check/table.py --check
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+          fallback: none
+      # ty, pytest over the coverage floor, and the README table against the routes' committed
+      # results (the routes need the EXIOBASE arrays).
+      - run: just py
 
   page:
     name: page tests
@@ -54,36 +57,24 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "26"
+          node-version-file: .node-version
 
       # The real-data checks (flows against the engine's totals) need the
-      # release asset; with CI set they fail rather than skip without it.
-      - name: fetch the embodied flows
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release download data-2011-r2 --repo "$GITHUB_REPOSITORY" --pattern embodied.parquet --dir data
-          sha256sum --check data/embodied.sha256
+      # release assets; with CI set they fail rather than skip without them.
+      - uses: ./.github/actions/data
 
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: engine-pkg
           path: engine
-      - name: fetch the browser scenario data
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release download data-2011 --repo "$GITHUB_REPOSITORY" --pattern ramascene-browser-engine-zarr.tar --dir data
-          sha256sum --check data/browser-engine-zarr.sha256
-          tar -xf data/ramascene-browser-engine-zarr.tar -C data
-      - run: pnpm exec biome ci .
-      - run: pnpm test
+      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+        with:
+          tool: just@1.59.0
+          fallback: none
+      - run: just page
         env:
           BROWSER_ENGINE_DATA: data/browser-engine
-      - run: node brightway-check/browser_check.js data/browser-engine
 
   engine:
     name: engine tests
@@ -101,17 +92,11 @@ jobs:
       - uses: ./.github/actions/engine
       - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
-          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2
+          tool: cargo-nextest@0.9.149,cargo-deny@0.20.2,just@1.59.0
           fallback: none
-      - run: cargo fmt --check
-      # --locked: the first build fails on a Cargo.lock that is missing or stale. The
-      # JavaScript exports compile only for wasm32, so lint there.
-      - run: cargo clippy --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
-      - run: cargo clippy --locked --features threads --all-targets -- -D warnings
-      - run: cargo nextest run --locked --features threads
-        env:
-          RAYON_NUM_THREADS: "4"
-      - run: cargo deny check
+      # fmt, clippy for both targets, nextest and cargo deny. --locked: the first build
+      # fails on a Cargo.lock that is missing or stale.
+      - run: just rust
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: engine-pkg
@@ -176,20 +161,11 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "26"
+          node-version-file: .node-version
 
-      # The shipped-data test reads the embodied flows from the release, by
-      # range request, as the live page does. The image has curl but not gh.
-      - name: fetch the embodied flows
-        run: |
-          set -euo pipefail
-          curl -fsSL --retry 3 --output data/embodied.parquet \
-            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011-r2/embodied.parquet"
-          sha256sum --check data/embodied.sha256
-          curl -fsSL --retry 3 --output data/ramascene-browser-engine-zarr.tar \
-            "https://github.com/$GITHUB_REPOSITORY/releases/download/data-2011/ramascene-browser-engine-zarr.tar"
-          sha256sum --check data/browser-engine-zarr.sha256
-          tar -xf data/ramascene-browser-engine-zarr.tar -C data
+      # The shipped-data test reads the embodied flows by range request, as the
+      # live page does.
+      - uses: ./.github/actions/data
 
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2

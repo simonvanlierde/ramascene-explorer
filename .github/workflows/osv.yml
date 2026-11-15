@@ -1,0 +1,35 @@
+name: osv
+
+# A new advisory can land against a lockfile with no commit here, so this scans the
+# lockfiles every Monday. osv-scanner.toml lists the advisories it ignores, each with
+# a reason and an end date. dependency-review in hygiene.yml covers what a PR adds.
+on:
+  schedule:
+    - cron: "31 5 * * 1" # Mondays, 05:31 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # v2.7 or later: v2.2.4 read only the 15 packages in the first YAML document of
+      # pnpm 12's lockfile, where v2.7.0 reads all 370. brightway-check/uv.lock is left
+      # out: it pins the Brightway release its recorded results came from.
+      - name: scan the lockfiles
+        run: >-
+          docker run --rm -v "$PWD:/src:ro" -w /src
+          ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0
+          scan source --config osv-scanner.toml
+          -L pnpm-lock.yaml -L uv.lock -L engine/Cargo.lock

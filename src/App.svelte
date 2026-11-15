@@ -331,7 +331,7 @@ $effect(() => {
 				<p role="alert"><strong>The scenario results could not be loaded.</strong> The connection may have dropped while reading <code>{dataPath}</code>. Reload the page to try again.</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}
 				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
-				<pre>gh release download data-2011-r2 --pattern embodied.parquet --dir data</pre>
+				<pre>scripts/fetch-data.sh embodied</pre>
 			{:else if flowsError === "failed" || flowsError === "missing"}
 				<p role="alert"><strong>The 2011 flows could not be loaded.</strong> The connection may have dropped while reading <code>{flowsUrl(dataPath, data, DATA_ORIGIN)}</code>. Reload the page to try again.</p>
 			{:else}
