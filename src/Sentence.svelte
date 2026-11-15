@@ -4,7 +4,7 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, WORLD, wording } from "./lib/flows.js";
+import { amount, amountText, capitalise, directionHint, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, WORLD, wording } from "./lib/flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
@@ -145,6 +145,7 @@ function onFocusOut(e) {
 		</h2>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>
+	{#if ui.mode === "flows"}<p class="direction-cue">{directionHint(meta, ui.who, ui.dir, ui.indicator)}</p>{/if}
 
 	{#if pop === "country"}
 		<div class="pop country" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label="Choose a country">

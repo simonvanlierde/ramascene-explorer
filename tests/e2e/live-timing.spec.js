@@ -11,7 +11,7 @@ test("click to a drawn result from the real job API", async ({ page }, info) => 
 	await page.goto(`?api=${encodeURIComponent(api)}`);
 	await expect(page.locator("#live-state")).toHaveText(`Connected to ${api}.`);
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (await page.locator(".dock .filters").isVisible()) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-run")).toBeVisible();

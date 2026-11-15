@@ -320,6 +320,7 @@ $effect(() => {
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {world} {whatif} {extent} />
+			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => setMode("whatif")}>See what one change does → What if…</button></p>{/if}
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {mirror} {whatif} {run} {text} {live} />

@@ -67,6 +67,11 @@ test("a region has one name on the page, with 'the' where English needs it", () 
 
 test("numbers use at most three significant figures and a true minus", () => {
 	assert.equal(fmt(1001.4), "1,000");
+	// tiny amounts keep two significant figures, larger ones three
+	assert.equal(fmt(-0.0119), "−0.012");
+	assert.equal(fmt(0.0451), "0.045");
+	assert.equal(fmt(-9.314), "−9.31");
+	assert.equal(fmt(-0.123), "−0.123");
 	assert.equal(fmt(42.37), "42.4");
 	assert.equal(fmt(-7.834), "−7.83");
 	assert.equal(fmt(0.0004), "0.0004");
@@ -411,8 +416,9 @@ test("the zoom goes into the link and back, and a bad one is dropped", () => {
 test("small changes do not produce long decimals or signed zero", () => {
 	assert.equal(pct(-7e-13), "0%");
 	assert.equal(pct(-0), "0%");
-	assert.equal(pct(-0.0007), "<0.01% decrease");
-	assert.equal(pct(0.0007), "<0.01% increase");
+	assert.equal(pct(-0.0007), "−<0.01%");
+	assert.equal(pct(0.0007), "+<0.01%");
+	assert.equal(pct(-0.02), "−0.02%");
 	assert.equal(fmt(-7e-12), "−7e−12");
 	assert.equal(fmt(1001.4), "1,000");
 });

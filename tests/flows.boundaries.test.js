@@ -23,12 +23,14 @@ import {
 const opts = { runs: ["baseline", "a"], indicators: [5], codes: ["DE", "FR"] };
 const zoom = (z) => parseView(`?zoom=${z}`, opts).zoom;
 
-test("fmt rounds to three significant figures across scale boundaries", () => {
+test("fmt rounds to three significant figures, two below 0.1, across scale boundaries", () => {
 	assert.equal(fmt(99.95), "100");
 	assert.equal(fmt(99.94), "99.9");
 	assert.equal(fmt(9.995), "10");
 	assert.equal(fmt(9.99), "9.99");
-	assert.equal(fmt(0.00995), "0.00995");
+	assert.equal(fmt(0.00995), "0.01");
+	assert.equal(fmt(0.0994), "0.099");
+	assert.equal(fmt(0.0996), "0.1");
 	assert.equal(fmt(0.004), "0.004");
 	assert.equal(fmt(-1234.5), "−1,230");
 	assert.equal(fmt(-1e-9), "−1e−9");

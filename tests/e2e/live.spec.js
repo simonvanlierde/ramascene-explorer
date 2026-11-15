@@ -7,7 +7,7 @@ const API = "http://127.0.0.1:8020";
 async function openLive(page) {
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	if (await page.locator("#live-run").isVisible()) return;
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	const dock = page.locator(".dock .filters");
 	if (await dock.isVisible()) await dock.click();
 	await page.locator("#live-open").click();
@@ -267,7 +267,7 @@ test("an unreachable job API says so, and Try again reconnects", async ({ page }
 	await page.route(`${API}/catalog`, (route) => route.abort());
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	const dock = page.locator(".dock .filters");
 	if (await dock.isVisible()) await dock.click();
 	await page.locator("#live-open").click();
@@ -331,7 +331,7 @@ test("a job that finishes while Flows is shown leaves the reader in Flows", asyn
 	release();
 	await expect(page.locator("#live-state")).toContainText("What if… shows its flows");
 	await expect(flows).toHaveAttribute("aria-pressed", "true");
-	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
+	await page.getByRole("button", { name: "What if…", exact: true }).filter({ visible: true }).click();
 	await expect(page.locator('.bands path[data-region="US"]')).toHaveCount(1);
 });
 
@@ -404,7 +404,7 @@ test("?api= contacts the job API only once the form is set up", async ({ page })
 	});
 	await page.goto(`?data=tests/fixture.json&api=${API}`);
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	await expect(page.locator("#live-title")).toBeAttached();
 	expect(asked).toBe(0);
 	await expect(page.locator(".live-card small")).toHaveText(`Calculated by the job API at ${API}`);

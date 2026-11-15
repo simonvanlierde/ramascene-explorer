@@ -266,7 +266,7 @@ async function submit(event) {
 
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
-		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed on this device" : `Calculated by the job API at ${api}`}</small></span>
+		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed in this browser" : `Calculated by the job API at ${api}`}</small></span>
 		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={toggle}>{open ? "Close" : "Set up"}</button>
 	</div>
 	{#if !open}{@render state()}{/if}

@@ -3,7 +3,7 @@ import { liveFlows } from "../live.js";
 export const BROWSER_STATUS = "computed in this browser";
 const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
-	pill: "Browser method",
+	pill: "Not checked: computed in this browser",
 	heading: "Custom calculation",
 	note: "The browser recalculates the 2011 supply chain using float64 Woodbury updates on matrices stored as float32. All published scenarios match RaMa-Scene within relative 1e-6. This agreement checks the calculation; assess the assumptions of your custom scenario separately.",
 };
@@ -12,7 +12,7 @@ export function browserProvenance(job) {
 	return [
 		["Status", BROWSER_STATUS],
 		["Dataset", "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
-		["Method", "Float64 Woodbury update on float32 matrices, computed in a worker on this device"],
+		["Method", "Float64 Woodbury update on float32 matrices, computed in a worker in this browser"],
 		["Scenario parameters", job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
 		["Computed", `${job.duration_s < 0.01 ? "less than 0.01" : job.duration_s.toFixed(2)} s including data reads`],
 	];

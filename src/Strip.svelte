@@ -26,6 +26,8 @@ const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : wording
 // the five cells share one unit, stated once in their heading, so a narrow cell never wraps it
 const regionChanges = $derived(conts?.map((c) => (whatif ? displayChange(c.change, sum.total) : c.base)) ?? []);
 const regionRef = $derived(Math.max(0, ...regionChanges.map(Math.abs)));
+// the cell with the largest change is the heaviest
+const topCell = $derived(regionChanges.reduce((best, v, i) => (Math.abs(v) > Math.abs(regionChanges[best]) ? i : best), 0));
 const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 </script>
 
@@ -70,7 +72,7 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 				{#each conts as c, i (c.name)}
 					{@const v = regionChanges[i]}
 					{@const p = c.base ? (v / c.base) * 100 : 0}
-					<div class="kpi">
+					<div class="kpi" class:lead={i === topCell}>
 						<div class="kl">{#if whatif}<span class="sw" style="background:{fill(p)}"></span>{/if}<span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
 						<div class="kv num">{whatif && v > 0 ? "+" : ""}{amount(v, ui.indicator, regionRef)[0]}<span class="sr-only"> {regionUnit}</span></div>
 						<div class="ks">{whatif ? (c.base ? `${pct(p)} relative to 2011` : "no 2011 flow") : `${share(c.base, sum.total)} of the total`}</div>
