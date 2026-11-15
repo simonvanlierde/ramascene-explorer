@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import fc from "fast-check";
-import { correction } from "../engine/pkg/ramascene_engine.js";
+import { correction, fold } from "../engine/pkg/ramascene_engine.js";
 import { LIMITS, plan, readKey, scenarioFlows, startReads } from "../src/lib/browser-engine/browser-engine.js";
 import "./engine-wasm.js";
 
@@ -636,4 +636,50 @@ test("a failed read stops the run's other reads and waits for them before it rej
 	await assert.rejects(scenarioFlows(data, [step()], ahead), /A could not load/);
 	assert.deepEqual(stopped.toSorted(), ["H", "L", "X"]);
 	assert.equal(open.size, 0, "the run rejected while the prefetch's reads still downloaded");
+});
+
+// Final demand for 600 products in one country, read in three H batches of 256, 256 and 88
+// rows, with three flow totals per row.
+function batched() {
+	const size = 600;
+	const F = 3;
+	const value = (i) => ((i * 7919) % 1009) / 1009 - 0.25;
+	const H = Array.from({ length: size }, (_, j) => Array.from({ length: F }, (_, f) => value(j * F + f)));
+	const Y = Array.from({ length: size }, (_, j) => [value(j + 5)]);
+	const all = Array.from({ length: size }, (_, i) => i);
+	return {
+		H,
+		Y,
+		meta: {
+			products: size,
+			countries: 1,
+			catalog: {
+				products: [{ id: 10, leaves: all }],
+				regions: [{ id: 1, leaves: [0] }],
+				consumers: [{ id: 30, final: true, leaves: [0] }],
+			},
+		},
+		baseline: Float64Array.from({ length: F }, (_, f) => f + 1),
+		read: memory({ H, Y }),
+	};
+}
+const demandStep = step({ consumedBy: [30] });
+
+test("H batches fold in J order, bit for bit, even when later reads finish first", async () => {
+	const data = batched();
+	// the same sums, folded batch by batch in J's order
+	const want = Float64Array.from(data.baseline);
+	for (let start = 0; start < data.H.length; start += 256) {
+		const rows = data.H.slice(start, start + 256);
+		const z = Float64Array.from(data.Y.slice(start, start + 256), ([y]) => y * 0.8 - y);
+		fold(want, Float64Array.from(rows.flat()), z, 3, 1);
+	}
+	assert.deepEqual(await scenarioFlows(data, [demandStep]), want);
+	// later batches arrive first
+	const read = data.read;
+	data.read = async (name, rows, ...rest) => {
+		if (name === "H") await new Promise((resolve) => setTimeout(resolve, 3 - rows[0] / 256));
+		return read(name, rows, ...rest);
+	};
+	assert.deepEqual(await scenarioFlows(data, [demandStep]), want);
 });

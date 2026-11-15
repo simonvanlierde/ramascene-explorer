@@ -61,7 +61,8 @@ Europe's manufacturing feeding every European industry, does not: choose a narro
 product, fewer producing countries, or fewer industries or regions that use it. The [job API](interface.md#job-api) remains available for
 work outside the browser budget. The memory estimate includes the matrix copies
 used for the coefficient update, transpose, solve and final-demand changes, the
-WebAssembly kernel's own copies of ΔA, L[K, R] and X₀[K, :], plus overlapping flow batches. It excludes the baseline, metadata, row caches and
+WebAssembly kernel's own copies of ΔA, L[K, R] and X₀[K, :], plus two batches of H rows, one of
+them read early beside the other matrices. It excludes the baseline, metadata, row caches and
 decoder buffers; it is not a total browser memory limit.
 
 A broad scenario can take several seconds on a desktop, and longer on a phone:
@@ -231,7 +232,9 @@ The script runs five fresh Node processes per case, each with a first and a
 repeated calculation including flow aggregation, and records read bytes and
 requests, peak RSS and host load. One case adds 150 ms of synthetic latency per
 read. Files come from the warm OS cache, so it measures the numerical and data
-path, not browser painting or a CDN.
+path, not browser painting or a CDN. With `--network`, every read instead waits
+30 ms and then shares a simulated 100 Mbit/s link with the other open reads, so the
+download's share of a run shows.
 
 The [recorded diagnostics](measurements/browser-engine-wasm.json) used Node
 26.9.0 on an i9-14900KF, pinned to CPUs 30–31 on a shared machine, on
@@ -256,6 +259,48 @@ of ΔA and L[K, R].
 The [earlier row layout's diagnostics](measurements/browser-engine-rows.json)
 used a paired method, so compare them with care. Use these numbers to locate
 costs, not to promise phone or network performance.
+
+### Reading H batches during the fold
+
+The worker reads H in batches of 256 rows and folds each before it reads the next;
+only the first batch loads beside the other matrices. Reading batch i+1 while
+batch i folds was measured with `--network` on a 24-core Linux desktop, pinned to
+two CPUs, on 2026-11-15: five fresh processes per case, first calculation, median
+and range ([serial](measurements/browser-engine-network.json),
+[overlapped](measurements/browser-engine-network-overlap.json)):
+
+| Case | Changed pairs | Serial | Overlapped |
+| --- | ---: | ---: | ---: |
+| steel used by every European industry (one batch) | 49 | 483 ms (470–486) | 491 ms (474–495) |
+| electricity used by manufacturing, everywhere | 1,078 | 4.13 s (4.12–4.15) | 4.11 s (4.10–4.15) |
+| manufacturing used by electricity, everywhere | 4,165 | 13.08 s (13.07–13.09) | 12.98 s (12.94–13.01) |
+| China's whole final demand | 9,800 | 8.00 s (8.00–8.02) | 7.76 s (7.71–7.84) |
+
+The best case gained 3%, below the 10% that would justify the code, so the batches
+stay serial. Decoding and folding share the worker's thread, so a read started
+before a fold reaches the network only after the fold, unless the worker first
+yields; without that yield the overlap gained nothing. Even then the gain is at
+most the fold's share, and the simulated link carries 65–135 MB in these cases,
+5–11 s at 100 Mbit/s.
+
+### Float32 maths, sparse rows and a GPU kernel
+
+On 2026-11-01 ([#92](https://github.com/simonvanlierde/ramascene-explorer/issues/92))
+manufacturing used by electricity was measured for a WebGPU kernel and a smaller download:
+
+- Float32 through the kernel and the fold stays within 3e-7 of each flow and 1.1e-6 of
+  the largest change, at −20% and +100%. The singular test would need its own threshold.
+- Float32 storage, which the store now uses, moved the 153 scenarios published then by
+  at most 1.2e-8 relative.
+- Dropping entries below 1e-9 of each column's largest keeps footprints within 3.6e-7.
+  At 1e-7 they move by up to 0.1%, at 1e-5 by 6%, which is too far.
+- Bytes per changed row: an A row is 31 KB, or 9.5 KB as sparse float32. An L column is
+  60 KB, 26 KB as sparse float32, or 6.3 KB with only the 2,205 flow totals.
+
+Not now: the download dominates. The scenario downloads for about 11 s at 100 Mbit/s,
+against about 1 s of maths with threads and SIMD, so a GPU kernel could save at most
+that second. The maths stays float64. The sparse sizes above are where a smaller store
+would start.
 
 ## Browser threads
 
