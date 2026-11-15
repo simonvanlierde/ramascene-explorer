@@ -145,9 +145,7 @@ existing `data/browser-engine` directory aside before extraction, so the build
 contains only the selected export.
 
 ```sh
-gh release download data-2011 --repo simonvanlierde/ramascene-explorer --pattern ramascene-browser-engine-zarr.tar --dir data
-sha256sum --check data/browser-engine-zarr.sha256
-tar -xf data/ramascene-browser-engine-zarr.tar -C data
+scripts/fetch-data.sh store   # downloads, checks data/browser-engine-zarr.sha256, unpacks into data/
 ```
 
 To publish a new export, pack it with fixed names, times and modes, so the same files give

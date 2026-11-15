@@ -11,13 +11,14 @@ in `engine/` is Rust built to WebAssembly: with [rustup](https://rustup.rs/) and
 (`cargo install wasm-bindgen-cli --version <that version> --locked`), run
 `pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/` and `engine/pkg-threads/`, which `pnpm dev`, `pnpm build` and `pnpm test` import. The threaded build installs
 the pinned nightly and `rust-src` declared in `engine/threads/rust-toolchain.toml`.
-It rebuilds the standard library with WebAssembly atomics. The map flows are a release
-asset, not in git, so fetch them into `data/`:
+It rebuilds the standard library with WebAssembly atomics. The map flows and the
+custom-scenario store are release assets, not in git. `scripts/fetch-data.sh` fetches
+them into `data/` with curl, checks them against `data/*.sha256`, and checks that
+`data/results.json` names the same embodied flows:
 
 ```sh
-gh release download data-2011-r2 --pattern embodied.parquet --dir data
-# or, without the GitHub CLI:
-curl -L -o data/embodied.parquet https://github.com/simonvanlierde/ramascene-explorer/releases/download/data-2011-r2/embodied.parquet
+scripts/fetch-data.sh embodied   # the map flows (52 MB); enough to view the page
+scripts/fetch-data.sh store      # the custom-scenario store (an 803 MB tar)
 ```
 
 Then:

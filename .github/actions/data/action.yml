@@ -1,0 +1,13 @@
+name: fetch the release data
+description: Runs scripts/fetch-data.sh, which downloads the data the page reads and checks it against data/*.sha256.
+inputs:
+  what:
+    description: embodied, store or all
+    default: all
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        WHAT: ${{ inputs.what }}
+      run: scripts/fetch-data.sh "$WHAT"
