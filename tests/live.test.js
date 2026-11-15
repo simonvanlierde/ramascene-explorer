@@ -139,6 +139,53 @@ test("polling stops at a final status", async () => {
 	assert.deepEqual(seen, ["queued", "running", "succeeded"]);
 });
 
+test("polling outlasts a failed poll but not three in a row", async () => {
+	const answers = [
+		new TypeError("Failed to fetch"),
+		{ id: "j", status: "running" },
+		new Error("502: Bad Gateway"),
+		{ id: "j", status: "succeeded" },
+	];
+	const flaky = async () => {
+		const a = answers.shift();
+		if (a instanceof Error) throw a;
+		return a;
+	};
+	assert.equal((await waitForJob(flaky, "u", { interval: 1 })).status, "succeeded");
+	let calls = 0;
+	const down = async () => {
+		calls++;
+		throw new TypeError("Failed to fetch");
+	};
+	await assert.rejects(waitForJob(down, "u", { interval: 1 }), /Failed to fetch/);
+	assert.equal(calls, 3);
+});
+
+test("polling stops at once when its signal aborts", async () => {
+	const controller = new AbortController();
+	let calls = 0;
+	const stopped = async () => {
+		calls++;
+		controller.abort();
+		throw new DOMException("The operation was aborted.", "AbortError");
+	};
+	await assert.rejects(waitForJob(stopped, "u", { interval: 1, signal: controller.signal }), { name: "AbortError" });
+	assert.equal(calls, 1);
+});
+
+test("an abort during the wait between polls stops polling at once", async () => {
+	const controller = new AbortController();
+	const running = async () => {
+		setTimeout(() => controller.abort(), 5);
+		return { id: "j", status: "running" };
+	};
+	const started = Date.now();
+	await assert.rejects(waitForJob(running, "u", { interval: 60_000, signal: controller.signal }), {
+		name: "AbortError",
+	});
+	assert.ok(Date.now() - started < 1000);
+});
+
 test("the custom panel's code loads on demand, and only it contacts the job API", () => {
 	const app = readFileSync(new URL("../src/App.svelte", import.meta.url), "utf8");
 	assert.match(app, /\{#await import\("\.\/LivePanel\.svelte"\)/);

@@ -48,19 +48,28 @@ let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
 let shapes = $state.raw([]);
 // where a region's label and bands meet, where its centroid misleads
 const ANCHOR = { WA: [100, 20], WL: [-62, -12], US: [-98, 39], WF: [20, 2], WM: [45, 25], WE: [25, 47], NO: [9, 61], FR: [2.5, 46.5], RU: [60, 58], CA: [-100, 56] };
-fetch("geo/countries-110m.topo.json")
-	.then((r) => r.json())
-	.then((topo) => {
-		const geoms = topo.objects.countries.geometries;
-		// within 0.2°: about 1.4 px on a full-height globe, under a pixel on the flat map
-		const thin = thinTopology(topo, 0.2);
-		shapes = meta.country_codes.map((code, i) => {
-			const mine = geoms.filter((g) => regionForIso(g.properties.iso, meta.country_codes) === code);
-			const feature = { type: "Feature", geometry: merge(topo, mine) };
-			const lite = { type: "Feature", geometry: merge(thin, mine) };
-			return { i, code, feature, lite, at: ANCHOR[code] ?? geoPath().centroid(feature) };
-		});
-	});
+let geoFailed = $state(false);
+function loadShapes() {
+	geoFailed = false;
+	fetch("geo/countries-110m.topo.json", { signal: AbortSignal.timeout(60_000) })
+		.then((r) => {
+			if (!r.ok) throw new Error(`map outlines: ${r.status}`);
+			return r.json();
+		})
+		.then((topo) => {
+			const geoms = topo.objects.countries.geometries;
+			// within 0.2°: about 1.4 px on a full-height globe, under a pixel on the flat map
+			const thin = thinTopology(topo, 0.2);
+			shapes = meta.country_codes.map((code, i) => {
+				const mine = geoms.filter((g) => regionForIso(g.properties.iso, meta.country_codes) === code);
+				const feature = { type: "Feature", geometry: merge(topo, mine) };
+				const lite = { type: "Feature", geometry: merge(thin, mine) };
+				return { i, code, feature, lite, at: ANCHOR[code] ?? geoPath().centroid(feature) };
+			});
+		})
+		.catch(() => (geoFailed = true));
+}
+loadShapes();
 
 // --- projection: Equal Earth morphing into an orthographic globe -------------------
 let W = $state(0);
@@ -307,6 +316,11 @@ const resetZoom = (group) => {
 	zk = 1;
 	off = [0, 0];
 	group.querySelector("button").focus();
+};
+// the map's Try again goes as the outlines load, so focus moves to the sentence
+const retryShapes = () => {
+	loadShapes();
+	document.getElementById("headline")?.focus();
 };
 // the Try again button goes while the run loads; the sentence is where it lands
 const retryHere = () => {
@@ -750,6 +764,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				{/each}
 			</div>
 		{/if}
+		{#if geoFailed}<p class="fn runnote" role="alert">The map outlines could not be loaded. <button type="button" class="chipb" onclick={retryShapes}>Try again</button></p>{/if}
 		<!-- always there, so the text it gets is read out; the sidebar shows the same note -->
 		<p class="fn runnote" role="status">{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.{:else if loadingRun && ui.mode === "whatif"}Loading the run’s flows…{/if}</p>
 	</div>

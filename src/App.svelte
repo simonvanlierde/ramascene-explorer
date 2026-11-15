@@ -39,19 +39,37 @@ const flag = $derived(data && banner(data));
 
 load();
 async function load() {
+	let response;
 	try {
-		const response = await fetch(dataPath, { cache: "no-cache" });
-		if (!response.ok) throw new Error(response.status);
-		data = await response.json();
+		response = await fetch(dataPath, { cache: "no-cache", signal: AbortSignal.timeout(60_000) });
 	} catch {
+		flowsError = "results";
+		return;
+	}
+	// A missing file (or a dev server's HTML in its place) is a checkout without data; any other
+	// failure is the host or the connection, which a reload may fix.
+	if (!response.ok && response.status !== 404) {
+		flowsError = "results";
+		return;
+	}
+	if (!response.ok) {
 		empty = true;
+		return;
+	}
+	try {
+		data = await response.json();
+	} catch (e) {
+		// HTML where the JSON should be is a dev server's fallback; a body that stalls or drops is not
+		if (e instanceof SyntaxError) empty = true;
+		else flowsError = "results";
 		return;
 	}
 	if (banner(data).synthetic) document.title = `${banner(data).text} · ${document.title}`;
 	try {
 		src = await openEmbodiedUrl(flowsUrl(dataPath, data, DATA_ORIGIN), data.provenance?.embodied?.bytes);
-	} catch {
-		flowsError = "missing";
+	} catch (e) {
+		// a stalled or dropped request is the connection; anything else, a file that is not there
+		flowsError = ["TimeoutError", "AbortError", "TypeError"].includes(e?.name) ? "failed" : "missing";
 		return;
 	}
 	if (!sameRun(src.meta, data)) {
@@ -79,16 +97,25 @@ async function load() {
 }
 
 // --- runs: fetched once each, by range request -------------------------------------
+// A decoded run is about 864 KB (3 × 49 × 15 × 49 float64); keeping all 155 would hold
+// 135 MB on a phone. The baseline is kept apart, and a dropped run is one range read away.
 const cache = new Map();
+const CACHED_RUNS = 20;
 function fetchRun(run) {
-	if (!cache.has(run))
-		cache.set(
-			run,
-			readRun(src, run).catch((e) => {
-				cache.delete(run);
-				throw e;
-			}),
-		);
+	if (cache.has(run)) {
+		// most recent last, so the first key is the one to drop
+		const hit = cache.get(run);
+		cache.delete(run);
+		cache.set(run, hit);
+	} else {
+		if (cache.size >= CACHED_RUNS) cache.delete(cache.keys().next().value);
+		// a failed read leaves the cache, unless an evicted read failed after a fresh one took its place
+		const reading = readRun(src, run).catch((e) => {
+			if (cache.get(run) === reading) cache.delete(run);
+			throw e;
+		});
+		cache.set(run, reading);
+	}
 	return cache.get(run);
 }
 const precomputedRun = async (run) => ({ run, base, delta: await fetchRun(run) });
@@ -300,6 +327,8 @@ $effect(() => {
 				<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
 				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+			{:else if flowsError === "results"}
+				<p role="alert"><strong>The scenario results could not be loaded.</strong> The connection may have dropped while reading <code>{dataPath}</code>. Reload the page to try again.</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}
 				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
 				<pre>gh release download data-2011-r2 --pattern embodied.parquet --dir data</pre>

@@ -239,7 +239,10 @@ export const storeBase = (base, origin) => (origin ? new URL("browser-engine/", 
 
 export async function fetchEngine(base, origin = DATA_ORIGIN) {
 	// Revalidated, so a deploy's new store is not paired with a cached manifest.
-	const response = await fetch(new URL("manifest-v3.json", base), { cache: "no-cache" });
+	const response = await fetch(new URL("manifest-v3.json", base), {
+		cache: "no-cache",
+		signal: AbortSignal.timeout(60_000),
+	});
 	if (!response.ok) throw new Error(`browser dataset: ${response.status}`);
 	const meta = await response.json();
 	const store = storeBase(base, origin);

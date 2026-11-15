@@ -503,6 +503,29 @@ test("a page whose 2011 flows fail to load says so instead of loading for ever",
 	await expect(page.getByRole("alert").filter({ hasText: "could not be loaded" })).toBeVisible();
 });
 
+test("a results file the host fails to send asks for a reload, not for a precompute run", async ({ page }) => {
+	await page.route("**/data/results.json", (route) => route.fulfill({ status: 503, body: "" }));
+	await page.goto("");
+	await expect(page.getByRole("alert").filter({ hasText: "The scenario results could not be loaded" })).toBeVisible();
+	await expect(page.getByText("No precomputed data here yet")).toHaveCount(0);
+});
+
+test("map outlines that fail to load say so, and Try again draws the map", async ({ page }) => {
+	let fail = true;
+	await page.route("**/geo/countries-110m.topo.json", (route) =>
+		fail ? route.fulfill({ status: 503, body: "" }) : route.continue(),
+	);
+	await page.goto(FIXTURE);
+	const note = page.getByRole("alert").filter({ hasText: "The map outlines could not be loaded" });
+	await expect(note).toBeVisible();
+	await expect(page.locator(".mapc .rg")).toHaveCount(0);
+	fail = false;
+	await note.getByRole("button", { name: "Try again" }).click();
+	await ready(page);
+	await expect(note).toHaveCount(0);
+	await expect(page.locator("#headline")).toBeFocused();
+});
+
 test("a run with a failed check is not shown as checks passed", async ({ page }) => {
 	await page.route("**/data/results.json", async (route) => {
 		const response = await route.fetch();

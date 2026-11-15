@@ -64,8 +64,10 @@ the page's layout or hold a value that is not a number.
 
 ## Trusting a live result
 
-A link with `?api=https://other.example` makes the page fetch that origin's
-catalog on load, and send it a job when someone clicks Run. The page cannot
+A link with `?api=https://other.example` names that origin on the custom
+scenario card. The page contacts it only when someone opens the form with Set up
+(for its catalog) and clicks Run (to send the job), so opening a link sends the
+visitor's address nowhere else. The page cannot
 tell a good job API from a bad one, and a bad one can return wrong numbers.
 So a live result is labelled "computed by the job API",
 with the API's origin and provenance: check that origin before you trust it.

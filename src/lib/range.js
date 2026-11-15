@@ -49,7 +49,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 			}
 			if (response.status >= 500) {
 				await response.body?.cancel();
-				// The Worker answers a passing R2 or cache failure with 503; that is the host, not its setup.
+				// A passing R2 or edge failure answers 503; that is the host, not its setup.
 				throw new Error(`the data host failed: try again (${where}, status ${response.status})`);
 			}
 			const total = response.headers.get("Content-Range")?.match(/\/(\d+)$/)?.[1];
@@ -98,7 +98,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 			if (!retried) continue;
 			const ms = Math.round(performance.now() - began);
 			throw new Error(
-				`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms${retried ? ", second try" : ""})`,
+				`the browser data could not be read (${e.name}: ${e.message.trim()}; ${where}, ${phase}, after ${ms} ms, second try)`,
 				{ cause: e },
 			);
 		} finally {
