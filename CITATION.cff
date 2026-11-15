@@ -11,15 +11,16 @@ abstract: >-
   grouped into 15 industry sections. Readers can trace a footprint, inspect
   its flows and compare 155 published scenarios. Custom scenarios compute on
   the reader's device, in WebAssembly, or through an optional RaMa-Scene job
-  API. The model changes
+  API. A World view shows the world totals split over five world regions, and
+  one custom scenario can combine up to 10 changes. The model changes
   monetary final demand or inputs per unit of output, with prices and other
   coefficients fixed. The results describe the 2011 economy, not forecasts.
   Methods, assumptions, provenance and numerical checks accompany the results.
   The code is MIT-licensed; derived EXIOBASE data is shared under CC BY 4.0.
-version: 0.7.0
+version: 0.8.0
 doi: 10.5281/zenodo.23461260
 url: "https://simonvanlierde.com/ramascene-explorer/"
-date-released: 2026-11-07
+date-released: 2026-11-15
 keywords:
   - input-output analysis
   - EXIOBASE
