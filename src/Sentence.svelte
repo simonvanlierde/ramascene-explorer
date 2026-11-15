@@ -4,7 +4,7 @@
 // tells screen readers the settled sentence once, not every frame.
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
-import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, wording } from "./lib/flows.js";
+import { amount, amountText, capitalise, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, WORLD, wording } from "./lib/flows.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
@@ -12,7 +12,9 @@ let { data, meta, sum, whatif, text } = $props();
 
 const S = SECTION_SHORT.length;
 // one name per region, as the strip and the map write it; "the" goes outside the country button
-const name = $derived(placeName(meta, ui.who));
+const world = $derived(ui.who === WORLD);
+// the world is not a proper noun inside the sentence: "The world’s consumption"
+const name = $derived(world ? "world" : placeName(meta, ui.who));
 const the = $derived(theName(meta, ui.who) === name ? "" : "the ");
 const w = $derived(wording(ui.indicator));
 const out = $derived(ui.dir === "out");
@@ -25,7 +27,12 @@ const scope = $derived(
 );
 const year = $derived(data.base_year);
 const top = $derived(sum.others.length ? theName(meta, sum.others[0]) : name);
-const abroad = $derived(sum.total ? ((sum.total - sum.home) / sum.total) * 100 : 0);
+// the share the sentence's last clause names: what is abroad, or for the world, what its largest region holds
+const abroad = $derived(
+	sum.total ? (((world ? sum.vals[sum.others[0]] : sum.total - sum.home) ?? 0) / sum.total) * 100 : 0,
+);
+// "was released abroad" becomes "was released in China" for the world, which has no abroad
+const tail = $derived((out ? w.out.abroad : w.in.abroad).split("abroad"));
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? displayChange(sum.dTotal, sum.total) : 0);
 const changed = $derived(sum.changed != null ? theName(meta, sum.changed) : "");
@@ -58,7 +65,7 @@ const plain = $derived.by(() => {
 	const [n, u] = amount(sum.total + dTot, ui.indicator);
 	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
 	if (!whatif)
-		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${out ? w.out.abroad : w.in.abroad}${noneAbroad ? "" : `, most in ${top}`}.`;
+		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${world ? `${tail[0]}in ${top}${tail[1]}` : out ? w.out.abroad : w.in.abroad}${noneAbroad || world ? "" : `, most in ${top}`}.`;
 	const detail = changed ? `, the largest change ${out ? w.out.where : w.in.where} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}` : dTot === 0 ? ", no change at the displayed precision" : "";
 	const d = dTot !== 0 || changed ? `, a change of ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
 	return `In the ${year} economy, if ${text}, ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${the}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${d}${detail}.`;
@@ -67,7 +74,10 @@ const plain = $derived.by(() => {
 // --- the two popovers -----------------------------------------------------------
 let pop = $state(null); // null | "country" | "indicator"
 let opener = null;
-const byName = $derived([...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b))));
+const byName = $derived([
+	WORLD,
+	...[...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b))),
+]);
 function openPop(kind, e) {
 	e.stopPropagation();
 	opener = e.currentTarget;
@@ -120,7 +130,7 @@ function onFocusOut(e) {
 				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
 			{/if}
 			in {year}{scope}; <span class="n">{Math.round(tShare.current)}%</span>
-			{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}.
+			{#if world}{tail[0]}in <b>{top}</b>{tail[1]}{:else}{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}{/if}.
 		</h2>
 	{:else}
 		<h2 id="headline" tabindex="-1" aria-label={plain}>

@@ -8,6 +8,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **World** is the first choice in the country list and the sentence's country menu. The map
+  colours every region by what it releases (Consumption) or consumes (Production), with no bands.
+  The strip gives the world total and its split over the five regions, and the Sankey runs from
+  the five regions where it is released to the five where it is consumed. The link token is
+  `?region=world`.
 - A custom scenario can hold up to 10 changes at once, in the browser and on the job API. Add a
   change (copied from the last) and Remove manage the list; changes that hit the same input
   multiply, as in RaMa-Scene. The headline names up to two changes and counts more, with all of

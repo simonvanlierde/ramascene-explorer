@@ -1,7 +1,7 @@
 <script>
 // The country combobox (WAI-ARIA combobox with a listbox popup): type to
 // filter by name or code, arrows to move, Enter to choose, Escape to close.
-import { placeName } from "./lib/flows.js";
+import { placeName, WORLD } from "./lib/flows.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, labelledby } = $props();
@@ -9,7 +9,7 @@ const nm = (i) => placeName(meta, i);
 
 // meta never changes: the page mounts once per load
 // svelte-ignore state_referenced_locally
-const order = [...meta.countries.keys()].sort((a, b) => nm(a).localeCompare(nm(b)));
+const order = [WORLD, ...[...meta.countries.keys()].sort((a, b) => nm(a).localeCompare(nm(b)))];
 // svelte-ignore state_referenced_locally
 let text = $state(nm(ui.who));
 let open = $state(false);
@@ -21,7 +21,8 @@ let focused = false;
 const options = $derived.by(() => {
 	const q = text.trim().toLowerCase();
 	const all = q === nm(ui.who).toLowerCase() ? order : null;
-	return all ?? order.filter((i) => nm(i).toLowerCase().includes(q) || meta.countries[i].toLowerCase().includes(q) || meta.country_codes[i].toLowerCase() === q);
+	// World has no database name or code: its own name is all there is to match
+	return all ?? order.filter((i) => nm(i).toLowerCase().includes(q) || (i !== WORLD && (meta.countries[i].toLowerCase().includes(q) || meta.country_codes[i].toLowerCase() === q)));
 });
 
 // follow selections made elsewhere (map, sentence) while not typing
@@ -104,7 +105,7 @@ function keys(e) {
 					input.blur();
 				}}
 			>
-				{nm(i)}<span>{meta.country_codes[i]}</span>
+				{nm(i)}<span>{i === WORLD ? "all" : meta.country_codes[i]}</span>
 			</li>
 		{:else}
 			<li class="none" role="option" aria-selected="false" aria-disabled="true">No region matches</li>

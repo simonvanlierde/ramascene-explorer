@@ -4,7 +4,7 @@ import { cubicInOut } from "svelte/easing";
 import { banner, dataUrl, ignoredData, sameRun } from "./lib/explorer.js";
 import { DATA_ORIGIN } from "./lib/data-origin.js";
 import { embodiedUrl, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
-import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, wording, worldTotal } from "./lib/flows.js";
+import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, WORLD, wording, worldTotal } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun, liveData } from "./lib/live.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Basis from "./Basis.svelte";
@@ -227,7 +227,13 @@ const away = $derived(shown?.live ? { target: "_blank", rel: "noopener" } : {});
 const text = $derived(live?.text ?? (run ? runText(data, run) : ""));
 const sum = $derived(ready ? summarise(meta, whatif ? shown.base : base, whatif ? delta : null, sel) : null);
 const extent = $derived(whatif ? fitExtent(sum) : 1);
-const conts = $derived(ready && whatif ? continents(meta, sum) : null);
+const conts = $derived(ready && (whatif || ui.who === WORLD) ? continents(meta, sum) : null);
+// World's Sankey reads released in on one side and consumed in on the other: the other direction's sums
+const mirror = $derived(
+	ready && ui.who === WORLD
+		? summarise(meta, whatif ? shown.base : base, null, { ...sel, dir: sel.dir === "in" ? "out" : "in" })
+		: null,
+);
 // a custom run's world total is against its own baseline, as everything else it shows
 const world = $derived(
 	ready && whatif ? (live ? worldTotal(liveData(live.job).results, "live", ui.indicator) : worldTotal(data.results, run, ui.indicator)) : null,
@@ -315,7 +321,7 @@ $effect(() => {
 			<Strip {meta} {sum} {conts} {world} {whatif} {extent} />
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
-		<Details {data} {meta} {sum} {whatif} {run} {text} {live} />
+		<Details {data} {meta} {sum} {mirror} {whatif} {run} {text} {live} />
 		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
 			<div class="seg big" role="group" aria-label="Mode">
 				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>

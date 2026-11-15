@@ -53,12 +53,16 @@ const ROW_NAME = {
 	WM: "Rest of Middle East",
 	WE: "Rest of Europe",
 };
-export const placeName = (meta, k) => ROW_NAME[meta.country_codes[k]] ?? meta.countries[k];
+// The choice in the country list that stands for every region at once; ui.who is otherwise an
+// index into the data's regions, so anything that indexes by it checks for this first.
+export const WORLD = -1;
+export const placeName = (meta, k) => (k === WORLD ? "World" : (ROW_NAME[meta.country_codes[k]] ?? meta.countries[k]));
 // The two that are too long for the Sankey's partner column on a phone.
 const ROW_SHORT = { WA: "Rest of Asia–Pac.", WM: "Rest of Mid. East" };
 // The same name after "in" or "from", where these four take "the".
 const THE = new Set(["US", "GB", "NL", "CZ"]);
-export const theName = (meta, k) => (THE.has(meta.country_codes[k]) ? "the " : "") + placeName(meta, k);
+export const theName = (meta, k) =>
+	k === WORLD ? "the world" : (THE.has(meta.country_codes[k]) ? "the " : "") + placeName(meta, k);
 
 // --- numbers ------------------------------------------------------------------
 
@@ -258,37 +262,44 @@ export const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
 // Everything the map, the sentence and the rail show for one selection.
 // base: the dense baseline run; delta: the dense run (change), or null.
-// sel: {ind (position in meta.indicators), id (global id), who, dir ("in"|"out"), on: Set of sections}
+// sel: {ind (position in meta.indicators), id (global id), who (a region, or WORLD), dir ("in"|"out"), on: Set of sections}
+// For WORLD every region is a partner: "in" gives what each region releases for all consumers,
+// "out" what each consumes of everything released, so the two totals are equal and nothing is
+// abroad (home 0, no bands, no hotspot abroad).
 export function summarise(meta, base, delta, sel) {
 	const N = meta.countries.length;
 	const S = meta.sections.length;
 	const f = wording(sel.id).factor;
-	const cellIdx = (k, q) => (sel.dir === "in" ? at(meta, sel.ind, k, q, sel.who) : at(meta, sel.ind, sel.who, q, k));
+	const world = sel.who === WORLD;
+	// the cells of partner k and section q that the selection adds up: one, or one per region for WORLD
+	const cellIdx = (k, q, c) => (sel.dir === "in" ? at(meta, sel.ind, k, q, c) : at(meta, sel.ind, c, q, k));
 	const vals = new Float64Array(N);
 	const dv = new Float64Array(N);
 	const sec = new Float64Array(S);
+	const flows = new Float64Array(N * S);
 	for (let k = 0; k < N; k++)
-		for (let q = 0; q < S; q++) {
-			const i = cellIdx(k, q);
-			sec[q] += f * base[i];
-			if (!sel.on.has(q)) continue;
-			vals[k] += f * base[i];
-			if (delta) dv[k] += f * delta[i];
-		}
+		for (let q = 0; q < S; q++)
+			for (let c = world ? 0 : sel.who; c < (world ? N : sel.who + 1); c++) {
+				const i = cellIdx(k, q, c);
+				flows[k * S + q] += f * base[i];
+				sec[q] += f * base[i];
+				if (!sel.on.has(q)) continue;
+				vals[k] += f * base[i];
+				if (delta) dv[k] += f * delta[i];
+			}
 	const total = vals.reduce((a, b) => a + b, 0);
-	const home = vals[sel.who];
+	const home = world ? 0 : vals[sel.who];
 	const others = [...vals.keys()].filter((k) => k !== sel.who && vals[k] > 0).sort((a, b) => vals[b] - vals[a]);
 	// The largest flows that matter at the scale of this selection.
 	const floor = (total - home) * 0.008;
-	const bands = others.filter((k) => vals[k] >= floor).slice(0, 18);
+	const bands = world ? [] : others.filter((k) => vals[k] >= floor).slice(0, 18);
 	const dTotal = delta ? dv.reduce((a, b) => a + b, 0) : 0;
 	const byChange = delta ? [...dv.keys()].sort((a, b) => Math.abs(dv[b]) - Math.abs(dv[a])) : [];
 	// A change below display resolution has no hotspot to name.
 	const changed = delta && displayChange(dv[byChange[0]], total) !== 0 ? byChange[0] : null;
 	// the home country often changes most; the sentence then also names the largest abroad
-	const changedAbroad = delta
-		? (byChange.find((k) => k !== sel.who && displayChange(dv[k], total) !== 0) ?? null)
-		: null;
+	const changedAbroad =
+		delta && !world ? (byChange.find((k) => k !== sel.who && displayChange(dv[k], total) !== 0) ?? null) : null;
 	return {
 		vals,
 		dv: delta ? dv : null,
@@ -300,7 +311,7 @@ export function summarise(meta, base, delta, sel) {
 		dTotal,
 		changed,
 		changedAbroad,
-		cell: (k, q) => f * base[cellIdx(k, q)],
+		cell: (k, q) => flows[k * S + q],
 	};
 }
 
@@ -536,6 +547,9 @@ export function taperGlyph(v, widthK, x1, dir) {
 // height box. top: where the nodes start, under the headings; edge: the room
 // for the partners' labels; room: the least room for the section labels before
 // the far column. Each partner has a short name for a narrow panel.
+// For WORLD there is no selected country: the two outer columns are the five world
+// regions, released in on the left and consumed in on the right, and other is the
+// summary for the other direction (the left column reads the "in" one).
 // The default room: layout units the longest section label takes, with its 4-unit gap,
 // on a 360 px phone (164 measured for "Electricity, gas, water")
 export const SANKEY_LABEL_ROOM = 170;
@@ -544,8 +558,11 @@ export function sankeyLayout(
 	meta,
 	sum,
 	sel,
-	{ width = 452, height = 420, top = 30, edge = 132, room = SANKEY_LABEL_ROOM } = {},
+	{ width = 452, height = 420, top = 30, edge = 132, room = SANKEY_LABEL_ROOM, other = null } = {},
 ) {
+	const world = sel.who === WORLD;
+	const sumL = world && sel.dir === "out" ? other : sum;
+	const sumR = world && sel.dir === "in" ? other : sum;
 	const { vals } = sum;
 	const secs = [...sel.on].filter((q) => sum.sec[q] > 0).sort((a, b) => sum.sec[b] - sum.sec[a]);
 	const partners = [...vals.keys()].filter((k) => vals[k] > 0).sort((a, b) => vals[b] - vals[a]);
@@ -561,10 +578,15 @@ export function sankeyLayout(
 		const name = `${rest.length} other regions`;
 		P.push({ ks: rest, name, short: name, v: rest.reduce((s, k) => s + vals[k], 0) });
 	}
-	const me = { ks: partners, name: placeName(meta, sel.who), v: sum.total, me: true };
+	const regions = (s) =>
+		continents(meta, s)
+			.filter((c) => c.base > 0)
+			.sort((a, b) => b.base - a.base)
+			.map((c) => ({ ks: c.ks, name: continentLabel(c.name), short: continentLabel(c.name), v: c.base }));
+	const me = world ? null : { ks: partners, name: placeName(meta, sel.who), v: sum.total, me: true };
 	const inDir = sel.dir === "in";
-	const left = inDir ? P : [me];
-	const right = inDir ? [me] : P;
+	const left = world ? regions(sumL) : inDir ? P : [me];
+	const right = world ? regions(sumR) : inDir ? [me] : P;
 	const mid = secs.map((q) => ({
 		q,
 		name: SECTION_SHORT[q],
@@ -578,12 +600,13 @@ export function sankeyLayout(
 	// sections sit midway, so both stages get the same width for their links,
 	// unless that leaves the labels less than room before the far column; the first
 	// stage keeps at least 20 units for its links.
-	const xL = inDir ? edge : 6;
-	const xR = inDir ? width - nw - 6 : width - edge - nw;
+	const xL = inDir || world ? edge : 6;
+	const xR = world ? width - edge - nw : inDir ? width - nw - 6 : width - edge - nw;
 	const midway = Math.round((xL + xR) / 2);
-	const xM = inDir
-		? Math.max(xL + nw + 20, Math.min(midway, xR - room - nw))
-		: Math.min(xR - nw - 20, Math.max(midway, xL + nw + room));
+	const xM =
+		inDir || world
+			? Math.max(xL + nw + 20, Math.min(midway, xR - room - nw))
+			: Math.min(xR - nw - 20, Math.max(midway, xL + nw + room));
 	const total = sum.total || 1;
 	const scale = (c) => (height - top0 - gap * (c.length - 1)) / total;
 	const stack = (c) => {
@@ -601,7 +624,7 @@ export function sankeyLayout(
 	const kL = stack(left);
 	const kM = stack(mid);
 	const kR = stack(right);
-	const val = (g, q) => g.ks.reduce((s, k) => s + sum.cell(k, q), 0);
+	const val = (g, q, s) => g.ks.reduce((t, k) => t + s.cell(k, q), 0);
 	const rib = (x0, a0, a1, x1, b0, b1) => {
 		const m = (x0 + x1) / 2;
 		return `M${x0},${a0}C${m},${a0} ${m},${b0} ${x1},${b0}L${x1},${b1}C${m},${b1} ${m},${a1} ${x0},${a1}Z`;
@@ -609,7 +632,7 @@ export function sankeyLayout(
 	const links = [];
 	for (const l of left)
 		for (const m of mid) {
-			const x = val(l, m.q);
+			const x = val(l, m.q, sumL);
 			if (x <= 0) continue;
 			links.push({ q: m.q, v: x, from: l.name, to: m.name, d: rib(xL + nw, l.o, l.o + x * kL, xM, m.i, m.i + x * kM) });
 			l.o += x * kL;
@@ -618,7 +641,7 @@ export function sankeyLayout(
 	for (const m of mid) {
 		m.o = m.y;
 		for (const r of right) {
-			const x = val(r, m.q);
+			const x = val(r, m.q, sumR);
 			if (x <= 0) continue;
 			links.push({ q: m.q, v: x, from: m.name, to: r.name, d: rib(xM + nw, m.o, m.o + x * kM, xR, r.i, r.i + x * kR) });
 			m.o += x * kM;
@@ -662,7 +685,7 @@ export function parseView(search, { runs, indicators, codes }) {
 		mode: q.get("mode") === "whatif" || (q.get("mode") === null && named.includes(scenario)) ? "whatif" : "flows",
 		run: named.includes(scenario) ? scenario : (FEATURED.find((r) => named.includes(r)) ?? named[0]),
 		indicator: indicators.includes(indicator) ? indicator : indicators[0],
-		who: Math.max(0, codes.indexOf(codes.includes(region) ? region : "DE")),
+		who: region?.toLowerCase() === "world" ? WORLD : Math.max(0, codes.indexOf(codes.includes(region) ? region : "DE")),
 		dir: q.get("dir") === "out" ? "out" : "in",
 		on: new Set(sections.length ? sections : SECTION_SHORT.keys()),
 		globe: q.get("map") !== "flat",
@@ -679,7 +702,7 @@ export function viewSearch(v, codes, search = "") {
 	set("mode", v.mode, "flows");
 	set("scenario", v.mode === "whatif" ? v.run : null);
 	set("indicator", v.indicator, 5);
-	set("region", codes[v.who], "DE");
+	set("region", v.who === WORLD ? "world" : codes[v.who], "DE");
 	set("dir", v.dir, "in");
 	set("sections", v.on.size === SECTION_SHORT.length ? null : [...v.on].sort((a, b) => a - b).join(","));
 	set("map", v.globe ? null : "flat");
@@ -747,7 +770,7 @@ export function flowsCsv(meta, sum, sel, { data, run = null }) {
 		"ramascene",
 		...(data.data_kind === "exiobase-v3" ? [] : ["synthetic"]),
 		data.base_year,
-		meta.country_codes[sel.who],
+		sel.who === WORLD ? "world" : meta.country_codes[sel.who],
 		slug(wording(sel.id).label),
 		sel.dir === "in" ? "consumption" : "production",
 		secs,
@@ -759,17 +782,19 @@ export function flowsCsv(meta, sum, sel, { data, run = null }) {
 // --- the five continents ----------------------------------------------------------
 
 // The selection split by the partner's continent: [{name, base, change}] in
-// the display unit (change 0 without a run). The five changes add up to the
-// selection's change, so the strip answers the sentence's question.
+// the display unit (change 0 without a run), and ks, its regions. The five changes add up to
+// the selection's change, so the strip answers the sentence's question.
 export function continents(meta, sum) {
 	return CONTINENTS.map((name) => {
 		let base = 0;
 		let change = 0;
-		for (const country of meta.aggregates[name] ?? []) {
-			const k = meta.countries.indexOf(country);
+		const ks = (meta.aggregates[name] ?? []).map((country) => meta.countries.indexOf(country));
+		for (const k of ks) {
 			base += sum.vals[k];
 			if (sum.dv) change += sum.dv[k];
 		}
-		return { name, base, change };
+		return { name, ks, base, change };
 	});
 }
+// "Asia-Pacific" as the strip and the Sankey write it
+export const continentLabel = (name) => name.replace("-", " ");

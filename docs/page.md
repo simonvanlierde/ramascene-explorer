@@ -19,6 +19,13 @@ The headline gives the selected total and the share that occurs abroad.
 Bands show the largest flows, and each band widens toward its destination.
 A region's fill also counts flows that are too small or too close to draw as a band.
 
+Choose **World**, the first entry in the country list, to see every region at once.
+No country is selected, so the map has no bands: each region's fill is what it releases (**Consumption**)
+or what it consumes (**Production**) across all of the world's supply chains, and the total is the same either way.
+The numbers under the sentence give that total and its split over the five world regions.
+In **Details**, the diagram runs from the five regions where it is released, through the industries, to the five where it is consumed.
+In the link, World is `?region=world`.
+
 Select an industry section on the rail to look at it alone. Select more sections to combine them.
 Every total follows that selection. The rail's heights show each section's share of the 2011 flows.
 

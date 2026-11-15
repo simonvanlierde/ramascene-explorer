@@ -37,6 +37,7 @@ import {
 	share,
 	taperGlyph,
 	theName,
+	WORLD,
 	wording,
 } from "./lib/flows.js";
 import { regionForIso, thinTopology } from "./lib/map.js";
@@ -153,7 +154,8 @@ const anchors = $derived(shapes.map((s) => s.at));
 const widthK = $derived((13 * view.scale) / (sum.vals[sum.bands[0]] || 1));
 const geom = $derived.by(() => {
 	view;
-	if (!shapes.length) return { R: 0, bands: [], B: [0, 0] };
+	// the world has no selected country, so no bands, collar or point to turn to
+	if (!shapes.length || ui.who === WORLD) return { R: 0, bands: [], B: [0, 0] };
 	const self = shapes[ui.who].at;
 	const B = proj(self);
 	const shown = visible(self);
@@ -280,7 +282,7 @@ function setGlobe(g) {
 	ui.globe = g;
 	zk = 1;
 	off = [0, 0];
-	if (g && shapes.length) rot = facing(shapes[ui.who].at);
+	if (g && shapes.length && ui.who !== WORLD) rot = facing(shapes[ui.who].at);
 	const from = alpha;
 	animate(900, (t) => (alpha = from + t * ((g ? 1 : 0) - from)));
 }
@@ -292,7 +294,7 @@ function turnTo(ll) {
 }
 // centre the globe on the selection once the shapes are in
 $effect(() => {
-	if (shapes.length && ui.globe && rot[0] === 0 && rot[1] === 0) rot = facing(shapes[ui.who].at);
+	if (shapes.length && ui.globe && ui.who !== WORLD && rot[0] === 0 && rot[1] === 0) rot = facing(shapes[ui.who].at);
 });
 const pick = (k) => (ui.who = k);
 
@@ -397,7 +399,8 @@ $effect(() => {
 $effect(() => {
 	const k = ui.who;
 	untrack(() => {
-		if (!shapes.length) return;
+		// World leaves the view where it is
+		if (!shapes.length || k === WORLD) return;
 		if (alpha > 0.5) return turnTo(shapes[k].at);
 		if (zk === 1) return;
 		view;
@@ -520,6 +523,7 @@ function hover(e, k) {
 const other = $derived(placeName(meta, ui.who));
 // inside a phrase: "the United States"
 const otherIn = $derived(theName(meta, ui.who));
+const world = $derived(ui.who === WORLD);
 const tipText = $derived.by(() => {
 	if (!tip) return null;
 	const k = tip.k;
@@ -605,7 +609,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
-			aria-label="Map of {sum.bands.length} flows {ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}; the table in Details lists every flow"
+			aria-label="Map of {world ? `the world total, by the region where ${ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}` : `${sum.bands.length} flows ${ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}`}; the table in Details lists every flow"
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
@@ -661,7 +665,7 @@ const unit = $derived(wording(ui.indicator).unit);
 
 		<div class="mtl">
 			<div class="sel-chip">
-				<span class="sw"></span><span>{other}</span>
+				{#if !world}<span class="sw"></span>{/if}<span>{other}</span>
 				<button type="button" onclick={() => (ui.panel = "sankey")} aria-label="Details for {other}: Sankey, table and method">
 					Details
 					<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -690,7 +694,9 @@ const unit = $derived(wording(ui.indicator).unit);
 
 		<p class="mnote">
 			{#if whatif}
-				Bands keep their 2011 width; their colour and the fill are the % change in each flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
+				{world ? "The fill is" : "Bands keep their 2011 width; their colour and the fill are"} the % change in each {world ? "region’s" : ""} flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
+			{:else if world}
+				Fill: {unit} per region, by where {ui.dir === "in" ? wording(ui.indicator).made.is : "it is consumed"}. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{:else}
 				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}
@@ -714,7 +720,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale, fitted to the larger flows; changes beyond its limits share the end colour. Band width: 2011 {unit}.</p>
+			<p class="fn">Square-root scale, fitted to the larger flows; changes beyond its limits share the end colour.{world ? "" : ` Band width: 2011 ${unit}.`}</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
@@ -749,7 +755,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</button>
 			</div>
 		{:else}
-			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${otherIn} consumes` : `Consumed here, made in ${otherIn}`}</div>
+			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${otherIn} consumes` : world ? "Consumed here" : `Consumed here, made in ${otherIn}`}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
 				<div class="tk num ticks">
@@ -757,12 +763,14 @@ const unit = $derived(wording(ui.indicator).unit);
 					<span class="u">{amountShort(1, ui.indicator).replace(/^\S+ /, "")}</span>
 				</div>
 			</div>
+			{#if !world}
 			<div class="aw">
 				{#each glyphs as g (g)}
 					<svg width="50" height="18" aria-hidden="true"><path d={taperGlyph(g, widthK, 48, ui.dir)} fill={oneSection !== null ? SECTION_COLOURS[oneSection] : pal.band} fill-opacity=".76" /></svg>
 					<span class="num">{amountShort(g, ui.indicator)}</span>
 				{/each}
 			</div>
+			{/if}
 		{/if}
 		{#if geoFailed}<p class="fn runnote" role="alert">The map outlines could not be loaded. <button type="button" class="chipb" onclick={retryShapes}>Try again</button></p>{/if}
 		<!-- always there, so the text it gets is read out; the sidebar shows the same note -->

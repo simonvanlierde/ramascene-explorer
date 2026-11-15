@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "./lib/explorer.js";
-import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, wording, worldTotal } from "./lib/flows.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, WORLD, wording, worldTotal } from "./lib/flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -96,7 +96,9 @@ function chooseRun(v) {
 }
 
 const directionHint = $derived(
-	ui.dir === "in"
+	ui.who === WORLD
+		? `Colours the map by where ${ui.dir === "in" ? w.source : "it is consumed"}.`
+		: ui.dir === "in"
 		? `Where ${w.source} to make what ${theName(meta, ui.who)} consumes.`
 		: `Where what ${theName(meta, ui.who)} makes is consumed.`,
 );

@@ -32,6 +32,7 @@ import {
 	summarise,
 	theName,
 	viewSearch,
+	WORLD,
 	wording,
 	worldTotal,
 } from "../src/lib/flows.js";
@@ -460,4 +461,108 @@ test("worldTotal sums a run's change over every region against the baseline, in 
 	assert.ok(Math.abs(t.delta + 400) < 1e-9);
 	assert.equal(worldTotal(results, "missing", 5), null);
 	assert.equal(worldTotal(results, "cut", 3), null);
+});
+
+// --- World as a choice in the country list ---------------------------------------
+
+test("World sums every country's flows: the totals agree both ways and nothing is abroad", () => {
+	const on = new Set([0, 3]);
+	const N = meta.countries.length;
+	const each = (dir) => Array.from({ length: N }, (_, c) => summarise(meta, base, null, sel({ who: c, dir, on })));
+	for (const dir of ["in", "out"]) {
+		const w = summarise(meta, base, null, sel({ who: WORLD, dir, on }));
+		const all = each(dir);
+		// "in": what k releases for every consumer; "out": what k consumes of everything released
+		for (let k = 0; k < N; k++)
+			assert.ok(
+				close(
+					w.vals[k],
+					all.reduce((a, s) => a + s.vals[k], 0),
+				),
+				`${dir} ${k}`,
+			);
+		assert.ok(
+			close(
+				w.total,
+				all.reduce((a, s) => a + s.total, 0),
+			),
+			dir,
+		);
+		assert.equal(w.home, 0);
+		assert.deepEqual(w.bands, []);
+		assert.equal(w.changedAbroad, null);
+	}
+	const [i, o] = ["in", "out"].map((dir) => summarise(meta, base, null, sel({ who: WORLD, dir, on })));
+	assert.ok(close(i.total, o.total));
+	// the sections' totals do not depend on the direction either
+	assert.ok([...i.sec].every((v, q) => close(v, o.sec[q])));
+});
+
+test("World in What if… splits the run's change over the five continents", () => {
+	const sum = summarise(meta, base, delta, sel({ who: WORLD }));
+	assert.ok(close(sum.dTotal, summarise(meta, base, delta, sel({ who: WORLD, dir: "out" })).dTotal));
+	assert.ok(
+		close(
+			continents(meta, sum).reduce((a, r) => a + r.change, 0),
+			sum.dTotal,
+		),
+	);
+	assert.equal(sum.changedAbroad, null);
+});
+
+test("?region=world is the World choice and round-trips; unknown regions still fall back", () => {
+	const opts = { runs: meta.runs, indicators: [5, 3, 7], codes: meta.country_codes };
+	assert.equal(WORLD, -1);
+	assert.equal(parseView("?region=world", opts).who, WORLD);
+	assert.equal(parseView("?region=World", opts).who, WORLD);
+	assert.equal(parseView("?region=XX", opts).who, DE);
+	const v = parseView("?region=world&dir=out", opts);
+	assert.equal(viewSearch(v, meta.country_codes), "?region=world&dir=out");
+	assert.equal(viewSearch({ ...v, who: DE }, meta.country_codes), "?dir=out");
+});
+
+test("World names read as a place: 'World', and 'the world' inside a phrase", () => {
+	assert.equal(placeName(meta, WORLD), "World");
+	assert.equal(theName(meta, WORLD), "the world");
+});
+
+test("the World Sankey runs released in five regions, through the sections, to consumed in five", () => {
+	const on = new Set([0, 3, 8]);
+	for (const dir of ["in", "out"]) {
+		const s = sel({ who: WORLD, dir, on });
+		const other = summarise(meta, base, null, { ...s, dir: dir === "in" ? "out" : "in" });
+		const lay = sankeyLayout(meta, summarise(meta, base, null, s), s, { other });
+		for (const col of [lay.left, lay.right]) {
+			assert.ok(col.length > 0 && col.length <= 5, dir);
+			assert.ok(
+				col.every((n) => !n.me),
+				dir,
+			);
+			assert.ok(
+				close(
+					col.reduce((a, n) => a + n.v, 0),
+					other.total,
+				),
+				dir,
+			);
+		}
+		assert.equal(lay.mid.length, on.size);
+		// the left column is where it is released, whichever way the map is coloured
+		const released = summarise(meta, base, null, { ...s, dir: "in" });
+		assert.ok(
+			close(
+				lay.left.reduce((a, n) => a + n.v, 0),
+				released.total,
+			),
+		);
+		assert.ok(
+			close(
+				lay.links.filter((l) => lay.mid.some((m) => m.name === l.to)).reduce((a, l) => a + l.v, 0),
+				released.total,
+			),
+			dir,
+		);
+		// every column keeps room for its labels: the middle is never plain-centred
+		assert.ok(lay.x.L < lay.x.M && lay.x.M < lay.x.R);
+	}
 });
