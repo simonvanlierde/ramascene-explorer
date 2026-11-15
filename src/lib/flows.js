@@ -112,6 +112,7 @@ const WORDING = {
 		source: "emissions are released",
 		made: { col: "Released in", here: "Released here to make", own: (n) => `What ${n} releases`, is: "it is released" },
 		total: { in: "Consumption footprint", out: "Emissions released" },
+		consumed: "it is consumed",
 		factor: 1e-9,
 		unit: "Mt CO₂-eq",
 		in: {
@@ -134,6 +135,7 @@ const WORDING = {
 		source: "people work",
 		made: { col: "Jobs in", here: "Jobs here that make", own: (n) => `Jobs in ${n}`, is: "the jobs are" },
 		total: { in: "Jobs behind consumption", out: "Jobs located here" },
+		consumed: "the jobs serve consumption",
 		factor: 1e3,
 		unit: "jobs",
 		in: {
@@ -161,6 +163,7 @@ const WORDING = {
 			is: "it is extracted",
 		},
 		total: { in: "Ores behind consumption", out: "Ores extracted here" },
+		consumed: "it is consumed",
 		factor: 1e-3,
 		unit: "Mt",
 		in: {

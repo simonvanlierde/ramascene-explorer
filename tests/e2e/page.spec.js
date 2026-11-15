@@ -1038,7 +1038,7 @@ test("World is the first choice in the country box, in the link and on the map, 
 	await openSelection(page);
 	const box = page.getByRole("combobox", { name: "Country" });
 	await box.focus();
-	await expect(page.getByRole("option").first()).toHaveText(/^World/);
+	await expect(page.getByRole("option").first()).toHaveText("World");
 	await box.fill("wor");
 	await box.press("Enter");
 	await expect(page).toHaveURL(/region=world/);
@@ -1076,11 +1076,67 @@ test("the World Sankey has five regions on each side, whichever way the map is c
 	}
 });
 
-test("World in What if… shows the run's change by region and the same world total", async ({ page }) => {
+test("World in What if… splits the run's change by region and leaves the world total to the sentence", async ({
+	page,
+}) => {
 	await page.goto(`${FIXTURE}&region=world&mode=whatif&scenario=cement-in-construction`);
 	await ready(page);
-	await expect(page.locator("#headline")).toContainText("the world\u2019s consumption would have been linked to");
+	await expect(page.locator("#headline")).toContainText("The world\u2019s consumption would have been linked to");
+	await expect(page.locator(".main .kpi.world")).toHaveCount(0);
 	await expect(page.locator(".main .wstrip .regions .kpi")).toHaveCount(5);
 	await expect(page.locator(".bands path")).toHaveCount(0);
 	await expectNoAxeViolations(page);
+});
+
+test("on the flat map, zooming with World keeps China in view", async ({ page }) => {
+	await page.goto(`${FIXTURE}&region=world&map=flat`);
+	await ready(page);
+	await page.getByRole("button", { name: "Zoom in" }).click();
+	await expect(page.locator("svg.map.zoomed")).toBeVisible();
+	await mapAtRest(page);
+	const inside = await page.evaluate(() => {
+		const c = document.querySelector('.rg[data-region="CN"]').getBoundingClientRect();
+		const m = document.querySelector(".mapv").getBoundingClientRect();
+		const [x, y] = [(c.left + c.right) / 2, (c.top + c.bottom) / 2];
+		return x > m.left && x < m.right && y > m.top && y < m.bottom;
+	});
+	expect(inside).toBe(true);
+});
+
+test("the World tooltip says what a region releases or consumes, with no home or other country", async ({ page }) => {
+	const tip = async (q) => {
+		await page.goto(`${FIXTURE}&region=world${q}`);
+		await ready(page);
+		await page.locator('.rg[data-region="CN"]').dispatchEvent("mousemove", { clientX: 300, clientY: 400 });
+		return (await page.locator(".tip").textContent()).replace(/\s+/g, " ");
+	};
+	const flows = await tip("");
+	expect(flows).toContain("released here");
+	expect(flows).not.toMatch(/for consumption|the world/);
+	expect(await tip("&dir=out")).toMatch(/consumed here/);
+	const run = await tip("&mode=whatif&scenario=cement-in-construction");
+	expect(run).toMatch(/on a 2011 flow of/);
+	expect(run).not.toMatch(/for consumption|the world|here/);
+});
+
+test("the World Sankey names all five regions on both sides, on every indicator", async ({ page }) => {
+	for (const indicator of [5, 3, 7]) {
+		await page.goto(`?region=world&indicator=${indicator}&panel=sankey`);
+		await expect(page.locator(".sk .lk").first()).toBeVisible();
+		for (const name of ["Europe", "Middle East", "America", "Asia Pacific", "Africa"])
+			await expect(
+				page.locator(".sk text").filter({ hasText: new RegExp(`^${name} `) }),
+				`${name} ${indicator}`,
+			).toHaveCount(2);
+	}
+});
+
+test("World's country entry has no code, and its words follow the indicator and direction", async ({ page }) => {
+	await page.goto("?region=world&indicator=3&dir=out");
+	await ready(page);
+	await expect(page.locator(".main .wstrip .regions .gl")).toContainText("where the jobs serve consumption");
+	await page.goto(`${FIXTURE}&region=world&panel=method`);
+	await expect(page.locator("#tp-method")).toContainText(
+		"the toggle only picks whether the map shows where it is released or where it is consumed",
+	);
 });

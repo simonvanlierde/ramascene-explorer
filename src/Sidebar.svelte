@@ -97,7 +97,7 @@ function chooseRun(v) {
 
 const directionHint = $derived(
 	ui.who === WORLD
-		? `Colours the map by where ${ui.dir === "in" ? w.source : "it is consumed"}.`
+		? `Colours the map by where ${ui.dir === "in" ? w.source : w.consumed}.`
 		: ui.dir === "in"
 		? `Where ${w.source} to make what ${theName(meta, ui.who)} consumes.`
 		: `Where what ${theName(meta, ui.who)} makes is consumed.`,

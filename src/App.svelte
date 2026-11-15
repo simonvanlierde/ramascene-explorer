@@ -234,9 +234,10 @@ const mirror = $derived(
 		? summarise(meta, whatif ? shown.base : base, null, { ...sel, dir: sel.dir === "in" ? "out" : "in" })
 		: null,
 );
-// a custom run's world total is against its own baseline, as everything else it shows
+// a custom run's world total is against its own baseline, as everything else it shows;
+// with World selected the sentence already says it, so the card is left out
 const world = $derived(
-	ready && whatif ? (live ? worldTotal(liveData(live.job).results, "live", ui.indicator) : worldTotal(data.results, run, ui.indicator)) : null,
+	ready && whatif && ui.who !== WORLD ? (live ? worldTotal(liveData(live.job).results, "live", ui.indicator) : worldTotal(data.results, run, ui.indicator)) : null,
 );
 // Checks passed only for engine output whose every published run passed every check,
 // and never while a run those checks did not cover is on screen

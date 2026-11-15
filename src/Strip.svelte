@@ -22,7 +22,7 @@ const largest = $derived(amount(sum.vals[k] ?? 0, ui.indicator));
 const fill = $derived(divFill(extent, themeName()));
 const wd = $derived(world ? displayChange(world.delta, world.base) : 0);
 const wa = $derived(amount(wd, ui.indicator));
-const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : "it is consumed");
+const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : wording(ui.indicator).consumed);
 // the five cells share one unit, stated once in their heading, so a narrow cell never wraps it
 const regionChanges = $derived(conts?.map((c) => (whatif ? displayChange(c.change, sum.total) : c.base)) ?? []);
 const regionRef = $derived(Math.max(0, ...regionChanges.map(Math.abs)));
@@ -57,7 +57,7 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 				<div class="kv num">{total[0]}<small>{total[1]}</small></div>
 				<div class="ks">{sections}, 2011</div>
 			</div>
-		{:else if world && !isWorld}
+		{:else if world}
 			<div class="kpi world">
 				<div class="kl">World total</div>
 				<div class="kv num">{wd > 0 ? "+" : ""}{wa[0]}<small>{wa[1]}</small></div>

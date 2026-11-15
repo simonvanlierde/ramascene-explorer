@@ -155,7 +155,7 @@ const widthK = $derived((13 * view.scale) / (sum.vals[sum.bands[0]] || 1));
 const geom = $derived.by(() => {
 	view;
 	// the world has no selected country, so no bands, collar or point to turn to
-	if (!shapes.length || ui.who === WORLD) return { R: 0, bands: [], B: [0, 0] };
+	if (!shapes.length || ui.who === WORLD) return { R: 0, bands: [], B: null };
 	const self = shapes[ui.who].at;
 	const B = proj(self);
 	const shown = visible(self);
@@ -243,6 +243,11 @@ let reveal = $state(1); // 0 hidden, 1 shown
 let revealFrame = 0;
 $effect(() => {
 	[ui.who, ui.dir, ui.indicator, ui.on, ui.mode];
+	// the world has no bands to reveal
+	if (ui.who === WORLD) {
+		reveal = 1;
+		return;
+	}
 	if (ui.mode !== "flows" || reducedMotion()) return;
 	cancelAnimationFrame(revealFrame);
 	const t0 = performance.now();
@@ -330,7 +335,8 @@ const retryHere = () => {
 	document.getElementById("headline")?.focus();
 };
 // the buttons zoom toward the selected country, so it stays where it is
-const towardSelection = () => (alpha < 0.5 && geom.B ? geom.B : undefined);
+// the world has no selection to zoom toward: it zooms about the centre
+const towardSelection = () => (alpha < 0.5 && ui.who !== WORLD ? geom.B : undefined);
 let svgEl = $state();
 const local = (x, y) => {
 	const r = svgEl.getBoundingClientRect();
@@ -529,8 +535,12 @@ const tipText = $derived.by(() => {
 	const k = tip.k;
 	const v = sum.vals[k];
 	const name = placeName(meta, k);
+	// the world has no selected country, so a region's flow is just what it releases or consumes
+	const here = ui.dir === "in" ? wording(ui.indicator).made.col.replace(/ in$/, " here") : "Consumed here";
 	const where =
-		k === ui.who
+		world
+			? here.toLowerCase()
+			: k === ui.who
 			? ui.dir === "in"
 				? "at home, for its own consumption"
 				: "at home and consumed at home"
@@ -540,11 +550,11 @@ const tipText = $derived.by(() => {
 	if (whatif) {
 		const p = displayFlowPct(sum, k);
 		const change = displayChange(sum.dv[k], sum.total);
-		if (p === null) return { name, big: "–", line: `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
+		if (p === null) return { name, big: "–", line: world ? "Almost no 2011 flow" : `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
 		return {
 			name,
 			big: pct(change === 0 ? 0 : p),
-			line: `${change > 0 ? "+" : ""}${amountText(change, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}, ${where}`,
+			line: `${change > 0 ? "+" : ""}${amountText(change, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}${world ? "" : `, ${where}`}`,
 		};
 	}
 	const secs = [...ui.on].map((q) => [q, sum.cell(k, q)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
@@ -609,7 +619,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
-			aria-label="Map of {world ? `the world total, by the region where ${ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}` : `${sum.bands.length} flows ${ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}`}; the table in Details lists every flow"
+			aria-label="Map of {world ? `the world total, by the region where ${ui.dir === 'in' ? wording(ui.indicator).made.is : wording(ui.indicator).consumed}` : `${sum.bands.length} flows ${ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}`}; the table in Details lists every flow"
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
@@ -640,7 +650,7 @@ const unit = $derived(wording(ui.indicator).unit);
 				</radialGradient>
 				<path class="limb" d={sphere} fill="url(#limb-g)" opacity={(alpha - 0.5) * 2} />
 			{/if}
-			{#if reveal < 1}
+			{#if reveal < 1 && geom.B}
 				<defs>
 					<radialGradient id="reveal-g" gradientUnits="userSpaceOnUse" cx={geom.B[0]} cy={geom.B[1]} r={revealR}>
 						<stop offset="0.8" stop-color={ui.dir === "in" ? "#000" : "#fff"} />
@@ -651,7 +661,7 @@ const unit = $derived(wording(ui.indicator).unit);
 					</mask>
 				</defs>
 			{/if}
-			<g class="bands" mask={reveal < 1 ? "url(#reveal)" : undefined}>
+			<g class="bands" mask={reveal < 1 && geom.B ? "url(#reveal)" : undefined}>
 				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} data-region={meta.country_codes[b.k]} />{/each}
 			</g>
 			{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
@@ -696,7 +706,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			{#if whatif}
 				{world ? "The fill is" : "Bands keep their 2011 width; their colour and the fill are"} the % change in each {world ? "region’s" : ""} flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
 			{:else if world}
-				Fill: {unit} per region, by where {ui.dir === "in" ? wording(ui.indicator).made.is : "it is consumed"}. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
+				Fill: {unit} per region, by where {ui.dir === "in" ? wording(ui.indicator).made.is : wording(ui.indicator).consumed}. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{:else}
 				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
 			{/if}

@@ -135,7 +135,7 @@ function onFocusOut(e) {
 	{:else}
 		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
-			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
+			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name), capitalise(the))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}; a change of
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
 			(<span class="n {tone}">{percent}</span>){/if}.

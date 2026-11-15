@@ -105,7 +105,7 @@ function keys(e) {
 					input.blur();
 				}}
 			>
-				{nm(i)}<span>{i === WORLD ? "all" : meta.country_codes[i]}</span>
+				{nm(i)}{#if i !== WORLD}<span>{meta.country_codes[i]}</span>{/if}
 			</li>
 		{:else}
 			<li class="none" role="option" aria-selected="false" aria-disabled="true">No region matches</li>

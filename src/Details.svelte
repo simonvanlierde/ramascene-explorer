@@ -134,14 +134,34 @@ const room = $derived(7 * k);
 // the section labels sit right of their column, except where the selected country is on the right
 const midIn = $derived(ui.dir === "in" || world);
 // a node is labelled where it is tall enough and its label clears the one above it
+// Where each region label sits: at its node's middle, pushed apart so five labels never overlap
+const labelY = $derived.by(() => {
+	const at = new Map();
+	for (const col of world && lay ? [lay.left, lay.right] : []) {
+		const y = col.map((n) => n.y + n.h / 2);
+		for (let i = 1; i < y.length; i++) y[i] = Math.max(y[i], y[i - 1] + SK_LINE * k);
+		const end = lay.height - SK_LINE * k * 0.5;
+		if (y.length && y.at(-1) > end) {
+			y[y.length - 1] = end;
+			for (let i = y.length - 2; i >= 0; i--) y[i] = Math.min(y[i], y[i + 1] - SK_LINE * k);
+		}
+		col.forEach((n, i) => at.set(n, y[i]));
+	}
+	return at;
+});
 const labelled = $derived.by(() => {
 	const shown = new Set();
 	for (const col of lay ? [lay.left, lay.mid, lay.right] : []) {
 		let last = -Infinity;
 		for (const n of col) {
 			const c = n.y + n.h / 2;
+			// the world's five region nodes are always named; labelY moves them apart
+			if (world && col !== lay.mid) {
+				shown.add(n);
+				continue;
+			}
 			if (n.me || n.h < room || c - last < SK_LINE * k) continue;
-			// the world's two outer columns both keep their labels, so a long section name may not fit before the far one
+			// only the section column may drop a label: a long name may not fit before the far column
 			if (world && col === lay.mid && labelPx(n.name, n.v) * k + 8 > lay.x.R - lay.x.M - lay.nw) continue;
 			shown.add(n);
 			last = c;
@@ -279,7 +299,7 @@ async function copyLink() {
 							{@const x = side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4}
 							<text class="me" {x} y={(11 + SK_LINE) * k} text-anchor={side === "L" ? "start" : "end"}>{n.name}{#if narrow}<tspan {x} dy={SK_LINE * k}>{amountText(n.v, ui.indicator)}</tspan>{:else} {amountText(n.v, ui.indicator)}{/if}</text>
 						{:else if labelled.has(n)}
-							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
+							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={(labelY.get(n) ?? n.y + n.h / 2) + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}
 					{/each}
 				{/each}
@@ -333,6 +353,7 @@ async function copyLink() {
 				What we consume connects us to environmental impacts across global supply chains.
 				The map follows those links from final demand, what households, governments and investors buy, to the industries where {w.source}.
 				Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there.
+				World adds up every region: both directions give the same total, and the toggle only picks whether the map shows where it is released or where it is consumed.
 			</p>
 			<p>
 				What if… shows how changes in one place ripple through supply chains worldwide.
