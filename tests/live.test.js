@@ -84,16 +84,70 @@ test("anything else is refused and reported", () => {
 });
 
 test("form values become the explorer's model_details format", () => {
-	const body = scenarioBody({ product: "180", originReg: "1", consumedBy: "198", consumedReg: "2", techChange: "-20" });
+	const body = scenarioBody([
+		{ product: "180", originReg: "1", consumedBy: "198", consumedReg: "2", techChange: "-20" },
+	]);
 	assert.deepEqual(body, { label: "custom scenario", model_details: job.scenario.model_details });
+});
+
+test("each lever becomes its own model_details entry, and one bad lever stops the run", () => {
+	const form = { product: "180", originReg: "1", consumedBy: "198", consumedReg: "2" };
+	const body = scenarioBody([
+		{ ...form, techChange: "-20" },
+		{ ...form, product: "181", consumedBy: "276", techChange: "5" },
+	]);
+	assert.deepEqual(
+		body.model_details.map((s) => [s.product, s.consumedBy, s.techChange]),
+		[
+			[[180], [198], [-20]],
+			[[181], [276], [5]],
+		],
+	);
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "" },
+			]),
+		/finite/,
+	);
+	assert.throws(
+		() =>
+			scenarioBody([
+				{ ...form, techChange: "-20" },
+				{ ...form, techChange: "2000" },
+			]),
+		/between/,
+	);
+	assert.throws(() => scenarioBody([]), /at least one/);
+});
+
+test("liveText joins one clause per lever with and", () => {
+	const catalog = {
+		products: [{ id: 180, name: "Motor vehicles" }],
+		regions: [
+			{ id: 1, name: "Europe" },
+			{ id: 2, name: "Africa" },
+		],
+		consumers: [
+			{ id: 198, name: "Manufacture of motor vehicles" },
+			{ id: 276, name: "Y: Final Consumption", final: true },
+		],
+	};
+	const [first] = job.scenario.model_details;
+	const two = { scenario: { model_details: [first, { ...first, consumedBy: [276], techChange: [5] }] } };
+	assert.equal(
+		liveText(two, catalog),
+		"Manufacture of motor vehicles in Africa required 20% less motor vehicles from Europe per unit of output and final demand in Africa for motor vehicles from Europe rose by 5%",
+	);
 });
 
 test("a change that is not a finite number never leaves the page", () => {
 	const form = { product: "180", originReg: "1", consumedBy: "198", consumedReg: "2" };
 	for (const techChange of ["", "abc", "Infinity", "NaN", "1e400"]) {
-		assert.throws(() => scenarioBody({ ...form, techChange }), /finite/, techChange);
+		assert.throws(() => scenarioBody([{ ...form, techChange }]), /finite/, techChange);
 	}
-	assert.throws(() => scenarioBody({ ...form, product: "1.5", techChange: "0" }), /not an id/);
+	assert.throws(() => scenarioBody([{ ...form, product: "1.5", techChange: "0" }]), /not an id/);
 });
 
 test("a change outside the job API's range never leaves the page", () => {
@@ -101,10 +155,10 @@ test("a change outside the job API's range never leaves the page", () => {
 	// the job API's own range (GET /catalog tech_change_percent) is the default
 	assert.deepEqual(CHANGE_RANGE, { min: -100, max: 1000 });
 	for (const techChange of ["-100.1", "-500", "1000.5"])
-		assert.throws(() => scenarioBody({ ...form, techChange }), /between −100 and 1000/, techChange);
-	for (const techChange of ["-100", "0", "1000"]) assert.doesNotThrow(() => scenarioBody({ ...form, techChange }));
+		assert.throws(() => scenarioBody([{ ...form, techChange }]), /between −100 and 1000/, techChange);
+	for (const techChange of ["-100", "0", "1000"]) assert.doesNotThrow(() => scenarioBody([{ ...form, techChange }]));
 	// a catalog that advertises a narrower range wins
-	assert.throws(() => scenarioBody({ ...form, techChange: "60" }, { min: -50, max: 50 }), /between −50 and 50/);
+	assert.throws(() => scenarioBody([{ ...form, techChange: "60" }], { min: -50, max: 50 }), /between −50 and 50/);
 });
 
 test("a live result is compared with its own job's baseline", () => {

@@ -110,6 +110,12 @@ The lists are nested: each industry section holds its divisions, and each divisi
 the world holds its continents, and each continent its countries. A list of more than ten items
 has a search button next to its label. A search keeps the matches and the groups they belong to.
 
+**Add a change** adds a second set of lists, copied from the last, and **Remove change** drops
+one; a scenario holds up to 10, the planner's limit, and focus moves to the change before the
+removed one. Changes that hit the same input multiply: two cuts of 20% leave 64%, not 60%,
+as RaMa-Scene applies interventions one after another. The headline joins one clause per
+change with "and".
+
 For an industry, the percentage changes how much of the product it uses per unit of output.
 For **Final demand**, it changes the spending on the product.
 The model then calculates the total use. It is not fixed to that percentage.

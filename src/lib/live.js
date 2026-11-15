@@ -41,30 +41,32 @@ export function unreachableMessage(api, error) {
 	return `Job API at ${api} answered with an error: ${error.message}`;
 }
 
-// Form values (strings from <select>/<input>) to a POST /jobs body in the
-// explorer's model_details format. Throws on a change that is not a finite number,
-// or outside range ({min, max} in percent, the job API's).
-export function scenarioBody({ product, originReg, consumedBy, consumedReg, techChange, label }, range = CHANGE_RANGE) {
-	const change = Number(techChange);
-	if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
-	if (change < range.min || change > range.max)
-		throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+// Form levers (strings from <select>/<input>) to a POST /jobs body in the
+// explorer's model_details format, one entry per lever. Throws on no lever, or a change
+// that is not a finite number or is outside range ({min, max} in percent, the job API's).
+export function scenarioBody(levers, range = CHANGE_RANGE) {
+	if (!levers.length) throw new Error("add at least one change");
 	const id = (v) => {
 		const n = Number(v);
 		if (!Number.isInteger(n)) throw new Error(`not an id: ${v}`);
 		return [n];
 	};
 	return {
-		label: label || "custom scenario",
-		model_details: [
-			{
+		label: "custom scenario",
+		model_details: levers.map(({ product, originReg, consumedBy, consumedReg, techChange }) => {
+			const change = Number(techChange);
+			if (techChange === "" || !Number.isFinite(change))
+				throw new Error("the change must be a finite number (percent)");
+			if (change < range.min || change > range.max)
+				throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+			return {
 				product: id(product),
 				originReg: id(originReg),
 				consumedBy: id(consumedBy),
 				consumedReg: id(consumedReg),
 				techChange: [change],
-			},
-		],
+			};
+		}),
 	};
 }
 
@@ -179,9 +181,12 @@ export function filterTree(tree, query) {
 	return tree.filter((n) => keep.has(n.item.id)).map((n) => ({ ...n, match: matched.has(n.item.id) }));
 }
 
-// The form submits one intervention. Its description retains both regional scopes.
+// One clause per lever, joined with "and". Each retains both regional scopes.
 export function liveText(job, catalog) {
-	const step = job.scenario.model_details[0];
+	return job.scenario.model_details.map((step) => leverText(step, catalog)).join(" and ");
+}
+
+function leverText(step, catalog) {
 	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);
 	const name = (list, ids) => catalogName(item(list, ids)) ?? `#${ids[0]}`;
 	const where = (prefix, ids) => (name("regions", ids) === "Total" ? "" : `${prefix}${name("regions", ids)}`);

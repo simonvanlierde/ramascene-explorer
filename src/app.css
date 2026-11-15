@@ -1703,8 +1703,34 @@ details.more summary {
   gap: 8px;
   margin: 8px 0 5px;
 }
-#live-form > .pick-l:first-child {
-  margin-top: 0;
+.lever {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.lever + .lever {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.lever legend {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut);
+}
+.lever .remove,
+#live-add {
+  margin-top: 10px;
+  justify-self: start;
+}
+#live-add:disabled {
+  opacity: 0.6;
+}
+#live-overlap {
+  margin-top: 6px;
 }
 #live .pick-l label {
   margin: 0;
