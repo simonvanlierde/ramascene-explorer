@@ -722,6 +722,8 @@ button.pill:hover {
 }
 
 /* --- main column ---------------------------------------------------------------- */
+/* The sentence and the strip keep their height and the map takes the rest; in
+   a short window the column scrolls, so the sentence never draws over the strip. */
 .main {
   min-width: 0;
   min-height: 0;
@@ -729,6 +731,12 @@ button.pill:hover {
   flex-direction: column;
   gap: 10px;
   padding: 14px 20px 18px;
+  overflow-y: auto;
+}
+.main > .hl,
+.main > .kpis,
+.main > .wstrip {
+  flex: none;
 }
 .main.solo {
   grid-column: 1 / -1;
@@ -957,7 +965,7 @@ button.pill:hover {
 }
 /* a change near zero is the ramp's near-black middle in dark, which would vanish on the card */
 :root[data-theme="dark"] .kpi .sw {
-  box-shadow: inset 0 0 0 1px var(--control-border);
+  box-shadow: inset 0 0 0 1px var(--input-border);
 }
 
 /* --- map card -------------------------------------------------------------------- */
@@ -1863,7 +1871,7 @@ details.more summary {
 
 /* --- small tablets: the byline goes under the name, so the header keeps one row
    with the caveat whole ------------------------------------------------------------ */
-@media (min-width: 761px) and (max-width: 860px) {
+@media (min-width: 761px) and (max-width: 900px) {
   .brand {
     display: grid;
     grid-template-columns: auto auto;
@@ -2020,6 +2028,7 @@ details.more summary {
   .main {
     padding: 14px 12px 18px;
     gap: 12px;
+    overflow: visible;
   }
   .hl {
     order: 1;

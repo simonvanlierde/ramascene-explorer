@@ -110,7 +110,7 @@ function onFocusOut(e) {
 
 <div class="hl">
 	{#if !whatif}
-		<h2 id="headline" tabindex="-1">
+		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
@@ -123,7 +123,7 @@ function onFocusOut(e) {
 			{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}.
 		</h2>
 	{:else}
-		<h2 id="headline" tabindex="-1">
+		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}; a change of

@@ -534,21 +534,28 @@ export function taperGlyph(v, widthK, x1, dir) {
 // largest plus one "other regions" node; the middle column is the sections in
 // the selection with any flow. Returns nodes and ribbon paths in a width ×
 // height box. top: where the nodes start, under the headings; edge: the room
-// for the partners' labels. Each partner has a short name for a narrow panel.
-// layout units the longest section label takes, with its 4-unit gap, on a 360 px
-// phone, where the text scales down least (164 measured for "Electricity, gas, water")
+// for the partners' labels; room: the least room for the section labels before
+// the far column. Each partner has a short name for a narrow panel.
+// The default room: layout units the longest section label takes, with its 4-unit gap,
+// on a 360 px phone (164 measured for "Electricity, gas, water")
 export const SANKEY_LABEL_ROOM = 170;
 
-export function sankeyLayout(meta, sum, sel, { width = 452, height = 420, top = 30, edge = 132 } = {}) {
+export function sankeyLayout(
+	meta,
+	sum,
+	sel,
+	{ width = 452, height = 420, top = 30, edge = 132, room = SANKEY_LABEL_ROOM } = {},
+) {
 	const { vals } = sum;
 	const secs = [...sel.on].filter((q) => sum.sec[q] > 0).sort((a, b) => sum.sec[b] - sum.sec[a]);
 	const partners = [...vals.keys()].filter((k) => vals[k] > 0).sort((a, b) => vals[b] - vals[a]);
 	const largest = partners.slice(0, 9);
 	const rest = partners.slice(9);
 	const P = largest.map((k) => {
-		const home = k === sel.who ? " (home)" : "";
-		const short = ROW_SHORT[meta.country_codes[k]];
-		return { ks: [k], name: placeName(meta, k) + home, short: (short ?? placeName(meta, k)) + home, v: vals[k] };
+		const home = k === sel.who;
+		const name = placeName(meta, k);
+		const short = home ? "At home" : (ROW_SHORT[meta.country_codes[k]] ?? name);
+		return { ks: [k], name: home ? `${name} (home)` : name, short, v: vals[k] };
 	});
 	if (rest.length) {
 		const name = `${rest.length} other regions`;
@@ -569,11 +576,14 @@ export function sankeyLayout(meta, sum, sel, { width = 452, height = 420, top = 
 	// release mirrors consumption: the selected country is one node at the edge,
 	// and the industry labels face it, over the bands that fan into it. The
 	// sections sit midway, so both stages get the same width for their links,
-	// unless that leaves the labels less than SANKEY_LABEL_ROOM before the far column.
+	// unless that leaves the labels less than room before the far column; the first
+	// stage keeps at least 20 units for its links.
 	const xL = inDir ? edge : 6;
 	const xR = inDir ? width - nw - 6 : width - edge - nw;
 	const midway = Math.round((xL + xR) / 2);
-	const xM = inDir ? Math.min(midway, xR - SANKEY_LABEL_ROOM - nw) : Math.max(midway, xL + nw + SANKEY_LABEL_ROOM);
+	const xM = inDir
+		? Math.max(xL + nw + 20, Math.min(midway, xR - room - nw))
+		: Math.min(xR - nw - 20, Math.max(midway, xL + nw + room));
 	const total = sum.total || 1;
 	const scale = (c) => (height - top0 - gap * (c.length - 1)) / total;
 	const stack = (c) => {

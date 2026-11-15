@@ -12,6 +12,7 @@ import {
 	placeName,
 	SECTION_COLOURS,
 	SECTION_SHORT,
+	SANKEY_LABEL_ROOM,
 	sankeyLayout,
 	share,
 	tableRows,
@@ -74,22 +75,38 @@ const skWidth = $derived(Math.max(452, Math.floor(skW / SK_SCALE)));
 // A Sankey drawn narrower than its layout scales its text down with it; k sets
 // the text back to its own size (in layout units), and labels need that much room.
 const k = $derived(skW ? Math.max(1, skWidth / skW) : 1);
-// Where the text scales up (a phone), the partners take their short names, which
-// with a value fit SK_LABEL px, and the selected country's total goes under its name.
-// SK_LINE: a label's line height in px.
+// Where the text scales up (a phone), the partners take their short names and the
+// selected country's total goes under its name. SK_LINE: a label's line height in px.
 const narrow = $derived(k > 1);
-const SK_LABEL = 116;
 const SK_LINE = 13;
 const meLines = $derived(narrow ? 2 : 1);
-const lay = $derived(
-	open && ui.panel === "sankey"
-		? sankeyLayout(meta, sum, ui, {
-				width: skWidth,
-				top: Math.round((11 + SK_LINE * meLines) * k + 6),
-				edge: Math.max(132, Math.ceil(SK_LABEL * k) + 5),
-			})
-		: null,
-);
+const fmtV = (v) => amount(v, ui.indicator, sum.total)[0];
+// A label's width in px, in the Sankey's own type (name 600, value 400); measured again
+// once the web font is in, since the fallback runs narrower.
+let fontsIn = $state(false);
+document.fonts?.ready.then(() => (fontsIn = true));
+let ctx;
+function labelPx(name, v) {
+	ctx ??= document.createElement("canvas").getContext("2d");
+	const face = `10.5px "Public Sans", system-ui, sans-serif`;
+	ctx.font = `600 ${face}`;
+	const a = ctx.measureText(`${name} `).width;
+	ctx.font = `400 ${face}`;
+	return a + ctx.measureText(fmtV(v)).width;
+}
+// The partner and section columns get room for their longest label at the text's
+// real size, so no label runs off the panel or into the far column.
+const lay = $derived.by(() => {
+	if (!open || ui.panel !== "sankey") return null;
+	void fontsIn; // re-measure once the font is in
+	const opts = { width: skWidth, top: Math.round((11 + SK_LINE * meLines) * k + 6) };
+	const first = sankeyLayout(meta, sum, ui, opts);
+	const partners = ui.dir === "in" ? first.left : first.right;
+	const widest = (nodes, name) => Math.max(0, ...nodes.map((n) => labelPx(name(n), n.v)));
+	const edge = Math.max(132, Math.ceil((widest(partners, (n) => (narrow ? n.short : n.name)) + 4) * k) + 5);
+	const room = Math.max(SANKEY_LABEL_ROOM, Math.ceil((widest(first.mid, (n) => n.name) + 4) * k) + 4);
+	return sankeyLayout(meta, sum, ui, { ...opts, edge, room });
+});
 const heads = $derived(
 	ui.dir === "in"
 		? [
@@ -103,7 +120,6 @@ const heads = $derived(
 				[lay?.x.R, "start", "Consumed in"],
 			],
 );
-const fmtV = (v) => amount(v, ui.indicator)[0];
 const room = $derived(7 * k);
 // a node is labelled where it is tall enough and its label clears the one above it
 const labelled = $derived.by(() => {
