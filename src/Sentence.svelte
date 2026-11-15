@@ -110,7 +110,7 @@ function onFocusOut(e) {
 
 <div class="hl">
 	{#if !whatif}
-		<p id="headline" tabindex="-1">
+		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
 			{#if w.unit === "jobs"}
 				<span class="u"><span class="n">{shown[0]}</span></span>
@@ -121,9 +121,9 @@ function onFocusOut(e) {
 			{/if}
 			in {year}{scope}; <span class="n">{Math.round(tShare.current)}%</span>
 			{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}.
-		</p>
+		</h2>
 	{:else}
-		<p id="headline" tabindex="-1">
+		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name))}{w.in.would}{/if}
 			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}; a change of
@@ -132,7 +132,7 @@ function onFocusOut(e) {
 			{#if changed || dTot === 0}<span class="scenario-context">
 			{#if changed}The largest change {out ? "was linked to consumption in" : "occurred in"}
 				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}No change at the displayed precision{/if}.</span>{/if}
-		</p>
+		</h2>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>
 

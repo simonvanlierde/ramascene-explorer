@@ -5,6 +5,7 @@ import { geoEqualEarth, geoOrthographic } from "d3-geo";
 import { asyncBufferFromFile } from "hyparquet";
 import { openEmbodied, readRun } from "../src/lib/embodied.js";
 import {
+	amount,
 	amountShort,
 	amountText,
 	arc,
@@ -74,6 +75,8 @@ test("numbers use at most three significant figures and a true minus", () => {
 	assert.equal(amountText(52_300_000, 3), "52.3 million jobs");
 	assert.equal(amountText(1234, 3), "1.23 thousand jobs");
 	assert.equal(amountText(104, 5), "104 Mt CO₂-eq");
+	// numbers that share one unit take it from the largest
+	assert.deepEqual(amount(520, 3, -52_300), ["0.52", "thousand jobs"]);
 });
 
 test("the selection sums its partners and sections; the two directions read the matrix both ways", () => {

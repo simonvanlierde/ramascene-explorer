@@ -462,6 +462,20 @@ test("both Sankey stages get the same link width once the section labels fit, an
 		}
 });
 
+test("a phone's wider label room moves the sections off centre, never past the partners' column", () => {
+	for (const dir of ["in", "out"]) {
+		const { lay } = build({ who: 0, dir, on: ALL }, { edge: 160, room: 230 });
+		const [first, second] = [lay.x.M - (lay.x.L + lay.nw), lay.x.R - (lay.x.M + lay.nw)];
+		// the label side keeps its room; the link side keeps at least 20 units
+		assert.ok(
+			(dir === "in" ? second : first) >= 230 || (dir === "in" ? first : second) === 20,
+			`${dir}: ${first} / ${second}`,
+		);
+		assert.ok(Math.min(first, second) >= 20, `${dir}: ${first} / ${second}`);
+		assert.notEqual(first, second);
+	}
+});
+
 test("links leave a node one after another from its top, and arrive stacked the same way", () => {
 	fc.assert(
 		fc.property(layouts, (s) => {

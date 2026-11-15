@@ -192,11 +192,14 @@ test("the shipped results render without the synthetic banner", async ({ page })
 	await expect(page.locator("#banner")).toBeHidden();
 	await expect(page.locator("#headline")).toContainText("Germany’s consumption was linked to");
 	await expect(page.locator(".pill.ok")).toHaveCount(1); // hidden, not removed, on a phone
-	await expect(page.getByRole("link", { name: "Source code on GitHub" })).toHaveAttribute(
+	// on a phone the link sits in the closed selection sheet
+	await expect(page.getByRole("link", { name: "Source code on GitHub", includeHidden: true }).first()).toHaveAttribute(
 		"href",
 		"https://github.com/simonvanlierde/ramascene-explorer",
 	);
 	await expect(page.locator(".brand .by")).toHaveText("by Simon van Lierde");
+	// the brand is the page's h1; the sentence is the heading under it
+	await expect(page.locator("h2#headline")).toHaveCount(1);
 	await expectNoAxeViolations(page);
 });
 
@@ -397,6 +400,143 @@ test("the honesty notes stay on screen: Published scenarios · not forecasts, an
 	await expect(page.locator(".pill.basis")).toContainText("2011 · Published scenarios · not forecasts");
 	await expect(page.locator("#headline")).toContainText("In the 2011 economy, if");
 	await expect(page.locator("#headline")).toContainText("would have");
+});
+
+test("on a tablet the caveat stays whole in the top bar", async ({ page, isMobile }) => {
+	test.skip(isMobile, "tablet widths");
+	for (const width of [761, 800, 860]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto("");
+		await ready(page);
+		const cut = await page.locator(".pill.basis").evaluate((pill) => {
+			const cav = pill.querySelector(".cav").getBoundingClientRect();
+			const box = pill.getBoundingClientRect();
+			return pill.scrollWidth > pill.clientWidth || cav.right > box.right || box.right > innerWidth;
+		});
+		expect(cut, `${width} px`).toBe(false);
+		await expect(page.locator(".pill.basis .cav")).toHaveText("Published scenarios · not forecasts");
+	}
+});
+
+test("on a tablet What if… fits: the world's change on its own row, every region cell whole", async ({
+	page,
+	isMobile,
+}) => {
+	test.skip(isMobile, "tablet widths");
+	for (const width of [761, 800, 950]) {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto("?mode=whatif");
+		await ready(page);
+		await expect(page.locator(".regions .kpi")).toHaveCount(5);
+		const fit = await page.evaluate(() => ({
+			page: document.documentElement.scrollWidth <= innerWidth,
+			cells: [...document.querySelectorAll(".regions .kpi")].every((c) => c.scrollWidth <= c.clientWidth),
+			ownRow:
+				document.querySelector(".wstrip .world").getBoundingClientRect().bottom <=
+				document.querySelector(".regions").getBoundingClientRect().top,
+		}));
+		expect(fit, `${width} px`).toEqual({ page: true, cells: true, ownRow: true });
+	}
+});
+
+test("the sentence never runs into the number strip, however short the window", async ({ page, isMobile }) => {
+	test.skip(isMobile, "the scrolling phone layout stacks them");
+	for (const [width, height, q] of [
+		[768, 1024, ""],
+		[800, 900, "&indicator=3"],
+		[1000, 1000, "&indicator=3"],
+		[1280, 700, ""],
+	]) {
+		await page.setViewportSize({ width, height });
+		await page.goto(`?mode=whatif${q}`);
+		await ready(page);
+		const gap = await page.evaluate(
+			() =>
+				document.querySelector(".wstrip").getBoundingClientRect().top -
+				document.querySelector("#headline").getBoundingClientRect().bottom,
+		);
+		expect(gap, `${width}×${height}${q}`).toBeGreaterThanOrEqual(0);
+	}
+});
+
+test("on a tablet the header never runs off the side", async ({ page, isMobile }) => {
+	test.skip(isMobile, "tablet widths");
+	for (const q of ["", FIXTURE, "?data=../secret.json"]) {
+		await page.setViewportSize({ width: 900, height: 800 });
+		await page.goto(q);
+		await expect(page.locator(".pill.basis")).toBeVisible();
+		const bad = [];
+		for (let width = 855; width <= 900; width++) {
+			await page.setViewportSize({ width, height: 800 });
+			const r = await page.evaluate(() => {
+				const right = Math.max(...[...document.querySelectorAll(".top *")].map((e) => e.getBoundingClientRect().right));
+				const pill = document.querySelector(".pill.basis");
+				const cav = pill.querySelector(".cav").getBoundingClientRect();
+				return { over: right > innerWidth + 0.5, cut: cav.right > pill.getBoundingClientRect().right + 0.5 };
+			});
+			if (r.over || r.cut) bad.push(`${width} px ${JSON.stringify(r)}`);
+		}
+		expect(bad, q || "shipped data").toEqual([]);
+	}
+});
+
+test("the table and the Sankey give every value in the caption's unit", async ({ page }) => {
+	await page.goto("?panel=table&indicator=3");
+	await expect(page.locator("#flows-table caption")).toContainText("million jobs");
+	// the rows come largest first, so the numbers shown must never go up
+	const values = await page
+		.locator("#flows-table tbody td.num:nth-of-type(1)")
+		.evaluateAll((tds) => tds.map((td) => Number(td.textContent.replace(/[^0-9.e−-]/g, "").replace(/−/g, "-"))));
+	expect(values.length).toBeGreaterThan(5);
+	const rises = values.flatMap((v, i) => (i && v > values[i - 1] ? [`${values[i - 1]} → ${v}`] : []));
+	expect(rises).toEqual([]);
+});
+
+test("the sentence's heading is named by its plain text, not its controls' labels", async ({ page }) => {
+	await page.goto("");
+	await ready(page);
+	await expect(page.getByRole("heading", { level: 2, name: /^Germany’s consumption was linked to/ })).toBeVisible();
+	expect(await page.locator("#headline").getAttribute("aria-label")).not.toContain("Change");
+});
+
+test("on a phone the Sankey's labels stay inside it and clear of each other", async ({ page, isMobile }) => {
+	test.skip(!isMobile, "phone layout only");
+	const views = ["", "&dir=out", "&region=US", "&region=GB&dir=out&indicator=7", "&region=GB&indicator=3"];
+	for (const width of [320, 360, 375])
+		for (const q of views) {
+			await page.setViewportSize({ width, height: 812 });
+			await page.goto(`?panel=sankey${q}`);
+			await expect(page.locator(".sk .lk").first()).toBeVisible();
+			const bad = await page.locator(".sk").evaluate((svg) => {
+				const s = svg.getBoundingClientRect();
+				const box = { left: Math.max(0, s.left), right: Math.min(innerWidth, s.right) };
+				const texts = [...svg.querySelectorAll("text")].map((t) => [t.textContent, t.getBoundingClientRect()]);
+				const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+				const out = texts
+					.filter(([, r]) => r.left < box.left - 0.5 || r.right > box.right + 0.5)
+					.map(([t]) => `outside: ${t}`);
+				for (let i = 0; i < texts.length; i++)
+					for (let j = i + 1; j < texts.length; j++)
+						if (over(texts[i][1], texts[j][1])) out.push(`${texts[i][0]} / ${texts[j][0]}`);
+				return out;
+			});
+			expect(bad, `${width} px ${q || "dir=in"}`).toEqual([]);
+		}
+});
+
+test("on a phone the header keeps two rows; the theme toggle and source link sit in the sheet", async ({
+	page,
+	isMobile,
+}) => {
+	test.skip(!isMobile, "phone layout only");
+	await page.setViewportSize({ width: 375, height: 812 });
+	await page.goto("");
+	await ready(page);
+	expect((await page.locator(".top").boundingBox()).height).toBeLessThan(100);
+	await expect(page.locator(".pill.basis .cav")).toBeVisible();
+	await openSelection(page);
+	await expect(page.locator("#side").getByRole("button", { name: "Dark theme" })).toBeVisible();
+	await expect(page.locator("#side").getByRole("link", { name: "Source code on GitHub" })).toBeVisible();
 });
 
 test("on a wide screen the header works while Details is open, and Escape in the basis note leaves Details open", async ({
@@ -634,7 +774,7 @@ test("on a phone the touch targets are 44 px, the rail tabs 36 px and 44 px apar
 	for (const s of [".dock .seg button", ".dock .filters", ".sel-chip button", ".mtr .seg button", ".mzm button"])
 		await tall(s);
 	// the pills and the sentence's controls look smaller; their hit area is 44 px tall
-	const reach = await page.locator(".top button.pill, .top a.pill, .hl .tok").evaluateAll((els) =>
+	const reach = await page.locator(".top button.pill:visible, .top a.pill:visible, .hl .tok").evaluateAll((els) =>
 		els.map((e) => {
 			const r = e.getBoundingClientRect();
 			const [x, y] = [r.left + r.width / 2, r.top + r.height / 2];
@@ -732,16 +872,20 @@ test("on a phone a control's hit area never covers its neighbour", async ({ page
 	// the country and the indicator on neighbouring lines of the sentence
 	await page.goto(`${FIXTURE}&region=US&dir=out`);
 	await ready(page);
-	const stolen = await page.locator(".top button.pill, .top a.pill, .brand .by a, .hl .tok").evaluateAll((els) =>
-		els.flatMap((e) => {
-			const r = e.getBoundingClientRect();
-			const points = [0.1, 0.5, 0.9].flatMap((fx) => [r.top + 1, r.bottom - 1].map((y) => [r.left + r.width * fx, y]));
-			return points
-				.map(([x, y]) => document.elementFromPoint(x, y))
-				.filter((hit) => !e.contains(hit))
-				.map((hit) => `${e.textContent.trim()} → ${hit?.textContent.trim().slice(0, 30)}`);
-		}),
-	);
+	const stolen = await page
+		.locator(".top button.pill:visible, .top a.pill:visible, .brand .by a, .hl .tok")
+		.evaluateAll((els) =>
+			els.flatMap((e) => {
+				const r = e.getBoundingClientRect();
+				const points = [0.1, 0.5, 0.9].flatMap((fx) =>
+					[r.top + 1, r.bottom - 1].map((y) => [r.left + r.width * fx, y]),
+				);
+				return points
+					.map(([x, y]) => document.elementFromPoint(x, y))
+					.filter((hit) => !e.contains(hit))
+					.map((hit) => `${e.textContent.trim()} → ${hit?.textContent.trim().slice(0, 30)}`);
+			}),
+		);
 	expect(stolen).toEqual([]);
 });
 
@@ -847,7 +991,7 @@ test("the grid card leaves a cell that was never computed for the first computed
 	await expect(pick).not.toContainText("not precomputed");
 });
 
-test("the header toggle switches the theme and the browser keeps the choice", async ({ page, colorScheme }) => {
+test("the theme toggle switches the theme and the browser keeps the choice", async ({ page, colorScheme }) => {
 	await page.goto(FIXTURE);
 	await ready(page);
 	const root = page.locator("html");
@@ -856,6 +1000,8 @@ test("the header toggle switches the theme and the browser keeps the choice", as
 	await expect(root).toHaveAttribute("data-theme", first);
 	const sea = () => page.locator("svg.map path").first().getAttribute("fill");
 	const before = await sea();
+	// on a phone the toggle sits in the selection sheet
+	await openSelection(page);
 	await page.getByRole("button", { name: "Dark theme" }).click();
 	await expect(root).toHaveAttribute("data-theme", other);
 	expect(await sea()).not.toBe(before);
@@ -865,6 +1011,7 @@ test("the header toggle switches the theme and the browser keeps the choice", as
 	await page.reload();
 	await ready(page);
 	await expect(root).toHaveAttribute("data-theme", other);
+	await openSelection(page);
 	await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute(
 		"aria-pressed",
 		String(other === "dark"),

@@ -21,6 +21,10 @@ const fill = $derived(divFill(extent, themeName()));
 const wd = $derived(world ? displayChange(world.delta, world.base) : 0);
 const wa = $derived(amount(wd, ui.indicator));
 const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : "it is consumed");
+// the five cells share one unit, stated once in their heading, so a narrow cell never wraps it
+const regionChanges = $derived(conts.map((c) => displayChange(c.change, sum.total)));
+const regionRef = $derived(Math.max(0, ...regionChanges.map(Math.abs)));
+const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 </script>
 
 {#if !whatif}
@@ -53,15 +57,14 @@ const where = $derived(ui.dir === "in" ? wording(ui.indicator).made.is : "it is 
 			</div>
 		{/if}
 		<div class="regions">
-			<div class="gl">{capitalise(nameIn)}’s change, by where {where}</div>
+			<div class="gl">{capitalise(nameIn)}’s change, by where {where} <small>({regionUnit})</small></div>
 			<div class="kpis k5" role="group" aria-label="The change in {nameIn}{ui.dir === 'in' ? '’s consumption' : ''}, by the world region where {ui.dir === 'in' ? wording(ui.indicator).made.is : 'it is consumed'}">
-				{#each conts as c (c.name)}
-					{@const v = displayChange(c.change, sum.total)}
+				{#each conts as c, i (c.name)}
+					{@const v = regionChanges[i]}
 					{@const p = c.base ? (v / c.base) * 100 : 0}
-					{@const a = amount(v, ui.indicator)}
 					<div class="kpi">
 						<div class="kl"><span class="sw" style="background:{fill(p)}"></span><span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{c.name.replace("-", " ")}</span></div>
-						<div class="kv num">{v > 0 ? "+" : ""}{a[0]}<wbr /><small>{a[1]}</small></div>
+						<div class="kv num">{v > 0 ? "+" : ""}{amount(v, ui.indicator, regionRef)[0]}<span class="sr-only"> {regionUnit}</span></div>
 						<div class="ks">{c.base ? `${pct(p)} relative to 2011` : "no 2011 flow"}</div>
 					</div>
 				{/each}

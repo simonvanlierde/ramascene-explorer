@@ -12,6 +12,7 @@ import {
 	placeName,
 	SECTION_COLOURS,
 	SECTION_SHORT,
+	SANKEY_LABEL_ROOM,
 	sankeyLayout,
 	share,
 	tableRows,
@@ -70,7 +71,42 @@ function tabKeys(e, i) {
 // widens instead, so the extra room lengthens the bands rather than enlarging the text.
 const SK_SCALE = 600 / 452;
 let skW = $state(0);
-const lay = $derived(open && ui.panel === "sankey" ? sankeyLayout(meta, sum, ui, { width: Math.max(452, Math.floor(skW / SK_SCALE)) }) : null);
+const skWidth = $derived(Math.max(452, Math.floor(skW / SK_SCALE)));
+// A Sankey drawn narrower than its layout scales its text down with it; k sets
+// the text back to its own size (in layout units), and labels need that much room.
+const k = $derived(skW ? Math.max(1, skWidth / skW) : 1);
+// Where the text scales up (a phone), the partners take their short names and the
+// selected country's total goes under its name. SK_LINE: a label's line height in px.
+const narrow = $derived(k > 1);
+const SK_LINE = 13;
+const meLines = $derived(narrow ? 2 : 1);
+const fmtV = (v) => amount(v, ui.indicator, sum.total)[0];
+// A label's width in px, in the Sankey's own type (name 600, value 400); measured again
+// once the web font is in, since the fallback runs narrower.
+let fontsIn = $state(false);
+document.fonts?.ready.then(() => (fontsIn = true));
+let ctx;
+function labelPx(name, v) {
+	ctx ??= document.createElement("canvas").getContext("2d");
+	const face = `10.5px "Public Sans", system-ui, sans-serif`;
+	ctx.font = `600 ${face}`;
+	const a = ctx.measureText(`${name} `).width;
+	ctx.font = `400 ${face}`;
+	return a + ctx.measureText(fmtV(v)).width;
+}
+// The partner and section columns get room for their longest label at the text's
+// real size, so no label runs off the panel or into the far column.
+const lay = $derived.by(() => {
+	if (!open || ui.panel !== "sankey") return null;
+	void fontsIn; // re-measure once the font is in
+	const opts = { width: skWidth, top: Math.round((11 + SK_LINE * meLines) * k + 6) };
+	const first = sankeyLayout(meta, sum, ui, opts);
+	const partners = ui.dir === "in" ? first.left : first.right;
+	const widest = (nodes, name) => Math.max(0, ...nodes.map((n) => labelPx(name(n), n.v)));
+	const edge = Math.max(132, Math.ceil((widest(partners, (n) => (narrow ? n.short : n.name)) + 4) * k) + 5);
+	const room = Math.max(SANKEY_LABEL_ROOM, Math.ceil((widest(first.mid, (n) => n.name) + 4) * k) + 4);
+	return sankeyLayout(meta, sum, ui, { ...opts, edge, room });
+});
 const heads = $derived(
 	ui.dir === "in"
 		? [
@@ -84,11 +120,21 @@ const heads = $derived(
 				[lay?.x.R, "start", "Consumed in"],
 			],
 );
-const fmtV = (v) => amount(v, ui.indicator)[0];
-// A Sankey drawn narrower than its layout scales its text down with it; k sets
-// the text back to its own size (in layout units), and labels need that much room.
-const k = $derived(lay && skW ? Math.max(1, lay.width / skW) : 1);
 const room = $derived(7 * k);
+// a node is labelled where it is tall enough and its label clears the one above it
+const labelled = $derived.by(() => {
+	const shown = new Set();
+	for (const col of lay ? [lay.left, lay.mid, lay.right] : []) {
+		let last = -Infinity;
+		for (const n of col) {
+			const c = n.y + n.h / 2;
+			if (n.me || n.h < room || c - last < SK_LINE * k) continue;
+			shown.add(n);
+			last = c;
+		}
+	}
+	return shown;
+});
 
 // --- table --------------------------------------------------------------------
 let sortK = $state("v");
@@ -208,7 +254,7 @@ async function copyLink() {
 		{#if lay}
 			<div class="skw" bind:clientWidth={skW}>
 			<svg class="sk" style="--k:{k}" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
-				{#each heads as [x, a, t] (t)}<text class="h" {x} y="11" text-anchor={a}>{t}</text>{/each}
+				{#each heads as [x, a, t] (t)}<text class="h" {x} y={11 * k} text-anchor={a}>{t}</text>{/each}
 				{#each lay.links as l, i (i)}<path class="lk" d={l.d} fill={SECTION_COLOURS[l.q]}><title>{l.from} → {l.to}: {amountText(l.v, ui.indicator)}</title></path>{/each}
 				{#each lay.left as n (n.name)}<rect x={lay.x.L} y={n.y} width={lay.nw} height={n.h} fill="var(--slate)"><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
 				{#each lay.mid as n (n.q)}<rect x={lay.x.M} y={n.y} width={lay.nw} height={n.h} fill={SECTION_COLOURS[n.q]}><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
@@ -216,14 +262,15 @@ async function copyLink() {
 				{#each [["L", lay.left], ["R", lay.right]] as [side, col] (side)}
 					{#each col as n (n.name)}
 						{#if n.me}
-							<text class="me" x={side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4} y={lay.top0 - 6} text-anchor={side === "L" ? "start" : "end"}>{n.name} {amountText(n.v, ui.indicator)}</text>
-						{:else if n.h >= room}
-							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5} text-anchor={side === "L" ? "end" : "start"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
+							{@const x = side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4}
+							<text class="me" {x} y={(11 + SK_LINE) * k} text-anchor={side === "L" ? "start" : "end"}>{n.name}{#if narrow}<tspan {x} dy={SK_LINE * k}>{amountText(n.v, ui.indicator)}</tspan>{:else} {amountText(n.v, ui.indicator)}{/if}</text>
+						{:else if labelled.has(n)}
+							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={n.y + n.h / 2 + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}
 					{/each}
 				{/each}
 				{#each lay.mid as n (n.q)}
-					{#if n.h >= room}<text class="halo" x={ui.dir === "in" ? lay.x.M + lay.nw + 4 : lay.x.M - 4} y={n.y + n.h / 2 + 3.5} text-anchor={ui.dir === "in" ? "start" : "end"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
+					{#if labelled.has(n)}<text class="halo" x={ui.dir === "in" ? lay.x.M + lay.nw + 4 : lay.x.M - 4} y={n.y + n.h / 2 + 3.5 * k} text-anchor={ui.dir === "in" ? "start" : "end"}>{n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>{/if}
 				{/each}
 			</svg>
 			</div>

@@ -34,8 +34,15 @@
   --danger: #b3261e;
   --on-fill: #fff; /* text on --slate and --danger */
   --halo: #fff; /* outlines and halos that lift map marks and labels off what is under them */
-  --sh: 0 1px 2px rgb(31 42 51 / 6%);
-  --pop: 0 10px 30px -10px rgb(31 42 51 / 28%);
+  /* elevation: a resting card, a pressed segment, a control floating on the map,
+     a popover, and the slide-over, sheet and dock over the page */
+  --shadow-card: 0 1px 2px rgb(31 42 51 / 6%);
+  --shadow-pressed: 0 1px 2px rgb(31 42 51 / 14%), 0 0 0 1px rgb(31 42 51 / 4%);
+  --shadow-float: 0 1px 3px rgb(31 42 51 / 8%);
+  --shadow-pop: 0 10px 30px -10px rgb(31 42 51 / 28%);
+  --shadow-overlay: -18px 0 40px -26px rgb(31 42 51 / 35%);
+  --shadow-sheet: 0 -18px 40px -20px rgb(31 42 51 / 40%);
+  --shadow-dock: 0 -8px 24px -16px rgb(31 42 51 / 30%);
   --side: 272px;
   --rail-min: 20px; /* with the 4 px gap, 24 px between tab centres (WCAG 2.2 target size) */
   --rail-share: 180px;
@@ -73,8 +80,13 @@
   --danger: #f07c72;
   --on-fill: #14191d;
   --halo: #1c2328;
-  --sh: 0 1px 2px rgb(0 0 0 / 30%);
-  --pop: 0 10px 30px -10px rgb(0 0 0 / 60%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-pressed: 0 1px 2px rgb(0 0 0 / 45%), 0 0 0 1px rgb(255 255 255 / 6%);
+  --shadow-float: 0 1px 3px rgb(0 0 0 / 40%);
+  --shadow-pop: 0 10px 30px -10px rgb(0 0 0 / 60%);
+  --shadow-overlay: -18px 0 40px -26px rgb(0 0 0 / 70%);
+  --shadow-sheet: 0 -18px 40px -20px rgb(0 0 0 / 70%);
+  --shadow-dock: 0 -8px 24px -16px rgb(0 0 0 / 60%);
 }
 
 * {
@@ -290,6 +302,9 @@ button.pill:hover {
 }
 
 /* the basis pill opens where the numbers come from (Basis.svelte) */
+/* The caveat is the honesty rule, so it never shrinks: only the dataset name
+   before it gives way, and below 1100 px, where that name is hidden, the pill
+   keeps its whole width. */
 .basis-w {
   position: relative;
   display: flex;
@@ -298,10 +313,13 @@ button.pill:hover {
 .pill.basis {
   max-width: 100%;
 }
-.pill.basis .bx {
+.pill.basis .ds {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.pill.basis .cav {
+  flex: none;
 }
 .pill.basis .chev {
   flex: none;
@@ -324,7 +342,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--pop);
+  box-shadow: var(--shadow-pop);
   font-size: 12px;
   line-height: 1.5;
   white-space: normal;
@@ -379,7 +397,8 @@ button.pill:hover {
 .grp:first-child {
   padding-top: 2px;
 }
-.grp:last-child {
+.grp:last-child,
+.grp:has(+ .sheet-foot) {
   border-bottom: 0;
 }
 .lab {
@@ -431,9 +450,7 @@ button.pill:hover {
 .seg button[aria-pressed="true"] {
   background: var(--card);
   color: var(--ink);
-  box-shadow:
-    0 1px 2px rgb(31 42 51 / 14%),
-    0 0 0 1px rgb(31 42 51 / 4%);
+  box-shadow: var(--shadow-pressed);
 }
 .seg.big button {
   min-height: 32px;
@@ -500,7 +517,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--pop);
+  box-shadow: var(--shadow-pop);
   z-index: 8;
   scrollbar-width: thin;
 }
@@ -705,6 +722,8 @@ button.pill:hover {
 }
 
 /* --- main column ---------------------------------------------------------------- */
+/* The sentence and the strip keep their height and the map takes the rest; in
+   a short window the column scrolls, so the sentence never draws over the strip. */
 .main {
   min-width: 0;
   min-height: 0;
@@ -712,6 +731,12 @@ button.pill:hover {
   flex-direction: column;
   gap: 10px;
   padding: 14px 20px 18px;
+  overflow-y: auto;
+}
+.main > .hl,
+.main > .kpis,
+.main > .wstrip {
+  flex: none;
 }
 .main.solo {
   grid-column: 1 / -1;
@@ -736,9 +761,11 @@ button.pill:hover {
   line-height: 0;
   vertical-align: -0.2em;
 }
-.hl p {
+/* the sentence is the page's heading, in the sentence's own type */
+.hl h2 {
   margin: 0;
   max-width: 900px;
+  font: inherit;
   text-wrap: balance;
 }
 .hl .scenario-context {
@@ -785,7 +812,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--pop);
+  box-shadow: var(--shadow-pop);
   padding: 8px;
   display: grid;
   gap: 1px;
@@ -830,7 +857,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--sh);
+  box-shadow: var(--shadow-card);
   display: grid;
   gap: 1px;
   min-width: 0;
@@ -891,7 +918,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--sh);
+  box-shadow: var(--shadow-card);
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -901,6 +928,12 @@ button.pill:hover {
   font-size: 12px;
   font-weight: 700;
   color: var(--ink);
+}
+.regions .gl small {
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--mut);
+  white-space: nowrap;
 }
 .regions .kpis.k5 {
   gap: 0;
@@ -924,18 +957,15 @@ button.pill:hover {
 .wstrip .world .ks {
   white-space: normal;
 }
-/* a narrow cell puts a long unit ("thousand jobs") under its number, at the <wbr> */
-.regions .kpis.k5 .kv {
-  white-space: normal;
-}
-.regions .kpis.k5 .kv small {
-  white-space: nowrap;
-}
 .kpi .sw {
   width: 9px;
   height: 9px;
   border-radius: 2px;
   flex: none;
+}
+/* a change near zero is the ramp's near-black middle in dark, which would vanish on the card */
+:root[data-theme="dark"] .kpi .sw {
+  box-shadow: inset 0 0 0 1px var(--input-border);
 }
 
 /* --- map card -------------------------------------------------------------------- */
@@ -946,7 +976,7 @@ button.pill:hover {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: var(--sh);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 .mapv {
@@ -955,6 +985,7 @@ button.pill:hover {
 }
 .dock,
 .sheet-head,
+.sheet-foot,
 .sheet-scrim {
   display: none;
 }
@@ -1036,7 +1067,7 @@ svg.map.live .rg {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgb(31 42 51 / 8%);
+  box-shadow: var(--shadow-float);
   font-weight: 700;
   font-size: 13px;
 }
@@ -1090,7 +1121,7 @@ svg.map.live .rg {
 .mzm {
   background: var(--card);
   border: 1px solid var(--rule);
-  box-shadow: 0 1px 3px rgb(31 42 51 / 8%);
+  box-shadow: var(--shadow-float);
 }
 .mtr .seg button {
   flex: none;
@@ -1112,7 +1143,8 @@ svg.map.live .rg {
   line-height: 1.38;
   background: color-mix(in srgb, var(--card) 80%, transparent);
   border-radius: 6px;
-  padding: 4px 6px;
+  padding: 4px 8px;
+  text-wrap: pretty;
 }
 .lg {
   position: absolute;
@@ -1121,7 +1153,7 @@ svg.map.live .rg {
   width: 262px;
   background: color-mix(in srgb, var(--card) 94%, transparent);
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgb(31 42 51 / 10%);
+  box-shadow: var(--shadow-float);
   padding: 9px 11px 10px;
   font-size: 12px;
   color: var(--mut);
@@ -1215,6 +1247,13 @@ svg.map.live .rg {
   border: 2px solid var(--card);
   box-shadow: 0 0 0 1px var(--slate);
 }
+/* a 24 px target, whatever the thumb's drawn size */
+.scrub .th::after {
+  content: "";
+  position: absolute;
+  inset: calc((100% - 24px) / -2);
+  border-radius: 50%;
+}
 .scrub .play {
   display: inline-flex;
   align-items: center;
@@ -1260,7 +1299,7 @@ svg.map.live .rg {
   border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 8px 10px;
-  box-shadow: 0 8px 24px -10px rgb(31 42 51 / 30%);
+  box-shadow: var(--shadow-pop);
   font-size: 12px;
   line-height: 1.4;
   width: 230px;
@@ -1318,7 +1357,7 @@ svg.map.live .rg {
   width: min(768px, calc(100vw - var(--side)));
   background: var(--card);
   border-left: 1px solid var(--rule);
-  box-shadow: -18px 0 40px -26px rgb(31 42 51 / 35%);
+  box-shadow: var(--shadow-overlay);
   transform: translateX(104%);
   visibility: hidden;
   transition:
@@ -1673,8 +1712,8 @@ details.more summary {
 #live .pick-s {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 22px;
+  width: 28px;
+  height: 24px;
   border-radius: 6px;
   color: var(--mut);
 }
@@ -1801,6 +1840,51 @@ details.more summary {
   .top .basis .ds {
     display: none;
   }
+  .top .basis-w {
+    flex: none;
+  }
+}
+
+/* --- tablets and phones: five region cells no longer fit one row, so the world's
+   change takes its own row and the cells go two a row, divided by hairlines both
+   ways; an odd last cell takes the whole row ------------------------------------- */
+@media (max-width: 1000px) {
+  .wstrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .regions .kpis.k5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .regions .kpis.k5 .kpi,
+  .regions .kpis.k5 .kpi:first-child {
+    padding: 8px 13px;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .regions .kpis.k5 .kpi:nth-child(even) {
+    border-left: 1px solid var(--rule);
+  }
+  .regions .kpis.k5 .kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- small tablets: the byline goes under the name, so the header keeps one row
+   with the caveat whole ------------------------------------------------------------ */
+@media (min-width: 761px) and (max-width: 900px) {
+  .brand {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 9px;
+    align-items: center;
+  }
+  .brand svg {
+    grid-row: span 2;
+  }
+  .brand h1,
+  .brand .by {
+    line-height: 1.25;
+  }
 }
 
 /* --- phones: content first, the selection in a bottom sheet ---------------------
@@ -1841,8 +1925,9 @@ details.more summary {
     padding: 0 12px 8px;
     row-gap: 6px;
   }
-  /* the basis pill and the trust pill sit on two rows; 14 px apart, each one's
-     44 px hit area keeps the 5 px next to it (the hit areas reach 7 px out) */
+  /* where the basis pill and the trust pill wrap to two rows they are 14 px
+     apart, so each one's 44 px hit area keeps the 5 px next to it (the hit
+     areas reach 7 px out) */
   .top .rt {
     margin-left: 0;
     flex: 1 1 100%;
@@ -1858,13 +1943,41 @@ details.more summary {
     right: auto;
     left: 0;
   }
+  /* without the icons the caveat and the trust pill share a row from 375 px:
+     tighter padding, and the trust pill's words carry it without the tick */
+  .top .rt {
+    column-gap: 6px;
+  }
   .top .pill {
     height: 32px;
-    padding: 0 10px;
+    padding: 0 8px;
     font-size: 12px;
+  }
+  .top .pill.ok svg {
+    display: none;
   }
   .top .pill.gh {
     width: 44px;
+    padding: 0;
+  }
+  /* the theme toggle and the source link move to the sheet's end, so the header
+     keeps two rows: the name, then the caveat and the trust pill */
+  .shell:has(.sheet-foot) .top .icons {
+    display: none;
+  }
+  .grp:has(+ .sheet-foot) {
+    border-bottom: 1px solid var(--rule);
+  }
+  .sheet-foot {
+    display: block;
+  }
+  .sheet-foot .icons {
+    display: flex;
+    gap: 8px;
+  }
+  .sheet-foot .pill.gh {
+    width: 44px;
+    height: 44px;
     padding: 0;
   }
   /* 44 px tall targets that still look smaller: a hit area (::after) above and
@@ -1915,6 +2028,7 @@ details.more summary {
   .main {
     padding: 14px 12px 18px;
     gap: 12px;
+    overflow: visible;
   }
   .hl {
     order: 1;
@@ -1952,29 +2066,14 @@ details.more summary {
     order: 3;
   }
   .wstrip {
-    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
-  /* the region cells two a row inside their card, divided by hairlines both ways */
-  .regions .kpis.k5 {
-    gap: 0;
-  }
-  .regions .kpis.k5 .kpi,
-  .regions .kpis.k5 .kpi:first-child {
-    padding: 8px 13px;
-    border-left: 0;
-    border-top: 1px solid var(--rule);
-  }
-  .regions .kpis.k5 .kpi:nth-child(even) {
-    border-left: 1px solid var(--rule);
-  }
   /* two cards a row; an odd last card takes the whole row */
-  .kpis.k3,
-  .kpis.k5 {
+  .kpis.k3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
-  .kpis .kpi:last-child:nth-child(odd) {
+  .kpis.k3 .kpi:last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
   .sel-chip,
@@ -2042,7 +2141,7 @@ details.more summary {
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--card) 96%, transparent);
     border-top: 1px solid var(--rule);
-    box-shadow: 0 -8px 24px -16px rgb(31 42 51 / 30%);
+    box-shadow: var(--shadow-dock);
   }
   .dock .seg button {
     min-height: 44px;
@@ -2080,7 +2179,7 @@ details.more summary {
     max-height: 86dvh;
     border: 0;
     border-radius: 14px 14px 0 0;
-    box-shadow: 0 -18px 40px -20px rgb(31 42 51 / 40%);
+    box-shadow: var(--shadow-sheet);
     padding: 0 16px calc(24px + env(safe-area-inset-bottom));
     transform: translateY(104%);
     visibility: hidden;
