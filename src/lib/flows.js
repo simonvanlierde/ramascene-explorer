@@ -68,7 +68,8 @@ export const theName = (meta, k) =>
 
 const MINUS = "−";
 const numbers = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
-const scientific = new Intl.NumberFormat("en", { notation: "scientific", maximumSignificantDigits: 3 });
+const small = new Intl.NumberFormat("en", { maximumSignificantDigits: 2 });
+const scientific = new Intl.NumberFormat("en", { notation: "scientific", maximumSignificantDigits: 2 });
 const percentages = new Intl.NumberFormat("en", {
 	maximumSignificantDigits: 3,
 	maximumFractionDigits: 2,
@@ -78,17 +79,21 @@ const percentages = new Intl.NumberFormat("en", {
 // as zero. Keep the original values for calculations and exports.
 export const displayChange = (value, baseline) => (Math.abs(value) <= Math.abs(baseline) * 1e-12 ? 0 : value);
 
-// Three significant figures; scientific notation keeps very small values short.
+// Three significant figures, two below 0.1 where a third is noise next to the larger cells;
+// scientific notation keeps very small values short.
 export function fmt(v) {
 	const a = Math.abs(v);
-	const s = (a > 0 && a < 1e-4 ? scientific : numbers).format(a).replace("E-", "e−").replace("E", "e");
+	const s = (a > 0 && a < 1e-4 ? scientific : a < 0.1 ? small : numbers)
+		.format(a)
+		.replace("E-", "e−")
+		.replace("E", "e");
 	return (v < 0 ? MINUS : "") + s;
 }
 const sign = (v) => (v > 0 ? "+" : v < 0 ? MINUS : "");
 export function pct(v) {
 	const value = displayChange(v, 100);
 	const a = Math.abs(value);
-	if (a > 0 && a < 0.01) return `<0.01% ${value < 0 ? "decrease" : "increase"}`;
+	if (a > 0 && a < 0.01) return `${sign(value)}<0.01%`;
 	return `${sign(value)}${percentages.format(a)}%`;
 }
 // A share that is not zero never reads as 0%.
@@ -185,6 +190,15 @@ const WORDING = {
 export function wording(id) {
 	if (!WORDING[id]) throw new Error(`No wording for indicator id ${id}; add it to WORDING in flows.js`);
 	return WORDING[id];
+}
+
+// The plain line under the Flows sentence: what the direction shows, for the country in view.
+export function directionHint(meta, who, dir, id) {
+	const w = wording(id);
+	if (who === WORLD) return `Colours the map by where ${dir === "in" ? w.source : w.consumed}.`;
+	return dir === "in"
+		? `Where ${w.source} to make what ${theName(meta, who)} consumes.`
+		: `Where what ${theName(meta, who)} makes is consumed.`;
 }
 
 // [number, unit] for an amount in the indicator's display unit; ref picks the

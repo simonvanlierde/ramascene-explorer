@@ -1,6 +1,6 @@
 <script>
 import { lookupGrid, pickerState } from "./lib/explorer.js";
-import { amountShort, capitalise, FEATURED, RUN_KIND, runText, theName, WORLD, wording, worldTotal } from "./lib/flows.js";
+import { amountShort, capitalise, FEATURED, RUN_KIND, runText, wording, worldTotal } from "./lib/flows.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -58,11 +58,11 @@ function radioKeys(e, list, choose) {
 	e.currentTarget.parentElement.querySelector(`[data-v="${next}"]`)?.focus();
 }
 const runOptions = [...NAMED, "grid"];
-// The run list folds to the chosen run once one is picked, so country,
-// direction, indicator and rail stay in view; a link to a run opens folded.
+// The run list is folded to the chosen run (a link's, or the default) until Change opens it,
+// so country, direction, indicator and rail stay in view.
 // The grid's pickers show only while the list is open: picking the grid keeps
 // it open for them, and their Done folds it.
-let showRuns = $state(!new URLSearchParams(location.search).has("scenario"));
+let showRuns = $state(false);
 let changeButton = $state();
 function pickRun(v) {
 	chooseRun(v);
@@ -78,6 +78,10 @@ function foldRuns() {
 	showRuns = false;
 	queueMicrotask(() => changeButton?.focus());
 }
+// What if… always opens folded, also after Change was used before a trip to Flows
+$effect(() => {
+	if (ui.mode === "whatif") showRuns = false;
+});
 // a job arriving, or opening the custom form, folds the list
 $effect(() => {
 	if (live || ui.custom) showRuns = false;
@@ -86,6 +90,12 @@ const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run))
 const chosenSub = $derived(
 	live ? capitalise(live.source.status) : `${RUN_KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
 );
+// a custom run is not a run of the list: ui.run still holds the last published one
+function backToPublished() {
+	showRuns = false;
+	setRun(ui.run);
+	queueMicrotask(() => changeButton?.focus());
+}
 function chooseRun(v) {
 	gridRun = null;
 	if (v !== "grid") return setRun(v);
@@ -94,14 +104,6 @@ function chooseRun(v) {
 	gridRun = lookupGrid(data, gridPick).id;
 	setRun(gridRun);
 }
-
-const directionHint = $derived(
-	ui.who === WORLD
-		? `Colours the map by where ${ui.dir === "in" ? w.source : w.consumed}.`
-		: ui.dir === "in"
-		? `Where ${w.source} to make what ${theName(meta, ui.who)} consumes.`
-		: `Where what ${theName(meta, ui.who)} makes is consumed.`,
-);
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape and Done are the keyboard path -->
@@ -126,7 +128,7 @@ const directionHint = $derived(
 			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
 		</div>
 		{#if ui.mode === "whatif"}
-			<div class="lab sub"><span id="run-l">Scenario</span><small>{meta.runs.length - 1} published scenarios</small></div>
+			<div class="lab sub"><span id="run-l">Scenario</span><small>{live ? "Custom scenario shown" : `${meta.runs.length - 1} published scenarios`}</small></div>
 			{#if !showRuns}
 				<div class="run chosen">
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
@@ -155,6 +157,9 @@ const directionHint = $derived(
 					</button>
 				{/each}
 			</div>
+			{/if}
+			{#if live}
+				<button type="button" class="chipb back" onclick={backToPublished}>Back to published scenarios</button>
 			{/if}
 			{#if onGrid && grid && showRuns}
 				<div class="gridpick">
@@ -204,7 +209,6 @@ const directionHint = $derived(
 			<button type="button" aria-pressed={ui.dir === "in"} onclick={() => (ui.dir = "in")}>Consumption</button>
 			<button type="button" aria-pressed={ui.dir === "out"} onclick={() => (ui.dir = "out")}>Production</button>
 		</div>
-		<p class="hint">{directionHint}</p>
 	</div>
 
 	<div class="grp">

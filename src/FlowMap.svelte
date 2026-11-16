@@ -229,9 +229,12 @@ const labels = $derived.by(() => {
 		if (placed.some((q) => hits(box, q))) continue;
 		placed.push(box);
 		const fp = displayFlowPct(sum, b.k);
-		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator) });
+		out.push({ k: b.k, t, x: p[0], y: p[1] - 3, sub: whatif ? (fp === null ? "–" : pct(fp)) : amountShort(b.v, ui.indicator), size: whatif ? Math.abs(fp ?? 0) : b.v });
 		if (out.length > 6) break;
 	}
+	// the largest label is the heaviest, as on the strip
+	const top = out.reduce((best, l) => (l.size > (best?.size ?? -1) ? l : best), null);
+	for (const l of out) l.lead = l === top && l.size > 0;
 	return out;
 });
 
@@ -668,7 +671,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			<g class="lbls">
 				{#each labels as l (l.k)}
 					<text x={l.x} y={l.y} text-anchor="middle">{l.t}</text>
-					<text class="b" x={l.x} y={l.y + 10} text-anchor="middle">{l.sub}</text>
+					<text class="b" class:lead={l.lead} x={l.x} y={l.y + 10} text-anchor="middle">{l.sub}</text>
 				{/each}
 			</g>
 		</svg>

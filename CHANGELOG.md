@@ -8,6 +8,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Under the headline, Flows says in plain words what the direction shows ("Where emissions are
+  released to make what Germany consumes"), and a quiet link after the strip leads to What if….
+  Both go away in What if….
+- A custom run has a one-step way back: **Back to published scenarios** in the sidebar shows the
+  last published scenario again.
 - **World** is the first choice in the country list and the sentence's country menu. The map
   colours every region by what it releases (Consumption) or consumes (Production), with no bands.
   The strip gives the world total and its split over the five regions, and the Sankey runs from
@@ -20,6 +25,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- A change reads the same everywhere: a tiny one is "−<0.01%" on the strip, in the sentence and
+  on the map, amounts under 0.1 keep two significant figures, and the largest cell and map label
+  are set heaviest.
+- A custom run has one name, "computed in this browser", on its card, in the header and in the
+  sidebar, where the scenario count reads "Custom scenario shown" while it is on screen.
+- What if… opens with the scenario list folded to the chosen scenario, so Direction, Indicator
+  and the industry list stay on screen; Change opens the list.
 - With `?api=`, the page contacts the job API only when the custom scenario form is opened
   with Set up, not on load, and the card names the API's address.
 - Cancel now stops a run on the job API too. The page stops waiting; the job may still finish

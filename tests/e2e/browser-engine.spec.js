@@ -25,7 +25,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
 	// the browser data loads when the form first opens, not with the page
 	expect(matrixBytes).toBe(0);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -36,6 +36,11 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
 	await expect(page.locator("#live-news")).toContainText("Computed in this browser in");
 	await expect(page.locator("#status .basis")).toContainText("computed in this browser");
+	// one name for a custom run: the card, the header pills and the sidebar count
+	await expect(page.locator("#live .live-card")).toContainText("Computed in this browser");
+	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not checked");
+	await expect(page.locator("#status")).not.toContainText("Browser method");
+	await expect(page.locator("#side .lab.sub small")).toHaveText("Custom scenario shown");
 	await expect(page.locator(".bands path").first()).toBeVisible();
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator(".ph")).toContainText("It does not include this custom result.");
@@ -60,13 +65,39 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	expect(page.url()).not.toContain("browser-");
 	if (["light", "phone"].includes(info.project.name))
 		await page.screenshot({ path: info.outputPath("browser-engine.png"), fullPage: true });
+	// the caveat stays whole, "not forecasts" included, at the narrowest width
+	const size = page.viewportSize();
+	await page.setViewportSize({ width: 320, height: size.height });
+	await expect(page.locator(".pill.basis .cav")).toHaveText("computed in this browser · not forecasts");
+	const cut = await page.locator(".pill.basis").evaluate((pill) => {
+		const cav = pill.querySelector(".cav").getBoundingClientRect();
+		const box = pill.getBoundingClientRect();
+		return pill.scrollWidth > pill.clientWidth || cav.right > box.right || box.right > innerWidth;
+	});
+	expect(cut, "320 px").toBe(false);
+	await page.setViewportSize(size);
+	// one step back to the last published scenario, also with the list open
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator("#run-list")).toBeVisible();
+	await page.getByRole("button", { name: "Back to published scenarios" }).click();
+	// the status lines no longer describe a result that is not on the map
+	await expect(page.locator("#live-state")).toHaveText(
+		"Back on the published scenario. Run again to see the custom result.",
+	);
+	await expect(page.locator("#live-news")).toHaveText(
+		"Back on the published scenario. Run again to see the custom result.",
+	);
+	await expect(page.locator("#status .pill.live")).toHaveCount(0);
+	await expect(page.locator("#side .lab.sub small")).toHaveText(/^\d+ published scenarios$/);
+	await expect(page.getByRole("button", { name: "Back to published scenarios" })).toHaveCount(0);
 });
 
 test("two levers run as one scenario, and Remove hands focus to a sensible field", async ({ page, isMobile }) => {
 	needData();
 	test.setTimeout(90_000);
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -125,7 +156,7 @@ test("Try again replaces a failed browser worker", async ({ page, isMobile }, in
 	});
 	await page.goto("./");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toContainText("Browser data could not load");
@@ -142,7 +173,7 @@ test("a worker file gone after a deploy asks for a reload, not Try again", async
 	await page.route("**/assets/browser-worker-*.js", (route) => route.fulfill({ status: 404, body: "" }));
 	await page.goto("./");
 	await expect(page.locator(".mapc .rg")).toHaveCount(49);
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toContainText("The browser worker could not load. Reload the page");
@@ -161,7 +192,7 @@ test("a worker file gone when a fresh worker starts turns Run off", async ({ pag
 	// the matrix reads never answer, so the run is still going when Cancel is pressed
 	await page.route("**/browser-engine/store-*/**", () => {});
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -191,7 +222,7 @@ self.onmessage = (e) =>
 		});
 	});
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -216,7 +247,7 @@ test("a failed kernel download leaves the form usable and Run loads it again", a
 		return route.continue();
 	});
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	let reads = 0;
@@ -236,7 +267,7 @@ test("a negligible custom change stays readable without claiming a hotspot", asy
 	needData();
 	test.setTimeout(90_000);
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -252,6 +283,9 @@ test("a negligible custom change stays readable without claiming a hotspot", asy
 	await expect(page.locator("#headline")).toContainText("No change at the displayed precision.");
 	await expect(page.locator("#headline")).not.toContainText("largest change");
 	await expect(page.locator("#headline")).not.toContainText("−0");
+	// nothing changed, so no cell or label is heavier
+	await expect(page.locator(".kpi.lead")).toHaveCount(0);
+	await expect(page.locator(".lbls text.lead")).toHaveCount(0);
 	await expect(page.locator(".lg")).not.toContainText("all decreases");
 	await expect(page.locator(".lg")).not.toContainText("e−12");
 	for (const card of await page.locator(".kpis.k5 .kv").all()) {
@@ -269,11 +303,12 @@ test("a selection too broad for the browser says so before Run, and search narro
 	needData();
 	test.setTimeout(90_000);
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
+	// What if… opens folded to the chosen run; opening the form folds an open list again
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await expect(page.locator("#run-list")).toBeVisible();
 	await page.locator("#live-open").click();
-	// the published runs fold to the chosen one, so the form sits higher
 	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 	// the preselected steel scenario reads about 2 MB, too little to mention
@@ -322,7 +357,7 @@ test("the open form reads its selection before Run, so Run downloads nothing mor
 		if (request.url().includes("/browser-engine/store-")) reads++;
 	});
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
@@ -351,7 +386,7 @@ test("Cancel stops a running browser scenario and leaves the form ready", async 
 	// the matrix reads never answer, so the run is still going when Cancel is pressed
 	await page.route("**/browser-engine/store-*/**", () => {});
 	await page.goto("./");
-	await page.getByRole("button", { name: "What if…" }).first().click();
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });

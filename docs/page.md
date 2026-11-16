@@ -108,7 +108,7 @@ Links from the first version still open their published scenario.
 
 Below the published scenarios, the **Custom scenario** card lets you set up your own change.
 On phones it is in the selection sheet.
-Open it to [calculate a scenario on your device](browser-engine.md). With `?api=<origin>`,
+Open it to [calculate a scenario in your browser](browser-engine.md). With `?api=<origin>`,
 the page sends the scenario to a job API instead.
 The page loads the browser data only when you open the card.
 
@@ -138,6 +138,7 @@ fewer industries or regions that use it (or remove a change), or use the job API
 Above 5 MB, the card says how much the selection downloads.
 While it runs, the card shows the seconds elapsed and a **Cancel** button.
 A finished custom scenario replaces the map's scenario, with its own baseline and provenance.
+**Back to published scenarios** in the sidebar shows the last published scenario again.
 **Details → Method** lists its totals by producing region.
 Choose a published scenario to return to the stored results.
 While a custom result is shown, links to other sites open in a new tab and say so, since leaving

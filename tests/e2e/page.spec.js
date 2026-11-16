@@ -63,8 +63,9 @@ test("What if… leads with the world's change, the same figure the run list giv
 test("What if… loads a run, keeps it in the URL and survives a reload", async ({ page }) => {
 	await page.goto(FIXTURE);
 	await ready(page);
-	await page.getByRole("button", { name: "What if…" }).click();
+	await page.getByRole("button", { name: "What if…", exact: true }).click();
 	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: CONSTRUCTION }).click();
 	await expect(page).toHaveURL(/mode=whatif/);
 	await expect(page).toHaveURL(/scenario=construction-demand-europe/);
@@ -619,8 +620,9 @@ test("a run that fails to load says so, and picking it again works", async ({ pa
 	await page.goto("");
 	await ready(page);
 	await page.route("**/*.parquet", (route) => route.abort());
-	await page.getByRole("button", { name: "What if…" }).click();
+	await page.getByRole("button", { name: "What if…", exact: true }).click();
 	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: CONSTRUCTION }).click();
 	await expect(page.getByText("That run could not be loaded").first()).toBeVisible();
 	await expect(page.getByText("Loading the run’s flows…")).toHaveCount(0);
@@ -713,9 +715,9 @@ test("the page fetches nothing but its own files", async ({ page, baseURL }) => 
 test("a fast run switch ends on the second run, and the slow first one never replaces it", async ({ page }) => {
 	await page.goto("");
 	await ready(page);
-	await page.getByRole("button", { name: "What if…" }).click();
+	await page.getByRole("button", { name: "What if…", exact: true }).click();
 	await openSelection(page);
-	await expect(page.getByRole("radio", { name: /Chinese coal power/i })).toHaveAttribute("aria-checked", "true");
+	await expect(page.locator(".run.chosen:not(.live-card)")).toContainText(/Chinese coal power/i);
 	await expect(page.locator("#headline")).toContainText("would have");
 	// every request made between the two clicks is A's: hold them until B is shown
 	let hold = false;
@@ -737,6 +739,7 @@ test("a fast run switch ends on the second run, and the slow first one never rep
 		await gate;
 		await route.continue();
 	});
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	hold = true;
 	await page.getByRole("radio", { name: STEEL_AP }).click();
 	await started;
@@ -838,7 +841,7 @@ test("“the” goes before the United States wherever its name sits in a phrase
 	await expect(page.locator("#headline")).toContainText("The United States");
 	await expect(page.locator(".kpis")).toContainText("outside the United States");
 	await expect(page.locator(".lg .lt")).toHaveText("Consumed here, made in the United States");
-	await page.getByRole("button", { name: "What if…" }).filter({ visible: true }).click();
+	await page.getByRole("button", { name: "What if…", exact: true }).filter({ visible: true }).click();
 	await expect(page.locator("#headline")).toContainText("released in the United States would have come to");
 	await expect(page.locator(".kpis.k5")).toHaveAttribute("aria-label", /^The change in the United States,/);
 });
@@ -928,6 +931,7 @@ test("the grid's pickers fold with their own Done, named apart from the sheet's"
 	await page.goto(`${FIXTURE}&mode=whatif`);
 	await ready(page);
 	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: /one product/i }).click();
 	await expect(page.locator(".gridpick")).toBeVisible();
 	// at most the sheet's own Done answers to the bare name
@@ -941,6 +945,7 @@ test("the grid pickers stay open on the grid cell the list also features", async
 	await page.goto(`${FIXTURE}&mode=whatif`);
 	await ready(page);
 	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	await page.getByRole("radio", { name: /one product/i }).click();
 	const pick = page.locator(".gridpick");
 	await pick.getByRole("button", { name: /Asia Pacific/ }).click();
@@ -981,6 +986,7 @@ test("the grid card leaves a cell that was never computed for the first computed
 	await page.goto(`${FIXTURE}&mode=whatif`);
 	await ready(page);
 	await openSelection(page);
+	await page.getByRole("button", { name: "Change the scenario" }).click();
 	const gridCard = page.getByRole("radio", { name: /one product/i });
 	await gridCard.click();
 	const pick = page.locator(".gridpick");
@@ -1141,4 +1147,100 @@ test("World's country entry has no code, and its words follow the indicator and 
 	await expect(page.locator("#tp-method")).toContainText(
 		"the toggle only picks whether the map shows where it is released or where it is consumed",
 	);
+});
+
+test("Flows says in plain words what the numbers are, and points to What if… once", async ({ page }) => {
+	await page.goto(FIXTURE);
+	await ready(page);
+	const cue = page.locator(".main .direction-cue");
+	await expect(cue).toHaveText(/^Where .+ to make what .+ consumes\.$/);
+	// the sidebar no longer repeats the line
+	await expect(page.locator("#side .hint").filter({ hasText: "to make what" })).toHaveCount(0);
+	await page.goto(`${FIXTURE}&dir=out`);
+	await ready(page);
+	await expect(page.locator(".main .direction-cue")).toHaveText(/^Where what .+ makes is consumed\.$/);
+	await page.goto(`${FIXTURE}&region=world`);
+	await ready(page);
+	await expect(page.locator(".main .direction-cue")).toHaveText(/^Colours the map by where /);
+	// the link opens What if… and both lines go
+	const link = page.getByRole("button", { name: "See what one change does What if…" });
+	await expect(link).toBeVisible();
+	await link.click();
+	await expect(page).toHaveURL(/mode=whatif/);
+	// the button goes with Flows: the headline takes focus once What if… has drawn
+	await expect(page.locator("#headline")).toBeFocused();
+	await expect(page.locator(".main .direction-cue")).toHaveCount(0);
+	await expect(page.getByRole("button", { name: /^See what one change does/ })).toHaveCount(0);
+	await expectNoAxeViolations(page);
+});
+
+test("a change reads the same on the strip, the sentence and the map: tiny ones as −<0.01%, the largest cell heaviest", async ({
+	page,
+}) => {
+	for (const q of ["", "&region=world"]) {
+		await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction${q}`);
+		await ready(page);
+		await expect(page.locator(".kpis.k5 .kpi.lead")).toHaveCount(1);
+		// the heaviest cell is the one with the largest change relative to 2011
+		const rel = await page
+			.locator(".kpis.k5 .kpi")
+			.evaluateAll((els) => els.map((e) => [e.classList.contains("lead"), e.querySelector(".ks").textContent]));
+		const size = rel.map(([, t]) => {
+			const m = t.match(/(<)?([\d.,]+)%/);
+			return m ? (m[1] ? 0.005 : Number(m[2].replace(",", ""))) : 0;
+		});
+		expect(size[rel.findIndex(([lead]) => lead)]).toBe(Math.max(...size));
+		// at most one map label is heavier than the rest (the world has none)
+		const labels = await page.locator(".lbls text.b").count();
+		await expect(page.locator(".lbls text.b.lead")).toHaveCount(labels ? 1 : 0);
+		const text = (await page.locator(".wstrip, .hl").allTextContents()).join(" ");
+		expect(text).not.toMatch(/<0\.01% (decrease|increase)/);
+		const weights = await page
+			.locator(".kpis.k5 .kpi .kv")
+			.evaluateAll((els) =>
+				els.map((e) => [e.parentElement.classList.contains("lead"), Number(getComputedStyle(e).fontWeight)]),
+			);
+		const top = weights.find(([t]) => t)[1];
+		for (const [t, w] of weights) if (!t) expect(w).toBeLessThan(top);
+	}
+});
+
+test("What if… opens folded to the chosen scenario, with the filters above the fold", async ({ page, isMobile }) => {
+	test.skip(isMobile, "the sidebar is a sheet on a phone");
+	await page.setViewportSize({ width: 1440, height: 900 });
+	for (const q of ["&mode=whatif", "&mode=whatif&scenario=steel-asia-pacific-20"]) {
+		await page.goto(FIXTURE + q);
+		await ready(page);
+		await expect(page.locator("#side .run.chosen:not(.live-card)")).toBeVisible();
+		await expect(page.locator("#run-list")).toHaveCount(0);
+		// Direction and Indicator whole; the industry list (taller than the window) from its first rows
+		for (const [name, need] of [
+			["Direction", "height"],
+			["Indicator", "height"],
+			["Industry sections", 150],
+		]) {
+			const group = page.locator("#side .grp").filter({ has: page.getByText(name, { exact: true }) });
+			const b = await group.boundingBox();
+			expect(b.y + (need === "height" ? b.height : need), name).toBeLessThanOrEqual(900);
+		}
+		await page.getByRole("button", { name: "Change the scenario" }).click();
+		await expect(page.getByRole("radio").first()).toBeVisible();
+	}
+});
+
+test("What if… opens folded again after a trip to Flows", async ({ page, isMobile }) => {
+	await page.goto(`${FIXTURE}&mode=whatif`);
+	await ready(page);
+	await openSelection(page);
+	const side = page.locator("#side");
+	await side.getByRole("button", { name: "Change the scenario" }).click();
+	await expect(page.locator("#run-list")).toBeVisible();
+	// a phone has the mode buttons in its dock, under the sheet
+	if (isMobile) await side.getByRole("button", { name: "Done", exact: true }).click();
+	const modes = isMobile ? page.locator(".dock") : side;
+	await modes.getByRole("button", { name: /^Flows, / }).click();
+	await modes.getByRole("button", { name: "What if…", exact: true }).click();
+	await openSelection(page);
+	await expect(page.locator("#run-list")).toHaveCount(0);
+	await expect(side.getByRole("button", { name: "Change the scenario" })).toBeVisible();
 });
