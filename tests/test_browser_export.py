@@ -1,6 +1,8 @@
 """The browser store keeps float32 values, row order and the reader's shard layout."""
 
 import hashlib
+import time
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -98,3 +100,13 @@ def test_export_finds_the_published_results_from_the_pipeline_folder(tmp_path):
     # the export goes on to the EXIOBASE arrays, which are absent here
     with pytest.raises(FileNotFoundError, match=r"A_v4\.npy"):
         export(tmp_path / "absent-data", tmp_path / "absent-db", tmp_path)
+
+
+def test_same_arrays_give_the_same_bytes_at_any_time(tmp_path, monkeypatch):
+    # gzip writes the build time into each member's header unless told otherwise
+    matrix = np.random.default_rng(7).normal(size=(200, 3))
+    write_array(tmp_path / "first", "A", matrix)
+    monkeypatch.setattr(time, "time", lambda: 2_000_000_000.0)
+    write_array(tmp_path / "second", "A", matrix)
+    shard = Path("A") / "c" / "0" / "0"
+    assert (tmp_path / "first" / shard).read_bytes() == (tmp_path / "second" / shard).read_bytes()

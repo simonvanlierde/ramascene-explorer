@@ -12,15 +12,19 @@ mixing exports.
 """
 
 import argparse
+import gzip
 import hashlib
 import json
 import sqlite3
 from contextlib import closing
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 import scipy.sparse as sp
 import zarr
+from numcodecs import GZip
+from numcodecs.compat import ensure_contiguous_ndarray
 from zarr.codecs import BytesCodec, GzipCodec, ShardingCodec
 from zarr.storage import LocalStore
 
@@ -31,6 +35,22 @@ SHARD_ROWS = 200
 # X and Y load a country's 200 rows at once, from one shard file each, so a
 # scenario reads one shard index for them; the other arrays load single rows.
 CHUNK_ROWS = {"X": 200, "Y": 200}
+
+
+class _Mtime0(GZip):
+    def encode(self, buf):
+        return gzip.compress(memoryview(ensure_contiguous_ndarray(buf)), self.level, mtime=0)
+
+
+class FixedTimeGzip(GzipCodec):
+    """zarr's gzip codec with MTIME 0 in each member header, so the same arrays give the same store bytes.
+
+    It writes the same "gzip" codec entry, so readers see no difference.
+    """
+
+    @cached_property
+    def _gzip_codec(self):
+        return _Mtime0(self.level)
 
 
 def catalog(db):
@@ -81,7 +101,7 @@ def write_array(directory, name, matrix, chunk_rows=1, shard_rows=SHARD_ROWS):
         chunks=(shard_rows, width),
         serializer=ShardingCodec(
             chunk_shape=(chunk_rows, width),
-            codecs=[BytesCodec(), GzipCodec(level=9)],
+            codecs=[BytesCodec(), FixedTimeGzip(level=9)],
             index_codecs=[BytesCodec()],
             subchunk_write_order="lexicographic",
         ),
