@@ -20,6 +20,9 @@ What is planned for the next year (to late 2027), in rough order. None of it has
   and read only the rows a scenario needs. CI checks every published scenario against
   RaMa-Scene at relative 1e-6.
 - The browser reader joins the [agreement table](../brightway-check/README.md).
+- **World** in the country list: the map, strip and Sankey show the world total and its split
+  over the five regions (`?region=world`).
+- Up to 10 changes in one custom scenario, in the browser and on the job API.
 
 ## Not planned
 

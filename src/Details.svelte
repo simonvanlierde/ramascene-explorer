@@ -130,7 +130,8 @@ const heads = $derived(
 				[lay?.x.R, "start", "Consumed in"],
 			],
 );
-const room = $derived(7 * k);
+// the shortest node that gets a label, in layout units
+const minNodeH = $derived(7 * k);
 // the section labels sit right of their column, except where the selected country is on the right
 const midIn = $derived(ui.dir === "in" || world);
 // a node is labelled where it is tall enough and its label clears the one above it
@@ -160,7 +161,7 @@ const labelled = $derived.by(() => {
 				shown.add(n);
 				continue;
 			}
-			if (n.me || n.h < room || c - last < SK_LINE * k) continue;
+			if (n.me || n.h < minNodeH || c - last < SK_LINE * k) continue;
 			// only the section column may drop a label: a long name may not fit before the far column
 			if (world && col === lay.mid && labelPx(n.name, n.v) * k + 8 > lay.x.R - lay.x.M - lay.nw) continue;
 			shown.add(n);

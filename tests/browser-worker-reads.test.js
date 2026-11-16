@@ -133,7 +133,7 @@ test("a selection made while Run computes starts its reads after Run", {
 });
 
 test("Run of the selection that waits behind a read-ahead does not read it again after", {
-	skip: !directory && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
+	skip: !directory && !process.env.CI && "Set BROWSER_ENGINE_DATA to the exported browser dataset.",
 }, async (t) => {
 	t.after(release);
 	self.onmessage({ data: { base, ahead: step(7, 1, 198, 2) } });

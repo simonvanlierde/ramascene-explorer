@@ -147,7 +147,8 @@ the page would lose the result.
 ## Live scenarios (optional)
 
 The card names the job API from the link. The page contacts it only when you open the form with
-**Set up**, which asks for `GET /catalog`; then the form sends one change and polls for its result.
+**Set up**, which asks for `GET /catalog`; then the form sends its changes (one `model_details`
+entry each, up to 10) and polls for the result.
 The allowed change comes from `GET /catalog`, or is −100% to +1000% if the API gives no range.
 If the API cannot be reached, the panel offers **Try again**, and the published scenarios stay available.
 A request with no answer fails after 30 s, and one failed poll does not give up on a running job.

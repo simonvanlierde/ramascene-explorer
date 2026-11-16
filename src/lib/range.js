@@ -10,6 +10,8 @@ let lastData = Number.NEGATIVE_INFINITY;
 
 // The file on the server is not the size the caller asked for: another copy of it.
 export class SizeMismatch extends Error {}
+// The data host answered 5xx: the host, not the file. Not retried (docs/browser-engine.md).
+export class HostError extends Error {}
 
 export async function fetchRange(url, start, end, byteLength, signal, timeoutMs = RANGE_TIMEOUT_MS) {
 	if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start || end > byteLength)
@@ -50,7 +52,7 @@ export async function fetchRange(url, start, end, byteLength, signal, timeoutMs 
 			if (response.status >= 500) {
 				await response.body?.cancel();
 				// A passing R2 or edge failure answers 503; that is the host, not its setup.
-				throw new Error(`the data host failed: try again (${where}, status ${response.status})`);
+				throw new HostError(`the data host failed: try again (${where}, status ${response.status})`);
 			}
 			const total = response.headers.get("Content-Range")?.match(/\/(\d+)$/)?.[1];
 			if (response.status === 416 || (response.status === 206 && total && Number(total) !== byteLength)) {

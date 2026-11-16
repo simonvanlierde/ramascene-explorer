@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-15
+
 ### Added
 
 - Under the headline, Flows says in plain words what the direction shows ("Where emissions are
@@ -17,11 +19,13 @@ follow [Semantic Versioning](https://semver.org/).
   colours every region by what it releases (Consumption) or consumes (Production), with no bands.
   The strip gives the world total and its split over the five regions, and the Sankey runs from
   the five regions where it is released to the five where it is consumed. The link token is
-  `?region=world`.
+  `?region=world`, and the table's CSV is named with `world` and lists every region.
 - A custom scenario can hold up to 10 changes at once, in the browser and on the job API. Add a
   change (copied from the last) and Remove manage the list; changes that hit the same input
   multiply, as in RaMa-Scene. The headline names up to two changes and counts more, with all of
   them listed under Details. An error names the change it is about.
+- [databases.md](docs/databases.md) sets out the licence and data terms of the candidate second
+  databases.
 
 ### Changed
 
@@ -37,6 +41,10 @@ follow [Semantic Versioning](https://semver.org/).
 - Cancel now stops a run on the job API too. The page stops waiting; the job may still finish
   on the server.
 - The page keeps the 20 most recently viewed runs in memory instead of every run viewed.
+- Development runs through `just` recipes, which CI runs as written, and
+  `scripts/fetch-data.sh` downloads and checks the release data. A pull request now fails on a
+  dependency licence outside the allow-list, and every commit in it needs a DCO sign-off
+  ([CONTRIBUTING.md](CONTRIBUTING.md)).
 - The social card is redrawn as a poster, and its URL carries a hash so shared links pick up a
   new card.
 - The deployed site no longer serves data through its Cloudflare Worker, which now serves the
@@ -51,19 +59,18 @@ follow [Semantic Versioning](https://semver.org/).
   pins, as the deploy already did, so it cannot ship results and flows from different runs.
 - Map outlines that fail to load now show "The map outlines could not be loaded" with Try
   again, instead of an empty map.
-- A `results.json` the host fails to send (an error other than 404, or no answer within 60 s)
-  now asks for a reload, instead of the "No precomputed data here yet" message for a checkout
-  without data.
-- The size check for the embodied flows and the browser data manifest now fail after 60 s
-  instead of waiting forever.
-- A job-API request that gets no answer fails after 30 s, and one failed status poll no longer
-  abandons a job that is still running: three failed polls in a row do.
-- An offline precompute run no longer hangs on a stuck engine worker: after 600 s that
-  scenario fails and the others carry on.
-- A data host that sends no `Content-Length` for the embodied flows now gives that as the
-  error, not "invalid matrix byte range".
-- When the embodied flows cannot be read, the page no longer asks the host for the file size
-  and waits a second time: it does so only when the file is not the size `results.json` gives.
+- Loading no longer hangs or shows the wrong message when the data host fails: a read of
+  `results.json` or the embodied flows that stalls, drops or gets a 5xx asks for a reload instead
+  of saying the data is missing. The size checks fail after 60 s, without a second wait after a
+  failed read, and a host that sends no `Content-Length` says so.
+- A job-API request with no answer fails after 30 s, and only three failed status polls in a row
+  abandon a running job. An offline precompute run fails a stuck scenario after 600 s and carries
+  on with the others.
+- After a deploy, a custom form whose code is gone asks for a reload instead of offering Try
+  again.
+- A refused `?data=` or `?api=` link stays readable in the header, up to 40% of its width, not cut to a few letters.
+- Screen readers hear the What if… headline and the region cells in the same words the page
+  shows.
 - A Run whose calculation kernel never finishes downloading now fails after two minutes,
   instead of showing "Running…" until Cancel. The next Run loads the kernel again.
 - The release's software bill of materials names its root component `ramascene-explorer`
@@ -96,6 +103,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Security
 
+- The site's Content-Security-Policy header also sets `object-src 'none'` and `base-uri 'none'`.
 - `engine/osv-scanner.toml` lists RUSTSEC-2024-0436 (`paste`, unmaintained, no fix), as `engine/deny.toml`
   already does, so OSV-based scanners skip it.
 
@@ -474,7 +482,8 @@ First release.
 - The whole view in the query string, so every view can be shared. Links of
   the form `?scenario=&indicator=&region=` still open their run.
 
-[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/simonvanlierde/ramascene-explorer/compare/v0.4.0...v0.5.0

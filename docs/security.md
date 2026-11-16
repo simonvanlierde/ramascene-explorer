@@ -19,13 +19,13 @@ https job API, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
-`public/_headers` adds `Content-Security-Policy: frame-ancestors 'none'` and
-`X-Frame-Options: DENY`, so no other site can frame the page, and
+`public/_headers` adds `Content-Security-Policy: frame-ancestors 'none'; object-src 'none';
+base-uri 'none'` and `X-Frame-Options: DENY`, so no other site can frame the page, and
 `Strict-Transport-Security` for one year. `frame-ancestors` works only as a
 header, so it sits there and not in the `<meta>` tag.
 
 The `<meta>` policy covers the page, not the custom-scenario worker: a worker
-takes its policy from its own response, and the host sends only `frame-ancestors`. The worker
+takes its policy from its own response, and the host sends only those three directives. The worker
 compiles the WebAssembly kernel, so a Content-Security-Policy header served for
 the whole site (for example from a host's `_headers` file) needs
 `'wasm-unsafe-eval'` in `script-src` for `browser-worker`'s script. Leave it out

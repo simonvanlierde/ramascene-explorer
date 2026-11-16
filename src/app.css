@@ -296,9 +296,34 @@ button.pill:hover {
 .pill.live {
   font-weight: 600;
 }
+/* a refused link keeps its pill whole up to 40% of the width, and its title has the rest */
 .pill.fail {
   color: var(--danger);
   border-color: currentColor;
+  flex: none;
+  max-width: 40vw;
+}
+
+/* Beside a refused link's pills the rest of the header no longer fits one row: there it wraps,
+   and the page below starts under the taller header (App measures it). */
+@media (min-width: 761px) {
+  .shell:has(.top .pill.fail) {
+    --top: var(--header-h, 48px);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .top:has(.pill.fail) {
+    min-height: 48px;
+  }
+  /* the dataset name gives way first, as below 1100 px, so only the pills wrap */
+  .top:has(.pill.fail) .pill.basis .ds {
+    display: none;
+  }
+  .top:has(.pill.fail) .rt {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
+    padding-block: 8px;
+  }
 }
 
 /* the basis pill opens where the numbers come from (Basis.svelte) */

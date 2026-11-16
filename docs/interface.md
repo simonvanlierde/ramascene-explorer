@@ -56,7 +56,7 @@ own CORS headers. The page makes these calls (`src/LivePanel.svelte`, `src/lib/l
 | call | what it does |
 | --- | --- |
 | `GET /catalog` | lists `products`, `regions` and `consumers` (each with `id` and `name`) for the form, and `tech_change_percent` (`{min, max}`) to bound the change field (−100 to 1000 if missing). |
-| `POST /jobs` | starts a job. Body: `{"label": string, "model_details": [{"product": [id], "originReg": [id], "consumedBy": [id], "consumedReg": [id], "techChange": [percent]}]}`. Answers with an object that has an `id`. |
+| `POST /jobs` | starts a job. Body: `{"label": string, "model_details": [{"product": [id], "originReg": [id], "consumedBy": [id], "consumedReg": [id], "techChange": [percent]}]}`, with 1 to 10 entries in `model_details`. Answers with an object that has an `id`. |
 | `GET /jobs/{id}` | polled every 2 seconds, for up to 30 minutes, until `status` is `succeeded` or `failed`. |
 
 If nothing answers, or the browser blocks the answer for lack of CORS headers,

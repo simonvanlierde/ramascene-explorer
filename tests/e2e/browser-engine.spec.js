@@ -181,6 +181,29 @@ test("a worker file gone after a deploy asks for a reload, not Try again", async
 	await expect(page.locator("#live-run")).toBeDisabled();
 });
 
+test("the browser client's file gone after a deploy asks for a reload, not Try again", async ({ page, isMobile }) => {
+	await page.route("**/assets/browser-client-*.js", (route) => route.fulfill({ status: 404, body: "" }));
+	await page.goto("./");
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toContainText("could not load. Reload the page");
+	await expect(page.locator("#live-retry")).toHaveCount(0);
+	await expect(page.locator("#live-run")).toBeDisabled();
+});
+
+test("the custom form's own file gone after a deploy asks for a reload", async ({ page, isMobile }) => {
+	await page.route("**/assets/LivePanel-*.js", (route) => route.fulfill({ status: 404, body: "" }));
+	await page.goto("./");
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await expect(page.getByRole("alert").filter({ hasText: "The custom scenario form could not load" })).toContainText(
+		"Reload the page",
+	);
+});
+
 test("a worker file gone when a fresh worker starts turns Run off", async ({ page, isMobile }) => {
 	test.skip(!existsSync("data/browser-engine/manifest-v3.json"), "Export or download the browser dataset first.");
 	test.setTimeout(60_000);
@@ -294,6 +317,28 @@ test("a negligible custom change stays readable without claiming a hotspot", asy
 	}
 	if (["light", "phone"].includes(info.project.name))
 		await page.screenshot({ path: info.outputPath("negligible-change.png"), fullPage: true, animations: "disabled" });
+});
+
+test("World after a custom run splits the run's change over the five regions", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(90_000);
+	await page.goto("./");
+	await page.getByRole("button", { name: "What if…" }).first().click();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 60_000 });
+	if (isMobile) await expect(page.locator("#side")).not.toBeVisible();
+	await page
+		.locator("#headline")
+		.getByRole("button", { name: /^Country:/ })
+		.click();
+	await page.locator(".pop.country").getByRole("button", { name: "World", exact: true }).click();
+	await expect(page.locator("#headline")).toContainText(/The world’s consumption would have been/);
+	await expect(page.locator("#status .pill.live")).toBeVisible();
+	await expect(page.locator(".kpis.k5 .kpi")).toHaveCount(5);
+	await expect(page.locator(".wstrip .world")).toHaveCount(0);
 });
 
 test("a selection too broad for the browser says so before Run, and search narrows the lists", async ({

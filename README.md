@@ -21,12 +21,14 @@ place ripples through supply chains worldwide.
 
 ## Try it
 
-1. Choose a country. The map shows where the goods and services it consumes are made.
+1. Choose a country, or World. The map shows where the goods and services a country consumes
+   are made; for World it colours each region by what it releases.
 2. Open **What if…**. The first scenario asks what happens if industry in China uses
    20% less coal power. World greenhouse-gas emissions fall, almost all of the cut happens
    in China, and it shrinks the footprint of every country that buys from China.
    [Read the map](docs/page.md#compare-a-scenario) gives the figures for each featured scenario.
-3. Try the others, or set up your own change in the **Custom scenario** card below the list.
+3. Try the others, or set up your own scenario in the **Custom scenario** card below the list,
+   with up to ten changes together.
 
 ## What the results are
 

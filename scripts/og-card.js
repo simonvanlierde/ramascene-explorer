@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "@playwright/test";
 import { preview } from "vite";
+import { headlineFigures } from "./og-headline.js";
 
 const root = new URL("..", import.meta.url).pathname;
 const font = (pkg, file) => pathToFileURL(join(root, "node_modules/@fontsource", pkg, "files", file)).href;
@@ -20,10 +21,7 @@ try {
 	await app.goto("http://127.0.0.1:4181/?region=DE");
 	await app.locator("svg.map path.limb").waitFor();
 	await app.waitForTimeout(3000); // the bands sweep in; wait until the map is at rest
-	const text = await app.locator("body").textContent();
-	const found = text.match(/(\w[\w ]*?)['’]s consumption was linked to .*? in (\d{4}) .*?(\d+)% was released abroad/s);
-	if (!found) throw new Error("the sentence did not match; update scripts/og-card.js");
-	const [, place, year, share] = found;
+	const { place, year, share } = await headlineFigures(app);
 	await app.addStyleTag({
 		content: `*{background:transparent!important;box-shadow:none!important}
 body *{visibility:hidden}svg.map,svg.map *{visibility:visible}g.lbls{display:none}`,

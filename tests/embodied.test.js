@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { asyncBufferFromFile } from "hyparquet";
-import { at, embodiedUrl, flowsUrl, openEmbodied, openEmbodiedUrl, readRun } from "../src/lib/embodied.js";
+import {
+	at,
+	embodiedUrl,
+	flowsFailure,
+	flowsUrl,
+	openEmbodied,
+	openEmbodiedUrl,
+	readRun,
+} from "../src/lib/embodied.js";
 import { path } from "./fixtures.js";
 
 const fixture = JSON.parse(readFileSync(path("./fixture.json"), "utf8"));
@@ -173,6 +181,24 @@ test("a host that fails with the right size is not asked for the size", async (t
 		/could not be read.*second try/,
 	);
 	assert.deepEqual(log, ["GET", "GET"]); // the footer and its one retry
+});
+
+test("a stalled or 5xx flows read is a failed load, which a reload may fix; a 404 is a missing file", async (t) => {
+	const reason = (p) => p.then(() => "opened", flowsFailure);
+	const stalled = async () => {
+		throw new DOMException("no data for 60000 ms", "TimeoutError");
+	};
+	t.mock.method(globalThis, "fetch", stalled);
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes)), "failed");
+	t.mock.method(globalThis, "fetch", async () => new Response("busy", { status: 503 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes)), "failed");
+	t.mock.method(globalThis, "fetch", async () => new Response("gone", { status: 404 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL, fixture.provenance.embodied.bytes)), "missing");
+	// without a known size the page asks the host first, and a 5xx there is a failed load too
+	t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 503 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL)), "failed");
+	t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 404 }));
+	assert.equal(await reason(openEmbodiedUrl(FIXTURE_URL)), "missing");
 });
 
 test("the published flows come from the data origin by their checksum", async () => {

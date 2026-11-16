@@ -146,12 +146,17 @@ function connect({ quiet = false } = {}) {
 	unreachable = false;
 	outdated = false;
 	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
+	// the client's own file gone (a deploy since the page loaded) is as stale as a missing worker
+	let gone = false;
 	const connecting = browser
 		? import("./lib/browser-engine/browser-client.js").then(({ browserClient }) => {
 			if (attempt !== connection) return null;
 			client?.close();
 			client = browserClient();
 			return client.request();
+		}, () => {
+			gone = true;
+			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.");
 		})
 		: fetchJson(`${api}/catalog`);
 	connecting.then(
@@ -163,7 +168,7 @@ function connect({ quiet = false } = {}) {
 		(e) => {
 			if (attempt !== connection) return;
 			// Try again would load the same missing worker files: only a reload helps
-			outdated = browser && client?.outdated === true;
+			outdated = browser && (gone || client?.outdated === true);
 			unreachable = !outdated;
 			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
 		},

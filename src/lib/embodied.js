@@ -4,7 +4,7 @@
 // countries, sections and indicators. No DOM here, so node --test covers it.
 
 import { parquetMetadataAsync, parquetRead } from "hyparquet";
-import { fetchRange, SizeMismatch } from "./range.js";
+import { fetchRange, HostError, SizeMismatch } from "./range.js";
 
 const COLUMNS = ["indicator", "producer", "section", "consumer", "value"];
 // The footer is about 90 kB (run names, countries, checks, provenance);
@@ -55,7 +55,7 @@ export async function openEmbodiedUrl(url, byteLength) {
 	const open = async (n) => {
 		if (n === undefined) {
 			const head = await fetch(href, { method: "HEAD", cache: "no-cache", signal: AbortSignal.timeout(60_000) });
-			if (!head.ok) throw new Error(`embodied flows: ${head.status}`);
+			if (!head.ok) throw new (head.status >= 500 ? HostError : Error)(`embodied flows: ${head.status}`);
 			n = Number(head.headers.get("Content-Length"));
 			if (!Number.isSafeInteger(n) || n <= 0) throw new Error("embodied flows: the data host sent no Content-Length");
 		}
@@ -70,6 +70,14 @@ export async function openEmbodiedUrl(url, byteLength) {
 		throw e;
 	});
 }
+
+// Why openEmbodiedUrl failed, for the page: "failed" when the connection or the host broke
+// (a stall, a dropped request, a 5xx), which a reload may fix; "missing" for anything else.
+// fetchRange wraps a stall or a drop after its retry, so its cause carries the name.
+export const flowsFailure = (e) =>
+	e instanceof HostError || ["TimeoutError", "AbortError", "TypeError"].includes(e?.cause?.name ?? e?.name)
+		? "failed"
+		: "missing";
 
 // Index into a dense run: indicator (position in meta.indicators), producer,
 // section, consumer.
