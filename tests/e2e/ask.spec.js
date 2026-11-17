@@ -71,7 +71,11 @@ test("a question becomes a what-if the browser engine runs, then a view change",
 		"Motor vehicles, trailers and semi-trailers, made in Europe, used by Y: Final Consumption in Europe: −20%",
 	]);
 	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not checked");
-	expect(page.url()).not.toContain("ask-");
+	// the link keeps only the view and ?ask=, never the custom run
+	const query = new URL(page.url()).searchParams;
+	expect([...query.keys()].sort()).toEqual(["ask", "mode", "scenario"]);
+	expect(query.get("mode")).toBe("whatif");
+	expect(page.url()).not.toContain("browser-");
 	const body = questions[0];
 	expect(body.model).toBe("test-model");
 	expect(body.response_format.json_schema.name).toBe("action");
@@ -113,4 +117,75 @@ test("an unknown name and a failing server show as text", async ({ page, isMobil
 	await page.route(`${MODEL}/chat/completions`, (route) => route.fulfill({ status: 500, body: "boom" }));
 	await page.locator("#ask-go").click();
 	await expect(page.locator("#ask-error")).toContainText("the model server answered 500");
+});
+
+test("a plan too broad for the browser leaves the view and the link as they were", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(90_000);
+	await mockModel(page, [
+		{
+			action: "whatif",
+			indicator: null,
+			region: null,
+			reply: "",
+			levers: [
+				{
+					product: "Total",
+					origin_region: "Total",
+					consumed_by: ["S: Electricity, gas and water supply"],
+					consumed_region: "Europe",
+					change_percent: -20,
+				},
+			],
+		},
+	]);
+	await page.goto(`./?ask=${encodeURIComponent(MODEL)}`);
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
+	// the scrubber parked at the 2011 baseline must stay there
+	const slider = page.locator('.scrub [role="slider"]');
+	await expect(slider).toHaveAttribute("aria-valuenow", "100", { timeout: 30_000 });
+	await slider.focus();
+	await slider.press("Home");
+	await expect(slider).toHaveAttribute("aria-valuenow", "0");
+	const before = page.url();
+	if (isMobile) await page.locator(".dock .filters").click();
+	await page.locator("#ask-q").fill("Everything into electricity");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-error")).toContainText("too broad", { timeout: 60_000 });
+	expect(page.url()).toBe(before);
+	await expect(slider).toHaveAttribute("aria-valuenow", "0");
+});
+
+test("Cancel during an Ask run says Cancelled", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(90_000);
+	// the matrix reads never answer, so the run is still going when Cancel is pressed
+	await page.route("**/browser-engine/store-*/**", () => {});
+	await mockModel(page, [
+		{
+			action: "whatif",
+			indicator: null,
+			region: null,
+			reply: "",
+			levers: [
+				{
+					product: "Motor vehicles, trailers and semi-trailers",
+					origin_region: "Europe",
+					consumed_by: ["Y: Final Consumption"],
+					consumed_region: "Europe",
+					change_percent: -20,
+				},
+			],
+		},
+	]);
+	await openAsk(page, isMobile);
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#live-run")).toHaveText("Running…");
+	await page.locator("#live-cancel").click();
+	await expect(page.locator("#ask-error")).toHaveText("Cancelled.");
+	await expect(page.locator("#ask-go")).toBeEnabled();
 });

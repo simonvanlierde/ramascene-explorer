@@ -109,7 +109,13 @@ function toggle() {
 // For the Ask panel, which shares this panel's worker: the catalogue, once loaded.
 export async function catalogue() {
 	ensureConnected();
-	return browser ? connecting : null;
+	if (!browser) return null;
+	// a reconnect (Cancel, a stopped worker) replaces the promise and the old one resolves null
+	let p;
+	let c;
+	do c = await (p = connecting);
+	while (p !== connecting);
+	return c;
 }
 // For the Ask panel: plans the scenario, then runs it as Run does. Resolves to {ok, text}.
 export async function runScenario(scenario) {
@@ -290,7 +296,7 @@ async function execute(scenario) {
 		say(text);
 		result = { ok: true, text };
 	} catch (e) {
-		if (cancelled) return result;
+		if (cancelled) return { ok: false, text: "Cancelled." };
 		result = { ok: false, text: `${browser ? "Scenario" : "Job"} failed: ${e.message}` };
 		say(result.text, true);
 		// a trap or a timeout stopped the worker: start a fresh one for the next Run

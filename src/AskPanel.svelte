@@ -6,8 +6,9 @@ import { ask, askSchema, leverText, systemPrompt, toModelDetails, toView } from 
 import { ui } from "./view.svelte.js";
 
 // base: the model server's base URL; model: its name, or null for the first one it lists;
-// panel: the mounted LivePanel (its catalogue() and runScenario()); meta: the page's data
-let { base, model = null, panel, meta } = $props();
+// panel: the mounted LivePanel (its catalogue() and runScenario()); meta: the page's data;
+// setMode: App's, so What if… shows the run once it has finished
+let { base, model = null, panel, meta, setMode } = $props();
 let question = $state("");
 let busy = $state(false);
 let error = $state("");
@@ -31,10 +32,9 @@ async function submit(event) {
 			answer = { reply, levers: [], outcome: "The map now shows this view." };
 		} else if (got.action === "whatif") {
 			const scenario = { label: "custom scenario", model_details: toModelDetails(got.levers, catalog) };
-			ui.mode = "whatif";
-			ui.s = 1;
 			const { ok, text } = await panel.runScenario(scenario);
 			if (!ok) throw new Error(text);
+			setMode("whatif");
 			answer = { reply, levers: got.levers.map(leverText), outcome: text };
 		} else {
 			answer = { reply, levers: [], outcome: "" };
