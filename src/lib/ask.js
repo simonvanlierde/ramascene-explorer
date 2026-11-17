@@ -34,7 +34,7 @@ export const DETAIL = " (detail)";
 // Name to id. A repeated name with the same leaves as its first entry is the same selection and
 // keeps the first id; one with other leaves (the EXIOBASE product under a section of the same
 // name) gets its own name, so the model can still pick it. Same rule as ask_eval.py.
-// shortcut: one suffix, so a third differing entry of a name collapses into the second.
+// NOTE: one suffix, so a third differing entry of a name collapses into the second.
 function namesOf(catalog) {
 	const out = {};
 	for (const kind of ["products", "regions", "consumers"]) {
