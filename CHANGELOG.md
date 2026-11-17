@@ -6,6 +6,13 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `?ask=<base URL>` adds an Ask panel: a question to a model server (such as a local
+  Ollama or vLLM) becomes a view change or a custom scenario, which the browser engine computes.
+  The model picks catalogue names and never produces a number; each answer lists the changes it
+  ran. Without the parameter the page is unchanged. `evals/ask/` scores models on the task.
+
 ## [0.8.0] - 2026-11-15
 
 ### Added

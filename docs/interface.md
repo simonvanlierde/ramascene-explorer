@@ -22,6 +22,8 @@ in `src/lib/live.js`.
 | `panel` | `sankey`, `table`, `method` | none |
 | `data` | a relative path to a `.json` file ([security.md](security.md#what-data-accepts)) | `data/results.json` |
 | `api` | a job API origin ([security.md](security.md#what-api-accepts)) | none |
+| `ask` | the base URL of a chat-completions model server, see [Ask](#ask) | none |
+| `askmodel` | the model name to send with `ask` | the first model the server lists |
 
 The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the
@@ -42,6 +44,31 @@ A change from a zero baseline has no percentage; the display says so.
 For display, differences no larger than a trillionth of the baseline are treated
 as zero and do not name a largest change. This is a display rule, not an uncertainty
 estimate. The calculations and downloadable CSV retain the original values.
+
+## Ask
+
+`?ask=<base URL>` adds an Ask panel under Custom scenario in What if…. The base URL is a
+chat-completions server's, with its path (`http://localhost:11434/v1` for Ollama,
+`http://127.0.0.1:8000/v1` for vLLM). It is checked like `api`: https, or http on `localhost`
+or `127.0.0.1`; anything else is ignored and the page is unchanged. With `?api=` also present,
+the job API takes precedence and the panel does not appear. Code: `src/lib/ask.js`,
+`src/AskPanel.svelte`.
+
+A question goes to `POST {base}/chat/completions` with a JSON schema whose enums are the
+catalogue's product, region and industry names, `temperature` 0 and thinking off. The model
+answers with an action: `view` (sets the indicator and country), `whatif` (up to ten changes) or
+`none` (text only). The page maps the names to ids, plans the scenario and runs it in the
+browser engine, in the worker the Custom scenario form uses, so the map shows the run. The
+model never produces a number. A name outside the catalogue, or a change outside −100 to
+1000 percent, is an error shown in the panel; nothing is clamped. Every answer lists the
+changes it ran. The model's text is shown as text. A custom run stays out of the link.
+Without `askmodel`, the page asks `GET {base}/models` and uses the first model.
+
+A page on a public origin that calls a model on the reader's own machine meets CORS, and Chrome
+asks for the local-network permission. For a demo, serve the page from the same machine as
+the model (`pnpm preview`). vLLM needs `--allowed-origins '["<page origin>"]'` and Ollama
+`OLLAMA_ORIGINS=<page origin>` for the page's origin. [evals/ask](../evals/ask/README.md)
+scores models on this task.
 
 ## Job API
 

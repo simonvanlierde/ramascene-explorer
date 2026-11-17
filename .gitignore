@@ -18,3 +18,4 @@ engine/pkg/
 .dev.vars
 engine/pkg-threads/
 engine/mutants.out*/
+evals/ask/out/

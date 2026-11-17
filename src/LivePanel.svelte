@@ -93,13 +93,35 @@ const range = $derived(catalog?.tech_change_percent ?? CHANGE_RANGE);
 // the browser data loads on the first open, not with the page
 let open = $state(false);
 let connected = false;
-function toggle() {
-	open = !open;
-	ui.custom = open;
-	if (open && !connected) {
+// the connection in progress, resolving to the catalogue (null if it failed)
+let connecting = Promise.resolve(null);
+function ensureConnected() {
+	if (!connected) {
 		connected = true;
 		connect();
 	}
+}
+function toggle() {
+	open = !open;
+	ui.custom = open;
+	if (open) ensureConnected();
+}
+// For the Ask panel, which shares this panel's worker: the catalogue, once loaded.
+export async function catalogue() {
+	ensureConnected();
+	return browser ? connecting : null;
+}
+// For the Ask panel: plans the scenario, then runs it as Run does. Resolves to {ok, text}.
+export async function runScenario(scenario) {
+	if (running) return { ok: false, text: "A scenario is already running." };
+	try {
+		plan({ catalog, ...catalog.size }, scenario.model_details);
+	} catch (e) {
+		const text = e.message.startsWith("too broad") ? `This selection is ${e.message}` : e.message;
+		say(text, true);
+		return { ok: false, text };
+	}
+	return execute(scenario);
 }
 const trees = $derived({
 	products: catalogTree(rootNamed(catalog?.products, "All products")),
@@ -148,7 +170,7 @@ function connect({ quiet = false } = {}) {
 	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
 	// the client's own file gone (a deploy since the page loaded) is as stale as a missing worker
 	let gone = false;
-	const connecting = browser
+	const loading = browser
 		? import("./lib/browser-engine/browser-client.js").then(({ browserClient }) => {
 			if (attempt !== connection) return null;
 			client?.close();
@@ -159,18 +181,20 @@ function connect({ quiet = false } = {}) {
 			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.");
 		})
 		: fetchJson(`${api}/catalog`);
-	connecting.then(
+	connecting = loading.then(
 		(c) => {
-			if (attempt !== connection) return;
+			if (attempt !== connection) return null;
 			catalog = c;
 			if (!quiet) say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
+			return c;
 		},
 		(e) => {
-			if (attempt !== connection) return;
+			if (attempt !== connection) return null;
 			// Try again would load the same missing worker files: only a reload helps
 			outdated = browser && (gone || client?.outdated === true);
 			unreachable = !outdated;
 			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
+			return null;
 		},
 	);
 }
@@ -225,6 +249,12 @@ async function submit(event) {
 		say(e.message, true);
 		return;
 	}
+	await execute(scenario);
+}
+
+// Runs a scenario and shows it on the map; both Run and the Ask panel come here.
+async function execute(scenario) {
+	let result = { ok: false, text: "" };
 	running = true;
 	cancelled = false;
 	elapsed = 0;
@@ -258,9 +288,11 @@ async function submit(event) {
 			text += ` Its flows are not on the map: ${e.message}`;
 		}
 		say(text);
+		result = { ok: true, text };
 	} catch (e) {
-		if (cancelled) return;
-		say(`${browser ? "Scenario" : "Job"} failed: ${e.message}`, true);
+		if (cancelled) return result;
+		result = { ok: false, text: `${browser ? "Scenario" : "Job"} failed: ${e.message}` };
+		say(result.text, true);
 		// a trap or a timeout stopped the worker: start a fresh one for the next Run
 		if (browser && client?.stopped) {
 			sent = "";
@@ -270,6 +302,7 @@ async function submit(event) {
 		clearInterval(tick);
 		running = false;
 	}
+	return result;
 }
 </script>
 

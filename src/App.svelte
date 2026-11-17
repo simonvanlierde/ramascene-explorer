@@ -6,6 +6,7 @@ import { DATA_ORIGIN } from "./lib/data-origin.js";
 import { embodiedUrl, flowsFailure, flowsUrl, openEmbodiedUrl, readRun } from "./lib/embodied.js";
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, WORLD, wording, worldTotal } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun, liveData } from "./lib/live.js";
+import { askModel, askUrl } from "./lib/ask.js";
 import { runCache } from "./lib/run-cache.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Basis from "./Basis.svelte";
@@ -22,6 +23,9 @@ const ignored = ignoredData(search);
 // The custom form computes in the browser, or on the job API with ?api=.
 const api = apiUrl(search);
 const refusedApi = ignoredApi(search);
+// ?ask= adds the Ask panel; it needs the browser engine, so ?api= takes precedence over it
+const askBase = api ? null : askUrl(search);
+let livePanelRef = $state();
 
 let data = $state.raw(null);
 let empty = $state(false);
@@ -252,7 +256,12 @@ $effect(() => {
 {#snippet livePanel()}
 	{#await import("./LivePanel.svelte") then { default: LivePanel }}
 		{#if api}<LivePanel {api} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses)} onnews={(text, alert) => (news = { text, alert })} />
-		{:else}<LivePanel browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+		{:else}<LivePanel bind:this={livePanelRef} browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
+		{#if askBase && livePanelRef}
+			{#await import("./AskPanel.svelte") then { default: AskPanel }}
+				<AskPanel base={askBase} model={askModel(search)} panel={livePanelRef} {meta} />
+			{/await}
+		{/if}
 	{:catch}
 		<p role="alert">The custom scenario form could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.</p>
 	{/await}
