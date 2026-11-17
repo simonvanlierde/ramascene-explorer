@@ -1,6 +1,18 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
-import { ALL, ask, askSchema, askUrl, leverText, systemPrompt, toModelDetails, toView } from "../src/lib/ask.js";
+import {
+	ALL,
+	ask,
+	askSchema,
+	askUrl,
+	DETAIL,
+	leverText,
+	systemPrompt,
+	toModelDetails,
+	toView,
+} from "../src/lib/ask.js";
 import { WORLD } from "../src/lib/flows.js";
 
 const consumers = [
@@ -85,6 +97,8 @@ test("unknown names and out-of-range changes are errors naming the change", () =
 	assert.throws(() => toModelDetails([lever({ change_percent: 1001 })], catalog), /outside/);
 	assert.throws(() => toModelDetails([lever({ change_percent: "20" })], catalog), /must be a number/);
 	assert.throws(() => toModelDetails([], catalog), /no changes/);
+	for (const bad of [null, "Steel", 3])
+		assert.throws(() => toModelDetails([lever(), bad], catalog), /change 2 is not a change/);
 	assert.throws(() => toModelDetails(Array(11).fill(lever()), catalog), /more than 10/);
 	assert.equal(toModelDetails([lever({ change_percent: -100 })], catalog)[0].techChange[0], -100);
 });
@@ -161,8 +175,115 @@ test("ask turns failures into readable errors", async () => {
 		}),
 		/did not answer within/,
 	);
+	for (const content of ["no json", null, "42", '"a string"', "[1]", "null"])
+		await assert.rejects(
+			ask({ ...args, fetchFn: async () => Response.json({ choices: [{ message: { content } }] }) }),
+			/not valid JSON/,
+			String(content),
+		);
+	await assert.rejects(ask({ ...args, fetchFn: async () => Response.json({}) }), /not valid JSON/);
+	// a 200 whose body is not JSON (a proxy's HTML page)
 	await assert.rejects(
-		ask({ ...args, fetchFn: async () => Response.json({ choices: [{ message: { content: "no json" } }] }) }),
-		/not valid JSON/,
+		ask({ ...args, fetchFn: async () => new Response("<html>login</html>") }),
+		/reply to \/chat\/completions was not JSON/,
 	);
+	// the body read can time out too
+	await assert.rejects(
+		ask({
+			...args,
+			fetchFn: async () => ({
+				ok: true,
+				json: async () => {
+					throw Object.assign(new Error("t"), { name: "TimeoutError" });
+				},
+			}),
+		}),
+		/did not answer within/,
+	);
+});
+
+test("ask refuses redirects", async () => {
+	const inits = [];
+	const fetchFn = async (_, init) => {
+		inits.push(init);
+		return Response.json({ data: [{ id: "m" }], choices: [{ message: { content: "{}" } }] });
+	};
+	await ask({ base: "http://localhost:1/v1", system: "S", schema: {}, question: "Q?", fetchFn });
+	assert.equal(inits.length, 2);
+	for (const init of inits) assert.equal(init.redirect, "error");
+});
+
+test("a repeated name with other leaves gets its own name; one with the same leaves collapses", () => {
+	const c = {
+		...catalog,
+		products: [
+			{ id: 16, name: "Other services", leaves: [1, 2, 3] },
+			{ id: 50, name: "Construction", leaves: [9] },
+			{ id: 51, name: "Construction", leaves: [9] },
+			{ id: 74, name: "Other services", leaves: [3] },
+		],
+	};
+	const s = askSchema(c);
+	assert.deepEqual(s.properties.levers.items.properties.product.enum, [
+		"Other services",
+		"Construction",
+		`Other services${DETAIL}`,
+	]);
+	const ids = (product) => toModelDetails([lever({ product })], c)[0].product;
+	assert.deepEqual(ids("Other services"), [16]);
+	assert.deepEqual(ids(`Other services${DETAIL}`), [74]);
+	assert.deepEqual(ids("Construction"), [50]);
+	assert.match(systemPrompt(c), /Products: Other services; Construction; Other services \(detail\)\n/);
+});
+
+// The real catalogue is a fetched release asset (docs/browser-engine.md), so these skip without it.
+const MANIFEST = "data/browser-engine/manifest-v3.json";
+const noManifest = !existsSync(MANIFEST) && `${MANIFEST} is missing: fetch the browser store to run this test`;
+
+test("the real catalogue matches what ask.js assumes", { skip: noManifest }, () => {
+	const real = JSON.parse(readFileSync(MANIFEST, "utf8")).catalog;
+	const sections = real.consumers.filter((c) => c.id <= 15);
+	assert.equal(sections.length, 15);
+	for (const c of sections) assert.match(c.name, /^S: /, `consumer ${c.id}`);
+	// sections cover every industry between them, so All industries is consumers 1 to 15
+	const leaves = sections.flatMap((c) => c.leaves);
+	assert.equal(new Set(leaves).size, leaves.length);
+	assert.deepEqual(
+		real.consumers.filter((c) => c.final).map((c) => c.id),
+		[276],
+	);
+	assert.deepEqual(
+		real.regions.slice(0, 6).map((r) => [r.id, r.name]),
+		[
+			[1, "Total"],
+			[2, "Europe"],
+			[3, "Middle-East"],
+			[4, "America"],
+			[5, "Asia-Pacific"],
+			[6, "Africa"],
+		],
+	);
+	// every name in the schema maps back to an id, and the narrow repeated selections stay reachable
+	const product = askSchema(real).properties.levers.items.properties.product.enum;
+	assert.ok(product.includes(`Other service activities${DETAIL}`));
+	assert.equal(new Set(product).size, product.length);
+});
+
+const noPython = spawnSync("python3", ["-I", "-c", ""]).error && "python3 is not installed";
+const noResults = !existsSync("data/results.json") && "data/results.json is missing";
+
+test("the eval sends the page's prompt and schema, byte for byte", {
+	skip: noManifest || noResults || noPython,
+}, () => {
+	const real = JSON.parse(readFileSync(MANIFEST, "utf8")).catalog;
+	const code = `import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("e", "evals/ask/ask_eval.py")
+e = importlib.util.module_from_spec(spec); spec.loader.exec_module(e)
+names, scen = e.load(sys.argv[1], "data/results.json")
+print(json.dumps([e.system_prompt(names, scen), e.schema(names)], ensure_ascii=False))`;
+	const out = spawnSync("python3", ["-I", "-B", "-c", code, MANIFEST], { encoding: "utf8" });
+	assert.equal(out.status, 0, out.stderr);
+	const [prompt, schema] = JSON.parse(out.stdout);
+	assert.equal(prompt, systemPrompt(real));
+	assert.deepEqual(schema, askSchema(real));
 });

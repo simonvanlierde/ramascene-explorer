@@ -55,7 +55,9 @@ the job API takes precedence and the panel does not appear. Code: `src/lib/ask.j
 `src/AskPanel.svelte`.
 
 A question goes to `POST {base}/chat/completions` with a JSON schema whose enums are the
-catalogue's product, region and industry names, `temperature` 0 and thinking off. The model
+catalogue's product, region and industry names, `temperature` 0 and thinking off. A name the
+catalogue repeats for a narrower selection (an EXIOBASE product under the section of the same
+name) gets ` (detail)` appended, so both stay reachable. The model
 answers with an action: `view` (sets the indicator and country), `whatif` (up to ten changes) or
 `none` (text only). The page maps the names to ids, plans the scenario and runs it in the
 browser engine, in the worker the Custom scenario form uses, so the map shows the run. The

@@ -19,6 +19,7 @@ import urllib.request
 from pathlib import Path
 
 ALL = "All industries"
+DETAIL = " (detail)"
 FEWSHOT = ("vehicle-demand-europe", "aluminium-europe-10")
 PARAPHRASES = [
     ("What if European car makers used 20% less steel?", "steel-in-vehicles-europe"),
@@ -44,10 +45,16 @@ def load(manifest, results):
     cat = json.loads(Path(manifest).read_text())["catalog"]
     names = {}
     for kind in ("products", "regions", "consumers"):
-        seen = {}
+        # the page's rule (namesOf in src/lib/ask.js): a repeated name with the first entry's
+        # leaves keeps the first id; one with other leaves becomes "<name> (detail)"
+        ids, leaves = {}, {}
         for item in cat[kind]:
-            seen.setdefault(item["name"], item["id"])  # duplicates keep the first id
-        names[kind] = seen
+            name = item["name"]
+            if name in leaves and leaves[name] != item.get("leaves"):
+                name += DETAIL
+            if name not in ids:
+                ids[name], leaves[name] = item["id"], item.get("leaves")
+        names[kind] = ids
     scen = {s["id"]: s for s in json.loads(Path(results).read_text())["scenarios"] if s.get("model_details")}
     return names, scen
 
@@ -103,7 +110,7 @@ def system_prompt(names, scen):
         s = scen[sid]
         answer = {"action": "whatif", "indicator": None, "region": None,
                   "levers": [to_names(lv, names) for lv in s["model_details"]], "reply": s["label"]}
-        shots.append(f"Question: {s['label']}\nAnswer: {json.dumps(answer, ensure_ascii=False)}")
+        shots.append(f"Question: {s['label']}\nAnswer: {json.dumps(answer, ensure_ascii=False, separators=(",", ":"))}")
     return f"""You control the RaMa-Scene Explorer, a map of where a country's consumption causes
 greenhouse-gas emissions (ghg), jobs and metal-ore extraction (metal_ores), from EXIOBASE for 2011.
 You never compute numbers yourself: you only choose an action, and the page's engine calculates.

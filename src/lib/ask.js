@@ -30,12 +30,24 @@ export function askUrl(search) {
 
 export const askModel = (search) => new URLSearchParams(search).get("askmodel") || null;
 
-// Name to first id: a name the catalogue repeats keeps its first entry.
+export const DETAIL = " (detail)";
+// Name to id. A repeated name with the same leaves as its first entry is the same selection and
+// keeps the first id; one with other leaves (the EXIOBASE product under a section of the same
+// name) gets its own name, so the model can still pick it. Same rule as ask_eval.py.
+// shortcut: one suffix, so a third differing entry of a name collapses into the second.
 function namesOf(catalog) {
 	const out = {};
 	for (const kind of ["products", "regions", "consumers"]) {
-		out[kind] = new Map();
-		for (const item of catalog[kind]) if (!out[kind].has(item.name)) out[kind].set(item.name, item.id);
+		const ids = new Map();
+		const leaves = new Map();
+		for (const item of catalog[kind]) {
+			const key = JSON.stringify(item.leaves);
+			const name = !leaves.has(item.name) || leaves.get(item.name) === key ? item.name : item.name + DETAIL;
+			if (ids.has(name)) continue;
+			ids.set(name, item.id);
+			leaves.set(name, key);
+		}
+		out[kind] = ids;
 	}
 	return out;
 }
@@ -131,6 +143,7 @@ export function toModelDetails(levers, catalog) {
 	if (levers.length > MAX_LEVERS) throw new Error(`the answer has more than ${MAX_LEVERS} changes`);
 	const names = namesOf(catalog);
 	return levers.map((l, n) => {
+		if (l === null || typeof l !== "object") throw new Error(`change ${n + 1} is not a change`);
 		const id = (kind, name) => {
 			const v = names[kind].get(name);
 			if (v === undefined) throw new Error(`change ${n + 1}: "${name}" is not in the catalogue`);
@@ -192,13 +205,15 @@ export async function ask({ base, model, system, schema, question, fetchFn = fet
 	const post = async (path, init) => {
 		let r;
 		try {
-			r = await fetchFn(`${base}${path}`, { ...init, signal });
+			// a redirect could carry the question to another host than the one the panel names
+			r = await fetchFn(`${base}${path}`, { ...init, signal, redirect: "error" });
+			if (r.ok) return await r.json();
 		} catch (e) {
 			if (e.name === "TimeoutError") throw new Error(`the model did not answer within ${TIMEOUT_MS / 1000} s`);
+			if (e.name === "SyntaxError") throw new Error(`the model server's reply to ${path} was not JSON`);
 			throw new Error(`could not reach the model at ${base} (${e.message})`);
 		}
-		if (!r.ok) throw new Error(`the model server answered ${r.status}`);
-		return r.json();
+		throw new Error(`the model server answered ${r.status}`);
 	};
 	const name = model ?? (await post("/models", {})).data?.[0]?.id;
 	if (!name) throw new Error("the model server lists no model; name one with ?askmodel=");
@@ -218,9 +233,13 @@ export async function ask({ base, model, system, schema, question, fetchFn = fet
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
+	let got;
 	try {
-		return JSON.parse(data.choices[0].message.content);
+		got = JSON.parse(data.choices[0].message.content);
 	} catch {
-		throw new Error("the model's answer was not valid JSON");
+		got = null;
 	}
+	if (got === null || typeof got !== "object" || Array.isArray(got))
+		throw new Error("the model's answer was not valid JSON");
+	return got;
 }
