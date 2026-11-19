@@ -168,11 +168,11 @@ export function leverText(l) {
 }
 
 // Catalogue names of one kind (products, regions or consumers) that contain every word of the
-// query, ignoring case; at most `limit`. For an agent that has no enums to read the names from.
-export function findNames(catalog, kind, query, limit = 25) {
+// query, ignoring case. For an agent that has no enums to read the names from.
+export function findNames(catalog, kind, query) {
 	const words = String(query).toLowerCase().split(/\s+/).filter(Boolean);
 	const all = [...namesOf(catalog)[kind].keys(), ...(kind === "consumers" ? [ALL] : [])];
-	return all.filter((n) => words.every((w) => n.toLowerCase().includes(w))).slice(0, limit);
+	return all.filter((n) => words.every((w) => n.toLowerCase().includes(w)));
 }
 
 const SAYS = { ghg: "greenhouse-gas emissions", jobs: "jobs", metal_ores: "metal-ore extraction" };

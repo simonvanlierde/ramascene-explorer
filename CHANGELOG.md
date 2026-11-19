@@ -8,9 +8,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- In a browser with WebMCP, the page registers three tools for an agent in that browser:
-  `find_names`, `show_view` and `run_whatif`, the Ask panel's contract without a model server
-  (docs/interface.md#webmcp).
+- In a browser with WebMCP (Chrome's origin trial or flag), the page registers three tools for
+  an agent in that browser: `find_names`, `show_view` and `run_whatif`, the Ask panel's contract
+  without a model server. With `?api=` it registers none. See
+  [interface.md](docs/interface.md#webmcp).
 - `?ask=<base URL>` adds an Ask panel: a question to a model server (such as a local
   Ollama or vLLM) becomes a view change or a custom scenario, which the browser engine computes.
   The model picks catalogue names and never produces a number; each answer lists the changes it

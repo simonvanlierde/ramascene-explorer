@@ -154,7 +154,7 @@ test("findNames matches every word, ignoring case; industries include All indust
 	assert.deepEqual(findNames(catalog, "products", "steel"), ["Steel"]);
 	assert.deepEqual(findNames(catalog, "consumers", "MOTOR manufacture"), ["S: Manufacture of motor vehicles"]);
 	assert.ok(findNames(catalog, "consumers", "all").includes(ALL));
-	assert.equal(findNames(catalog, "consumers", "section", 3).length, 3);
+	assert.deepEqual(findNames(catalog, "products", "steel zzz"), []);
 	assert.deepEqual(findNames(catalog, "regions", "atlantis"), []);
 });
 

@@ -91,20 +91,23 @@ this task.
 
 ## WebMCP
 
-In a browser with WebMCP (`document.modelContext`; in November 2026 only Chrome, behind a flag or
-an origin trial), the page registers three tools for an agent in that browser, with the same
-contract as the Ask panel. Code: `src/lib/webmcp.js`.
+In a browser with WebMCP (`document.modelContext`: Chrome's origin trial, versions 149 to 156,
+or its flag), the page registers three tools for an agent in that browser, with the same contract
+as the Ask panel. They need no `?ask=` and no model server; with `?api=` the page registers none.
+Code: `src/lib/webmcp.js`.
 
 | Tool | Input | Result |
 | --- | --- | --- |
-| `find_names` (read-only) | `kind` (`products`, `regions` or `industries`), `query` | up to 25 names containing every word of the query |
+| `find_names` (read-only) | `kind` (`products`, `regions` or `industries`), `query` | `names`: up to 25 names containing every word of the query; `more`: true when there were more |
 | `show_view` | `indicator` (`ghg`, `jobs`, `metal_ores`) and/or `region` (a country, or `World`) | the sentence saying what the map now shows |
 | `run_whatif` | `levers`: up to ten changes, as in the Ask panel's schema | the changes as run, the run's status line and the map's headline with its numbers |
 
-`run_whatif` switches to What if… and runs in the custom form's worker; names that are not in
-the catalogue and changes outside −100 to 1000 percent are errors, and nothing is clamped. As
-with every custom run, it stays out of the link. With `?api=` the page registers no tools.
-`tests/e2e/webmcp.spec.js` drives them through a stand-in `document.modelContext`.
+`run_whatif` runs in the custom form's worker, then switches to What if… to show the result. A
+refused run (unknown names, changes outside −100 to 1000 percent, a plan too broad for the
+browser) is an error and leaves the view as it was; nothing is clamped. `headline` is null when
+the map could not draw the run. An agent that aborts the call cancels the run. As with every
+custom run, it stays out of the link. `tests/e2e/webmcp.spec.js` drives the tools through a
+stand-in `document.modelContext`, and shows the calls an agent makes.
 
 ## Job API
 
