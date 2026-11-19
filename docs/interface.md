@@ -77,7 +77,9 @@ The model server must:
 - allow the page's origin by CORS, including the preflight for the `Content-Type` header. vLLM
   allows every origin by default (`--allowed-origins` narrows it); Ollama needs
   `OLLAMA_ORIGINS=<page origin>`. The page sends no API key, so a server that needs one
-  cannot be used.
+  cannot be used directly: put a proxy on loopback in front of it that holds the key and
+  answers only pages served from the same machine, since any site open in the browser can post
+  to a loopback port.
 
 A page on a public https origin calling a model on loopback is a local-network request: Chrome
 asks the reader for permission and refuses without it, Firefox stops it (the panel says the
