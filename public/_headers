@@ -11,5 +11,9 @@
 /ramascene-explorer/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Public data (CC BY 4.0): any origin may read it, as on the R2 data host.
+/ramascene-explorer/data/*
+  Access-Control-Allow-Origin: *
+
 /ramascene-explorer/geo/*
   Cache-Control: public, max-age=86400
