@@ -1,19 +1,30 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import {
 	ALL,
-	ask,
+	ask as askReal,
 	askSchema,
 	askUrl,
 	DETAIL,
+	INDICATORS,
 	leverText,
 	systemPrompt,
 	toModelDetails,
 	toView,
 } from "../src/lib/ask.js";
 import { WORLD } from "../src/lib/flows.js";
+
+// ask() uses the global fetch: each call here names the fake it runs against
+const realFetch = globalThis.fetch;
+after(() => {
+	globalThis.fetch = realFetch;
+});
+const ask = ({ fetchFn, ...opts }) => {
+	globalThis.fetch = fetchFn;
+	return askReal(opts);
+};
 
 const consumers = [
 	...Array.from({ length: 15 }, (_, i) => ({ id: i + 1, name: `S: Section ${i + 1}`, final: false, leaves: [i] })),
@@ -50,6 +61,8 @@ test("askUrl accepts https and loopback http, keeps the path, refuses the rest",
 		"https://u:p@x.org/v1",
 		"https://x.org/v1?k=1",
 		"https://x.org/#a",
+		"https://x.org/v1?",
+		"https://x.org/v1#",
 		"nope",
 	])
 		assert.equal(askUrl(`?ask=${encodeURIComponent(bad)}`), null, bad);
@@ -63,6 +76,7 @@ test("the schema's enums are the catalogue names, without repeats", () => {
 	assert.equal(l.consumed_by.items.enum[0], ALL);
 	assert.ok(l.consumed_by.items.enum.includes("Y: Final Consumption"));
 	assert.equal(s.properties.levers.maxItems, 10);
+	assert.equal(l.consumed_by.minItems, 1);
 	assert.deepEqual(s.properties.region.anyOf[0].enum, ["World", "Austria", "China"]);
 	assert.deepEqual(s.properties.action.enum, ["view", "whatif", "none"]);
 });
@@ -71,6 +85,9 @@ test("the prompt lists the catalogue and the examples", () => {
 	const p = systemPrompt(catalog);
 	assert.match(p, /Products: Motor vehicles; Steel\n/);
 	assert.match(p, /Question: Aluminium input to all industries in Europe/);
+	assert.match(p, /Regions: Total; Europe; Middle-East/);
+	assert.match(p, /Industries \(consumed_by\): All industries; S: Section 1; /);
+	assert.match(p, /"All industries" means every industry/);
 });
 
 test("names map to ids, and All industries is consumers 1 to 15", () => {
@@ -84,6 +101,12 @@ test("names map to ids, and All industries is consumers 1 to 15", () => {
 		Array.from({ length: 15 }, (_, i) => i + 1),
 	);
 	assert.deepEqual(b.product, [7]); // a repeated name keeps its first id
+	// a consumer named twice, or inside All industries, is sent once
+	const [c] = toModelDetails(
+		[lever({ consumed_by: [ALL, "S: Section 2", "S: Manufacture of motor vehicles"] })],
+		catalog,
+	);
+	assert.equal(c.consumedBy.length, 16);
 	assert.deepEqual(b.originReg, [0]);
 });
 
@@ -108,6 +131,7 @@ test("a lever reads in plain words", () => {
 		leverText(lever({ origin_region: "Total" })),
 		"Motor vehicles, made in all regions, used by Y: Final Consumption in Austria: −20%",
 	);
+	assert.match(leverText(lever({ change_percent: 10 })), /: \+10%$/);
 });
 
 const meta = {
@@ -139,6 +163,8 @@ test("ask posts one chat request with the schema, and reads the model name from 
 	const body = JSON.parse(calls[1][1].body);
 	assert.equal(body.model, "qwen");
 	assert.equal(body.temperature, 0);
+	assert.equal(body.max_tokens, 1500);
+	assert.ok(calls[1][1].signal instanceof AbortSignal);
 	assert.deepEqual(body.chat_template_kwargs, { enable_thinking: false });
 	assert.equal(body.response_format.type, "json_schema");
 	assert.equal(body.response_format.json_schema.name, "action");
@@ -157,6 +183,26 @@ test("ask turns failures into readable errors", async () => {
 	const base = "http://localhost:1/v1";
 	const args = { base, model: "m", system: "S", schema: {}, question: "Q?" };
 	await assert.rejects(ask({ ...args, fetchFn: async () => Response.json({}, { status: 503 }) }), /answered 503/);
+	// the server's own words for an error are kept, cut short
+	await assert.rejects(
+		ask({ ...args, fetchFn: async () => new Response(`context too long ${"x".repeat(500)}`, { status: 400 }) }),
+		(e) => e.message.startsWith("the model server answered 400: context too long") && e.message.length < 260,
+	);
+	await assert.rejects(
+		ask({
+			...args,
+			fetchFn: async () =>
+				Response.json({ choices: [{ message: { content: '{"action":' }, finish_reason: "length" }] }),
+		}),
+		/cut off/,
+	);
+	// Cancel is the reader's own act, not an error to word
+	const stop = new AbortController();
+	stop.abort();
+	await assert.rejects(
+		ask({ ...args, cancel: stop.signal, fetchFn: async (_, init) => init.signal.throwIfAborted() }),
+		{ name: "AbortError" },
+	);
 	await assert.rejects(
 		ask({
 			...args,
@@ -238,7 +284,10 @@ test("a repeated name with other leaves gets its own name; one with the same lea
 
 // The real catalogue is a fetched release asset (docs/browser-engine.md), so these skip without it.
 const MANIFEST = "data/browser-engine/manifest-v3.json";
-const noManifest = !existsSync(MANIFEST) && `${MANIFEST} is missing: fetch the browser store to run this test`;
+// CI fetches the data, so there a missing file fails the test instead of skipping it
+const noResults = !existsSync("data/results.json") && !process.env.CI && "data/results.json is missing";
+const noManifest =
+	!existsSync(MANIFEST) && !process.env.CI && `${MANIFEST} is missing: fetch the browser store to run this test`;
 
 test("the real catalogue matches what ask.js assumes", { skip: noManifest }, () => {
 	const real = JSON.parse(readFileSync(MANIFEST, "utf8")).catalog;
@@ -269,8 +318,16 @@ test("the real catalogue matches what ask.js assumes", { skip: noManifest }, () 
 	assert.equal(new Set(product).size, product.length);
 });
 
+test("the indicator ids ask.js names are the published ones", { skip: noResults }, () => {
+	const names = Object.fromEntries(
+		JSON.parse(readFileSync("data/results.json", "utf8")).indicators.map((i) => [i.id, i.name]),
+	);
+	assert.match(names[INDICATORS.ghg], /^GHG emissions/);
+	assert.match(names[INDICATORS.jobs], /^Employment/);
+	assert.match(names[INDICATORS.metal_ores], /Metal Ores/);
+});
+
 const noPython = spawnSync("python3", ["-I", "-c", ""]).error && "python3 is not installed";
-const noResults = !existsSync("data/results.json") && "data/results.json is missing";
 
 test("the eval sends the page's prompt and schema, byte for byte", {
 	skip: noManifest || noResults || noPython,

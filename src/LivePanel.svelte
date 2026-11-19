@@ -118,17 +118,25 @@ export async function catalogue() {
 	return c;
 }
 // For the Ask panel: plans the scenario, then runs it as Run does. Resolves to {ok, text}.
+// Resolves to {ok, text, cancelled}.
 export async function runScenario(scenario) {
 	if (running) return { ok: false, text: "A scenario is already running." };
+	// a reconnect (Cancel, a stopped worker) since the Ask panel read the catalogue
+	if (!catalog) return { ok: false, text: "The scenario data is loading again; ask once more." };
 	try {
 		plan({ catalog, ...catalog.size }, scenario.model_details);
 	} catch (e) {
-		const text = e.message.startsWith("too broad") ? `This selection is ${e.message}` : e.message;
+		const text = broad(e.message) || e.message;
 		say(text, true);
 		return { ok: false, text };
 	}
 	return execute(scenario);
 }
+// For the Ask panel's Cancel: stops a run as Cancel here does.
+export function cancelRun() {
+	if (running) stop();
+}
+const broad = (message) => (message.startsWith("too broad") ? `This selection is ${message}` : "");
 const trees = $derived({
 	products: catalogTree(rootNamed(catalog?.products, "All products")),
 	regions: catalogTree(rootNamed(catalog?.regions, "World")),
@@ -146,7 +154,7 @@ const planned = $derived.by(() => {
 		return { download: plan({ catalog, ...catalog.size }, body().model_details).download };
 	} catch (e) {
 		// other errors surface on Run
-		return { tooBroad: e.message.startsWith("too broad") ? `This selection is ${e.message}` : "" };
+		return { tooBroad: broad(e.message) };
 	}
 });
 const tooBroad = $derived(planned.tooBroad ?? "");
@@ -226,7 +234,7 @@ $effect(() => {
 
 // Stops a run: in the browser a fresh worker replaces the busy one; on the job API the page
 // stops waiting, and says the job may still finish there.
-function cancel() {
+function stop() {
 	cancelled = true;
 	if (browser) {
 		sent = "";
@@ -235,6 +243,9 @@ function cancel() {
 		stopJob?.abort();
 		say("Cancelled. The job API may still finish the job, and runs one job at a time.");
 	}
+}
+function cancel() {
+	stop();
 	document.getElementById("live-run")?.focus();
 }
 
@@ -296,7 +307,7 @@ async function execute(scenario) {
 		say(text);
 		result = { ok: true, text };
 	} catch (e) {
-		if (cancelled) return { ok: false, text: "Cancelled." };
+		if (cancelled) return { ok: false, text: "Cancelled.", cancelled: true };
 		result = { ok: false, text: `${browser ? "Scenario" : "Job"} failed: ${e.message}` };
 		say(result.text, true);
 		// a trap or a timeout stopped the worker: start a fresh one for the next Run

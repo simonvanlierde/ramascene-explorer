@@ -259,7 +259,7 @@ $effect(() => {
 		{:else}<LivePanel bind:this={livePanelRef} browser={true} onscreen={shown?.live != null} onflows={(job, text, clauses) => showLive(job, text, clauses, true)} onnews={(text, alert) => (news = { text, alert })} />{/if}
 		{#if askBase && livePanelRef}
 			{#await import("./AskPanel.svelte") then { default: AskPanel }}
-				<AskPanel base={askBase} model={askModel(search)} panel={livePanelRef} {meta} {setMode} />
+				<AskPanel base={askBase} model={askModel(search)} panel={livePanelRef} {meta} />
 			{/await}
 		{/if}
 	{:catch}

@@ -65,7 +65,7 @@ test("a question becomes a what-if the browser engine runs, then a view change",
 	await page.locator("#ask-go").click();
 	await expect(page.locator("#ask-outcome")).toContainText("Computed in this browser in", { timeout: 90_000 });
 	// the reply is text, not markup
-	await expect(page.locator("#ask-reply")).toHaveText("<b>Cut</b> European car demand by 20%.");
+	await expect(page.locator("#ask-reply")).toHaveText("Model: <b>Cut</b> European car demand by 20%.");
 	await expect(page.locator("#ask-reply b")).toHaveCount(0);
 	await expect(page.locator("#ask-levers li")).toHaveText([
 		"Motor vehicles, trailers and semi-trailers, made in Europe, used by Y: Final Consumption in Europe: −20%",
@@ -85,7 +85,8 @@ test("a question becomes a what-if the browser engine runs, then a view change",
 	if (isMobile) await page.locator(".dock .filters").click();
 	await page.locator("#ask-q").fill("Show me jobs in China");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-outcome")).toHaveText("The map now shows this view.");
+	await expect(page.locator("#ask-outcome")).toHaveText("The map now shows jobs for China.");
+	await expect(page.locator("#ask-error")).toHaveText("");
 	await expect(page).toHaveURL(/indicator=3/);
 	await expect(page).toHaveURL(/region=CN/);
 });
@@ -179,13 +180,52 @@ test("Cancel during an Ask run says Cancelled", async ({ page, isMobile }) => {
 			],
 		},
 	]);
+	// Custom scenario stays closed: the Ask panel's own Cancel stops the run
 	await openAsk(page, isMobile);
-	await page.locator("#live-open").click();
-	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
 	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#live-run")).toHaveText("Running…");
-	await page.locator("#live-cancel").click();
-	await expect(page.locator("#ask-error")).toHaveText("Cancelled.");
-	await expect(page.locator("#ask-go")).toBeEnabled();
+	await expect(page.locator("#ask-answer")).toHaveText("Asking the model…");
+	await expect(page.locator("#live-state")).toContainText("Computing the scenario", { timeout: 60_000 });
+	await page.locator("#ask-cancel").click();
+	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.");
+	await expect(page.locator("#ask-error")).toHaveText("");
+	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "false");
+	await expect(page.locator("#ask-q")).toBeFocused();
+});
+
+test("Cancel stops waiting for the model", async ({ page, isMobile }) => {
+	needData();
+	await page.route(`${MODEL}/models`, (route) => route.fulfill({ json: { data: [{ id: "test-model" }] } }));
+	// the model never answers
+	await page.route(`${MODEL}/chat/completions`, () => {});
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "true");
+	await page.locator("#ask-cancel").click();
+	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.", { timeout: 60_000 });
+	await expect(page.locator("#ask-cancel")).toHaveCount(0);
+});
+
+test("an off-topic answer only replies; an unknown action is an error", async ({ page, isMobile }) => {
+	needData();
+	const none = { action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." };
+	await mockModel(page, [none, { ...none, action: "run" }]);
+	await openAsk(page, isMobile);
+	const before = page.url();
+	await page.locator("#ask-q").fill("What is the capital of France?");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-reply")).toHaveText("Model: That is not about the map.", { timeout: 60_000 });
+	await expect(page.locator("#ask-outcome")).toHaveCount(0);
+	expect(page.url()).toBe(before);
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-error")).toContainText("no action this page knows");
+	await expect(page.locator("#ask-reply")).toHaveCount(0);
+});
+
+test("?api= takes precedence over ?ask=: no Ask panel", async ({ page }) => {
+	await page.goto(`./?api=http://127.0.0.1:8998&ask=${encodeURIComponent(MODEL)}`);
+	await expect(page.locator(".mapc .rg")).toHaveCount(49);
+	await page.getByRole("button", { name: "What if…", exact: true }).first().click();
+	await expect(page.locator("#ask")).toHaveCount(0);
 });

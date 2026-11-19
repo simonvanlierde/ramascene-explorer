@@ -3,7 +3,7 @@
 // evals/ask/ask_eval.py (same schema shape and prompt), so that eval scores what the page sends.
 
 import { placeName, WORLD } from "./flows.js";
-import { CHANGE_RANGE, minus } from "./live.js";
+import { CHANGE_RANGE, minus, serverUrl } from "./live.js";
 
 export const ALL = "All industries";
 // the section consumers (ids 1 to 15) that "All industries" stands for
@@ -14,18 +14,8 @@ const TIMEOUT_MS = 60_000;
 
 // Like apiUrl, but a base URL keeps its path (Ollama and vLLM serve at .../v1).
 export function askUrl(search) {
-	const raw = new URLSearchParams(search).get("ask");
-	if (!raw) return null;
-	let url;
-	try {
-		url = new URL(raw);
-	} catch {
-		return null;
-	}
-	const loopback = ["127.0.0.1", "localhost"].includes(url.hostname);
-	const scheme = url.protocol === "https:" || (loopback && url.protocol === "http:");
-	const bare = url.username === "" && url.password === "" && url.search === "" && url.hash === "";
-	return scheme && bare ? url.href.replace(/\/+$/, "") : null;
+	const url = serverUrl(search, "ask");
+	return url && url.origin + url.pathname.replace(/\/+$/, "");
 }
 
 export const askModel = (search) => new URLSearchParams(search).get("askmodel") || null;
@@ -109,9 +99,9 @@ export const EXAMPLES = [
 	},
 ];
 
-export function systemPrompt(catalog, examples = EXAMPLES) {
+export function systemPrompt(catalog) {
 	const names = namesOf(catalog);
-	const shots = examples.map(
+	const shots = EXAMPLES.map(
 		(e) =>
 			`Question: ${e.question}\nAnswer: ${JSON.stringify({ action: "whatif", indicator: null, region: null, levers: e.levers, reply: e.question })}`,
 	);
@@ -131,6 +121,7 @@ reply: one short sentence saying what you did.
 
 Products: ${[...names.products.keys()].join("; ")}
 Regions: ${[...names.regions.keys()].join("; ")}
+Industries (consumed_by): ${[ALL, ...names.consumers.keys()].join("; ")}
 
 Examples:
 ${shots.join("\n\n")}`;
@@ -199,21 +190,26 @@ export function toView(answer, meta) {
 	return out;
 }
 
-// One chat call: the parsed answer. Errors (timeout, HTTP, unparsable) are thrown as readable text.
-export async function ask({ base, model, system, schema, question, fetchFn = fetch }) {
-	const signal = AbortSignal.timeout(TIMEOUT_MS);
+// One chat call: the parsed answer. Errors (timeout, HTTP, unparsable) are thrown as readable
+// text; `cancel`, an AbortSignal, stops it with an AbortError.
+export async function ask({ base, model, system, schema, question, cancel }) {
+	const timeout = AbortSignal.timeout(TIMEOUT_MS);
+	const signal = cancel ? AbortSignal.any([cancel, timeout]) : timeout;
 	const post = async (path, init) => {
 		let r;
 		try {
 			// a redirect could carry the question to another host than the one the panel names
-			r = await fetchFn(`${base}${path}`, { ...init, signal, redirect: "error" });
+			r = await fetch(`${base}${path}`, { ...init, signal, redirect: "error" });
 			if (r.ok) return await r.json();
 		} catch (e) {
+			if (e.name === "AbortError") throw e;
 			if (e.name === "TimeoutError") throw new Error(`the model did not answer within ${TIMEOUT_MS / 1000} s`);
 			if (e.name === "SyntaxError") throw new Error(`the model server's reply to ${path} was not JSON`);
 			throw new Error(`could not reach the model at ${base} (${e.message})`);
 		}
-		throw new Error(`the model server answered ${r.status}`);
+		// the body usually names the cause (context too long, model still loading)
+		const why = (await r.text().catch(() => "")).trim().slice(0, 200);
+		throw new Error(`the model server answered ${r.status}${why ? `: ${why}` : ""}`);
 	};
 	const name = model ?? (await post("/models", {})).data?.[0]?.id;
 	if (!name) throw new Error("the model server lists no model; name one with ?askmodel=");
@@ -233,6 +229,8 @@ export async function ask({ base, model, system, schema, question, fetchFn = fet
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
+	if (data.choices?.[0]?.finish_reason === "length")
+		throw new Error("the model's answer was cut off before it finished");
 	let got;
 	try {
 		got = JSON.parse(data.choices[0].message.content);
