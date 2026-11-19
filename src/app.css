@@ -643,7 +643,8 @@ button.pill:hover {
 }
 /* the form controls of the grid's pickers and the live panel */
 .gridpick label,
-#live label {
+#live label,
+#ask label {
   display: block;
   font-size: 12px;
   font-weight: 700;
@@ -651,7 +652,8 @@ button.pill:hover {
 }
 .gridpick select,
 #live select,
-#live input {
+#live input,
+#ask input {
   width: 100%;
   min-width: 0;
   height: 32px;
@@ -1718,14 +1720,16 @@ details.more summary {
 .custom {
   margin-top: 10px;
 }
-#live .hint {
+#live .hint,
+#ask .hint {
   margin-top: 5px;
 }
 /* kept in the page, empty, so its later message is announced; no gap while empty */
 #live-broad:empty {
   margin: 0;
 }
-#live .hint.bad {
+#live .hint.bad,
+#ask .hint.bad {
   color: var(--danger);
 }
 #live-retry {
@@ -1745,9 +1749,14 @@ details.more summary {
   font-size: 12px;
   font-weight: 700;
 }
-#live-form {
+#live-form,
+#ask-form {
   display: grid;
   margin-top: 10px;
+}
+#ask-cancel {
+  justify-self: start;
+  margin-top: 6px;
 }
 #live label {
   margin-top: 8px;
@@ -1824,7 +1833,8 @@ details.more summary {
   color: var(--mut);
   margin-top: 4px;
 }
-#live .go {
+#live .go,
+#ask .go {
   margin-top: 12px;
   min-height: 34px;
   background: var(--slate);
@@ -1841,12 +1851,14 @@ details.more summary {
   font-variant-numeric: tabular-nums;
 }
 @media (hover: hover) {
-  #live .go:hover {
+  #live .go:hover,
+  #ask .go:hover {
     background: var(--ink);
   }
 }
 #live .go:disabled,
-#live .go[aria-disabled="true"] {
+#live .go[aria-disabled="true"],
+#ask .go[aria-disabled="true"] {
   background: var(--tint);
   color: var(--mut);
   cursor: not-allowed;

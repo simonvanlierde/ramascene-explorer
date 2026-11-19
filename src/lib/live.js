@@ -8,11 +8,11 @@ export const LIVE_STATUS = "computed by the job API";
 export const CHANGE_RANGE = { min: -100, max: 1000 };
 export const minus = (n) => String(n).replace("-", "−");
 
-// Loopback (a local run, or an SSH tunnel) over http, anything else over https.
-// Not [::1]: the job API only allows the 127.0.0.1 and localhost hosts.
-// A bare origin: no path, query, fragment or credentials.
-export function apiUrl(search) {
-	const raw = new URLSearchParams(search).get("api");
+// The URL in ?<key>=, or null unless it is loopback (a local run, or an SSH tunnel) over http or
+// anything else over https, with no query, fragment or credentials. Not [::1]: the job API only
+// allows the 127.0.0.1 and localhost hosts. A trailing "?" or "#" counts as a query or fragment.
+export function serverUrl(search, key) {
+	const raw = new URLSearchParams(search).get(key);
 	if (!raw) return null;
 	let url;
 	try {
@@ -22,8 +22,14 @@ export function apiUrl(search) {
 	}
 	const loopback = ["127.0.0.1", "localhost"].includes(url.hostname);
 	const scheme = url.protocol === "https:" || (loopback && url.protocol === "http:");
-	const bare = url.username === "" && url.password === "" && url.search === "" && url.hash === "";
-	return scheme && bare && (url.pathname === "/" || url.pathname === "") ? url.origin : null;
+	const bare = url.username === "" && url.password === "" && !/[?#]/.test(raw);
+	return scheme && bare ? url : null;
+}
+
+// The job API's origin: a bare origin, no path.
+export function apiUrl(search) {
+	const url = serverUrl(search, "api");
+	return url && (url.pathname === "/" || url.pathname === "") ? url.origin : null;
 }
 
 // The ?api= value apiUrl refused, for the status line; null if none was refused.
@@ -211,9 +217,13 @@ function leverText(step, catalog) {
 	const change = step.techChange[0];
 	const product = name("products", step.product).toLowerCase();
 	const origin = where(" from ", step.originReg);
-	if (catalogName(item("consumers", step.consumedBy)) === "Final demand")
+	const by = step.consumedBy;
+	if (by.length === 1 && catalogName(item("consumers", by)) === "Final demand")
 		return `final demand${where(" in ", step.consumedReg)} for ${product}${origin} ${change < 0 ? "fell" : change > 0 ? "rose" : "changed"} by ${Math.abs(change)}%`;
-	return `${name("consumers", step.consumedBy)}${where(" in ", step.consumedReg)} required ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${origin} per unit of output`;
+	// sections 1 to 15 are every industry (the Ask panel's "All industries"); else each one by name
+	const all = by.length === 15 && by.every((id, i) => id === i + 1);
+	const users = all ? "All industries" : new Intl.ListFormat("en").format(by.map((id) => name("consumers", [id])));
+	return `${users}${where(" in ", step.consumedReg)} required ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${origin} per unit of output`;
 }
 
 // A job's flows as the page's {base, delta}: dense arrays in meta's layout, the

@@ -165,6 +165,11 @@ test("liveText joins one clause per lever with and, and counts past two", () => 
 	assert.equal(liveText(ten, catalog), "10 changes were made together");
 	assert.equal(liveClauses(ten, catalog).length, 10);
 	assert.ok(liveText(ten, catalog).length < 40);
+	// a lever with several consumers names each; sections 1 to 15 read as all industries
+	const both = { scenario: { model_details: [{ ...first, consumedBy: [198, 276] }] } };
+	assert.match(liveText(both, catalog), /^Manufacture of motor vehicles and Final demand in Africa required/);
+	const all = { scenario: { model_details: [{ ...first, consumedBy: Array.from({ length: 15 }, (_, i) => i + 1) }] } };
+	assert.match(liveText(all, catalog), /^All industries in Africa required 20% less/);
 });
 
 test("a change that is not a finite number never leaves the page", () => {

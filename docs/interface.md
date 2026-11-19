@@ -22,6 +22,8 @@ in `src/lib/live.js`.
 | `panel` | `sankey`, `table`, `method` | none |
 | `data` | a relative path to a `.json` file ([security.md](security.md#what-data-accepts)) | `data/results.json` |
 | `api` | a job API origin ([security.md](security.md#what-api-accepts)) | none |
+| `ask` | the base URL of a chat-completions model server, see [Ask](#ask) | none |
+| `askmodel` | the model name to send with `ask` | the first model the server lists |
 
 The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the
@@ -42,6 +44,50 @@ A change from a zero baseline has no percentage; the display says so.
 For display, differences no larger than a trillionth of the baseline are treated
 as zero and do not name a largest change. This is a display rule, not an uncertainty
 estimate. The calculations and downloadable CSV retain the original values.
+
+## Ask
+
+`?ask=<base URL>` adds an Ask panel under Custom scenario in What if…. The base URL is a
+chat-completions server's, with its path (`http://localhost:11434/v1` for Ollama,
+`http://127.0.0.1:8000/v1` for vLLM). It is checked like `api`: https, or http on `localhost`
+or `127.0.0.1` on any port, with no user name, password, query or fragment; anything else is
+ignored and the page is unchanged. `?askmodel=` names the model. With `?api=` also present,
+the job API takes precedence and the panel does not appear. Code: `src/lib/ask.js`,
+`src/AskPanel.svelte`.
+
+A question goes to `POST {base}/chat/completions` with a JSON schema whose enums are the
+catalogue's product, region and industry names, `temperature` 0 and thinking off. A name the
+catalogue repeats for a narrower selection (an EXIOBASE product under the section of the same
+name) gets ` (detail)` appended, so both stay reachable. The model
+answers with an action: `view` (sets the indicator and country), `whatif` (up to ten changes) or
+`none` (text only). The page maps the names to ids, plans the scenario and runs it in the
+browser engine, in the worker the Custom scenario form uses, so the map shows the run. The
+model never produces a number. A name outside the catalogue, or a change outside −100 to
+1000 percent, is an error shown in the panel; nothing is clamped. Every answer lists the
+changes it ran. The model's text is shown as text. A custom run stays out of the link.
+Without `askmodel`, the page asks `GET {base}/models` and uses the first model.
+
+The model server must:
+
+- serve the chat-completions `POST /chat/completions` (and `GET /models` without `askmodel`) and
+  honour `response_format` with `type: "json_schema"` (vLLM and Ollama's `/v1` do). The request
+  also sends `chat_template_kwargs: {enable_thinking: false}`, which Qwen-style templates read and
+  other servers ignore;
+- answer within 60 s, in at most 1500 tokens; a longer answer is reported as cut off;
+- allow the page's origin by CORS, including the preflight for the `Content-Type` header. vLLM
+  answers the preflight with 400 unless started with `--allowed-origins '["<page origin>"]'`;
+  Ollama needs `OLLAMA_ORIGINS=<page origin>`. The page sends no API key, so a server that needs
+  one cannot be used directly: put a proxy on loopback in front of it that holds the key and
+  answers only pages served from the same machine, since any site open in the browser can post
+  to a loopback port.
+
+A page on a public https origin calling a model on loopback is a local-network request: Chrome
+asks the reader for permission and refuses without it, Firefox stops it (the panel says the
+model did not answer within 60 s) and Safari refuses it. So for a demo, open the page from the
+same machine as the model: `pnpm preview`, then `http://127.0.0.1:4180/?ask=…`. A model on
+another machine is reached through an SSH tunnel to the same loopback port
+(`ssh -N -L 8000:127.0.0.1:8000 <host>`). [evals/ask](../evals/ask/README.md) scores models on
+this task.
 
 ## Job API
 

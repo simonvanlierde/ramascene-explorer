@@ -93,14 +93,50 @@ const range = $derived(catalog?.tech_change_percent ?? CHANGE_RANGE);
 // the browser data loads on the first open, not with the page
 let open = $state(false);
 let connected = false;
-function toggle() {
-	open = !open;
-	ui.custom = open;
-	if (open && !connected) {
+// the connection in progress, resolving to the catalogue (null if it failed)
+let connecting = Promise.resolve(null);
+function ensureConnected() {
+	if (!connected) {
 		connected = true;
 		connect();
 	}
 }
+function toggle() {
+	open = !open;
+	ui.custom = open;
+	if (open) ensureConnected();
+}
+// For the Ask panel, which shares this panel's worker: the catalogue, once loaded.
+export async function catalogue() {
+	ensureConnected();
+	if (!browser) return null;
+	// a reconnect (Cancel, a stopped worker) replaces the promise and the old one resolves null
+	let p;
+	let c;
+	do c = await (p = connecting);
+	while (p !== connecting);
+	return c;
+}
+// For the Ask panel: plans the scenario, then runs it as Run does. Resolves to {ok, text}.
+// Resolves to {ok, text, cancelled}.
+export async function runScenario(scenario) {
+	if (running) return { ok: false, text: "A scenario is already running." };
+	// a reconnect (Cancel, a stopped worker) since the Ask panel read the catalogue
+	if (!catalog) return { ok: false, text: "The scenario data is loading again; ask once more." };
+	try {
+		plan({ catalog, ...catalog.size }, scenario.model_details);
+	} catch (e) {
+		const text = broad(e.message) || e.message;
+		say(text, true);
+		return { ok: false, text };
+	}
+	return execute(scenario);
+}
+// For the Ask panel's Cancel: stops a run as Cancel here does.
+export function cancelRun() {
+	if (running) stop();
+}
+const broad = (message) => (message.startsWith("too broad") ? `This selection is ${message}` : "");
 const trees = $derived({
 	products: catalogTree(rootNamed(catalog?.products, "All products")),
 	regions: catalogTree(rootNamed(catalog?.regions, "World")),
@@ -118,7 +154,7 @@ const planned = $derived.by(() => {
 		return { download: plan({ catalog, ...catalog.size }, body().model_details).download };
 	} catch (e) {
 		// other errors surface on Run
-		return { tooBroad: e.message.startsWith("too broad") ? `This selection is ${e.message}` : "" };
+		return { tooBroad: broad(e.message) };
 	}
 });
 const tooBroad = $derived(planned.tooBroad ?? "");
@@ -148,7 +184,7 @@ function connect({ quiet = false } = {}) {
 	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
 	// the client's own file gone (a deploy since the page loaded) is as stale as a missing worker
 	let gone = false;
-	const connecting = browser
+	const loading = browser
 		? import("./lib/browser-engine/browser-client.js").then(({ browserClient }) => {
 			if (attempt !== connection) return null;
 			client?.close();
@@ -159,18 +195,20 @@ function connect({ quiet = false } = {}) {
 			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.");
 		})
 		: fetchJson(`${api}/catalog`);
-	connecting.then(
+	connecting = loading.then(
 		(c) => {
-			if (attempt !== connection) return;
+			if (attempt !== connection) return null;
 			catalog = c;
 			if (!quiet) say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
+			return c;
 		},
 		(e) => {
-			if (attempt !== connection) return;
+			if (attempt !== connection) return null;
 			// Try again would load the same missing worker files: only a reload helps
 			outdated = browser && (gone || client?.outdated === true);
 			unreachable = !outdated;
 			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
+			return null;
 		},
 	);
 }
@@ -196,7 +234,7 @@ $effect(() => {
 
 // Stops a run: in the browser a fresh worker replaces the busy one; on the job API the page
 // stops waiting, and says the job may still finish there.
-function cancel() {
+function stop() {
 	cancelled = true;
 	if (browser) {
 		sent = "";
@@ -205,6 +243,9 @@ function cancel() {
 		stopJob?.abort();
 		say("Cancelled. The job API may still finish the job, and runs one job at a time.");
 	}
+}
+function cancel() {
+	stop();
 	document.getElementById("live-run")?.focus();
 }
 
@@ -225,6 +266,12 @@ async function submit(event) {
 		say(e.message, true);
 		return;
 	}
+	await execute(scenario);
+}
+
+// Runs a scenario and shows it on the map; both Run and the Ask panel come here.
+async function execute(scenario) {
+	let result = { ok: false, text: "" };
 	running = true;
 	cancelled = false;
 	elapsed = 0;
@@ -258,9 +305,11 @@ async function submit(event) {
 			text += ` Its flows are not on the map: ${e.message}`;
 		}
 		say(text);
+		result = { ok: true, text };
 	} catch (e) {
-		if (cancelled) return;
-		say(`${browser ? "Scenario" : "Job"} failed: ${e.message}`, true);
+		if (cancelled) return { ok: false, text: "Cancelled.", cancelled: true };
+		result = { ok: false, text: `${browser ? "Scenario" : "Job"} failed: ${e.message}` };
+		say(result.text, true);
 		// a trap or a timeout stopped the worker: start a fresh one for the next Run
 		if (browser && client?.stopped) {
 			sent = "";
@@ -270,6 +319,7 @@ async function submit(event) {
 		clearInterval(tick);
 		running = false;
 	}
+	return result;
 }
 </script>
 

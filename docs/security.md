@@ -7,7 +7,7 @@ This page covers the technical surface. To report a vulnerability, follow
 
 The published page is static files, served as a Cloudflare Worker's static assets with
 no Worker code ([publishing.md](publishing.md#cloudflare)). There is no database or login,
-and it stores nothing. Without `?api=` it fetches only its own files and the published
+and it stores nothing. Without `?api=` or `?ask=` it fetches only its own files and the published
 data from the [data host](publishing.md#data-host) by hash
 ([page.md](page.md#live-scenarios-optional)). How those files are built and
 checked is in [publishing.md](publishing.md).
@@ -15,7 +15,7 @@ checked is in [publishing.md](publishing.md).
 The Content-Security-Policy is the `<meta>` tag in `index.html`. It allows
 scripts, styles and fonts from the page's own origin only (plus inline styles).
 `connect-src` also allows any `https:` origin, because `?api=` can name any
-https job API, and loopback over http. The page renders data as text, never
+https job API and `?ask=` any https model server, and loopback over http. The page renders data as text, never
 through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
 markup.
 
@@ -72,6 +72,22 @@ tell a good job API from a bad one, and a bad one can return wrong numbers.
 So a live result is labelled "computed by the job API",
 with the API's origin and provenance: check that origin before you trust it.
 A live run never enters the shared link.
+
+## What `?ask=` sends
+
+`askUrl` in `src/lib/ask.js` checks the value like `?api=` (scheme, host, no user name,
+password, query or fragment), but keeps the path, since model servers serve at `/v1`. The
+Ask panel then sends the reader's question, a fixed prompt and the catalogue's names to
+`POST {base}/chat/completions`, and asks `GET {base}/models` when `?askmodel=` is absent
+([interface.md](interface.md#ask)). Nothing else goes there: no scenario, cookies or
+results. It sends nothing until someone asks a question.
+
+A crafted link can point the questions at any https server, which then reads what the
+reader types. The panel shows the base URL above the question field: check it before you
+ask. A redirect is refused, so the questions cannot move on to another host. The answer
+goes through the same checks as a typed scenario: it must be a JSON object with a known
+action, whose names are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
+shown as text, after "Model:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
 
 ## What `?data=` accepts
 
