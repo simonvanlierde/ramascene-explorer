@@ -89,6 +89,13 @@ goes through the same checks as a typed scenario: it must be a JSON object with 
 action, whose names are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
 shown as text, after "Model:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
 
+## WebMCP tools
+
+The tools in `src/lib/webmcp.js` ([interface.md](interface.md#webmcp)) are open to any agent the
+reader runs in their browser, on this page's origin only. They can change the view and run a
+custom scenario in the reader's own tab, through the same checks as the Ask panel. They send
+nothing anywhere and read nothing the page does not already show.
+
 ## What `?data=` accepts
 
 `dataUrl` in `src/lib/explorer.js` accepts only a relative path ending in `.json`: the

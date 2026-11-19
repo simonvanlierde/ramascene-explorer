@@ -26,6 +26,15 @@ const refusedApi = ignoredApi(search);
 // ?ask= adds the Ask panel; it needs the browser engine, so ?api= takes precedence over it
 const askBase = api ? null : askUrl(search);
 let livePanelRef = $state();
+// WebMCP: tools for an agent in the reader's browser, on the same worker as the custom form
+$effect(() => {
+	if (api || !livePanelRef || !meta || !document.modelContext) return;
+	const off = new AbortController();
+	import("./lib/webmcp.js").then(({ registerTools }) =>
+		registerTools({ panel: livePanelRef, meta, ui, setMode, signal: off.signal }),
+	);
+	return () => off.abort();
+});
 
 let data = $state.raw(null);
 let empty = $state(false);

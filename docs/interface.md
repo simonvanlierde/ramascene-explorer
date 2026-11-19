@@ -89,6 +89,23 @@ another machine is reached through an SSH tunnel to the same loopback port
 (`ssh -N -L 8000:127.0.0.1:8000 <host>`). [evals/ask](../evals/ask/README.md) scores models on
 this task.
 
+## WebMCP
+
+In a browser with WebMCP (`document.modelContext`; in November 2026 only Chrome, behind a flag or
+an origin trial), the page registers three tools for an agent in that browser, with the same
+contract as the Ask panel. Code: `src/lib/webmcp.js`.
+
+| Tool | Input | Result |
+| --- | --- | --- |
+| `find_names` (read-only) | `kind` (`products`, `regions` or `industries`), `query` | up to 25 names containing every word of the query |
+| `show_view` | `indicator` (`ghg`, `jobs`, `metal_ores`) and/or `region` (a country, or `World`) | the sentence saying what the map now shows |
+| `run_whatif` | `levers`: up to ten changes, as in the Ask panel's schema | the changes as run, the run's status line and the map's headline with its numbers |
+
+`run_whatif` switches to What if… and runs in the custom form's worker; names that are not in
+the catalogue and changes outside −100 to 1000 percent are errors, and nothing is clamped. As
+with every custom run, it stays out of the link. With `?api=` the page registers no tools.
+`tests/e2e/webmcp.spec.js` drives them through a stand-in `document.modelContext`.
+
 ## Job API
 
 `?api=` points the page at a RaMa-Scene job API such as `ramascene-jobs`. Its
