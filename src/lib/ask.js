@@ -167,6 +167,26 @@ export function leverText(l) {
 	return `${l.product}, made in ${where(l.origin_region)}, used by ${l.consumed_by.join(", ")} in ${where(l.consumed_region)}: ${sign}${minus(l.change_percent)}%`;
 }
 
+// Catalogue names of one kind (products, regions or consumers) that contain every word of the
+// query, ignoring case. For an agent that has no enums to read the names from.
+export function findNames(catalog, kind, query) {
+	const words = String(query).toLowerCase().split(/\s+/).filter(Boolean);
+	const all = [...namesOf(catalog)[kind].keys(), ...(kind === "consumers" ? [ALL] : [])];
+	return all.filter((n) => words.every((w) => n.toLowerCase().includes(w)));
+}
+
+const SAYS = { ghg: "greenhouse-gas emissions", jobs: "jobs", metal_ores: "metal-ore extraction" };
+// Applies a view answer to ui; the sentence saying what the map now shows. Throws as toView does,
+// and when the answer changes nothing.
+export function applyView(answer, meta, ui) {
+	if (!meta) throw new Error("the map did not load, so its view cannot change");
+	const view = toView(answer, meta);
+	if (!Object.keys(view).length) throw new Error("the view changes nothing: give an indicator or a region");
+	Object.assign(ui, view);
+	const shows = [SAYS[answer.indicator], answer.region === "World" ? "the world" : answer.region].filter(Boolean);
+	return `The map now shows ${shows.join(" for ")}.`;
+}
+
 // A view answer as ui fields; only what the answer sets is returned. meta is the page's
 // (indicators with ids, countries). Throws when the page has no such indicator or country.
 export function toView(answer, meta) {

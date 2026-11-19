@@ -4,10 +4,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { after, test } from "node:test";
 import {
 	ALL,
+	applyView,
 	ask as askReal,
 	askSchema,
 	askUrl,
 	DETAIL,
+	findNames,
 	INDICATORS,
 	leverText,
 	systemPrompt,
@@ -146,6 +148,23 @@ test("a view answer maps indicator and region, and leaves the rest unset", () =>
 	assert.deepEqual(toView({ indicator: "ghg", region: null }, meta), { indicator: 5 });
 	assert.throws(() => toView({ indicator: "metal_ores", region: null }, meta), /no indicator/);
 	assert.throws(() => toView({ indicator: null, region: "Atlantis" }, meta), /no country/);
+});
+
+test("findNames matches every word, ignoring case; industries include All industries", () => {
+	assert.deepEqual(findNames(catalog, "products", "steel"), ["Steel"]);
+	assert.deepEqual(findNames(catalog, "consumers", "MOTOR manufacture"), ["S: Manufacture of motor vehicles"]);
+	assert.ok(findNames(catalog, "consumers", "all").includes(ALL));
+	assert.deepEqual(findNames(catalog, "products", "steel zzz"), []);
+	assert.deepEqual(findNames(catalog, "regions", "atlantis"), []);
+});
+
+test("applyView sets the ui and says what the map shows", () => {
+	const ui = { indicator: 5, who: 0 };
+	assert.equal(applyView({ indicator: "jobs", region: "China" }, meta, ui), "The map now shows jobs for China.");
+	assert.deepEqual(ui, { indicator: 3, who: 1 });
+	assert.equal(applyView({ indicator: null, region: "World" }, meta, ui), "The map now shows the world.");
+	assert.throws(() => applyView({ indicator: null, region: null }, meta, ui), /changes nothing/);
+	assert.throws(() => applyView({ indicator: "jobs" }, undefined, ui), /did not load/);
 });
 
 test("ask posts one chat request with the schema, and reads the model name from /models", async () => {

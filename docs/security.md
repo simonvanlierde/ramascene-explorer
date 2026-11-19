@@ -89,6 +89,17 @@ goes through the same checks as a typed scenario: it must be a JSON object with 
 action, whose names are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
 shown as text, after "Model:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
 
+## WebMCP tools
+
+The tools in `src/lib/webmcp.js` ([interface.md](interface.md#webmcp)) are open to any agent the
+reader runs in their browser, on this page's origin only: the page sends `frame-ancestors 'none'`,
+and WebMCP's `tools` feature defaults to the page's own origin. They can change the view and run a
+custom scenario in the reader's own tab, through the same checks as the form, and do nothing the
+reader could not do by hand. A call loads the scenario data the custom form loads, from the same
+data host. The page itself sends nothing else; each result goes to the agent that called the tool.
+Every string in a result comes from the page's own data, or from the agent's input once its names
+have been checked against the catalogue.
+
 ## What `?data=` accepts
 
 `dataUrl` in `src/lib/explorer.js` accepts only a relative path ending in `.json`: the

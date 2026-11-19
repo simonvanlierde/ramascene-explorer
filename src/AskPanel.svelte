@@ -2,7 +2,7 @@
 // Ask: a question to a model the reader runs (?ask=), answered as a view change or a custom
 // scenario. The model only picks catalogue names; the page's engine computes, through the
 // custom form's own worker. Everything the model sends is rendered as text, never markup.
-import { ask, askSchema, leverText, systemPrompt, toModelDetails, toView } from "./lib/ask.js";
+import { applyView, ask, askSchema, leverText, systemPrompt, toModelDetails } from "./lib/ask.js";
 import { ui } from "./view.svelte.js";
 
 // base: the model server's base URL; model: its name, or null for the first one it lists;
@@ -15,7 +15,6 @@ let error = $state("");
 let answer = $state.raw(null);
 // set while busy: Cancel aborts the model call through it
 let stop = null;
-const SAYS = { ghg: "greenhouse-gas emissions", jobs: "jobs", metal_ores: "metal-ore extraction" };
 
 async function submit(event) {
 	event.preventDefault();
@@ -31,12 +30,7 @@ async function submit(event) {
 		const got = await ask({ base, model, system: systemPrompt(catalog), schema: askSchema(catalog), question: q, cancel: stop.signal });
 		const reply = typeof got.reply === "string" ? got.reply : "";
 		if (got.action === "view") {
-			if (!meta) throw new Error("the map did not load, so its view cannot change");
-			const view = toView(got, meta);
-			if (!Object.keys(view).length) throw new Error("the model chose a view but changed nothing");
-			Object.assign(ui, view);
-			const shows = [SAYS[got.indicator], got.region === "World" ? "the world" : got.region].filter(Boolean);
-			answer = { reply, levers: [], outcome: `The map now shows ${shows.join(" for ")}.` };
+			answer = { reply, levers: [], outcome: applyView(got, meta, ui) };
 		} else if (got.action === "whatif") {
 			const scenario = { label: "custom scenario", model_details: toModelDetails(got.levers, catalog) };
 			const { ok, text, cancelled } = await panel.runScenario(scenario);

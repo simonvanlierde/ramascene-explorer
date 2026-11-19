@@ -26,6 +26,17 @@ const refusedApi = ignoredApi(search);
 // ?ask= adds the Ask panel; it needs the browser engine, so ?api= takes precedence over it
 const askBase = api ? null : askUrl(search);
 let livePanelRef = $state();
+// WebMCP: tools for an agent in the reader's browser, on the same worker as the custom form
+$effect(() => {
+	if (api || !livePanelRef || !meta || !document.modelContext?.registerTool) return;
+	const off = new AbortController();
+	import("./lib/webmcp.js")
+		.then(({ registerTools }) =>
+			registerTools({ panel: livePanelRef, meta, ui, setMode, drawn: () => drawing, signal: off.signal }),
+		)
+		.catch(() => {}); // a chunk gone since a deploy: the page works without the tools
+	return () => off.abort();
+});
 
 let data = $state.raw(null);
 let empty = $state(false);
@@ -108,6 +119,8 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 // A finished job with flows, shown as the run in What if…. ui.run stays the last
 // precomputed run, so the page's link never points at a job its reader cannot reach.
 // A reader who went back to Flows stays there; What if… has the job when they return.
+// the last live run sent to the map; settles once it is on screen
+let drawing = Promise.resolve();
 function showLive(job, text, clauses, browser = false) {
 	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
 	const next = browser ? browserRun(job, meta, text) : jobRun(job, meta, api, text);
@@ -115,11 +128,12 @@ function showLive(job, text, clauses, browser = false) {
 	// the headline says only how many changes there are; Details lists them
 	if (clauses.length > 2) next.live.rows.unshift(["Changes", clauses.join("\n")]);
 	if (ui.mode !== "whatif") {
-		show(next.run, async () => next);
+		drawing = show(next.run, async () => next);
 		return true;
 	}
 	stop();
 	const loaded = show(next.run, async () => next);
+	drawing = loaded;
 	// a phone shows the result, not the sheet the form sits in
 	if (sheet) {
 		sheet = false;
