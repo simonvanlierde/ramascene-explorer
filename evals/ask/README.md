@@ -14,8 +14,11 @@ The gold set:
 - `view`: 6 view questions; a field the gold leaves null must stay null;
 - `none`: 3 off-topic questions, where the answer must be action `none`.
 
-A what-if is correct when its levers match the gold's as the page would run them: names mapped
-to ids, "All industries" counted as sections 1 to 15, a repeated industry counted once.
+A what-if is correct when its levers cover the same EXIOBASE products, regions and industries
+as the gold's, with the same change: the selection the engine computes. So two catalogue entries
+over the same leaves count as one answer ("Electrical machinery and apparatus n.e.c." and
+"Manufacture of electrical machinery and apparatus n.e.c." are both leaf 119), as do "All
+industries" and the 15 sections it stands for.
 
 ## Run it
 

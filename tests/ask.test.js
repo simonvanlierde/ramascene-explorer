@@ -336,7 +336,7 @@ test("the eval sends the page's prompt and schema, byte for byte", {
 	const code = `import importlib.util, json, sys
 spec = importlib.util.spec_from_file_location("e", "evals/ask/ask_eval.py")
 e = importlib.util.module_from_spec(spec); spec.loader.exec_module(e)
-names, scen = e.load(sys.argv[1], "data/results.json")
+names, scen, _ = e.load(sys.argv[1], "data/results.json")
 print(json.dumps([e.system_prompt(names, scen), e.schema(names)], ensure_ascii=False))`;
 	const out = spawnSync("python3", ["-I", "-B", "-c", code, MANIFEST], { encoding: "utf8" });
 	assert.equal(out.status, 0, out.stderr);

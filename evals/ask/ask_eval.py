@@ -52,7 +52,9 @@ MAX_DOWN = 3
 
 
 def load(manifest, results):
+    """Catalogue names to ids per kind, the scenarios with model_details, and each id's leaves."""
     cat = json.loads(Path(manifest).read_text())["catalog"]
+    covers = {k: {item["id"]: item["leaves"] for item in cat[k]} for k in ("products", "regions", "consumers")}
     names = {}
     for kind in ("products", "regions", "consumers"):
         # the page's rule (namesOf in src/lib/ask.js): a repeated name with the first entry's
@@ -66,7 +68,7 @@ def load(manifest, results):
                 ids[name], leaves[name] = item["id"], item.get("leaves")
         names[kind] = ids
     scen = {s["id"]: s for s in json.loads(Path(results).read_text())["scenarios"] if s.get("model_details")}
-    return names, scen
+    return names, scen, covers
 
 
 def schema(names):
@@ -109,15 +111,19 @@ def to_names(lever, names):
     }
 
 
-def canon(lever, names):
-    # compared by id, as the page runs it: "All industries" is sections 1-15, repeats collapse
-    ids = names["consumers"]
-    by = frozenset(c for n in lever["consumed_by"] for c in (range(1, 16) if n == ALL else [ids[n]]))
+def canon(lever, names, leaves):
+    # what the engine computes: every name expanded to its EXIOBASE leaves, so two catalogue
+    # entries over the same leaves ("Electrical machinery …" and "Manufacture of electrical
+    # machinery …") are one answer, as are "All industries" and sections 1-15
+    def cover(kind, picked):
+        ids = [i for n in picked for i in (range(1, 16) if n == ALL else [names[kind][n]])]
+        return tuple(sorted({v for i in ids for v in leaves[kind][i]}))
+
     return (
-        lever["product"],
-        lever["origin_region"],
-        tuple(sorted(by)),
-        lever["consumed_region"],
+        cover("products", [lever["product"]]),
+        cover("regions", [lever["origin_region"]]),
+        cover("consumers", lever["consumed_by"]),
+        cover("regions", [lever["consumed_region"]]),
         float(lever["change_percent"]),
     )
 
@@ -177,7 +183,7 @@ def ask(url, model, system, question, fmt):
     return choice["message"]["content"], time.monotonic() - t, data.get("usage", {}), choice.get("finish_reason")
 
 
-def score(kind, gold, raw, names, scen, rec):
+def score(kind, gold, raw, names, scen, leaves, rec):
     """Whether the answer matches gold; per-field matches and parse errors go into rec."""
     try:
         got = json.loads(raw)
@@ -185,8 +191,8 @@ def score(kind, gold, raw, names, scen, rec):
             return got["action"] == "view" and got["indicator"] == gold[0] and got["region"] == gold[1]
         if kind == "none":
             return got["action"] == "none"
-        want = sorted(canon(to_names(lv, names), names) for lv in scen[gold]["model_details"])
-        have = sorted(canon(lv, names) for lv in got["levers"]) if got["action"] == "whatif" else []
+        want = sorted(canon(to_names(lv, names), names, leaves) for lv in scen[gold]["model_details"])
+        have = sorted(canon(lv, names, leaves) for lv in got["levers"]) if got["action"] == "whatif" else []
         if len(want) == len(have):
             rec["fields"] = {
                 f: [w[i] == h[i] for w, h in zip(want, have, strict=True)]
@@ -201,7 +207,7 @@ def score(kind, gold, raw, names, scen, rec):
 def main():
     manifest, results, out = sys.argv[1:4]
     url, model = os.environ["NODE_SERVE_URL"], os.environ["NODE_SERVE_NAME"]
-    names, scen = load(manifest, results)
+    names, scen, leaves = load(manifest, results)
     for _, _, region in VIEWS:
         if region not in (None, "World") and region not in names["regions"]:
             sys.exit(f"view region {region!r} not in catalogue")
@@ -233,7 +239,7 @@ def main():
                 break
             continue
         rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
-        ok = score(kind, gold, raw, names, scen, rec)
+        ok = score(kind, gold, raw, names, scen, leaves, rec)
         rec["ok"] = ok
         log.write(json.dumps(rec, ensure_ascii=False) + "\n")
         log.flush()
