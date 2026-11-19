@@ -409,7 +409,7 @@ outliers, retained in the JSON. Eight threads improve the median repeat by 2%
 over four, and sixteen by 6%; those gains are small relative to the observed variation.
 
 Keep the four-thread cap. The pinned wasm-bindgen runtime reserves a
-[2 MiB stack per additional thread](https://github.com/wasm-bindgen/wasm-bindgen/blob/0.2.129/crates/cli-support/src/transforms/threads/mod.rs#L12).
+[2 MiB stack per additional thread](https://github.com/wasm-bindgen/wasm-bindgen/blob/0.2.130/crates/cli-support/src/transforms/threads/mod.rs#L12).
 Eight calculation threads would consume the entire 16 MiB pool allowance in stacks
 alone, and sixteen would need 32 MiB before runtime space. Increasing the allowance
 would remove the largest dense case from the existing working-memory budget.

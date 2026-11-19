@@ -34,7 +34,7 @@ jobs:
           enable-cache: true
 
       - run: uv sync --locked
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: just@1.59.0
           fallback: none
@@ -68,7 +68,7 @@ jobs:
         with:
           name: engine-pkg
           path: engine
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: just@1.59.0
           fallback: none
@@ -90,7 +90,7 @@ jobs:
       # Builds engine/pkg too, which the browser job takes: its Playwright image has
       # no C linker for build scripts.
       - uses: ./.github/actions/engine
-      - uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: cargo-nextest@0.9.149,cargo-deny@0.20.2,just@1.59.0
           fallback: none
