@@ -2,6 +2,7 @@
 # Runs ask_eval.py against three local models on the GPU node, one node-serve per model.
 set -uo pipefail
 cd "$(dirname "$0")"
+export PATH=$HOME/.local/bin:$PATH # a systemd unit or timer starts without it
 hub=$HOME/.cache/huggingface/hub
 export NODE_SERVE_ARGS='--max-model-len 8192'
 run() { # snapshot-dir served-name

@@ -12,6 +12,7 @@ Usage: ask_eval.py MANIFEST RESULTS OUT_DIR   (URL and model from NODE_SERVE_URL
 Stdlib only.
 """
 
+import http.client
 import json
 import os
 import sys
@@ -32,7 +33,7 @@ PARAPHRASES = [
     ("Halve the plastics American industry uses.", "plastics-america-50"),
     ("European industry uses 20% less steel.", "steel-europe-20"),
 ]
-VIEWS = [  # question, gold indicator, gold region (None = unchanged)
+VIEWS = [  # question, gold indicator, gold region (None: the answer must leave it null)
     ("Show me jobs instead of emissions.", "jobs", None),
     ("Where do China's emissions come from?", "ghg", "China"),
     ("What about metal ore extraction for India?", "metal_ores", "India"),
@@ -40,6 +41,14 @@ VIEWS = [  # question, gold indicator, gold region (None = unchanged)
     ("Show Germany's employment footprint.", "jobs", "Germany"),
     ("Switch to greenhouse gases for Brazil.", "ghg", "Brazil"),
 ]
+OFF_TOPIC = [  # gold action "none"
+    "What is the capital of France?",
+    "Write a short poem about steel.",
+    "Who built this website?",
+]
+# consecutive transport failures (server gone) after which the run stops instead of timing out
+# on every remaining question
+MAX_DOWN = 3
 
 
 def load(manifest, results):
@@ -100,9 +109,17 @@ def to_names(lever, names):
     }
 
 
-def canon(lever):
-    by = tuple(sorted(lever["consumed_by"]))
-    return (lever["product"], lever["origin_region"], by, lever["consumed_region"], float(lever["change_percent"]))
+def canon(lever, names):
+    # compared by id, as the page runs it: "All industries" is sections 1-15, repeats collapse
+    ids = names["consumers"]
+    by = frozenset(c for n in lever["consumed_by"] for c in (range(1, 16) if n == ALL else [ids[n]]))
+    return (
+        lever["product"],
+        lever["origin_region"],
+        tuple(sorted(by)),
+        lever["consumed_region"],
+        float(lever["change_percent"]),
+    )
 
 
 def system_prompt(names, scen):
@@ -133,6 +150,7 @@ reply: one short sentence saying what you did.
 
 Products: {"; ".join(names["products"])}
 Regions: {"; ".join(names["regions"])}
+Industries (consumed_by): {"; ".join([ALL, *names["consumers"]])}
 
 Examples:
 """ + "\n\n".join(shots)
@@ -155,7 +173,29 @@ def ask(url, model, system, question, fmt):
     t = time.monotonic()
     with urllib.request.urlopen(req, timeout=300) as r:  # noqa: S310 - scheme checked above
         data = json.load(r)
-    return data["choices"][0]["message"]["content"], time.monotonic() - t, data.get("usage", {})
+    choice = data["choices"][0]
+    return choice["message"]["content"], time.monotonic() - t, data.get("usage", {}), choice.get("finish_reason")
+
+
+def score(kind, gold, raw, names, scen, rec):
+    """Whether the answer matches gold; per-field matches and parse errors go into rec."""
+    try:
+        got = json.loads(raw)
+        if kind == "view":
+            return got["action"] == "view" and got["indicator"] == gold[0] and got["region"] == gold[1]
+        if kind == "none":
+            return got["action"] == "none"
+        want = sorted(canon(to_names(lv, names), names) for lv in scen[gold]["model_details"])
+        have = sorted(canon(lv, names) for lv in got["levers"]) if got["action"] == "whatif" else []
+        if len(want) == len(have):
+            rec["fields"] = {
+                f: [w[i] == h[i] for w, h in zip(want, have, strict=True)]
+                for i, f in enumerate(["product", "origin", "consumed_by", "consumed_region", "change"])
+            }
+    except (ValueError, KeyError, TypeError, IndexError, RecursionError) as e:  # a malformed answer is wrong
+        rec["error"] = repr(e)
+        return False
+    return want == have
 
 
 def main():
@@ -173,32 +213,27 @@ def main():
     items = [("label", s["label"], sid) for sid, s in scen.items() if sid not in FEWSHOT]
     items += [("paraphrase", q, sid) for q, sid in PARAPHRASES]
     items += [("view", q, (ind, reg)) for q, ind, reg in VIEWS]
+    items += [("none", q, None) for q in OFF_TOPIC]
 
     Path(out).mkdir(parents=True, exist_ok=True)
-    log = (Path(out) / f"{model}.jsonl").open("w")
-    tally = {}
+    log = (Path(out) / f"{Path(model).name}.jsonl").open("w")
+    tally, errors, down = {}, 0, 0
     for kind, question, gold in items:
         rec = {"kind": kind, "question": question, "gold": gold}
         try:
-            raw, secs, usage = ask(url, model, system, question, fmt)
-            got = json.loads(raw)
-            rec.update(raw=raw, secs=round(secs, 2), usage=usage)
-            if kind == "view":
-                ok = (
-                    got["action"] == "view"
-                    and (gold[0] is None or got["indicator"] == gold[0])
-                    and (gold[1] is None or got["region"] == gold[1])
-                )
-            else:
-                want = sorted(canon(to_names(lv, names)) for lv in scen[gold]["model_details"])
-                have = sorted(canon(lv) for lv in got["levers"]) if got["action"] == "whatif" else []
-                ok = want == have
-                rec["fields"] = {
-                    f: [w[i] == h[i] for w, h in zip(want, have, strict=False)]
-                    for i, f in enumerate(["product", "origin", "consumed_by", "consumed_region", "change"])
-                }
-        except (OSError, ValueError, KeyError, TypeError, IndexError) as e:  # a failed answer is wrong, and logged
-            ok, rec["error"] = False, repr(e)
+            raw, secs, usage, finish = ask(url, model, system, question, fmt)
+            down = 0
+        except (OSError, http.client.HTTPException, ValueError, KeyError, IndexError) as e:
+            # the server failed, not the model: counted apart so an outage cannot pass for a bad model
+            errors, down = errors + 1, down + 1
+            rec.update(ok=False, error=repr(e), transport=True)
+            log.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            log.flush()
+            if down >= MAX_DOWN:
+                break
+            continue
+        rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
+        ok = score(kind, gold, raw, names, scen, rec)
         rec["ok"] = ok
         log.write(json.dumps(rec, ensure_ascii=False) + "\n")
         log.flush()
@@ -210,13 +245,17 @@ def main():
     summary = {
         "model": model,
         "image": os.environ.get("NODE_SERVE_IMAGE"),
+        "server_errors": errors,
+        "stopped_early": down >= MAX_DOWN,
         **{
             k: {"correct": c, "n": n, "median_s": sorted(s)[len(s) // 2] if s else None}
             for k, (c, n, s) in tally.items()
         },
     }
-    (Path(out) / f"{model}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    (Path(out) / f"{Path(model).name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary))
+    if errors:
+        sys.exit(f"{errors} requests failed at the server; see {log.name}")
 
 
 if __name__ == "__main__":
