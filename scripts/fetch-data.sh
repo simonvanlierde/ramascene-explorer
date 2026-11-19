@@ -42,7 +42,8 @@ fetch() {
 	# a cut connection is retried too; a transfer under 100 kB/s for a minute counts as cut
 	curl -fsSL --retry 3 --retry-all-errors --connect-timeout 30 --speed-limit 100000 --speed-time 60 \
 		--output "data/$2.part" "https://github.com/$repo/releases/download/$1/$2"
-	echo "$(cut -d' ' -f1 "$3")  data/$2.part" | sha256sum --check
+	# the "-" is for macOS, whose sha256sum reads a checksum list from stdin only when told to
+	echo "$(cut -d' ' -f1 "$3")  data/$2.part" | sha256sum --check -
 	mv -f "data/$2.part" "data/$2"
 }
 
