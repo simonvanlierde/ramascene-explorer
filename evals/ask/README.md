@@ -27,7 +27,7 @@ You need the browser store (`scripts/fetch-data.sh store`, or the export in
 `response_format` with a JSON schema, such as vLLM:
 
 ```sh
-vllm serve Qwen/Qwen3.5-9B --served-model-name qwen3.5-9b --max-model-len 8192
+vllm serve Qwen/Qwen3.5-9B --served-model-name qwen3.5-9b --max-model-len 8192 --language-model-only
 export NODE_SERVE_URL=http://127.0.0.1:8000/v1 NODE_SERVE_NAME=qwen3.5-9b
 python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out
 ```
@@ -40,3 +40,18 @@ scored. After three in a row the run stops, and the script exits 1 whenever ther
 
 `run.sh` is one host's script: it serves three models in turn with a local `node-serve`
 wrapper and expects `manifest-v3.json` and `results.json` beside it.
+
+## Results
+
+2026-11-19, vLLM 0.33.0 on a 24 GB RTX 4090, temperature 0, scored by leaves:
+
+| Model | label (153) | paraphrase (8) | view (6) | none (3) | median s |
+| --- | --- | --- | --- | --- | --- |
+| Qwen3.8-27B, AWQ INT4 | 151 | 6 | 6 | 3 | 1.6 |
+| Gemma-4-26B-A4B, AWQ 4-bit | 151 | 3 | 6 | 3 | 0.5 |
+| Qwen3.5-9B, bf16 | 146 | 3 | 5 | 3 | 1.3 |
+
+On this card the 9B and the 27B need `--language-model-only` (the vision encoder does not fit
+beside them); the 27B also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`. The
+paraphrase misses are mostly readings the question allows: "industry" as Manufacturing rather
+than all industries, "construction" as the whole section rather than construction work.

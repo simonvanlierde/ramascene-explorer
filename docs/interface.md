@@ -75,9 +75,9 @@ The model server must:
   other servers ignore;
 - answer within 60 s, in at most 1500 tokens; a longer answer is reported as cut off;
 - allow the page's origin by CORS, including the preflight for the `Content-Type` header. vLLM
-  allows every origin by default (`--allowed-origins` narrows it); Ollama needs
-  `OLLAMA_ORIGINS=<page origin>`. The page sends no API key, so a server that needs one
-  cannot be used directly: put a proxy on loopback in front of it that holds the key and
+  answers the preflight with 400 unless started with `--allowed-origins '["<page origin>"]'`;
+  Ollama needs `OLLAMA_ORIGINS=<page origin>`. The page sends no API key, so a server that needs
+  one cannot be used directly: put a proxy on loopback in front of it that holds the key and
   answers only pages served from the same machine, since any site open in the browser can post
   to a loopback port.
 
