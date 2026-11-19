@@ -85,9 +85,9 @@ results. It sends nothing until someone asks a question.
 A crafted link can point the questions at any https server, which then reads what the
 reader types. The panel shows the base URL above the question field: check it before you
 ask. A redirect is refused, so the questions cannot move on to another host. The answer
-goes through the same checks as a typed scenario: it must be a JSON object whose names
-are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
-shown as text. The run is computed by the page's own engine and stays out of the link.
+goes through the same checks as a typed scenario: it must be a JSON object with a known
+action, whose names are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
+shown as text, after "Model:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
 
 ## What `?data=` accepts
 

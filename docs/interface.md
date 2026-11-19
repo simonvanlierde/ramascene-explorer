@@ -50,7 +50,8 @@ estimate. The calculations and downloadable CSV retain the original values.
 `?ask=<base URL>` adds an Ask panel under Custom scenario in What if…. The base URL is a
 chat-completions server's, with its path (`http://localhost:11434/v1` for Ollama,
 `http://127.0.0.1:8000/v1` for vLLM). It is checked like `api`: https, or http on `localhost`
-or `127.0.0.1`; anything else is ignored and the page is unchanged. With `?api=` also present,
+or `127.0.0.1` on any port, with no user name, password, query or fragment; anything else is
+ignored and the page is unchanged. `?askmodel=` names the model. With `?api=` also present,
 the job API takes precedence and the panel does not appear. Code: `src/lib/ask.js`,
 `src/AskPanel.svelte`.
 
@@ -66,11 +67,25 @@ model never produces a number. A name outside the catalogue, or a change outside
 changes it ran. The model's text is shown as text. A custom run stays out of the link.
 Without `askmodel`, the page asks `GET {base}/models` and uses the first model.
 
-A page on a public origin that calls a model on the reader's own machine meets CORS, and Chrome
-asks for the local-network permission. For a demo, serve the page from the same machine as
-the model (`pnpm preview`). vLLM needs `--allowed-origins '["<page origin>"]'` and Ollama
-`OLLAMA_ORIGINS=<page origin>` for the page's origin. [evals/ask](../evals/ask/README.md)
-scores models on this task.
+The model server must:
+
+- serve the chat-completions `POST /chat/completions` (and `GET /models` without `askmodel`) and
+  honour `response_format` with `type: "json_schema"` (vLLM and Ollama's `/v1` do). The request
+  also sends `chat_template_kwargs: {enable_thinking: false}`, which Qwen-style templates read and
+  other servers ignore;
+- answer within 60 s, in at most 1500 tokens; a longer answer is reported as cut off;
+- allow the page's origin by CORS, including the preflight for the `Content-Type` header. vLLM
+  allows every origin by default (`--allowed-origins` narrows it); Ollama needs
+  `OLLAMA_ORIGINS=<page origin>`. The page sends no API key, so a server that needs one
+  cannot be used.
+
+A page on a public https origin calling a model on loopback is a local-network request: Chrome
+asks the reader for permission and refuses without it, Firefox stops it (the panel says the
+model did not answer within 60 s) and Safari refuses it. So for a demo, open the page from the
+same machine as the model: `pnpm preview`, then `http://127.0.0.1:4180/?ask=…`. A model on
+another machine is reached through an SSH tunnel to the same loopback port
+(`ssh -N -L 8000:127.0.0.1:8000 <host>`). [evals/ask](../evals/ask/README.md) scores models on
+this task.
 
 ## Job API
 

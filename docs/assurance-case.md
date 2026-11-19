@@ -10,8 +10,8 @@ The page is static: files served as a Cloudflare Worker's static assets, with no
 code, and the published data from a public R2 hostname by hash, with no login
 or stored data. It has four threats:
 
-1. **A crafted link** whose `?api=` or `?data=` makes the page load data from
-   somewhere else, or show it as a real result.
+1. **A crafted link** whose `?api=`, `?ask=` or `?data=` makes the page load data from
+   somewhere else, send the reader's questions there, or show it as a real result.
 2. **A swapped data file.** `embodied.parquet` lives on the `data-2011-r2`
    release, outside git, and the browser matrix archive on `data-2011`.
 3. **A hijacked dependency or action** that runs in CI or ends up in the
@@ -26,7 +26,7 @@ good one from a bad one, so it labels a live result with its origin.
 
 | Boundary | What crosses it | Who controls the far side |
 | --- | --- | --- |
-| The URL | `?api=`, `?data=` | whoever wrote the link |
+| The URL | `?api=`, `?ask=`, `?data=` | whoever wrote the link |
 | A job API | catalog, job results | whoever runs that origin |
 | Release assets | `embodied.parquet`, the browser matrix archive, the `dist` tarball | anyone with write access to releases |
 | Build and CI | npm and PyPI packages, actions | their publishers |
@@ -37,8 +37,8 @@ good one from a bad one, so it labels a live result with its origin.
   a write permission only where it needs one, with the reason in a comment.
   In `release.yml` the job that runs `pnpm install` cannot sign or upload, and
   the job that signs runs no repository code.
-- **Fail-safe defaults.** `?api=` and `?data=` pass an allow-list or are
-  ignored, and the status line says so. `cloudflare.yml` refuses data not marked
+- **Fail-safe defaults.** `?api=`, `?ask=` and `?data=` pass an allow-list or are
+  ignored; for `?api=` and `?data=` the status line says so. `cloudflare.yml` refuses data not marked
   `exiobase-v3`, and every download of `embodied.parquet` must match the hash
   in `data/embodied.sha256`.
   The browser archive must match `data/browser-engine-zarr.sha256`. Its store
