@@ -29,6 +29,17 @@ The Parquet file for `data` has the same name ending in `-embodied.parquet`
 (`embodied.parquet` for `results.json`). `?data=tests/fixture.json` opens the
 synthetic fixture.
 
+## Data endpoints
+
+Paths are relative to the site URL. All data is CC BY 4.0 (see the README's Licence section), and every
+endpoint sends `Access-Control-Allow-Origin: *`.
+
+| Path or URL | Format | Schema | CORS |
+| --- | --- | --- | --- |
+| `data/results.json` | JSON: scenario totals and flows | `pipeline/` writes it; [scenarios.md](scenarios.md) | `*` |
+| `data/browser-engine/manifest-v3.json` | JSON: the browser store's manifest, naming the store by hash | [browser-engine.md](browser-engine.md) | `*` |
+| `https://ramascene-data.simonvanlierde.com/embodied/<sha256>.parquet` | Parquet: the map flows; the hash is in `data/embodied.sha256` | [publishing.md](publishing.md#data-host) | `*`, exposes `Content-Range, ETag` |
+
 ## Number display
 
 Amounts use at most three significant figures, without padded zeros, and two below
