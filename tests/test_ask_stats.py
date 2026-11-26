@@ -185,8 +185,8 @@ def test_report_flags_small_n(n):
     head, label, para = report(summary).splitlines()
     assert "server_errors 2" in head
     assert "151/153  95% CI 0.954-0.996" in label
-    assert "n < 15" not in label
-    assert para.endswith("  n < 15") == (n < 15)
+    assert f"n < {SMALL_N}" not in label
+    assert para.endswith(f"  n < {SMALL_N}") == (n < SMALL_N)
 
 
 def test_compare_flips(tmp_path, capsys):
@@ -476,19 +476,19 @@ def test_repo_items_load_against_the_catalogue():
 
 
 def scored_ids():
-    """The scenario ids ask_eval.load scores: those with model_details."""
+    """The label scenarios: those with model_details, minus the few-shot pair (mirrors ask_eval.load_items)."""
     scenarios = json.loads(RESULTS.read_text())["scenarios"]
-    return {s["id"] for s in scenarios if s.get("model_details")}
+    return {s["id"] for s in scenarios if s.get("model_details")} - set(ask_eval.FEWSHOT)
 
 
 def test_label_gate_counts_153_scenarios():
     # LABEL_GATE is an absolute count: a new scenario must move it on purpose
-    assert len(scored_ids() - set(ask_eval.FEWSHOT)) == 153
+    assert (len(scored_ids()), ask_eval.LABEL_GATE) == (153, 148)
 
 
 def test_items_name_scored_scenarios():
     # runs in CI, where the browser store is absent and the catalogue test above skips
-    ids = scored_ids() - set(ask_eval.FEWSHOT)
+    ids = scored_ids()
     bad = [it["scenario"] for it in json.loads(REPO_ITEMS.read_text())["paraphrase"] if it["scenario"] not in ids]
     assert bad == []
 
