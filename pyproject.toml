@@ -32,7 +32,7 @@ default-groups = ["dev", "precompute"]
 # deprecation shows up in CI, not after the upgrade that removes it.
 [tool.pytest]
 minversion = "9"
-pythonpath = [".", "pipeline"]
+pythonpath = [".", "pipeline", "evals/ask"]
 testpaths = ["tests"]
 addopts = ["-ra"]
 strict = true
@@ -48,7 +48,7 @@ fail_under = 80
 allowed-unresolved-imports = ["ramascene", "ramascene.**"]
 
 [tool.ty.environment]
-extra-paths = ["pipeline"]
+extra-paths = ["pipeline", "evals/ask"]
 
 [tool.ty.src]
 # Its own uv project, with the Brightway packages this environment lacks.
@@ -58,7 +58,7 @@ exclude = ["brightway-check"]
 [tool.ruff]
 line-length = 120
 # the pipeline modules are imported by bare name, so they sort as first-party
-src = [".", "pipeline"]
+src = [".", "pipeline", "evals/ask"]
 
 [tool.ruff.lint]
 select = ["ALL"]

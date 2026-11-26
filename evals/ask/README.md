@@ -34,9 +34,32 @@ python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.
 
 The prompt is about 5,100 tokens, so 8192 leaves room for the answer. Results go to `out/` and
 are not committed: `<model>.jsonl` holds one line per question, with the raw answer,
-`finish_reason` and timing, and `<model>.summary.json` holds `correct` and `n` per kind.
-`server_errors` counts requests the server failed (refused, timed out, not JSON), which are not
-scored. After three in a row the run stops, and the script exits 1 whenever there was one.
+`finish_reason` and timing, and `<model>.summary.json` holds `correct`, `n` and a Wilson 95% CI
+(`ci95`) per kind. `server_errors` counts requests the server failed (refused, timed out, not
+JSON), which are not scored and not in `n`; the printed summary shows it beside the scores. After
+three in a row the run stops, and the script exits 1 whenever there was one.
+
+To compare runs item by item:
+
+```sh
+python3 evals/ask/compare.py evals/ask/out/qwen3.8-27b.jsonl evals/ask/out/qwen3.5-9b.jsonl
+```
+
+## Statistics
+
+Each kind's score comes with a Wilson 95% interval, which stays meaningful near 0/n and n/n
+where the usual normal interval does not; below 15 items the summary flags it with `n < 15`.
+`compare.py` pairs two or more runs on the same questions and reports, per kind, the discordant
+counts (b: only the first run right; c: only the second), the difference in accuracy with a
+Bonett-Price 95% interval for paired proportions, the exact McNemar p (a two-sided binomial test
+on b and c) and, with more than one pair, the Holm-adjusted p. It prints no p-value below 15
+paired items.
+
+8 paraphrases cannot rank models. With 3 discordant items, all going one way, the smallest
+possible paired p is 0.25, and the Wilson intervals of 6/8 (0.41-0.93) and 3/8 (0.14-0.69)
+overlap. The 153 label questions do separate models: Qwen3.8-27B got 16 right that Gemma missed
+and none the other way (Holm p 9e-05). Between Qwen3.8-27B and Qwen3.5-9B they do not (b 5, c 0,
+Holm p 0.06).
 
 `run.sh` is one host's script: it serves three models in turn with a local `node-serve`
 wrapper and expects `manifest-v3.json` and `results.json` beside it.
@@ -45,11 +68,30 @@ wrapper and expects `manifest-v3.json` and `results.json` beside it.
 
 2026-11-19, vLLM 0.33.0 on a 24 GB RTX 4090, temperature 0, scored by leaves:
 
-| Model | label (153) | paraphrase (8) | view (6) | none (3) | median s |
-| --- | --- | --- | --- | --- | --- |
-| Qwen3.8-27B, AWQ INT4 | 151 | 6 | 6 | 3 | 1.6 |
-| Gemma-4-26B-A4B, AWQ 4-bit | 151 | 3 | 6 | 3 | 0.5 |
-| Qwen3.5-9B, bf16 | 146 | 3 | 5 | 3 | 1.3 |
+| Model | label (153) | paraphrase (8) | paraphrase 95% CI | view (6) | none (3) | median s |
+| --- | --- | --- | --- | --- | --- | --- |
+| Qwen3.8-27B, AWQ INT4 | 151 | 6 | 0.41-0.93 | 6 | 3 | 1.6 |
+| Gemma-4-26B-A4B, AWQ 4-bit | 135 | 3 | 0.14-0.69 | 6 | 3 | 0.5 |
+| Qwen3.5-9B, bf16 | 146 | 3 | 0.14-0.69 | 5 | 3 | 1.3 |
+
+The label intervals are 0.954-0.996 for 151/153, 0.909-0.978 for 146/153 and 0.822-0.924 for
+135/153; view 6/6 is 0.61-1.00 and 5/6 0.44-0.97, none 3/3 0.44-1.00.
+
+Gemma's label misses are clustered: 15 of its 18 are the electrical-machinery scenarios, where it
+names the product by its industry, "Manufacture of electrical machinery and apparatus n.e.c.",
+instead of "Electrical machinery and apparatus n.e.c.". The other three are
+`steel-in-vehicles-europe`, `cement-in-construction` and `construction-demand-europe`.
+
+<details>
+<summary><code>compare.py</code> on the three runs, label rows</summary>
+
+```text
+label      qwen3.8-27b vs gemma-4-26b-a4b  n 153  151 vs 135  b 16 c 0  diff +0.10 (95% CI +0.052 to +0.154)  p 3.05e-05  Holm 9.16e-05
+label      qwen3.8-27b vs qwen3.5-9b  n 153  151 vs 146  b 5 c 0  diff +0.03 (95% CI -0.001 to +0.065)  p 0.0625  Holm 0.0625
+label      gemma-4-26b-a4b vs qwen3.5-9b  n 153  135 vs 146  b 5 c 16  diff -0.07 (95% CI -0.131 to -0.011)  p 0.0266  Holm 0.0532
+```
+
+</details>
 
 On this card the 9B and the 27B need `--language-model-only` (the vision encoder does not fit
 beside them); the 27B also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`. The
