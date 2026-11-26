@@ -389,7 +389,7 @@ def fixture_store(directory, **over):
 
 @pytest.mark.parametrize("residual", [1e-16, 1e-9])
 def test_store_reads_the_fixture(tmp_path, residual):
-    store = ne.Store(fixture_store(tmp_path, baseline_residual=residual))
+    store = ne.open_store(fixture_store(tmp_path, baseline_residual=residual))
     assert np.array_equal(store.read("M", [3, 1], [0, 2]), MATRIX.astype(np.float32).astype(float)[[3, 1]][:, [0, 2]])
 
 
@@ -410,7 +410,7 @@ def test_store_reads_the_fixture(tmp_path, residual):
 )
 def test_store_refuses_an_unsupported_manifest(tmp_path, over):
     with pytest.raises(ValueError, match="unsupported browser dataset"):
-        ne.Store(fixture_store(tmp_path, **over))
+        ne.open_store(fixture_store(tmp_path, **over))
 
 
 # as tests/browser-parity.test.js: with CI set, a missing store fails instead of skipping
@@ -425,7 +425,7 @@ def test_published_scenarios_match_ramascene(monkeypatch):
     monkeypatch.syspath_prepend(ROOT / "brightway-check")
     import scenario_check  # ty: ignore[import-not-found]
 
-    store = ne.Store(STORE)
+    store = ne.open_store(STORE)
     reference = json.loads((ROOT / "data/results.json").read_text())
     runs = scenario_check.scenarios(reference)
     assert len(runs) == 156

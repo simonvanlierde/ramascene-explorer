@@ -199,7 +199,7 @@ import sys
 sys.path.insert(0, "pipeline")
 import numpy_engine as ne
 
-store = ne.Store("data/browser-engine")
+store = ne.open_store("data/browser-engine")
 flows = ne.scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
                                    "consumedReg": [2], "techChange": [-20]}])
 print(flows.shape)  # (2205, 49): indicator x producer x section, by consumer

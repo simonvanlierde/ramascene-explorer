@@ -1,6 +1,6 @@
 """The browser scenario engine in numpy and scipy: the same maths as src/lib/browser-engine/, no Rust.
 
-    store = Store("data/browser-engine")
+    store = open_store("data/browser-engine")
     flows = scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
                                     "consumedReg": [2], "techChange": [-20]}])
 
@@ -127,6 +127,10 @@ class Store:
 
     def read(self, name, rows, columns=None):
         return self.readers[name].read(rows, columns)
+
+
+def open_store(directory):
+    return Store(directory)
 
 
 def _expand(items, ids, bound):
