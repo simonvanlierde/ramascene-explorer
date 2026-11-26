@@ -61,6 +61,9 @@ logs again from their raw answers, without a model:
 python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out --rescore
 ```
 
+Pass the `--items` the logs ran with (the held-out file for a held-out run): a log holding an
+item the gold set lacks exits 3 and is left as it was.
+
 To compare runs item by item:
 
 ```sh
@@ -111,7 +114,7 @@ runs. A Wilson 95% interval follows each paraphrase and `none` score.
 No server errors. Qwen3.5-9B fails the label gate (143 < 148); on vLLM 0.33.0 a week earlier it
 got 146. Across the three runs only Gemma changed answers: 3 of its 60 paraphrases (50, 51 and 50
 right). Most paraphrase misses are the origin region (`fields_wrong.origin`: 4, 9 and 16 items),
-then consumed_by and consumed_region. The `none` misses are near misses: a water or plastic-waste
+then consumed_region and consumed_by. The `none` misses are near misses: a water or plastic-waste
 footprint answered with another indicator, Nigeria or Saudi Arabia shown as a listed region, and
 "emissions per person" as the total.
 

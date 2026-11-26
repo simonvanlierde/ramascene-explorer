@@ -5,9 +5,15 @@ set -uo pipefail
 cd "$(dirname "$0")" || exit 3
 export PATH=$HOME/.local/bin:$PATH # a systemd unit or timer starts without it
 hub=$HOME/.cache/huggingface/hub
-eval_all() {
-	for r in 1 2 3; do python3 ask_eval.py manifest-v3.json results.json "out/r$r" || echo "r$r exit $?"; done
-	if [[ -n ${HELDOUT:-} ]]; then python3 ask_eval.py manifest-v3.json results.json out/heldout --items "$HELDOUT"; fi
+eval_all() { # returns the last nonzero ask_eval.py exit, so status.txt shows a failed gate
+	local r rc=0
+	for r in 1 2 3; do
+		python3 ask_eval.py manifest-v3.json results.json "out/r$r" || { rc=$? && echo "r$r exit $rc"; }
+	done
+	if [[ -n ${HELDOUT:-} ]]; then
+		python3 ask_eval.py manifest-v3.json results.json out/heldout --items "$HELDOUT" || rc=$?
+	fi
+	return "$rc"
 }
 export -f eval_all
 run() { # snapshot-dir served-name engine-args

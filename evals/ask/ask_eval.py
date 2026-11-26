@@ -181,43 +181,43 @@ def ask(url, model, system, question, fmt):
         "response_format": {"type": "json_schema", "json_schema": {"name": "action", "schema": fmt}},
         "chat_template_kwargs": {"enable_thinking": False},
     }
-    if not url.startswith(("http://", "https://")):
-        sys.exit(f"NODE_SERVE_URL must be http(s), got {url!r}")
-    req = urllib.request.Request(  # noqa: S310 - scheme checked above
+    req = urllib.request.Request(  # noqa: S310 - main checks the scheme
         f"{url}/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"}
     )
     t = time.monotonic()
-    with urllib.request.urlopen(req, timeout=300) as r:  # noqa: S310 - scheme checked above
+    with urllib.request.urlopen(req, timeout=300) as r:  # noqa: S310 - main checks the scheme
         data = json.load(r)
     choice = data["choices"][0]
     return choice["message"]["content"], time.monotonic() - t, data.get("usage", {}), choice.get("finish_reason")
 
 
-def load_items(path, names, scen):
-    """(kind, question, gold) per item: the label questions, then the items file.
+def load_items(path, names, scen, leaves):
+    """(kind, question, gold, accept) per item: the label questions, then the items file.
 
     gold is a scenario id for label and paraphrase, (indicator, region) for view, None for none.
-    The second value maps a paraphrase or view question to its other accepted answers: lever
-    lists for a paraphrase, (indicator, region) pairs for a view.
+    accept holds the other accepted answers: lever lists as sorted leaves for a paraphrase,
+    (indicator, region) pairs for a view. A name not in the catalogue raises here, not as a miss.
     """
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    items = [("label", s["label"], sid) for sid, s in scen.items() if sid not in FEWSHOT]
-    accept = {}
+    items = [("label", s["label"], sid, []) for sid, s in scen.items() if sid not in FEWSHOT]
     for it in data["paraphrase"]:
         if it["scenario"] not in scen or it["scenario"] in FEWSHOT:
             raise ValueError(f"paraphrase gold {it['scenario']!r} is not a scored scenario")
-        items.append(("paraphrase", it["question"], it["scenario"]))
-        accept[it["question"]] = it.get("accept", [])
+        alts = [sorted(canon(lv, names, leaves) for lv in alt) for alt in it.get("accept", [])]
+        items.append(("paraphrase", it["question"], it["scenario"], alts))
+    views = schema(names)["properties"]
+    indicators, regions = (views[k]["anyOf"][0]["enum"] for k in ("indicator", "region"))
     for it in data["view"]:
-        if it["region"] not in (None, "World", *names["regions"]):
-            raise ValueError(f"view region {it['region']!r} not in catalogue")
-        items.append(("view", it["question"], (it["indicator"], it["region"])))
-        accept[it["question"]] = [tuple(a) for a in it.get("accept", [])]
-    items += [("none", it["question"], None) for it in data["none"]]
-    keys = [(k, q) for k, q, _ in items]
+        for ind, reg in [(it["indicator"], it["region"]), *it.get("accept", [])]:
+            if ind not in (None, *indicators) or reg not in (None, *regions):
+                raise ValueError(f"view answer {(ind, reg)!r} is not one the schema allows")
+        accept = [tuple(a) for a in it.get("accept", [])]
+        items.append(("view", it["question"], (it["indicator"], it["region"]), accept))
+    items += [("none", it["question"], None, []) for it in data["none"]]
+    keys = [(k, q) for k, q, *_ in items]
     if len(set(keys)) < len(keys):  # compare.py pairs runs on (kind, question)
         raise ValueError(f"repeated item {next(k for k in keys if keys.count(k) > 1)!r}")
-    return items, accept
+    return items
 
 
 def score(kind, gold, raw, names, scen, leaves, rec, accept=()):
@@ -232,11 +232,13 @@ def score(kind, gold, raw, names, scen, leaves, rec, accept=()):
         have = sorted(canon(lv, names, leaves) for lv in got["levers"]) if got["action"] == "whatif" else []
         if len(want) == len(have):
             rec["fields"] = {f: [w[i] == h[i] for w, h in zip(want, have, strict=True)] for i, f in enumerate(FIELDS)}
-        alts = [sorted(canon(lv, names, leaves) for lv in alt) for alt in accept]
     except (ValueError, KeyError, TypeError, IndexError, RecursionError) as e:  # a malformed answer is wrong
         rec["error"] = repr(e)
         return False
-    return have == want or have in alts
+    if have == want or have in accept:
+        rec.pop("fields", None)  # fields_wrong counts misses; an accepted answer differs from gold on purpose
+        return True
+    return False
 
 
 def summarize(model, image, recs, stopped_early):
@@ -272,35 +274,34 @@ def write(out, summary, recs):
     (Path(out) / f"{name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
 
-def rescore(out, items, accept, names, scen, leaves):
+def rescore(out, items, names, scen, leaves):
     """Score every <model>.jsonl in out again from its raw answers, against the current gold.
 
     A log keeps the ok it was scored with, so a change to the scorer or the gold leaves it stale
-    until this runs. Items no longer in the gold set are dropped.
+    until this runs. Raises ValueError, before writing that log, when it holds an item the gold
+    set lacks (the wrong --items), and when out holds no log.
     """
-    gold = {(k, q): g for k, q, g in items}
+    gold = {(k, q): (g, a) for k, q, g, a in items}
     summaries = []
     for path in sorted(Path(out).glob("*.jsonl")):
-        recs, dropped = [], 0
-        for line in path.read_text(encoding="utf-8").splitlines():
-            rec = json.loads(line)
-            key = rec["kind"], rec["question"]
-            if key not in gold:
-                dropped += 1
-                continue
-            rec["gold"] = gold[key]
+        recs = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        missing = sum((r["kind"], r["question"]) not in gold for r in recs)
+        if missing:
+            raise ValueError(f"{path.name}: {missing} items not in the gold set; pass the --items it ran with")
+        for rec in recs:
+            g, accept = gold[rec["kind"], rec["question"]]
+            rec["gold"] = g
             if not rec.get("transport"):
                 for f in ("fields", "error"):
                     rec.pop(f, None)
-                rec["ok"] = score(key[0], gold[key], rec["raw"], names, scen, leaves, rec, accept.get(key[1], ()))
-            recs.append(rec)
+                rec["ok"] = score(rec["kind"], g, rec["raw"], names, scen, leaves, rec, accept)
         old = path.with_suffix(".summary.json")
         meta = json.loads(old.read_text()) if old.exists() else {}
         summary = summarize(meta.get("model", path.stem), meta.get("image"), recs, meta.get("stopped_early", False))
         write(out, summary, recs)
-        if dropped:
-            print(f"note: {path.name}: {dropped} items not in the gold set, dropped", file=sys.stderr)
         summaries.append(summary)
+    if not summaries:
+        raise ValueError(f"no <model>.jsonl in {Path(out).as_posix()!r}")
     return summaries
 
 
@@ -315,11 +316,11 @@ exit codes: 0 scored; 1 scored, but fewer than {LABEL_GATE} label questions righ
 error; 3 a server error or an unreadable input"""
 
 
-def run(args, items, accept, names, scen, leaves):
+def run(args, items, names, scen, leaves):
     url, model = os.environ["NODE_SERVE_URL"], os.environ["NODE_SERVE_NAME"]
     system, fmt = system_prompt(names, scen), schema(names)
     recs, down = [], 0
-    for kind, question, gold in items:
+    for kind, question, gold, accept in items:
         rec = {"kind": kind, "question": question, "gold": gold}
         recs.append(rec)
         try:
@@ -333,7 +334,7 @@ def run(args, items, accept, names, scen, leaves):
                 break
             continue
         rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
-        rec["ok"] = score(kind, gold, raw, names, scen, leaves, rec, accept.get(question, ()))
+        rec["ok"] = score(kind, gold, raw, names, scen, leaves, rec, accept)
     summary = summarize(model, os.environ.get("NODE_SERVE_IMAGE"), recs, down >= MAX_DOWN)
     write(args.out, summary, recs)
     return [summary]
@@ -355,25 +356,30 @@ def main(argv=None):
     )
     parser.add_argument("--rescore", action="store_true", help="score the logs in OUT again; asks no model")
     args = parser.parse_args(argv)
-    if not args.rescore and not os.environ.get("NODE_SERVE_URL", "").startswith(("http://", "https://")):
+    url_ok = os.environ.get("NODE_SERVE_URL", "").startswith(("http://", "https://"))
+    if not args.rescore and not (url_ok and os.environ.get("NODE_SERVE_NAME")):
         parser.error("set NODE_SERVE_URL to the server's http(s) base URL, and NODE_SERVE_NAME")
     try:
         names, scen, leaves = load(args.manifest, args.results)
-        items, accept = load_items(args.items, names, scen)
+        items = load_items(args.items, names, scen, leaves)
     except (OSError, ValueError, KeyError, TypeError) as e:
         print(f"error: cannot read the gold set: {e!r}", file=sys.stderr)
         return 3
     args.out.mkdir(parents=True, exist_ok=True)
     if args.rescore:
-        summaries = rescore(args.out, items, accept, names, scen, leaves)
+        try:
+            summaries = rescore(args.out, items, names, scen, leaves)
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 3
     else:
-        summaries = run(args, items, accept, names, scen, leaves)
+        summaries = run(args, items, names, scen, leaves)
     code = 0
     for s in summaries:
         print(report(s))
         if s["server_errors"]:
             code = 3
-        elif s.get("label", {}).get("correct", LABEL_GATE) < LABEL_GATE and code == 0:
+        elif s.get("label", {}).get("correct", 0) < LABEL_GATE and code == 0:
             code = 1
     return code
 

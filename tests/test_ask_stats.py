@@ -254,9 +254,12 @@ def test_score_by_leaves_and_accept_list():
             "change_percent": -10,
         }
     ]
-    assert score(answer(consumed_by=["S: 5"]), [mfg])[0]
-    assert not score(answer(product="Glass"), [mfg])[0]
-    ok, rec = score("not json", [mfg])
+    alt = [sorted(ask_eval.canon(lv, NAMES, LEAVES) for lv in mfg)]  # as load_items resolves it
+    ok, rec = score(answer(consumed_by=["S: 5"]), alt)
+    assert ok
+    assert "fields" not in rec  # an accepted answer is not a field miss
+    assert not score(answer(product="Glass"), alt)[0]
+    ok, rec = score("not json", alt)
     assert not ok
     assert "error" in rec
 
@@ -269,16 +272,25 @@ def items_file(tmp_path, **extra):
 
 
 def test_load_items_rejects_bad_gold(tmp_path):
-    items, accept = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN)
-    assert [k for k, _, _ in items] == ["label", "paraphrase"]
-    assert accept == {"Europe cuts steel by a tenth": []}
-    for extra, message in [
-        ({"paraphrase": [{"question": "q", "scenario": "nope"}]}, "not a scored scenario"),
-        ({"view": [{"question": "q", "indicator": None, "region": "Mars"}]}, "not in catalogue"),
-        ({"none": [{"question": "q"}, {"question": "q"}]}, "repeated item"),
+    items = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN, LEAVES)
+    assert [(k, a) for k, _, _, a in items] == [("label", []), ("paraphrase", [])]
+    bad_lever = {"product": "Steel typo", "origin_region": "Total", "consumed_by": ["All industries"]}
+    bad_lever |= {"consumed_region": "Europe", "change_percent": -10}
+    for extra, error, message in [
+        ({"paraphrase": [{"question": "q", "scenario": "nope"}]}, ValueError, "not a scored scenario"),
+        ({"paraphrase": [{"question": "q", "scenario": "steel", "accept": [[bad_lever]]}]}, KeyError, "Steel typo"),
+        ({"view": [{"question": "q", "indicator": None, "region": "Mars"}]}, ValueError, "schema allows"),
+        ({"view": [{"question": "q", "indicator": None, "region": "Europe"}]}, ValueError, "schema allows"),
+        ({"view": [{"question": "q", "indicator": "co2", "region": None}]}, ValueError, "schema allows"),
+        (
+            {"view": [{"question": "q", "indicator": None, "region": None, "accept": [["ghg", "Mars"]]}]},
+            ValueError,
+            "schema allows",
+        ),
+        ({"none": [{"question": "q"}, {"question": "q"}]}, ValueError, "repeated item"),
     ]:
-        with pytest.raises(ValueError, match=message):
-            ask_eval.load_items(items_file(tmp_path, **extra), NAMES, SCEN)
+        with pytest.raises(error, match=message):
+            ask_eval.load_items(items_file(tmp_path, **extra), NAMES, SCEN, LEAVES)
 
 
 def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, capsys):
@@ -297,7 +309,6 @@ def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, 
                 "secs": 1.0,
             },
             {"kind": "label", "question": SCEN["steel"]["label"], "ok": True, "raw": answer(product="Glass")},
-            {"kind": "none", "question": "dropped from the gold set", "ok": True, "raw": "{}"},
         ],
     )
     args = ["manifest", "results", str(out), "--items", str(items_file(tmp_path)), "--rescore"]
@@ -313,11 +324,36 @@ def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, 
         "consumed_region": 0,
         "change": 0,
     }
+    # a log from another --items (the held-out run) is refused and left as it was
+    with (out / "m.jsonl").open("a") as log:
+        log.write(json.dumps({"kind": "none", "question": "held out", "ok": True, "raw": "{}"}) + "\n")
+    before = (out / "m.jsonl").read_bytes()
+    assert ask_eval.main(args) == 3
+    assert (out / "m.jsonl").read_bytes() == before
     assert "1 items not in the gold set" in capsys.readouterr().err
 
 
-def test_eval_needs_a_server_url(tmp_path, monkeypatch):
-    monkeypatch.delenv("NODE_SERVE_URL", raising=False)
+def test_rescore_of_an_empty_folder_fails(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    args = ["manifest", "results", str(tmp_path / "out"), "--items", str(items_file(tmp_path)), "--rescore"]
+    assert ask_eval.main(args) == 3
+    assert "no <model>.jsonl" in capsys.readouterr().err
+
+
+def test_a_log_without_labels_fails_the_gate(tmp_path, monkeypatch):
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    out = tmp_path / "out"
+    out.mkdir()
+    write(out / "m.jsonl", [{"kind": "paraphrase", "question": "Europe cuts steel by a tenth", "raw": answer()}])
+    assert ask_eval.main(["manifest", "results", str(out), "--items", str(items_file(tmp_path)), "--rescore"]) == 1
+
+
+@pytest.mark.parametrize("env", [{"NODE_SERVE_NAME": "m"}, {"NODE_SERVE_URL": "http://127.0.0.1:1/v1"}])
+def test_eval_needs_a_server_url_and_name(tmp_path, monkeypatch, env):
+    for k in ("NODE_SERVE_URL", "NODE_SERVE_NAME"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
     with pytest.raises(SystemExit) as e:
         ask_eval.main(["m", "r", str(tmp_path)])
     assert e.value.code == 2
@@ -329,9 +365,9 @@ MANIFEST = Path("data/browser-engine/manifest-v3.json")
 
 @pytest.mark.skipif(not MANIFEST.exists(), reason="needs the browser store")
 def test_repo_items_load_against_the_catalogue():
-    names, scen, _ = ask_eval.load(MANIFEST, "data/results.json")
-    items, _ = ask_eval.load_items(REPO_ITEMS, names, scen)
-    paraphrased = [g for k, _, g in items if k == "paraphrase"]
+    names, scen, leaves = ask_eval.load(MANIFEST, "data/results.json")
+    items = ask_eval.load_items(REPO_ITEMS, names, scen, leaves)
+    paraphrased = [g for k, _, g, _ in items if k == "paraphrase"]
     assert len(paraphrased) == len(set(paraphrased))  # one scenario each, so a split by scenario holds
 
 
