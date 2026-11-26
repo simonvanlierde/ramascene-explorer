@@ -41,6 +41,7 @@ const staticFiles = {
 // The host sends the page's Content-Security-Policy from public/_headers; the preview sends the
 // same line, so the browser tests run under it (workers included).
 const csp = readFileSync("public/_headers", "utf8").match(/^\s+Content-Security-Policy: (.+)$/m)?.[1];
+if (!csp) throw new Error("public/_headers has no Content-Security-Policy line");
 
 // Platforms cache a preview by image URL, so the card URL carries the PNG's hash.
 const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);

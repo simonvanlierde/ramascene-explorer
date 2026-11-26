@@ -1307,3 +1307,8 @@ test("What if… opens folded again after a trip to Flows", async ({ page, isMob
 	await expect(page.locator("#run-list")).toHaveCount(0);
 	await expect(side.getByRole("button", { name: "Change the scenario" })).toBeVisible();
 });
+
+test("the preview sends the host's Content-Security-Policy, workers included", async ({ page }) => {
+	const res = await page.goto(FIXTURE);
+	expect(res.headers()["content-security-policy"]).toContain("worker-src 'self'");
+});

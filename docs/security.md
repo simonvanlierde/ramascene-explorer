@@ -15,7 +15,7 @@ checked is in [publishing.md](publishing.md).
 The Content-Security-Policy is a header, set in `public/_headers`, so it also governs the
 dedicated workers (a `<meta>` policy does not). It allows scripts, workers, styles and fonts from the
 page's own origin only (plus inline styles), and `'wasm-unsafe-eval'` for scripts: the workers compile
-the WebAssembly kernel. `connect-src` names the data host and also allows any `https:` origin,
+the WebAssembly kernel. `connect-src` allows any `https:` origin, the data host among them,
 because `?api=` can name any https job API and `?ask=` any https model server, and loopback over
 http. The page renders data as text, never through `innerHTML` or Svelte's `{@html}`, so a job API's
 text cannot add markup. `vite preview` sends the same header, so the browser tests run under it;
