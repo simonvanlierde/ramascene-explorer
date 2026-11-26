@@ -21,6 +21,16 @@ follow [Semantic Versioning](https://semver.org/).
 - `evals/ask/` reports a Wilson 95% interval per kind, and `evals/ask/compare.py` compares runs
   item by item: discordant counts, the exact McNemar p, a Bonett-Price interval for the
   difference and Holm over pairs, with no p-value below 15 items.
+- `evals/ask/items.json`: 60 paraphrases (one scenario each), 24 view and 30 `none` questions,
+  near misses included, with a held-out set kept outside the repository. `ask_eval.py` takes
+  `--items`, `--rescore` (score the logs again from their raw answers) and counts wrong lever
+  fields per kind; the label set gates the run (exit 1 below 148 of 153). `compare.py --flips`
+  counts items scored differently between repeat runs.
+
+### Fixed
+
+- The Ask eval README gave Gemma-4-26B-A4B 135 of 153 label questions; the logs had been
+  scored by an older scorer that compared names, not EXIOBASE leaves. Scored again, it is 151.
 
 ## [0.8.0] - 2026-11-15
 

@@ -8,10 +8,10 @@ question), plus hand-written paraphrases and view questions. The model answers t
 JSON schema whose enums are the catalogue names, so it picks names and never invents ids;
 this script maps names back to catalogue ids and compares with the gold levers.
 
-Usage: ask_eval.py MANIFEST RESULTS OUT_DIR   (URL and model from NODE_SERVE_URL, NODE_SERVE_NAME)
 Stdlib only.
 """
 
+import argparse
 import http.client
 import json
 import math
@@ -24,29 +24,10 @@ from pathlib import Path
 ALL = "All industries"
 DETAIL = " (detail)"
 FEWSHOT = ("vehicle-demand-europe", "aluminium-europe-10")
-PARAPHRASES = [
-    ("What if European car makers used 20% less steel?", "steel-in-vehicles-europe"),
-    ("Cut cement use in construction worldwide by a fifth.", "cement-in-construction"),
-    ("What if Chinese industry used 20% less coal power from China?", "coal-power-china"),
-    ("Europe spends 20% less on construction. What changes?", "construction-demand-europe"),
-    ("What if industries in Africa used half as much nitrogen fertiliser?", "fertiliser-africa-50"),
-    ("Copper use down 10% across Asia-Pacific industry", "copper-asia-pacific-10"),
-    ("Halve the plastics American industry uses.", "plastics-america-50"),
-    ("European industry uses 20% less steel.", "steel-europe-20"),
-]
-VIEWS = [  # question, gold indicator, gold region (None: the answer must leave it null)
-    ("Show me jobs instead of emissions.", "jobs", None),
-    ("Where do China's emissions come from?", "ghg", "China"),
-    ("What about metal ore extraction for India?", "metal_ores", "India"),
-    ("Show the whole world.", None, "World"),
-    ("Show Germany's employment footprint.", "jobs", "Germany"),
-    ("Switch to greenhouse gases for Brazil.", "ghg", "Brazil"),
-]
-OFF_TOPIC = [  # gold action "none"
-    "What is the capital of France?",
-    "Write a short poem about steel.",
-    "Who built this website?",
-]
+ITEMS = Path(__file__).with_name("items.json")
+# below this many correct label questions the run fails: a regression gate, not a ranking
+LABEL_GATE = 148
+FIELDS = ("product", "origin", "consumed_by", "consumed_region", "change")
 # consecutive transport failures (server gone) after which the run stops instead of timing out
 # on every remaining question
 MAX_DOWN = 3
@@ -200,103 +181,220 @@ def ask(url, model, system, question, fmt):
         "response_format": {"type": "json_schema", "json_schema": {"name": "action", "schema": fmt}},
         "chat_template_kwargs": {"enable_thinking": False},
     }
-    if not url.startswith(("http://", "https://")):
-        sys.exit(f"NODE_SERVE_URL must be http(s), got {url!r}")
-    req = urllib.request.Request(  # noqa: S310 - scheme checked above
+    req = urllib.request.Request(  # noqa: S310 - main checks the scheme
         f"{url}/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"}
     )
     t = time.monotonic()
-    with urllib.request.urlopen(req, timeout=300) as r:  # noqa: S310 - scheme checked above
+    with urllib.request.urlopen(req, timeout=300) as r:  # noqa: S310 - main checks the scheme
         data = json.load(r)
     choice = data["choices"][0]
     return choice["message"]["content"], time.monotonic() - t, data.get("usage", {}), choice.get("finish_reason")
 
 
-def score(kind, gold, raw, names, scen, leaves, rec):
-    """Whether the answer matches gold; per-field matches and parse errors go into rec."""
+def load_items(path, names, scen, leaves):
+    """(kind, question, gold, accept) per item: the label questions, then the items file.
+
+    gold is a scenario id for label and paraphrase, (indicator, region) for view, None for none.
+    accept holds the other accepted answers: lever lists as sorted leaves for a paraphrase,
+    (indicator, region) pairs for a view. A name not in the catalogue raises here, not as a miss.
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    items = [("label", s["label"], sid, []) for sid, s in scen.items() if sid not in FEWSHOT]
+    for it in data["paraphrase"]:
+        if it["scenario"] not in scen or it["scenario"] in FEWSHOT:
+            raise ValueError(f"paraphrase gold {it['scenario']!r} is not a scored scenario")
+        alts = [sorted(canon(lv, names, leaves) for lv in alt) for alt in it.get("accept", [])]
+        items.append(("paraphrase", it["question"], it["scenario"], alts))
+    views = schema(names)["properties"]
+    indicators, regions = (views[k]["anyOf"][0]["enum"] for k in ("indicator", "region"))
+    for it in data["view"]:
+        for ind, reg in [(it["indicator"], it["region"]), *it.get("accept", [])]:
+            if ind not in (None, *indicators) or reg not in (None, *regions):
+                raise ValueError(f"view answer {(ind, reg)!r} is not one the schema allows")
+        accept = [tuple(a) for a in it.get("accept", [])]
+        items.append(("view", it["question"], (it["indicator"], it["region"]), accept))
+    items += [("none", it["question"], None, []) for it in data["none"]]
+    keys = [(k, q) for k, q, *_ in items]
+    if len(set(keys)) < len(keys):  # compare.py pairs runs on (kind, question)
+        raise ValueError(f"repeated item {next(k for k in keys if keys.count(k) > 1)!r}")
+    return items
+
+
+def score(kind, gold, raw, names, scen, leaves, rec, accept):
+    """Whether the answer matches gold or an accepted alternative.
+
+    A missed what-if's per-field matches and a parse error go into rec.
+    """
     try:
         got = json.loads(raw)
         if kind == "view":
-            return got["action"] == "view" and got["indicator"] == gold[0] and got["region"] == gold[1]
+            return got["action"] == "view" and (got["indicator"], got["region"]) in (gold, *accept)
         if kind == "none":
             return got["action"] == "none"
         want = sorted(canon(to_names(lv, names), names, leaves) for lv in scen[gold]["model_details"])
         have = sorted(canon(lv, names, leaves) for lv in got["levers"]) if got["action"] == "whatif" else []
+        if have == want or have in accept:
+            return True
         if len(want) == len(have):
-            rec["fields"] = {
-                f: [w[i] == h[i] for w, h in zip(want, have, strict=True)]
-                for i, f in enumerate(["product", "origin", "consumed_by", "consumed_region", "change"])
-            }
+            rec["fields"] = {f: [w[i] == h[i] for w, h in zip(want, have, strict=True)] for i, f in enumerate(FIELDS)}
     except (ValueError, KeyError, TypeError, IndexError, RecursionError) as e:  # a malformed answer is wrong
         rec["error"] = repr(e)
-        return False
-    return want == have
+    return False
 
 
-def main():
-    manifest, results, out = sys.argv[1:4]
-    url, model = os.environ["NODE_SERVE_URL"], os.environ["NODE_SERVE_NAME"]
-    names, scen, leaves = load(manifest, results)
-    for _, _, region in VIEWS:
-        if region not in (None, "World") and region not in names["regions"]:
-            sys.exit(f"view region {region!r} not in catalogue")
-    for _, sid in PARAPHRASES:
-        if sid not in scen:
-            sys.exit(f"paraphrase gold {sid!r} not in results.json")
-    system, fmt = system_prompt(names, scen), schema(names)
-
-    items = [("label", s["label"], sid) for sid, s in scen.items() if sid not in FEWSHOT]
-    items += [("paraphrase", q, sid) for q, sid in PARAPHRASES]
-    items += [("view", q, (ind, reg)) for q, ind, reg in VIEWS]
-    items += [("none", q, None) for q in OFF_TOPIC]
-
-    Path(out).mkdir(parents=True, exist_ok=True)
-    log = (Path(out) / f"{Path(model).name}.jsonl").open("w")
-    tally, errors, down = {}, 0, 0
-    for kind, question, gold in items:
-        rec = {"kind": kind, "question": question, "gold": gold}
-        try:
-            raw, secs, usage, finish = ask(url, model, system, question, fmt)
-            down = 0
-        except (OSError, http.client.HTTPException, ValueError, KeyError, IndexError) as e:
-            # the server failed, not the model: counted apart so an outage cannot pass for a bad model
-            errors, down = errors + 1, down + 1
-            rec.update(ok=False, error=repr(e), transport=True)
-            log.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            log.flush()
-            if down >= MAX_DOWN:
-                break
+def summarize(model, image, recs, stopped_early):
+    """Per kind: correct, n, Wilson CI, median seconds and how often each lever field was wrong."""
+    kinds = {}
+    for r in recs:
+        if r.get("transport"):
             continue
-        rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
-        ok = score(kind, gold, raw, names, scen, leaves, rec)
-        rec["ok"] = ok
-        log.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        log.flush()
-        t = tally.setdefault(kind, [0, 0, []])
-        t[0] += ok
-        t[1] += 1
-        if "secs" in rec:
-            t[2].append(rec["secs"])
-    summary = {
+        t = kinds.setdefault(r["kind"], {"correct": 0, "n": 0, "secs": []})
+        t["correct"] += r["ok"]
+        t["n"] += 1
+        if "secs" in r:
+            t["secs"].append(r["secs"])
+        for f, matches in r.get("fields", {}).items():
+            t.setdefault("fields_wrong", dict.fromkeys(FIELDS, 0))[f] += not all(matches)
+    for t in kinds.values():
+        s = sorted(t.pop("secs"))
+        t["ci95"] = [round(x, 4) for x in wilson(t["correct"], t["n"])]
+        t["median_s"] = s[len(s) // 2] if s else None
+    return {
         "model": model,
-        "image": os.environ.get("NODE_SERVE_IMAGE"),
-        "server_errors": errors,
-        "stopped_early": down >= MAX_DOWN,
-        **{
-            k: {
-                "correct": c,
-                "n": n,
-                "ci95": [round(x, 4) for x in wilson(c, n)],
-                "median_s": sorted(s)[len(s) // 2] if s else None,
-            }
-            for k, (c, n, s) in tally.items()
-        },
+        "image": image,
+        "server_errors": sum(bool(r.get("transport")) for r in recs),
+        "stopped_early": stopped_early,
+        **kinds,
     }
-    (Path(out) / f"{Path(model).name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print(report(summary))
-    if errors:
-        sys.exit(f"{errors} requests failed at the server; see {log.name}")
+
+
+def line(rec):
+    return json.dumps(rec, ensure_ascii=False) + "\n"
+
+
+def write_summary(out, summary):
+    (Path(out) / f"{Path(summary['model']).name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+
+def rescore(out, items, names, scen, leaves):
+    """Score every <model>.jsonl in out again from its raw answers, against the current gold.
+
+    A log keeps the ok it was scored with, so a change to the scorer or the gold leaves it stale
+    until this runs. Raises ValueError, before writing any log, when out holds none or one holds
+    an item the gold set lacks (the wrong --items).
+    """
+    gold = {(k, q): (g, a) for k, q, g, a in items}
+    logs = {
+        path: [json.loads(s) for s in path.read_text(encoding="utf-8").splitlines() if s.strip()]
+        for path in sorted(Path(out).glob("*.jsonl"))
+    }
+    if not logs:
+        raise ValueError(f"no <model>.jsonl in {Path(out).as_posix()!r}")
+    for path, recs in logs.items():
+        if missing := sum((r["kind"], r["question"]) not in gold for r in recs):
+            raise ValueError(f"{path.name}: {missing} items not in the gold set; pass the --items it ran with")
+    summaries = []
+    for path, recs in logs.items():
+        for rec in recs:
+            g, accept = gold[rec["kind"], rec["question"]]
+            rec["gold"] = g
+            if not rec.get("transport"):
+                for f in ("fields", "error"):
+                    rec.pop(f, None)
+                rec["ok"] = score(rec["kind"], g, rec["raw"], names, scen, leaves, rec, accept)
+        old = path.with_suffix(".summary.json")
+        meta = json.loads(old.read_text()) if old.exists() else {}
+        summary = summarize(meta.get("model", path.stem), meta.get("image"), recs, meta.get("stopped_early", False))
+        path.write_text("".join(line(r) for r in recs), encoding="utf-8")
+        write_summary(out, summary)
+        summaries.append(summary)
+    return summaries
+
+
+EPILOG = f"""\
+The server comes from NODE_SERVE_URL (an OpenAI-compatible base URL) and NODE_SERVE_NAME (the
+served model name).
+
+example:
+  ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out
+
+exit codes: 0 scored; 1 scored, but fewer than {LABEL_GATE} label questions right; 2 usage
+error; 3 a server error or an unreadable input"""
+
+
+def run(args, items, names, scen, leaves):
+    url, model = os.environ["NODE_SERVE_URL"], os.environ["NODE_SERVE_NAME"]
+    system, fmt = system_prompt(names, scen), schema(names)
+    recs, down = [], 0
+    # one flushed line per item, so a crash or a stopped unit keeps the answers so far
+    with (Path(args.out) / f"{Path(model).name}.jsonl").open("w", encoding="utf-8") as log:
+        try:
+            for kind, question, gold, accept in items:
+                rec = {"kind": kind, "question": question, "gold": gold}
+                try:
+                    raw, secs, usage, finish = ask(url, model, system, question, fmt)
+                except (OSError, http.client.HTTPException, ValueError, KeyError, IndexError, TypeError) as e:
+                    # the server failed, not the model: counted apart so an outage cannot pass for a bad model
+                    down += 1
+                    rec.update(ok=False, error=repr(e), transport=True)
+                else:
+                    down = 0
+                    rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
+                    rec["ok"] = score(kind, gold, raw, names, scen, leaves, rec, accept)
+                recs.append(rec)
+                log.write(line(rec))
+                log.flush()
+                if down >= MAX_DOWN:
+                    break
+        finally:
+            summary = summarize(model, os.environ.get("NODE_SERVE_IMAGE"), recs, down >= MAX_DOWN)
+            write_summary(args.out, summary)
+    return [summary]
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="ask_eval.py",
+        description=__doc__.split("\n\n")[0],
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
+    parser.add_argument("manifest", type=Path, help="the browser store's manifest-v3.json")
+    parser.add_argument("results", type=Path, help="data/results.json")
+    parser.add_argument("out", type=Path, help="directory for <model>.jsonl and <model>.summary.json")
+    parser.add_argument(
+        "--items", type=Path, default=ITEMS, help="paraphrase, view and none items (default: %(default)s)"
+    )
+    parser.add_argument("--rescore", action="store_true", help="score the logs in OUT again; asks no model")
+    args = parser.parse_args(argv)
+    url_ok = os.environ.get("NODE_SERVE_URL", "").startswith(("http://", "https://"))
+    if not args.rescore and not (url_ok and os.environ.get("NODE_SERVE_NAME")):
+        parser.error("set NODE_SERVE_URL to the server's http(s) base URL, and NODE_SERVE_NAME")
+    try:
+        names, scen, leaves = load(args.manifest, args.results)
+        items = load_items(args.items, names, scen, leaves)
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"error: cannot read the gold set: {e!r}", file=sys.stderr)
+        return 3
+    args.out.mkdir(parents=True, exist_ok=True)
+    if args.rescore:
+        try:
+            summaries = rescore(args.out, items, names, scen, leaves)
+        except (OSError, ValueError, KeyError, TypeError) as e:  # a log that is not ask_eval.py's
+            print(f"error: cannot rescore: {e!r}", file=sys.stderr)
+            return 3
+    else:
+        summaries = run(args, items, names, scen, leaves)
+    code = 0
+    for s in summaries:
+        print(report(s))
+        if s["server_errors"]:
+            code = 3
+        elif s.get("label", {}).get("correct", 0) < LABEL_GATE and code == 0:
+            code = 1
+    return code
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

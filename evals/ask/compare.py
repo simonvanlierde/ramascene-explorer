@@ -5,8 +5,9 @@ Reads the <model>.jsonl files ask_eval.py writes, pairs items on (kind, question
 server errors and items missing from either run. For each pair of runs and each kind it prints
 n, both scores, the discordant counts (b: only the first run right, c: only the second), the
 difference in accuracy with a Bonett-Price 95% CI, the exact McNemar p and, over all pairs of a
-kind, the Holm-adjusted p. Below 15 paired items no p-value is given.
-Stdlib only.
+kind, the Holm-adjusted p. Below 15 paired items no p-value is given. With --flips, for repeat
+runs of one model, it prints per kind how many items were not scored the same (right or wrong)
+in every run. Stdlib only.
 """
 
 import argparse
@@ -17,13 +18,12 @@ import math
 import sys
 from pathlib import Path
 
-# the same values as in ask_eval.py (a test checks), kept here so the script runs on its own
-Z95 = 1.959963984540054
-SMALL_N = 15
+from ask_eval import SMALL_N, Z95
 
 EPILOG = """\
-example:
+examples:
   compare.py out/qwen3.8-27b.jsonl out/gemma-4-26b-a4b.jsonl out/qwen3.5-9b.jsonl
+  compare.py --flips r1/qwen3.8-27b.jsonl r2/qwen3.8-27b.jsonl r3/qwen3.8-27b.jsonl
 
 exit codes: 0 report printed; 2 usage error; 3 a file could not be read or parsed, or the
 runs share no items"""
@@ -108,6 +108,16 @@ def compare(runs):
     return rows
 
 
+def flips(runs):
+    """Per kind: items scored in every run, and how many of them did not get the same result in all."""
+    shared = set.intersection(*(set(r) for r in runs.values()))
+    out = {}
+    for kind in sorted({k for k, _ in shared}):
+        keys = [k for k in shared if k[0] == kind]
+        out[kind] = len(keys), sum(len({r[k] for r in runs.values()}) > 1 for k in keys)
+    return out
+
+
 def fmt(row):
     lo, hi = row["ci95"]
     p = f"p -  (n < {SMALL_N})" if row["p"] is None else f"p {row['p']:.3g}  Holm {row['p_holm']:.3g}"
@@ -127,11 +137,15 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         allow_abbrev=False,
     )
+    parser.add_argument(
+        "--flips", action="store_true", help="repeat runs of one model: count the items whose result changed"
+    )
     parser.add_argument("runs", nargs="+", type=Path, metavar="RUN.jsonl", help="two or more ask_eval.py logs")
     args = parser.parse_args(argv)
     if len(args.runs) < 2:  # noqa: PLR2004 - a comparison needs two runs
         parser.error("give at least two RUN.jsonl files")
-    names = [p.name.removesuffix(".jsonl") for p in args.runs]
+    # repeat runs share a model, and so a file name: --flips labels them by path
+    names = [p.as_posix() if args.flips else p.name.removesuffix(".jsonl") for p in args.runs]
     if len(set(names)) < len(names):
         dup = next(n for n in names if names.count(n) > 1)
         parser.error(f"two runs share the file name {dup!r}; the name labels the run in the report")
@@ -146,11 +160,15 @@ def main(argv=None):
     for name, run in runs.items():
         if missing := len(every - run.keys()):
             print(f"note: {missing} items not scored in {name}; left out of its pairs", file=sys.stderr)
-    if not (rows := compare(runs)):
+    lines = (
+        [f"{k:<11}n {n}  flipped {c}  rate {c / n:.3f}" for k, (n, c) in flips(runs).items()]
+        if args.flips
+        else [fmt(r) for r in compare(runs)]
+    )
+    if not lines:
         print("error: the runs share no scored items", file=sys.stderr)
         return 3
-    for row in rows:
-        print(fmt(row))
+    print("\n".join(lines))
     return 0
 
 
