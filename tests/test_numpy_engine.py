@@ -4,6 +4,7 @@ Checks the store reader on the fixture store, the maths against direct solves, a
 155 published scenarios against RaMa-Scene's results when the browser store is here.
 """
 
+import gzip
 import json
 import os
 from pathlib import Path
@@ -20,7 +21,7 @@ STORE = os.environ.get("BROWSER_ENGINE_DATA")
 
 CATALOG = {
     "products": [{"id": 10, "leaves": [0]}, {"id": 11, "leaves": [1]}, {"id": 12, "leaves": [0, 1]}],
-    "regions": [{"id": 1, "leaves": [0]}],
+    "regions": [{"id": 1, "leaves": [0]}, {"id": 2, "leaves": [1]}, {"id": 3, "leaves": [0, 1]}],
     "consumers": [
         {"id": 20, "leaves": [0]},
         {"id": 21, "leaves": [1]},
@@ -34,21 +35,23 @@ VIA_COLUMNS = {"L": {"chunk_bytes": 100}, "LC": {"chunk_bytes": 1}}
 
 
 class Tiny:
-    """Two products in one country with a known inverse, as in tests/browser-engine.test.js.
+    """Two products per country with a known inverse, as in tests/browser-engine.test.js.
 
-    H = L^T and the baseline flows are X, so the flows are X' itself.
+    `y` is final demand, one column per consuming country (one country by default). H = L^T
+    and the baseline flows are X, so the flows are X' itself.
     """
 
-    def __init__(self, a, arrays):
+    def __init__(self, a, arrays, y=((2.0,), (3.0,))):
         self.a = np.asarray(a)
-        self.l = np.linalg.inv(np.eye(2) - self.a)
-        self.x = self.l @ [2.0, 3.0]
-        self.baseline = self.x
-        self.meta = {"products": 2, "countries": 1, "catalog": CATALOG, "arrays": arrays}
+        self.y = np.asarray(y)
+        self.l = np.linalg.inv(np.eye(len(self.a)) - self.a)
+        self.x = self.l @ self.y
+        self.baseline = self.x.copy()
+        self.meta = {"products": 2, "countries": self.y.shape[1], "catalog": CATALOG, "arrays": arrays}
 
     def read(self, name, rows, columns=None):
-        m = {"A": self.a, "L": self.l, "LC": self.l.T, "H": self.l.T, "X": self.x[:, None], "Y": [[2.0], [3.0]]}
-        m = np.asarray(m[name])[rows]
+        m = {"A": self.a, "L": self.l, "LC": self.l.T, "H": self.l.T, "X": self.x, "Y": self.y}
+        m = m[name][rows]
         return m if columns is None else m[:, columns]
 
 
@@ -57,7 +60,7 @@ def step(**over):
 
 
 def direct(a, y):
-    return np.linalg.solve(np.eye(2) - a, y)
+    return np.linalg.solve(np.eye(len(a)) - a, y)
 
 
 A = np.array([[0.1, 0.05], [0.15, 0.2]])
@@ -74,7 +77,9 @@ def scaled(a, entries, f):
 @pytest.mark.parametrize("arrays", [VIA_ROWS, VIA_COLUMNS])
 @pytest.mark.parametrize("change", [-60, 40, 300])
 @pytest.mark.parametrize("case", ["one cell", "two rows into a column", "a row into two columns", "mixed"])
-def test_matches_a_direct_solve(case, change, arrays):
+def test_matches_a_direct_solve(case, change, arrays, monkeypatch):
+    # one H row per batch, so the fold runs past its first batch
+    monkeypatch.setattr(ne, "H_BATCH", 1)
     f = 1 + change / 100
     steps, changed, y = {
         "one cell": ([step(techChange=[change]), FINAL], scaled(A, [(0, 1)], f), [1, 3]),
@@ -92,6 +97,121 @@ def test_matches_a_direct_solve(case, change, arrays):
     assert_allclose(got, direct(changed, y), rtol=1e-12, atol=0, strict=True)
 
 
+# Two countries: rows and columns are country * 2 + product, Y has a column per consuming country.
+A2 = np.array([[0.1, 0.05, 0.02, 0.08], [0.15, 0.2, 0.04, 0.01], [0.03, 0.06, 0.12, 0.09], [0.07, 0.02, 0.1, 0.05]])
+Y2 = np.array([[1.0, 2.0], [3.0, 1.0], [2.0, 2.0], [1.0, 3.0]])
+
+
+def block(a, rows, columns, f):
+    a = a.copy()
+    a[np.ix_(rows, columns)] *= f
+    return a
+
+
+@pytest.mark.parametrize("arrays", [VIA_ROWS, VIA_COLUMNS])
+@pytest.mark.parametrize(
+    "case",
+    ["made in one country, used in the other", "a region over both countries", "final demand of the other country",
+     "overlapping steps multiply"],
+)  # fmt: skip
+def test_two_countries_match_a_direct_solve(case, arrays):
+    steps, changed, y = {
+        # product 0 made in country 0, used by consumer 1 in country 1: A[0, 3]
+        "made in one country, used in the other": (
+            [step(consumedReg=[2], techChange=[-40])],
+            block(A2, [0], [3], 0.6),
+            Y2,
+        ),
+        "a region over both countries": (
+            [step(originReg=[3], consumedReg=[3], techChange=[80])],
+            block(A2, [0, 2], [1, 3], 1.8),
+            Y2,
+        ),
+        # country 1's final demand for product 0 made in country 0: Y[0, 1]
+        "final demand of the other country": (
+            [step(consumedBy=[30], consumedReg=[2], techChange=[-50])],
+            A2,
+            block(Y2, [0], [1], 0.5),
+        ),
+        "overlapping steps multiply": (
+            [
+                step(product=[12], originReg=[3], consumedReg=[3], techChange=[-20]),
+                step(originReg=[3], consumedBy=[22], consumedReg=[3], techChange=[50]),
+            ],
+            block(block(A2, [0, 1, 2, 3], [1, 3], 0.8), [0, 2], [0, 1, 2, 3], 1.5),
+            Y2,
+        ),
+    }[case]
+    store = Tiny(A2, arrays, Y2)
+    got = ne.scenario_flows(store, steps)
+    # NOTE: condition number is about 2 here, as above
+    assert_allclose(got, direct(changed, y), rtol=1e-12, atol=0, strict=True)
+    assert np.array_equal(store.baseline, store.x)
+
+
+def test_final_demand_only_and_no_change():
+    store = Tiny(A, VIA_ROWS)
+    got = ne.scenario_flows(store, [FINAL]).ravel()
+    assert_allclose(got, direct(A, [1, 3]), rtol=1e-12, atol=0, strict=True)
+    assert np.array_equal(ne.scenario_flows(store, [step(techChange=[0])]), store.baseline)
+
+
+@pytest.mark.parametrize("change", [-100, 1000])
+def test_plan_accepts_the_bounds(change):
+    assert ne.plan(Tiny(A, VIA_ROWS).meta, [step(techChange=[change])] * 10)["edits"]
+
+
+# The pivot threshold, ported from the_threshold_uses_the_scale_before_cancellation and
+# cancellation_is_refused_and_inputs_are_checked in engine/src/lib.rs. A pivot p after
+# cancellation, with the terms before it near 2, is refused at or below epsilon * 2 * n.
+EPS = 2.0**-23
+L1 = 1 / (1 - 0.092)
+
+
+def one(p):
+    return [[(1 - p) / 2]], [[2.0]], [[1.0]]
+
+
+def wide(p):
+    # the K x K form: two rows into one column
+    return [[(1 - p) / 4], [(1 - p) / 4]], [[2.0, 2.0]], [[1.0]]
+
+
+def two(p):
+    # n = 2: S = diag(1, p)
+    return [[0.0, 0.0], [0.0, (1 - p) / 2]], [[0.0, 0.0], [0.0, 2.0]], [[1.0], [1.0]]
+
+
+@pytest.mark.parametrize(
+    ("args", "epsilon", "refused"),
+    [
+        (one(1.5 * EPS), EPS, True),
+        (one(2.5 * EPS), EPS, False),
+        (wide(1.5 * EPS), EPS, True),
+        (wide(2.5 * EPS), EPS, False),
+        (two(3 * EPS), EPS, True),
+        (two(5 * EPS), EPS, False),
+        # 1 - dA L = 0 for a = 0.092 and a change of 986.95...%
+        (([[0.092 * 9.869_565_217_391_305]], [[L1]], [[1.0]]), EPS, True),
+        (([[0.092 * 9.8]], [[L1]], [[1.0]]), EPS, False),
+    ],
+    ids=["one 1.5 eps", "one 2.5 eps", "wide 1.5 eps", "wide 2.5 eps", "two 3 eps", "two 5 eps", "cancels",
+         "near cancelling"],
+)  # fmt: skip
+def test_the_threshold_matches_the_rust_kernel(args, epsilon, refused):
+    delta, t, x = (np.asarray(m) for m in args)
+    if refused:
+        with pytest.raises(ValueError, match="singular or ill-conditioned"):
+            ne.correction(delta, t, x, epsilon)
+    else:
+        assert np.isfinite(ne.correction(delta, t, x, epsilon)).all()
+
+
+def test_correction_refuses_non_finite_input():
+    with pytest.raises(ValueError, match="finite numbers"):
+        ne.correction(np.array([[np.nan]]), np.array([[L1]]), np.array([[1.0]]), 1e-16)
+
+
 def test_singular_scenario_is_refused():
     # a coefficient of 1 on the diagonal after the change makes I - A' singular
     a = np.array([[0.5, 0.0], [0.0, 0.2]])
@@ -107,11 +227,18 @@ def test_singular_scenario_is_refused():
         {"product": []},
         {"product": [99]},
         {"consumedBy": [20, 30]},
+        {"techChange": [-100.001]},
+        {"techChange": [1000.001]},
     ],
 )
 def test_plan_refuses_invalid_steps(bad):
     with pytest.raises(ValueError, match=r"\w"):
         ne.plan(Tiny(A, VIA_ROWS).meta, [step(**bad)])
+
+
+def test_plan_refuses_more_than_ten_steps():
+    with pytest.raises(ValueError, match="1 to 10 interventions"):
+        ne.plan(Tiny(A, VIA_ROWS).meta, [step()] * 11)
 
 
 def test_reader_matches_the_fixture_store():
@@ -139,6 +266,65 @@ def test_decode_refuses_a_corrupt_chunk():
         ne.decode_chunk(chunk, 16)
     with pytest.raises(ValueError, match="invalid matrix chunk"):
         ne.decode_chunk(chunk[:-1] + bytes([chunk[-1] ^ 1]), 12)  # the trailer's size field
+
+
+def gzipped(values):
+    return gzip.compress(np.asarray(values, dtype="<f4").tobytes(), mtime=0)
+
+
+@pytest.mark.parametrize(
+    "corrupt",
+    [
+        lambda c: c[:-4],  # the trailer cut short: the values decode, the stream never ends
+        lambda c: c + b"\0",  # bytes after the stream
+    ],
+    ids=["truncated", "padded"],
+)
+def test_decode_refuses_a_truncated_or_padded_chunk(corrupt):
+    chunk = gzipped([1.0, 2.0, 3.0])
+    assert np.array_equal(ne.decode_chunk(chunk, 12), [1.0, 2.0, 3.0])
+    with pytest.raises(ValueError, match="invalid matrix chunk"):
+        ne.decode_chunk(corrupt(chunk), 12)
+
+
+def test_decode_refuses_non_finite_values():
+    with pytest.raises(ValueError, match="invalid matrix values"):
+        ne.decode_chunk(gzipped([1.0, np.nan]), 8)
+
+
+def test_reader_refuses_an_index_past_the_data():
+    info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
+    reader = ne.ArrayReader(info["M"], lambda i: ROOT / "tests/fixture-store/M/c" / str(i) / "0")
+    data, index = reader._shard(0)  # noqa: SLF001
+    index = index.copy()
+    # chunk 0 ends where the index begins, one byte past the chunk data
+    index[0] = [len(data) - 32 - int(index[0, 1]) + 1, index[0, 1]]
+    reader._shard = lambda shard: (data, index)  # noqa: SLF001
+    with pytest.raises(ValueError, match="invalid shard index"):
+        reader.chunk(0)
+
+
+def fixture_store(directory, **over):
+    """tests/fixture-store's M as a store with a manifest, `over` replacing manifest fields."""
+    info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
+    manifest = {
+        "version": 3,
+        "products": 200,
+        "countries": 49,
+        "baseline_residual": 1e-16,
+        "baseline_flows": [0.0],
+        "store": "f" * 64,
+        "arrays": {"M": info["M"]},
+    } | over
+    (directory / f"store-{manifest['store']}").mkdir()
+    (directory / f"store-{manifest['store']}" / "M").symlink_to(ROOT / "tests/fixture-store/M")
+    (directory / "manifest-v3.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return directory
+
+
+def test_store_reads_the_fixture(tmp_path):
+    store = ne.open_store(fixture_store(tmp_path))
+    assert np.array_equal(store.read("M", [3, 1], [0, 2]), MATRIX.astype(np.float32).astype(float)[[3, 1]][:, [0, 2]])
 
 
 @pytest.mark.skipif(not STORE, reason="set BROWSER_ENGINE_DATA to the browser store (docs/browser-engine.md)")
