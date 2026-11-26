@@ -13,7 +13,7 @@ For anyone using the explorer.
 For researchers who want to know how the numbers were made and checked.
 
 - [Regenerate the data](precompute.md): the engine run, its checks and the files it writes.
-- [Compute a scenario in the browser](browser-engine.md): the custom-scenario method, its limits and its agreement with RaMa-Scene.
+- [Compute a scenario in the browser](browser-engine.md): the custom-scenario method, its limits and its agreement with RaMa-Scene, in the browser and from Python.
 - [Other databases](databases.md): the licence and data terms of candidate second databases.
 - [Cross-engine comparison](../brightway-check/README.md): one footprint computed with Brightway, numpy, pymrio, pycirk, the browser reader and RaMa-Scene.
 - [Security controls](assurance-case.md): the threats to the published data and what guards against each.

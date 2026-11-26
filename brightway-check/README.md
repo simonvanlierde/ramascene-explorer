@@ -47,8 +47,9 @@ itself. Both are compared with `../data/results.json`, relative to each value.
 | pymrio 0.7.0, `calc_system` with its own inverse, float64 arrays | 156 | 1.5e-14 |
 <!-- /scenario-table -->
 
-The numpy engine's gap is the float32 storage of the store: the WebAssembly engine on the same store differs
-from it by 1.6e-15 elementwise, and from RaMa-Scene by the same 5.5e-9 (`../tests/browser-parity.test.js`).
+The numpy engine's gap is the float32 storage of the store. The WebAssembly engine on the same store is also
+5.5e-9 from RaMa-Scene, and a one-off comparison on 26 November 2026 found the two engines 1.6e-15 apart
+elementwise on all 156 runs.
 With float64 inputs and an independent inverse, pymrio reproduces RaMa-Scene to rounding, so the maths of the scenario edits agrees across all three.
 
 Before the footprint run, the engine passed its four Octave reference files:

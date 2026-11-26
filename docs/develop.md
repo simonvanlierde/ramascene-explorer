@@ -83,6 +83,7 @@ pnpm mutation                          # mutation score with Stryker (about 4 mi
 ```
 
 `just page` and the browser parity tests read the store: fetch it with `just data store`.
+`BROWSER_ENGINE_DATA=data/browser-engine uv run pytest tests/test_numpy_engine.py` runs the numpy engine's parity test on its own.
 
 The citesync hook requires a name, version, author, licence and DOI in both `CITATION.cff` and `codemeta.json`.
 [citesync.toml](../citesync.toml) lists the required fields.

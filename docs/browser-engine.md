@@ -120,6 +120,10 @@ it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
 request is one range, since many static hosts answer a request for several ranges
 with the whole file.
 
+Three readers depend on this layout: the page's `src/lib/browser-engine/browser-data.js`,
+`pipeline/numpy_engine.py`, and zarr-python in `tests/test_browser_export.py`. A change to the
+layout in `pipeline/export_browser.py` needs all three.
+
 ## Build or download the data
 
 From the explorer, with the RaMa-Scene arrays and its label database available:
@@ -177,15 +181,17 @@ node brightway-check/browser_check.js data/browser-engine
 CI=1 pnpm exec playwright test tests/e2e/browser-engine.spec.js
 ```
 
-The first command checks all 155 scenarios against `data/results.json` at relative
-1e-6. The second checks the agreement table's Dutch cement footprint, from H, at
+The first command checks the 155 scenarios and the baseline against `data/results.json`
+at relative 1e-6 per value, with the worst held to 1e-8. The second checks the agreement table's Dutch cement footprint, from H, at
 relative 1e-6. The browser test checks the worker, map, source label, retry and
 absence of external requests.
 
 ## Use the engine from Python
 
 `pipeline/numpy_engine.py` runs the same calculation on the local store with numpy and scipy, so
-there is no Rust or WebAssembly to build. Run it from the repository root:
+there is no Rust or WebAssembly to build. It reads the store in `data/browser-engine` (`just data store`
+fetches it). A step names products, regions and consumers by their ids in the manifest's `catalog`, as
+the page does, and `techChange` is a change in percent. Run it from the repository root:
 
 ```sh
 uv run python - <<'EOF'
@@ -200,12 +206,14 @@ print(flows.shape)  # (2205, 49): indicator x producer x section, by consumer
 EOF
 ```
 
-The steps and the flows are the page's. `tests/test_numpy_engine.py` runs the 155 scenarios against
-`data/results.json` when `BROWSER_ENGINE_DATA` is set (relative 1e-8 gate, 5.5e-9 measured, the same
-float32 storage floor as the page's test). The page's budgets on download, memory and work are not applied.
-Measured on 26 November 2026, the Python decode of the gzip chunks took 0.9 times the WebAssembly decode
-time on the three large workloads, and the correction and fold match the WebAssembly engine to
-1.6e-15 elementwise on all 156 runs, so the maths is the same and a Rust wheel gains no speed here.
+`tests/test_numpy_engine.py` runs the 155 scenarios and the baseline against `data/results.json` when
+`BROWSER_ENGINE_DATA` is set. It holds the worst relative difference to 1e-8; 5.5e-9 is measured, the
+same float32 storage floor as the page's test. The page's budgets on download, memory and work are not applied.
+
+Two one-off measurements from 26 November 2026, with no script in the repository to repeat them: the
+Python decode of the gzip chunks took 0.9 times the WebAssembly decode time on the three large workloads,
+and the correction and fold matched the WebAssembly engine to 1.6e-15 elementwise on all 156 runs. So
+the maths is the same, and a Rust wheel would gain no speed here.
 
 ## What to precompute
 
