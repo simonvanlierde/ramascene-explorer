@@ -9,10 +9,21 @@ The gold set:
 
 - `label`: every published scenario with `model_details` in `data/results.json`, its label as
   the question (the two few-shot examples are left out). These read like the examples, so they
-  test copying the pattern more than understanding;
-- `paraphrase`: 8 questions in other words, each with a published scenario as gold;
-- `view`: 6 view questions; a field the gold leaves null must stay null;
-- `none`: 3 off-topic questions, where the answer must be action `none`.
+  test copying the pattern more than understanding. They are a regression gate, not a ranking:
+  the run exits 1 below 148 of 153;
+- `paraphrase` ([`items.json`](items.json)): 60 questions in other words, one published scenario
+  each. None shares more than half its words with any label (token Jaccard at most 0.5, checked by
+  `tests/test_ask_stats.py`). Six say "industry" where all industries is meant, so
+  Manufacturing also counts there (`accept`);
+- `view`: 24 view questions; a field the gold leaves null must stay null;
+- `none`: 30 questions the page cannot answer, where the answer must be action `none`: 12
+  plainly off topic, and 18 near misses such as another year, water or land use, a country
+  EXIOBASE folds into a rest-of region, or prices.
+
+A held-out set (30 paraphrases of other scenarios, 12 view and 15 none questions) is kept out of
+this repository, so that a prompt tuned on the dev items can still be checked on items nobody
+tuned against. Run it only on a frozen prompt, with `--items`; once an item has been looked at
+it moves into `items.json`. Every miss seen in the real Ask panel becomes a dev item.
 
 A what-if is correct when its levers cover the same EXIOBASE products, regions and industries
 as the gold's, with the same change: the selection the engine computes. So two catalogue entries
@@ -34,10 +45,20 @@ python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.
 
 The prompt is about 5,100 tokens, so 8192 leaves room for the answer. Results go to `out/` and
 are not committed: `<model>.jsonl` holds one line per question, with the raw answer,
-`finish_reason` and timing, and `<model>.summary.json` holds `correct`, `n` and a Wilson 95% CI
-(`ci95`) per kind. `server_errors` counts requests the server failed (refused, timed out, not
-JSON), which are not scored and not in `n`; the printed summary shows it beside the scores. After
-three in a row the run stops, and the script exits 1 whenever there was one.
+`finish_reason` and timing, and `<model>.summary.json` holds per kind `correct`, `n`, a Wilson
+95% CI (`ci95`) and, for what-ifs, `fields_wrong`: how often each lever field (product, origin,
+consumed_by, consumed_region, change) missed when the lever count was right. `server_errors`
+counts requests the server failed (refused, timed out, not JSON), which are not scored and not
+in `n`; the printed summary shows it beside the scores. After three in a row the run stops.
+Exit codes: 0 scored, 1 fewer than 148 label questions right, 2 usage error, 3 a server error or
+an unreadable gold set.
+
+A log keeps the `ok` it was scored with. After a change to the scorer or the gold, score the
+logs again from their raw answers, without a model:
+
+```sh
+python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out --rescore
+```
 
 To compare runs item by item:
 

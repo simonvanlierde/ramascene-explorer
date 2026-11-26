@@ -1,6 +1,8 @@
 """evals/ask statistics: Wilson intervals, the exact McNemar test, Bonett-Price and run pairing."""
 
 import json
+import re
+from pathlib import Path
 
 import pytest
 
@@ -188,3 +190,158 @@ def test_report_flags_small_n():
     assert "151/153  95% CI 0.954-0.996" in label
     assert "n < 15" not in label
     assert "0.409-0.929  n < 15" in para
+
+
+def test_compare_flips(tmp_path, capsys):
+    (tmp_path / "r2").mkdir()
+    a = write(tmp_path / "m.jsonl", [{"kind": "view", "question": f"v{j}", "ok": j != 0} for j in range(4)])
+    b = write(tmp_path / "r2" / "m.jsonl", [{"kind": "view", "question": f"v{j}", "ok": j != 1} for j in range(4)])
+    # v0 and v1 changed between the runs; repeat runs may share a file name
+    assert compare.main(["--flips", str(a), str(b)]) == 0
+    assert capsys.readouterr().out == "view       n 4  flipped 2  rate 0.500\n"
+
+
+# a catalogue small enough to read: section i covers leaf i, product 2 and region 3 are aliases
+NAMES = {
+    "products": {"Steel": 1, "Steel (alias)": 2, "Glass": 3},
+    "regions": {"Total": 1, "Europe": 2, "Europe (alias)": 3},
+    "consumers": {f"S: {i}": i for i in range(1, 16)} | {"Y: Final Consumption": 16},
+}
+LEAVES = {
+    "products": {1: [7], 2: [7], 3: [8]},
+    "regions": {1: [1, 2], 2: [2], 3: [2]},
+    "consumers": {i: [i] for i in range(1, 17)},
+}
+SCEN = {
+    "steel": {
+        "label": "Steel input to all industries in Europe -10%",
+        "model_details": [
+            {
+                "product": [1],
+                "originReg": [1],
+                "consumedBy": list(range(1, 16)),
+                "consumedReg": [2],
+                "techChange": [-10],
+            }
+        ],
+    }
+}
+
+
+def answer(**lever):
+    base = {"product": "Steel", "origin_region": "Total", "consumed_by": ["All industries"]}
+    lv = base | {"consumed_region": "Europe", "change_percent": -10} | lever
+    return json.dumps({"action": "whatif", "levers": [lv]})
+
+
+def score(raw, accept=()):
+    rec = {}
+    return ask_eval.score("paraphrase", "steel", raw, NAMES, SCEN, LEAVES, rec, accept), rec
+
+
+def test_score_by_leaves_and_accept_list():
+    assert score(answer(product="Steel (alias)", consumed_region="Europe (alias)"))[0]
+    ok, rec = score(answer(consumed_by=["S: 5"]))
+    assert not ok
+    assert rec["fields"]["consumed_by"] == [False]
+    assert rec["fields"]["product"] == [True]
+    mfg = [
+        {
+            "product": "Steel",
+            "origin_region": "Total",
+            "consumed_by": ["S: 5"],
+            "consumed_region": "Europe",
+            "change_percent": -10,
+        }
+    ]
+    assert score(answer(consumed_by=["S: 5"]), [mfg])[0]
+    assert not score(answer(product="Glass"), [mfg])[0]
+    ok, rec = score("not json", [mfg])
+    assert not ok
+    assert "error" in rec
+
+
+def items_file(tmp_path, **extra):
+    data = {"paraphrase": [{"question": "Europe cuts steel by a tenth", "scenario": "steel"}], "view": [], "none": []}
+    path = tmp_path / "items.json"
+    path.write_text(json.dumps(data | extra))
+    return path
+
+
+def test_load_items_rejects_bad_gold(tmp_path):
+    items, accept = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN)
+    assert [k for k, _, _ in items] == ["label", "paraphrase"]
+    assert accept == {"Europe cuts steel by a tenth": []}
+    for extra, message in [
+        ({"paraphrase": [{"question": "q", "scenario": "nope"}]}, "not a scored scenario"),
+        ({"view": [{"question": "q", "indicator": None, "region": "Mars"}]}, "not in catalogue"),
+        ({"none": [{"question": "q"}, {"question": "q"}]}, "repeated item"),
+    ]:
+        with pytest.raises(ValueError, match=message):
+            ask_eval.load_items(items_file(tmp_path, **extra), NAMES, SCEN)
+
+
+def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    out = tmp_path / "out"
+    out.mkdir()
+    write(
+        out / "m.jsonl",
+        [
+            # scored wrong by an older scorer that compared names, not leaves
+            {
+                "kind": "paraphrase",
+                "question": "Europe cuts steel by a tenth",
+                "ok": False,
+                "raw": answer(product="Steel (alias)"),
+                "secs": 1.0,
+            },
+            {"kind": "label", "question": SCEN["steel"]["label"], "ok": True, "raw": answer(product="Glass")},
+            {"kind": "none", "question": "dropped from the gold set", "ok": True, "raw": "{}"},
+        ],
+    )
+    args = ["manifest", "results", str(out), "--items", str(items_file(tmp_path)), "--rescore"]
+    assert ask_eval.main(args) == 1  # 0 of 1 label questions is below the gate
+    recs = [json.loads(line) for line in (out / "m.jsonl").read_text().splitlines()]
+    assert [r["ok"] for r in recs] == [True, False]
+    summary = json.loads((out / "m.summary.json").read_text())
+    assert [summary["paraphrase"][k] for k in ("correct", "n", "median_s")] == [1, 1, 1.0]
+    assert summary["label"]["fields_wrong"] == {
+        "product": 1,
+        "origin": 0,
+        "consumed_by": 0,
+        "consumed_region": 0,
+        "change": 0,
+    }
+    assert "1 items not in the gold set" in capsys.readouterr().err
+
+
+def test_eval_needs_a_server_url(tmp_path, monkeypatch):
+    monkeypatch.delenv("NODE_SERVE_URL", raising=False)
+    with pytest.raises(SystemExit) as e:
+        ask_eval.main(["m", "r", str(tmp_path)])
+    assert e.value.code == 2
+
+
+REPO_ITEMS = ask_eval.ITEMS
+MANIFEST = Path("data/browser-engine/manifest-v3.json")
+
+
+@pytest.mark.skipif(not MANIFEST.exists(), reason="needs the browser store")
+def test_repo_items_load_against_the_catalogue():
+    names, scen, _ = ask_eval.load(MANIFEST, "data/results.json")
+    items, _ = ask_eval.load_items(REPO_ITEMS, names, scen)
+    paraphrased = [g for k, _, g in items if k == "paraphrase"]
+    assert len(paraphrased) == len(set(paraphrased))  # one scenario each, so a split by scenario holds
+
+
+def test_paraphrases_do_not_copy_a_label():
+    # token Jaccard above 0.5 against any label (few-shot examples included) tests copying, not reading
+    labels = [s["label"] for s in json.loads(Path("data/results.json").read_text())["scenarios"]]
+
+    def toks(s):
+        return set(re.findall(r"[a-z0-9]+", s.lower()))
+
+    for it in json.loads(REPO_ITEMS.read_text())["paraphrase"]:
+        q = toks(it["question"])
+        assert max(len(q & toks(t)) / len(q | toks(t)) for t in labels) <= 0.5, it["question"]
