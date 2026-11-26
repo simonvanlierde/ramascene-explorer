@@ -207,6 +207,32 @@ test("Cancel stops waiting for the model", async ({ page, isMobile }) => {
 	await expect(page.locator("#ask-cancel")).toHaveCount(0);
 });
 
+test("the example question is a hint the input names, not a placeholder", async ({ page, isMobile }) => {
+	await openAsk(page, isMobile);
+	const input = page.locator("#ask-q");
+	await expect(page.locator("#ask-q-h")).toBeVisible();
+	await expect(input).toHaveAccessibleDescription("For example: What if European car makers used 20% less steel?");
+	await expect(input).not.toHaveAttribute("placeholder");
+});
+
+test("a run the Custom form starts clears the last answer", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(120_000);
+	await mockModel(page, [
+		{ action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." },
+	]);
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What is the capital of France?");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-reply")).toHaveText("Model: That is not about the map.", { timeout: 60_000 });
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#ask-answer")).toHaveText("");
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+	await expect(page.locator("#ask-answer")).toHaveText("");
+});
+
 test("an off-topic answer only replies; an unknown action is an error", async ({ page, isMobile }) => {
 	needData();
 	const none = { action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." };

@@ -2,6 +2,7 @@
 // Ask: a question to a model the reader runs (?ask=), answered as a view change or a custom
 // scenario. The model only picks catalogue names; the page's engine computes, through the
 // custom form's own worker. Everything the model sends is rendered as text, never markup.
+import { untrack } from "svelte";
 import { applyView, ask, askSchema, leverText, systemPrompt, toModelDetails } from "./lib/ask.js";
 import { ui } from "./view.svelte.js";
 
@@ -15,6 +16,10 @@ let error = $state("");
 let answer = $state.raw(null);
 // set while busy: Cancel aborts the model call through it
 let stop = null;
+// a run the Custom form starts itself replaces what the map shows, so the last answer no longer holds
+$effect(() => {
+	if (panel.isRunning() && !untrack(() => busy)) answer = null;
+});
 
 async function submit(event) {
 	event.preventDefault();
@@ -62,7 +67,8 @@ function cancel() {
 	</div>
 	<form id="ask-form" onsubmit={submit} aria-busy={busy}>
 		<label for="ask-q">Question</label>
-		<input id="ask-q" type="text" bind:value={question} placeholder="What if European car makers used 20% less steel?" required />
+		<input id="ask-q" type="text" bind:value={question} required aria-describedby="ask-q-h" />
+		<small class="fh" id="ask-q-h">For example: What if European car makers used 20% less steel?</small>
 		<button type="submit" class="go" id="ask-go" aria-disabled={busy}>{busy ? "Asking…" : "Ask"}</button>
 		{#if busy}<button type="button" class="chipb" id="ask-cancel" onclick={cancel}>Cancel</button>{/if}
 	</form>
