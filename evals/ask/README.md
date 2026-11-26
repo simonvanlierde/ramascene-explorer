@@ -102,7 +102,14 @@ What the 2026-11-26 run below can and cannot say:
   paraphrases Gemma leads 3 to 2. Separating them would take more discordant items, so more
   paraphrases, not repeat runs: their answers hardly change between runs.
 - Four paraphrase misses shared by all three models are one finding: "African producers … use
-  less X" is read as X made in Africa (`origin`), not used in Africa.
+  less X" is read as X made in Africa (`origin`), not used in Africa. The gold stands, since
+  nothing in these questions says where the input is made, and an `accept` entry would score a
+  smaller scenario as right. The items stay: the fine-tuned 0.8B model gets the origin right on
+  all four, so they separate models.
+- The fine-tuned Qwen3.5-0.8B cannot be told apart from Qwen3.8-27B or Gemma-4-26B-A4B on
+  paraphrases (4 to 6, p 0.75; 8 to 5, p 0.58) and leads Qwen3.5-9B 14 to 3 (Holm p 0.06). It
+  trails all three on labels, views and `none`; on views it loses 0 to 11 against the 27B and
+  Gemma and 0 to 10 against the 9B.
 
 `run.sh` is one host's script: it serves three models in turn with a local `node-serve`
 wrapper, each with the engine flags that fit a 24 GB card, and runs the dev items three times
@@ -119,12 +126,19 @@ runs. A Wilson 95% interval follows each paraphrase and `none` score.
 | Qwen3.8-27B, AWQ INT4 | 151 | 55 (0.82-0.96) | 24 | 25 (0.66-0.93) | 27 | 1.5 |
 | Gemma-4-26B-A4B, AWQ 4-bit | 151 | 50 (0.72-0.91) | 24 | 21 (0.52-0.83) | 28 | 0.5 |
 | Qwen3.5-9B, bf16 | 143 | 42 (0.57-0.80) | 23 | 20 (0.49-0.81) | 22 | 1.3 |
+| Qwen3.5-0.8B + LoRA, bf16 | 131 | 53 (0.78-0.94) | 13 | 14 (0.30-0.64) | 24 | 0.2 |
 
-No server errors. Qwen3.5-9B fails the label gate (143 < 148). Its 146 on vLLM 0.33.0 a week
-earlier was scored by name, not by leaves, so the two do not compare. Across the three runs only
-Gemma changed results: 3 of its 60 paraphrases went from right to wrong or back (50, 51 and 50
-right). Most paraphrase misses are the origin region (`fields_wrong.origin`: 4, 9 and 16 items),
-then consumed_region and consumed_by. The `none` misses are near misses: a water or plastic-waste
+No server errors. Qwen3.5-9B and the LoRA fail the label gate (143 and 131 < 148). The 9B's 146
+on vLLM 0.33.0 a week earlier was scored by name, not by leaves, so the two do not compare.
+The LoRA row is Qwen3.5-0.8B fine-tuned on about 5,000 what-if, view and off-topic questions
+written from the catalogue, none from these items or the 153 labels; the weights are not
+published. Its view misses fill the field a question leaves out (a region for "jobs instead of
+emissions"), and 15 of its 22 label misses say "Other chemicals", the labels' name for
+Chemicals n.e.c.
+
+Across the three runs only Gemma changed results: 3 of its 60 paraphrases went from right to
+wrong or back (50, 51 and 50 right). Most paraphrase misses are the origin region
+(`fields_wrong.origin`: 4, 9 and 16 items), then consumed_region and consumed_by. The `none` misses are near misses: a water or plastic-waste
 footprint answered with another indicator, another year (2020, 1995), biodiversity loss, Nigeria
 or Saudi Arabia shown as a listed region, a place with no region of its own (California,
 Bavaria), and "emissions per person" as the total.
