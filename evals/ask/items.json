@@ -6,7 +6,20 @@
   },
   {
    "question": "Worldwide, builders get by with 20 percent less cement, lime and plaster.",
-   "scenario": "cement-in-construction"
+   "scenario": "cement-in-construction",
+   "accept": [
+    [
+     {
+      "product": "Cement, lime and plaster",
+      "origin_region": "Total",
+      "consumed_by": [
+       "S: Construction"
+      ],
+      "consumed_region": "Total",
+      "change_percent": -20
+     }
+    ]
+   ]
   },
   {
    "question": "Chinese industries take 20% less electricity from China's coal plants.",
@@ -363,7 +376,13 @@
   {
    "question": "Show South Korea's footprint.",
    "indicator": null,
-   "region": "South Korea"
+   "region": "South Korea",
+   "accept": [
+    [
+     "ghg",
+     "South Korea"
+    ]
+   ]
   },
   {
    "question": "Mining of metal ores caused by Australian consumption",

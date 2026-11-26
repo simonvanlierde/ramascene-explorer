@@ -13,9 +13,10 @@ The gold set:
   the run exits 1 below 148 of 153;
 - `paraphrase` ([`items.json`](items.json)): 60 questions in other words, one published scenario
   each. None shares more than half its words with any label (token Jaccard at most 0.5, checked by
-  `tests/test_ask_stats.py`). Six say "industry" where all industries is meant, so
-  Manufacturing also counts there (`accept`);
-- `view`: 24 view questions; a field the gold leaves null must stay null;
+  `tests/test_ask_stats.py`). Where a wording allows a second reading, `accept` lists it:
+  Manufacturing for six that say "industry", the Construction section for "builders";
+- `view`: 24 view questions; a field the gold leaves null must stay null, unless `accept`
+  allows a value ("South Korea's footprint" may also show greenhouse gases);
 - `none`: 30 questions the page cannot answer, where the answer must be action `none`: 12
   plainly off topic, and 18 near misses such as another year, water or land use, a country
   EXIOBASE folds into a rest-of region, or prices.
@@ -76,45 +77,67 @@ Bonett-Price 95% interval for paired proportions, the exact McNemar p (a two-sid
 on b and c) and, with more than one pair, the Holm-adjusted p. It prints no p-value below 15
 paired items.
 
-8 paraphrases cannot rank models. With 3 discordant items, all going one way, the smallest
-possible paired p is 0.25, and the Wilson intervals of 6/8 (0.41-0.93) and 3/8 (0.14-0.69)
-overlap. The 153 label questions do separate models: Qwen3.8-27B got 16 right that Gemma missed
-and none the other way (Holm p 9e-05). Between Qwen3.8-27B and Qwen3.5-9B they do not (b 5, c 0,
-Holm p 0.06).
+`compare.py --flips` takes repeat runs of one model and counts, per kind, the items that did
+not get the same result in every run.
+
+What the 2026-11-26 run below can and cannot say:
+
+- Qwen3.8-27B beats Qwen3.5-9B on paraphrases (14 items to 1, Holm p 0.003) and on labels (8 to
+  0, Holm p 0.02). Gemma-4-26B-A4B beats Qwen3.5-9B on labels (8 to 0, Holm p 0.02); on
+  paraphrases it leads 10 to 2, but Holm p is 0.08.
+- Qwen3.8-27B and Gemma-4-26B-A4B cannot be told apart. They agree on every label and view item;
+  on paraphrases Qwen leads 6 to 1 (p 0.13), on `none` 4 to 0 (p 0.13), and on the held-out
+  paraphrases Gemma leads 3 to 2. Separating them would take more discordant items, so more
+  paraphrases, not repeat runs: their answers hardly change between runs.
+- Four paraphrase misses shared by all three models are one finding: "African producers … use
+  less X" is read as X made in Africa (`origin`), not used in Africa.
 
 `run.sh` is one host's script: it serves three models in turn with a local `node-serve`
-wrapper and expects `manifest-v3.json` and `results.json` beside it.
+wrapper, each with the engine flags that fit a 24 GB card, and runs the dev items three times
+(`out/r1` to `out/r3`), then the held-out items if `HELDOUT` names their file. It expects
+`manifest-v3.json` and `results.json` beside it.
 
 ## Results
 
-2026-11-19, vLLM 0.33.0 on a 24 GB RTX 4090, temperature 0, scored by leaves:
+2026-11-26, vLLM 0.34.0 on a 24 GB RTX 4090, temperature 0, scored by leaves, first of three
+runs. A Wilson 95% interval follows each paraphrase and `none` score.
 
-| Model | label (153) | paraphrase (8) | paraphrase 95% CI | view (6) | none (3) | median s |
+| Model | label (153) | paraphrase (60) | view (24) | none (30) | held-out para. (30) | median s |
 | --- | --- | --- | --- | --- | --- | --- |
-| Qwen3.8-27B, AWQ INT4 | 151 | 6 | 0.41-0.93 | 6 | 3 | 1.6 |
-| Gemma-4-26B-A4B, AWQ 4-bit | 135 | 3 | 0.14-0.69 | 6 | 3 | 0.5 |
-| Qwen3.5-9B, bf16 | 146 | 3 | 0.14-0.69 | 5 | 3 | 1.3 |
+| Qwen3.8-27B, AWQ INT4 | 151 | 55 (0.82-0.96) | 24 | 25 (0.66-0.93) | 27 | 1.5 |
+| Gemma-4-26B-A4B, AWQ 4-bit | 151 | 50 (0.72-0.91) | 24 | 21 (0.52-0.83) | 28 | 0.5 |
+| Qwen3.5-9B, bf16 | 143 | 42 (0.57-0.80) | 23 | 20 (0.49-0.81) | 22 | 1.3 |
 
-The label intervals are 0.954-0.996 for 151/153, 0.909-0.978 for 146/153 and 0.822-0.924 for
-135/153; view 6/6 is 0.61-1.00 and 5/6 0.44-0.97, none 3/3 0.44-1.00.
-
-Gemma's label misses are clustered: 15 of its 18 are the electrical-machinery scenarios, where it
-names the product by its industry, "Manufacture of electrical machinery and apparatus n.e.c.",
-instead of "Electrical machinery and apparatus n.e.c.". The other three are
-`steel-in-vehicles-europe`, `cement-in-construction` and `construction-demand-europe`.
+No server errors. Qwen3.5-9B fails the label gate (143 < 148); on vLLM 0.33.0 a week earlier it
+got 146. Across the three runs only Gemma changed answers: 3 of its 60 paraphrases (50, 51 and 50
+right). Most paraphrase misses are the origin region (`fields_wrong.origin`: 4, 9 and 16 items),
+then consumed_by and consumed_region. The `none` misses are near misses: a water or plastic-waste
+footprint answered with another indicator, Nigeria or Saudi Arabia shown as a listed region, and
+"emissions per person" as the total.
 
 <details>
-<summary><code>compare.py</code> on the three runs, label rows</summary>
+<summary><code>compare.py</code> on the first dev run</summary>
 
 ```text
-label      qwen3.8-27b vs gemma-4-26b-a4b  n 153  151 vs 135  b 16 c 0  diff +0.10 (95% CI +0.052 to +0.154)  p 3.05e-05  Holm 9.16e-05
-label      qwen3.8-27b vs qwen3.5-9b  n 153  151 vs 146  b 5 c 0  diff +0.03 (95% CI -0.001 to +0.065)  p 0.0625  Holm 0.0625
-label      gemma-4-26b-a4b vs qwen3.5-9b  n 153  135 vs 146  b 5 c 16  diff -0.07 (95% CI -0.131 to -0.011)  p 0.0266  Holm 0.0532
+label      qwen3.8-27b vs gemma-4-26b-a4b  n 153  151 vs 151  b 0 c 0  diff +0.00 (95% CI -0.018 to +0.018)  p 1  Holm 1
+none       qwen3.8-27b vs gemma-4-26b-a4b  n 30  25 vs 21  b 4 c 0  diff +0.13 (95% CI -0.019 to +0.269)  p 0.125  Holm 0.25
+paraphrase qwen3.8-27b vs gemma-4-26b-a4b  n 60  55 vs 50  b 6 c 1  diff +0.08 (95% CI -0.012 to +0.173)  p 0.125  Holm 0.125
+view       qwen3.8-27b vs gemma-4-26b-a4b  n 24  24 vs 24  b 0 c 0  diff +0.00 (95% CI -0.107 to +0.107)  p 1  Holm 1
+label      qwen3.8-27b vs qwen3.5-9b  n 153  151 vs 143  b 8 c 0  diff +0.05 (95% CI +0.012 to +0.091)  p 0.00781  Holm 0.0234
+none       qwen3.8-27b vs qwen3.5-9b  n 30  25 vs 20  b 5 c 0  diff +0.17 (95% CI +0.004 to +0.309)  p 0.0625  Holm 0.188
+paraphrase qwen3.8-27b vs qwen3.5-9b  n 60  55 vs 42  b 14 c 1  diff +0.22 (95% CI +0.090 to +0.329)  p 0.000977  Holm 0.00293
+view       qwen3.8-27b vs qwen3.5-9b  n 24  24 vs 23  b 1 c 0  diff +0.04 (95% CI -0.091 to +0.168)  p 1  Holm 1
+label      gemma-4-26b-a4b vs qwen3.5-9b  n 153  151 vs 143  b 8 c 0  diff +0.05 (95% CI +0.012 to +0.091)  p 0.00781  Holm 0.0234
+none       gemma-4-26b-a4b vs qwen3.5-9b  n 30  21 vs 20  b 2 c 1  diff +0.03 (95% CI -0.105 to +0.168)  p 1  Holm 1
+paraphrase gemma-4-26b-a4b vs qwen3.5-9b  n 60  50 vs 42  b 10 c 2  diff +0.13 (95% CI +0.015 to +0.243)  p 0.0386  Holm 0.0771
+view       gemma-4-26b-a4b vs qwen3.5-9b  n 24  24 vs 23  b 1 c 0  diff +0.04 (95% CI -0.091 to +0.168)  p 1  Holm 1
 ```
 
 </details>
 
 On this card the 9B and the 27B need `--language-model-only` (the vision encoder does not fit
-beside them); the 27B also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`. The
-paraphrase misses are mostly readings the question allows: "industry" as Manufacturing rather
-than all industries, "construction" as the whole section rather than construction work.
+beside them); the 27B also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`.
+
+A log scored before 2026-11-26 compared catalogue names, not leaves, so "Manufacture of
+electrical machinery and apparatus n.e.c." counted as a miss for "Electrical machinery and
+apparatus n.e.c.". That put Gemma at 135 of 153 labels; scored again with `--rescore` it is 151.

@@ -197,7 +197,8 @@ def load_items(path, names, scen):
     """(kind, question, gold) per item: the label questions, then the items file.
 
     gold is a scenario id for label and paraphrase, (indicator, region) for view, None for none.
-    The second value maps a paraphrase question to its other accepted answers (lever lists).
+    The second value maps a paraphrase or view question to its other accepted answers: lever
+    lists for a paraphrase, (indicator, region) pairs for a view.
     """
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     items = [("label", s["label"], sid) for sid, s in scen.items() if sid not in FEWSHOT]
@@ -211,6 +212,7 @@ def load_items(path, names, scen):
         if it["region"] not in (None, "World", *names["regions"]):
             raise ValueError(f"view region {it['region']!r} not in catalogue")
         items.append(("view", it["question"], (it["indicator"], it["region"])))
+        accept[it["question"]] = [tuple(a) for a in it.get("accept", [])]
     items += [("none", it["question"], None) for it in data["none"]]
     keys = [(k, q) for k, q, _ in items]
     if len(set(keys)) < len(keys):  # compare.py pairs runs on (kind, question)
@@ -223,7 +225,7 @@ def score(kind, gold, raw, names, scen, leaves, rec, accept=()):
     try:
         got = json.loads(raw)
         if kind == "view":
-            return got["action"] == "view" and got["indicator"] == gold[0] and got["region"] == gold[1]
+            return got["action"] == "view" and (got["indicator"], got["region"]) in (tuple(gold), *accept)
         if kind == "none":
             return got["action"] == "none"
         want = sorted(canon(to_names(lv, names), names, leaves) for lv in scen[gold]["model_details"])

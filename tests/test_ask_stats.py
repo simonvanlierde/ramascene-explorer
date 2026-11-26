@@ -345,3 +345,13 @@ def test_paraphrases_do_not_copy_a_label():
     for it in json.loads(REPO_ITEMS.read_text())["paraphrase"]:
         q = toks(it["question"])
         assert max(len(q & toks(t)) / len(q | toks(t)) for t in labels) <= 0.5, it["question"]
+
+
+def test_view_accept_list():
+    def view(indicator, region):
+        raw = json.dumps({"action": "view", "indicator": indicator, "region": region})
+        return ask_eval.score("view", (None, "Europe"), raw, NAMES, SCEN, LEAVES, {}, [("ghg", "Europe")])
+
+    assert view(None, "Europe")
+    assert view("ghg", "Europe")
+    assert not view("jobs", "Europe")
