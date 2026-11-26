@@ -8,7 +8,7 @@ import pytest
 
 import ask_eval
 import compare
-from ask_eval import report, wilson
+from ask_eval import SMALL_N, report, wilson
 
 # NOTE: 4 decimals is the precision of the published reference values
 TOL = 5e-4
@@ -172,20 +172,21 @@ def test_compare_runs_with_no_shared_items(tmp_path, capsys):
     assert "share no scored items" in err
 
 
-def test_report_flags_small_n():
+@pytest.mark.parametrize("n", [SMALL_N - 1, SMALL_N, SMALL_N + 1])
+def test_report_flags_small_n(n):
     summary = {
         "model": "m",
         "server_errors": 2,
         "stopped_early": False,
         "image": None,
         "label": {"correct": 151, "n": 153, "ci95": [0.954, 0.996], "median_s": 1.6},
-        "paraphrase": {"correct": 6, "n": 8, "ci95": [0.409, 0.929], "median_s": 1.6},
+        "paraphrase": {"correct": 6, "n": n, "ci95": [0.409, 0.929], "median_s": 1.6},
     }
     head, label, para = report(summary).splitlines()
     assert "server_errors 2" in head
     assert "151/153  95% CI 0.954-0.996" in label
-    assert "n < 15" not in label
-    assert "0.409-0.929  n < 15" in para
+    assert f"n < {SMALL_N}" not in label
+    assert para.endswith(f"  n < {SMALL_N}") == (n < SMALL_N)
 
 
 def test_compare_flips(tmp_path, capsys):
@@ -472,6 +473,24 @@ def test_repo_items_load_against_the_catalogue():
     items = ask_eval.load_items(REPO_ITEMS, names, scen, leaves)
     paraphrased = [g for k, _, g, _ in items if k == "paraphrase"]
     assert len(paraphrased) == len(set(paraphrased))  # one scenario each, so a split by scenario holds
+
+
+def scored_ids():
+    """The label scenarios: those with model_details, minus the few-shot pair (mirrors ask_eval.load_items)."""
+    scenarios = json.loads(RESULTS.read_text())["scenarios"]
+    return {s["id"] for s in scenarios if s.get("model_details")} - set(ask_eval.FEWSHOT)
+
+
+def test_label_gate_counts_153_scenarios():
+    # LABEL_GATE is an absolute count: a new scenario must move it on purpose
+    assert (len(scored_ids()), ask_eval.LABEL_GATE) == (153, 148)
+
+
+def test_items_name_scored_scenarios():
+    # runs in CI, where the browser store is absent and the catalogue test above skips
+    ids = scored_ids()
+    bad = [it["scenario"] for it in json.loads(REPO_ITEMS.read_text())["paraphrase"] if it["scenario"] not in ids]
+    assert bad == []
 
 
 def test_paraphrases_do_not_copy_a_label():
