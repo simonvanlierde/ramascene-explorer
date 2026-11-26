@@ -190,7 +190,7 @@ absence of external requests.
 
 `pipeline/numpy_engine.py` runs the same calculation on the local store with numpy and scipy, so
 there is no Rust or WebAssembly to build. It reads the store in `data/browser-engine` (`just data store`
-fetches it). A step names products, regions and consumers by their ids in the manifest's `catalog`, as
+fetches it, an 803 MB download). A step names products, regions and consumers by their ids in the manifest's `catalog`, as
 the page does, and `techChange` is a change in percent. Run it from the repository root:
 
 ```sh
@@ -199,7 +199,7 @@ import sys
 sys.path.insert(0, "pipeline")
 import numpy_engine as ne
 
-store = ne.open_store("data/browser-engine")
+store = ne.Store("data/browser-engine")
 flows = ne.scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
                                    "consumedReg": [2], "techChange": [-20]}])
 print(flows.shape)  # (2205, 49): indicator x producer x section, by consumer

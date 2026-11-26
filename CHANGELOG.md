@@ -9,8 +9,8 @@ follow [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `pipeline/numpy_engine.py` runs browser scenarios from Python with numpy and scipy, on the same
-  store and with the same maths as the page. It matches RaMa-Scene's published results to 5.5e-9 on all
-  155 scenarios (the float32 storage floor); a one-off comparison on 26 November 2026 found it 1.6e-15
+  store and with the same maths as the page. It matches RaMa-Scene's published results to 5.5e-9 on the
+  155 scenarios and the baseline (the float32 storage floor); a one-off comparison on 26 November 2026 found it 1.6e-15
   from the page's engine. See
   [browser-engine.md](docs/browser-engine.md#use-the-engine-from-python).
 - The agreement table in `brightway-check/` gains a scenario table: the numpy engine and pymrio on the

@@ -1,6 +1,6 @@
 """The browser scenario engine in numpy and scipy: the same maths as src/lib/browser-engine/, no Rust.
 
-    store = open_store("data/browser-engine")
+    store = Store("data/browser-engine")
     flows = scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
                                     "consumedReg": [2], "techChange": [-20]}])
 
@@ -102,7 +102,8 @@ class Store:
         self.meta = json.loads((directory / "manifest-v3.json").read_text(encoding="utf-8"))
         m = self.meta
         residual = m.get("baseline_residual")
-        # the checks openEngine in browser-data.js makes
+        baseline = m.get("baseline_flows")
+        # the manifest checks of openEngine in browser-data.js that this reader relies on
         if (
             m.get("version") != 3  # noqa: PLR2004
             or m.get("products") != 200  # noqa: PLR2004
@@ -110,9 +111,13 @@ class Store:
             or type(residual) not in {int, float}
             or not np.isfinite(residual)
             or residual > 1e-9  # noqa: PLR2004
+            or not isinstance(baseline, list)
+            or len(baseline) != len(m.get("indicators", [])) * 49 * len(m.get("sections", [])) * 49
         ):
             raise ValueError("unsupported browser dataset")
-        self.baseline = np.asarray(self.meta["baseline_flows"], dtype=float)
+        self.baseline = np.asarray(baseline, dtype=float)
+        if not np.isfinite(self.baseline).all():
+            raise ValueError("unsupported browser dataset")
         self.readers = {
             name: ArrayReader(
                 info, lambda i, name=name: directory / f"store-{self.meta['store']}" / name / "c" / str(i) / "0"
@@ -122,10 +127,6 @@ class Store:
 
     def read(self, name, rows, columns=None):
         return self.readers[name].read(rows, columns)
-
-
-def open_store(directory):
-    return Store(directory)
 
 
 def _expand(items, ids, bound):

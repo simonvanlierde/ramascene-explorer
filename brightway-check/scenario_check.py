@@ -75,7 +75,7 @@ def main():
     args = ap.parse_args()
 
     reference = json.loads((HERE.parent / "data" / "results.json").read_text(encoding="utf-8"))
-    store = ne.open_store(args.store)
+    store = ne.Store(args.store)
     meta = store.meta
     regions = [r for r in meta["catalog"]["regions"] if 2 <= r["id"] <= 6]  # noqa: PLR2004
     arrays = {n: array(args.data, n) for n in ("A", "B", "Y")} if args.route == "pymrio" else None

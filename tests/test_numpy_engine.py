@@ -207,6 +207,28 @@ def test_the_threshold_matches_the_rust_kernel(args, epsilon, refused):
         assert np.isfinite(ne.correction(delta, t, x, epsilon)).all()
 
 
+@pytest.mark.parametrize(("pivot", "refused"), [(1.5, True), (2.5, False)])
+def test_the_default_threshold_is_the_stored_epsilon(pivot, refused):
+    delta, t, x = (np.asarray(m) for m in one(pivot * EPS))
+    if refused:
+        with pytest.raises(ValueError, match="singular or ill-conditioned"):
+            ne.correction(delta, t, x)
+    else:
+        assert np.isfinite(ne.correction(delta, t, x)).all()
+
+
+def test_correction_refuses_an_overflowing_result():
+    # finite inputs whose product overflows: S = I, dA X = inf
+    with np.errstate(over="ignore"), pytest.raises(ValueError, match="singular or ill-conditioned"):
+        ne.correction(np.array([[1e300]]), np.array([[0.0]]), np.array([[1e300]]))
+
+
+def test_scenario_flows_refuses_an_overflowing_output():
+    tiny = Tiny(A, VIA_ROWS, y=((1e308,), (1.0,)))
+    with np.errstate(over="ignore"), pytest.raises(ValueError, match="non-finite scenario output"):
+        ne.scenario_flows(tiny, [step(product=[10], consumedBy=[30], techChange=[1000])])
+
+
 def test_correction_refuses_non_finite_input():
     with pytest.raises(ValueError, match="finite numbers"):
         ne.correction(np.array([[np.nan]]), np.array([[L1]]), np.array([[1.0]]), 1e-16)
@@ -262,6 +284,11 @@ def test_singular_scenario_is_refused():
 def test_plan_refuses_invalid_steps(bad):
     with pytest.raises(ValueError, match=r"\w"):
         ne.plan(Tiny(A, VIA_ROWS).meta, [step(**bad)])
+
+
+def test_overlapping_ids_in_one_step_select_each_leaf_once():
+    meta = Tiny(A, VIA_ROWS).meta
+    assert ne.plan(meta, [step(product=[10, 12])])["edits"] == ne.plan(meta, [step(product=[12])])["edits"]
 
 
 def test_plan_refuses_more_than_ten_steps():
@@ -348,7 +375,9 @@ def fixture_store(directory, **over):
         "products": 200,
         "countries": 49,
         "baseline_residual": 1e-16,
-        "baseline_flows": [0.0],
+        "indicators": [5],
+        "sections": [1],
+        "baseline_flows": [0.0] * 49 * 49,
         "store": "f" * 64,
         "arrays": {"M": info["M"]},
     } | over
@@ -358,8 +387,9 @@ def fixture_store(directory, **over):
     return directory
 
 
-def test_store_reads_the_fixture(tmp_path):
-    store = ne.open_store(fixture_store(tmp_path))
+@pytest.mark.parametrize("residual", [1e-16, 1e-9])
+def test_store_reads_the_fixture(tmp_path, residual):
+    store = ne.Store(fixture_store(tmp_path, baseline_residual=residual))
     assert np.array_equal(store.read("M", [3, 1], [0, 2]), MATRIX.astype(np.float32).astype(float)[[3, 1]][:, [0, 2]])
 
 
@@ -369,15 +399,18 @@ def test_store_reads_the_fixture(tmp_path):
         {"version": 2},
         {"products": 199},
         {"countries": 48},
-        {"baseline_residual": 1.1e-9},
+        {"baseline_residual": 1.0000001e-9},
         {"baseline_residual": float("nan")},
         {"baseline_residual": None},
+        {"baseline_flows": [0.0] * 49 * 48},
+        {"baseline_flows": [float("inf")] + [0.0] * (49 * 49 - 1)},
     ],
-    ids=["version", "products", "countries", "residual too large", "residual NaN", "residual missing"],
+    ids=["version", "products", "countries", "residual too large", "residual NaN", "residual missing",
+         "baseline too short", "baseline not finite"],  # fmt: skip
 )
 def test_store_refuses_an_unsupported_manifest(tmp_path, over):
     with pytest.raises(ValueError, match="unsupported browser dataset"):
-        ne.open_store(fixture_store(tmp_path, **over))
+        ne.Store(fixture_store(tmp_path, **over))
 
 
 # as tests/browser-parity.test.js: with CI set, a missing store fails instead of skipping
@@ -392,7 +425,7 @@ def test_published_scenarios_match_ramascene(monkeypatch):
     monkeypatch.syspath_prepend(ROOT / "brightway-check")
     import scenario_check  # ty: ignore[import-not-found]
 
-    store = ne.open_store(STORE)
+    store = ne.Store(STORE)
     reference = json.loads((ROOT / "data/results.json").read_text())
     runs = scenario_check.scenarios(reference)
     assert len(runs) == 156
