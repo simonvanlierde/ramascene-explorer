@@ -212,6 +212,24 @@ def test_correction_refuses_non_finite_input():
         ne.correction(np.array([[np.nan]]), np.array([[L1]]), np.array([[1.0]]), 1e-16)
 
 
+@pytest.mark.parametrize(
+    ("delta", "t", "x"),
+    [
+        # from cancellation_is_refused_and_inputs_are_checked: delta is 1 x 1, T is 1 x 1, X must be 2 rows
+        (np.ones((1, 1)), np.ones((1, 1)), np.ones((2, 1))),
+        (np.ones((1, 2)), np.ones((1, 2)), np.ones((2, 1))),
+        (np.ones((2, 2)), np.ones((2, 2)), np.ones(2)),
+        (np.ones((0, 2)), np.ones((2, 0)), np.ones((2, 1))),
+        (np.ones((2, 2)), np.ones((2, 2)), np.ones((2, 0))),
+        (np.ones(2), np.ones(2), np.ones((2, 1))),
+    ],
+    ids=["x rows", "T not K x R", "x one-dimensional", "no rows", "no columns", "delta one-dimensional"],
+)
+def test_correction_refuses_mismatched_dimensions(delta, t, x):
+    with pytest.raises(ValueError, match="invalid solve dimensions"):
+        ne.correction(delta, t, x)
+
+
 def test_singular_scenario_is_refused():
     # a coefficient of 1 on the diagonal after the change makes I - A' singular
     a = np.array([[0.5, 0.0], [0.0, 0.2]])
@@ -229,6 +247,16 @@ def test_singular_scenario_is_refused():
         {"consumedBy": [20, 30]},
         {"techChange": [-100.001]},
         {"techChange": [1000.001]},
+        # wrong types get the same messages, not a TypeError
+        {"product": 10},
+        {"product": [[10]]},
+        {"product": [10.0]},
+        {"originReg": "1"},
+        {"consumedBy": 21},
+        {"consumedBy": [[21]]},
+        {"techChange": -20},
+        {"techChange": ["-20"]},
+        {"techChange": [True]},
     ],
 )
 def test_plan_refuses_invalid_steps(bad):
@@ -239,6 +267,14 @@ def test_plan_refuses_invalid_steps(bad):
 def test_plan_refuses_more_than_ten_steps():
     with pytest.raises(ValueError, match="1 to 10 interventions"):
         ne.plan(Tiny(A, VIA_ROWS).meta, [step()] * 11)
+    with pytest.raises(ValueError, match="1 to 10 interventions"):
+        ne.plan(Tiny(A, VIA_ROWS).meta, step())
+
+
+def test_plan_refuses_bool_catalog_leaves():
+    meta = Tiny(A, VIA_ROWS).meta | {"catalog": CATALOG | {"products": [{"id": 10, "leaves": [True]}]}}
+    with pytest.raises(ValueError, match="invalid catalog indices"):
+        ne.plan(meta, [step()])
 
 
 def test_reader_matches_the_fixture_store():
@@ -327,23 +363,33 @@ def test_store_reads_the_fixture(tmp_path):
     assert np.array_equal(store.read("M", [3, 1], [0, 2]), MATRIX.astype(np.float32).astype(float)[[3, 1]][:, [0, 2]])
 
 
-@pytest.mark.skipif(not STORE, reason="set BROWSER_ENGINE_DATA to the browser store (docs/browser-engine.md)")
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"version": 2},
+        {"products": 199},
+        {"countries": 48},
+        {"baseline_residual": 1.1e-9},
+        {"baseline_residual": float("nan")},
+        {"baseline_residual": None},
+    ],
+    ids=["version", "products", "countries", "residual too large", "residual NaN", "residual missing"],
+)
+def test_store_refuses_an_unsupported_manifest(tmp_path, over):
+    with pytest.raises(ValueError, match="unsupported browser dataset"):
+        ne.open_store(fixture_store(tmp_path, **over))
+
+
+# as tests/browser-parity.test.js: with CI set, a missing store fails instead of skipping
+@pytest.mark.skipif(
+    not STORE and not os.environ.get("CI"),
+    reason="set BROWSER_ENGINE_DATA to the browser store (docs/browser-engine.md)",
+)
 def test_published_scenarios_match_ramascene():
+    assert STORE, "BROWSER_ENGINE_DATA is not set; fetch the browser store, see docs/browser-engine.md"
+    assert (Path(STORE) / "manifest-v3.json").exists(), f"no manifest-v3.json in {STORE}"
     store = ne.open_store(STORE)
     meta = store.meta
-    with pytest.raises(ValueError, match="singular or ill-conditioned"):
-        ne.scenario_flows(
-            store,
-            [
-                {
-                    "product": [82],
-                    "originReg": [7],
-                    "consumedBy": [81],
-                    "consumedReg": [7],
-                    "techChange": [632.7954014961612],
-                }
-            ],
-        )
     reference = json.loads((ROOT / "data/results.json").read_text())
     scenarios = [s for s in reference["scenarios"] if s["id"] != "baseline"]
     assert len(scenarios) == 155
@@ -361,3 +407,16 @@ def test_published_scenarios_match_ramascene():
     print(f"worst relative difference: {worst:.2e}")
     # NOTE: the page's own test measures 5.5e-9 against the same results (float32 store); 1e-8 catches a regression
     assert worst <= 1e-8
+    with pytest.raises(ValueError, match="singular or ill-conditioned"):
+        ne.scenario_flows(
+            store,
+            [
+                {
+                    "product": [82],
+                    "originReg": [7],
+                    "consumedBy": [81],
+                    "consumedReg": [7],
+                    "techChange": [632.7954014961612],
+                }
+            ],
+        )

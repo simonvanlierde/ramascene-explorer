@@ -49,18 +49,17 @@ class ArrayReader:
         self.shape = tuple(info["shape"])
         self.chunk_rows = info["chunk_rows"]
         self.per_shard = info["shard_rows"] // self.chunk_rows
-        self.shard_rows = info["shard_rows"]
         self.shard_path = shard_path
-        self.maps = {}
+        self._maps = {}
 
     def _shard(self, shard):
-        if shard not in self.maps:
+        if shard not in self._maps:
             with Path(self.shard_path(shard)).open("rb") as f:
                 data = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             n = self.per_shard
             index = np.frombuffer(data, dtype="<u8", count=2 * n, offset=len(data) - 16 * n).reshape(n, 2)
-            self.maps[shard] = data, index
-        return self.maps[shard]
+            self._maps[shard] = data, index
+        return self._maps[shard]
 
     def chunk(self, i):
         shard, at = divmod(i, self.per_shard)
@@ -101,6 +100,18 @@ class Store:
     def __init__(self, directory):
         directory = Path(directory)
         self.meta = json.loads((directory / "manifest-v3.json").read_text(encoding="utf-8"))
+        m = self.meta
+        residual = m.get("baseline_residual")
+        # the checks openEngine in browser-data.js makes
+        if (
+            m.get("version") != 3  # noqa: PLR2004
+            or m.get("products") != 200  # noqa: PLR2004
+            or m.get("countries") != 49  # noqa: PLR2004
+            or type(residual) not in {int, float}
+            or not np.isfinite(residual)
+            or residual > 1e-9  # noqa: PLR2004
+        ):
+            raise ValueError("unsupported browser dataset")
         self.baseline = np.asarray(self.meta["baseline_flows"], dtype=float)
         self.readers = {
             name: ArrayReader(
@@ -118,15 +129,15 @@ def open_store(directory):
 
 
 def _expand(items, ids, bound):
-    if not ids:
+    if not isinstance(ids, list) or not ids:
         raise ValueError("select at least one id")
     by_id = {v["id"]: v for v in items}
     leaves = []
     for i in ids:
-        if i not in by_id:
+        if type(i) is not int or i not in by_id:
             raise ValueError(f"unknown id {i}")
         leaves += by_id[i]["leaves"]
-    if not all(isinstance(v, int) and 0 <= v < bound for v in leaves):
+    if not all(type(v) is int and 0 <= v < bound for v in leaves):
         raise ValueError("invalid catalog indices")
     return sorted(set(leaves))
 
@@ -137,13 +148,19 @@ def _selection(meta, step):
     origins = _expand(catalog["regions"], step["originReg"], meta["countries"])
     destinations = _expand(catalog["regions"], step["consumedReg"], meta["countries"])
     change = step["techChange"]
-    if len(change) != 1 or not np.isfinite(change[0]) or not -100 <= change[0] <= 1000:  # noqa: PLR2004
+    if (
+        not isinstance(change, list)
+        or len(change) != 1
+        or type(change[0]) not in {int, float}
+        or not np.isfinite(change[0])
+        or not -100 <= change[0] <= 1000  # noqa: PLR2004
+    ):
         raise ValueError("change must be between -100 and 1000 percent")
-    if not step["consumedBy"]:
+    if not isinstance(step["consumedBy"], list) or not step["consumedBy"]:
         raise ValueError("select a consumer")
     by_id = {v["id"]: v for v in catalog["consumers"]}
     for i in step["consumedBy"]:
-        if i not in by_id:
+        if type(i) is not int or i not in by_id:
             raise ValueError(f"unknown consumer {i}")
     final = by_id[step["consumedBy"][0]].get("final") is True
     if any((by_id[i].get("final") is True) != final for i in step["consumedBy"]):
@@ -160,7 +177,7 @@ def _selection(meta, step):
 
 def plan(meta, steps):
     """The edits and the sorted matrix rows, columns and final-demand rows they touch."""
-    if not 1 <= len(steps) <= 10:  # noqa: PLR2004
+    if not isinstance(steps, list) or not 1 <= len(steps) <= 10:  # noqa: PLR2004
         raise ValueError("a scenario needs 1 to 10 interventions")
     edits = [e for e in (_selection(meta, s) for s in steps) if e["factor"] != 1]
     technical = [e for e in edits if not e["final"]]
@@ -204,6 +221,15 @@ def _solve(s, rhs, scale, epsilon):
 
 def correction(delta, t, x, epsilon=STORED_EPSILON):
     """W = (I - dA T)^-1 dA X = dA (I - T dA)^-1 X, solved in whichever form is smaller (engine/src/lib.rs)."""
+    if (
+        delta.ndim != 2  # noqa: PLR2004
+        or 0 in delta.shape
+        or t.shape != delta.shape[::-1]
+        or x.ndim != 2  # noqa: PLR2004
+        or x.shape[0] != t.shape[0]
+        or not x.shape[1]
+    ):
+        raise ValueError("invalid solve dimensions")
     r, k = delta.shape
     if not all(np.isfinite(m).all() for m in (delta, t, x)):
         raise ValueError("the solve needs finite numbers")
