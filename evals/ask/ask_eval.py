@@ -14,6 +14,7 @@ Stdlib only.
 
 import http.client
 import json
+import math
 import os
 import sys
 import time
@@ -49,6 +50,34 @@ OFF_TOPIC = [  # gold action "none"
 # consecutive transport failures (server gone) after which the run stops instead of timing out
 # on every remaining question
 MAX_DOWN = 3
+Z95 = 1.959963984540054  # two-sided 95% standard normal quantile
+# below this many items an interval is printed but flagged, and compare.py gives no p-value
+SMALL_N = 15
+
+
+def wilson(correct, n, z=Z95):
+    """Wilson score interval for correct/n (Wilson 1927); (0, 1) when n is 0.
+
+    Unlike the Wald interval it stays inside [0, 1] and keeps its coverage near 0/n and n/n.
+    """
+    if n == 0:
+        return 0.0, 1.0
+    p = correct / n
+    mid = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z / (1 + z * z / n) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return max(0.0, mid - half), min(1.0, mid + half)
+
+
+def report(summary):
+    """Human-readable summary: one line per kind with its Wilson 95% CI."""
+    stop = ", stopped early" if summary["stopped_early"] else ""
+    lines = [f"{summary['model']}  server_errors {summary['server_errors']} (not scored{stop})"]
+    for kind, v in summary.items():
+        if isinstance(v, dict):
+            lo, hi = v["ci95"]
+            flag = f"  n < {SMALL_N}" if v["n"] < SMALL_N else ""
+            lines.append(f"  {kind:<11}{v['correct']:>4}/{v['n']:<4} 95% CI {lo:.2f}-{hi:.2f}{flag}")
+    return "\n".join(lines)
 
 
 def load(manifest, results):
@@ -254,12 +283,17 @@ def main():
         "server_errors": errors,
         "stopped_early": down >= MAX_DOWN,
         **{
-            k: {"correct": c, "n": n, "median_s": sorted(s)[len(s) // 2] if s else None}
+            k: {
+                "correct": c,
+                "n": n,
+                "ci95": [round(x, 4) for x in wilson(c, n)],
+                "median_s": sorted(s)[len(s) // 2] if s else None,
+            }
             for k, (c, n, s) in tally.items()
         },
     }
     (Path(out) / f"{Path(model).name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print(json.dumps(summary))
+    print(report(summary))
     if errors:
         sys.exit(f"{errors} requests failed at the server; see {log.name}")
 

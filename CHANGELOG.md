@@ -18,6 +18,9 @@ follow [Semantic Versioning](https://semver.org/).
   ran. `?askmodel=` names the model; with `?api=` the job API takes precedence and the panel
   does not appear. Without the parameter the page is unchanged. `evals/ask/` scores models on
   the task.
+- `evals/ask/` reports a Wilson 95% interval per kind, and `evals/ask/compare.py` compares runs
+  item by item: discordant counts, the exact McNemar p, a Bonett-Price interval for the
+  difference and Holm over pairs, with no p-value below 15 items.
 
 ## [0.8.0] - 2026-11-15
 
