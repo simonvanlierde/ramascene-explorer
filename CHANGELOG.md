@@ -25,7 +25,7 @@ follow [Semantic Versioning](https://semver.org/).
   near misses included, with a held-out set kept outside the repository. `ask_eval.py` takes
   `--items`, `--rescore` (score the logs again from their raw answers) and counts wrong lever
   fields per kind; the label set gates the run (exit 1 below 148 of 153). `compare.py --flips`
-  counts items that change between repeat runs.
+  counts items scored differently between repeat runs.
 
 ### Fixed
 

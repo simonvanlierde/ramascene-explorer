@@ -2,17 +2,25 @@
 # Runs ask_eval.py against three local models on a 24 GB GPU, one node-serve per model: the dev
 # items three times (out/r1-r3, for flip rates), then the held-out items once if HELDOUT names them.
 set -uo pipefail
+if [[ -n ${HELDOUT:-} ]]; then HELDOUT=$(realpath "$HELDOUT") || exit 3; fi # before the cd
+export HELDOUT
 cd "$(dirname "$0")" || exit 3
 export PATH=$HOME/.local/bin:$PATH # a systemd unit or timer starts without it
 hub=$HOME/.cache/huggingface/hub
-eval_all() { # returns the last nonzero ask_eval.py exit, so status.txt shows a failed gate
-	local r rc=0
-	for r in 1 2 3; do
-		python3 ask_eval.py manifest-v3.json results.json "out/r$r" || { rc=$? && echo "r$r exit $rc"; }
+eval_all() { # returns the highest ask_eval.py exit (3 server error, 1 failed gate) for status.txt
+	local r e rc=0
+	for r in r1 r2 r3 heldout; do
+		if [[ $r == heldout ]]; then
+			[[ -n ${HELDOUT:-} ]] || break
+			python3 ask_eval.py manifest-v3.json results.json out/heldout --items "$HELDOUT"
+		else
+			python3 ask_eval.py manifest-v3.json results.json "out/$r"
+		fi
+		e=$?
+		((e)) && echo "$r exit $e"
+		((e > rc)) && rc=$e
+		((e == 3)) && break # the server is down or wedged: later passes would only wait on it
 	done
-	if [[ -n ${HELDOUT:-} ]]; then
-		python3 ask_eval.py manifest-v3.json results.json out/heldout --items "$HELDOUT" || rc=$?
-	fi
 	return "$rc"
 }
 export -f eval_all

@@ -51,23 +51,32 @@ are not committed: `<model>.jsonl` holds one line per question, with the raw ans
 consumed_by, consumed_region, change) missed when the lever count was right. `server_errors`
 counts requests the server failed (refused, timed out, not JSON), which are not scored and not
 in `n`; the printed summary shows it beside the scores. After three in a row the run stops.
+The log is written one line per question as the run goes, and a run replaces the logs already in
+its output folder. `run.sh` writes its three dev runs to `out/r1` to `out/r3` and the held-out
+run to `out/heldout`, and records each model's highest exit in `out/status.txt`.
 Exit codes: 0 scored, 1 fewer than 148 label questions right, 2 usage error, 3 a server error or
-an unreadable gold set.
+an unreadable gold set or log.
 
 A log keeps the `ok` it was scored with. After a change to the scorer or the gold, score the
 logs again from their raw answers, without a model:
 
 ```sh
-python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out --rescore
+python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out/r1 --rescore
 ```
 
-Pass the `--items` the logs ran with (the held-out file for a held-out run): a log holding an
-item the gold set lacks exits 3 and is left as it was.
+Pass the `--items` the logs ran with (the held-out file for `out/heldout`): when a log in the
+folder holds an item the gold set lacks, the run exits 3 and rewrites no log.
 
 To compare runs item by item:
 
 ```sh
-python3 evals/ask/compare.py evals/ask/out/qwen3.8-27b.jsonl evals/ask/out/qwen3.5-9b.jsonl
+python3 evals/ask/compare.py evals/ask/out/r1/qwen3.8-27b.jsonl evals/ask/out/r1/qwen3.5-9b.jsonl
+```
+
+To count, per kind, the items a model did not score the same in its three runs:
+
+```sh
+python3 evals/ask/compare.py --flips evals/ask/out/r{1,2,3}/gemma-4-26b-a4b.jsonl
 ```
 
 ## Statistics
@@ -111,12 +120,14 @@ runs. A Wilson 95% interval follows each paraphrase and `none` score.
 | Gemma-4-26B-A4B, AWQ 4-bit | 151 | 50 (0.72-0.91) | 24 | 21 (0.52-0.83) | 28 | 0.5 |
 | Qwen3.5-9B, bf16 | 143 | 42 (0.57-0.80) | 23 | 20 (0.49-0.81) | 22 | 1.3 |
 
-No server errors. Qwen3.5-9B fails the label gate (143 < 148); on vLLM 0.33.0 a week earlier it
-got 146. Across the three runs only Gemma changed answers: 3 of its 60 paraphrases (50, 51 and 50
+No server errors. Qwen3.5-9B fails the label gate (143 < 148). Its 146 on vLLM 0.33.0 a week
+earlier was scored by name, not by leaves, so the two do not compare. Across the three runs only
+Gemma changed results: 3 of its 60 paraphrases went from right to wrong or back (50, 51 and 50
 right). Most paraphrase misses are the origin region (`fields_wrong.origin`: 4, 9 and 16 items),
 then consumed_region and consumed_by. The `none` misses are near misses: a water or plastic-waste
-footprint answered with another indicator, Nigeria or Saudi Arabia shown as a listed region, and
-"emissions per person" as the total.
+footprint answered with another indicator, another year (2020, 1995), biodiversity loss, Nigeria
+or Saudi Arabia shown as a listed region, a place with no region of its own (California,
+Bavaria), and "emissions per person" as the total.
 
 <details>
 <summary><code>compare.py</code> on the first dev run</summary>

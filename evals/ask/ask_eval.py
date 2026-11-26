@@ -220,24 +220,25 @@ def load_items(path, names, scen, leaves):
     return items
 
 
-def score(kind, gold, raw, names, scen, leaves, rec, accept=()):
-    """Whether the answer matches gold or an accepted alternative; per-field matches and parse errors go into rec."""
+def score(kind, gold, raw, names, scen, leaves, rec, accept):
+    """Whether the answer matches gold or an accepted alternative.
+
+    A missed what-if's per-field matches and a parse error go into rec.
+    """
     try:
         got = json.loads(raw)
         if kind == "view":
-            return got["action"] == "view" and (got["indicator"], got["region"]) in (tuple(gold), *accept)
+            return got["action"] == "view" and (got["indicator"], got["region"]) in (gold, *accept)
         if kind == "none":
             return got["action"] == "none"
         want = sorted(canon(to_names(lv, names), names, leaves) for lv in scen[gold]["model_details"])
         have = sorted(canon(lv, names, leaves) for lv in got["levers"]) if got["action"] == "whatif" else []
+        if have == want or have in accept:
+            return True
         if len(want) == len(have):
             rec["fields"] = {f: [w[i] == h[i] for w, h in zip(want, have, strict=True)] for i, f in enumerate(FIELDS)}
     except (ValueError, KeyError, TypeError, IndexError, RecursionError) as e:  # a malformed answer is wrong
         rec["error"] = repr(e)
-        return False
-    if have == want or have in accept:
-        rec.pop("fields", None)  # fields_wrong counts misses; an accepted answer differs from gold on purpose
-        return True
     return False
 
 
@@ -267,27 +268,33 @@ def summarize(model, image, recs, stopped_early):
     }
 
 
-def write(out, summary, recs):
-    name = Path(summary["model"]).name
-    with (Path(out) / f"{name}.jsonl").open("w", encoding="utf-8") as log:
-        log.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in recs)
-    (Path(out) / f"{name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+def line(rec):
+    return json.dumps(rec, ensure_ascii=False) + "\n"
+
+
+def write_summary(out, summary):
+    (Path(out) / f"{Path(summary['model']).name}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
 
 def rescore(out, items, names, scen, leaves):
     """Score every <model>.jsonl in out again from its raw answers, against the current gold.
 
     A log keeps the ok it was scored with, so a change to the scorer or the gold leaves it stale
-    until this runs. Raises ValueError, before writing that log, when it holds an item the gold
-    set lacks (the wrong --items), and when out holds no log.
+    until this runs. Raises ValueError, before writing any log, when out holds none or one holds
+    an item the gold set lacks (the wrong --items).
     """
     gold = {(k, q): (g, a) for k, q, g, a in items}
-    summaries = []
-    for path in sorted(Path(out).glob("*.jsonl")):
-        recs = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-        missing = sum((r["kind"], r["question"]) not in gold for r in recs)
-        if missing:
+    logs = {
+        path: [json.loads(s) for s in path.read_text(encoding="utf-8").splitlines() if s.strip()]
+        for path in sorted(Path(out).glob("*.jsonl"))
+    }
+    if not logs:
+        raise ValueError(f"no <model>.jsonl in {Path(out).as_posix()!r}")
+    for path, recs in logs.items():
+        if missing := sum((r["kind"], r["question"]) not in gold for r in recs):
             raise ValueError(f"{path.name}: {missing} items not in the gold set; pass the --items it ran with")
+    summaries = []
+    for path, recs in logs.items():
         for rec in recs:
             g, accept = gold[rec["kind"], rec["question"]]
             rec["gold"] = g
@@ -298,10 +305,9 @@ def rescore(out, items, names, scen, leaves):
         old = path.with_suffix(".summary.json")
         meta = json.loads(old.read_text()) if old.exists() else {}
         summary = summarize(meta.get("model", path.stem), meta.get("image"), recs, meta.get("stopped_early", False))
-        write(out, summary, recs)
+        path.write_text("".join(line(r) for r in recs), encoding="utf-8")
+        write_summary(out, summary)
         summaries.append(summary)
-    if not summaries:
-        raise ValueError(f"no <model>.jsonl in {Path(out).as_posix()!r}")
     return summaries
 
 
@@ -320,23 +326,29 @@ def run(args, items, names, scen, leaves):
     url, model = os.environ["NODE_SERVE_URL"], os.environ["NODE_SERVE_NAME"]
     system, fmt = system_prompt(names, scen), schema(names)
     recs, down = [], 0
-    for kind, question, gold, accept in items:
-        rec = {"kind": kind, "question": question, "gold": gold}
-        recs.append(rec)
+    # one flushed line per item, so a crash or a stopped unit keeps the answers so far
+    with (Path(args.out) / f"{Path(model).name}.jsonl").open("w", encoding="utf-8") as log:
         try:
-            raw, secs, usage, finish = ask(url, model, system, question, fmt)
-            down = 0
-        except (OSError, http.client.HTTPException, ValueError, KeyError, IndexError) as e:
-            # the server failed, not the model: counted apart so an outage cannot pass for a bad model
-            down += 1
-            rec.update(ok=False, error=repr(e), transport=True)
-            if down >= MAX_DOWN:
-                break
-            continue
-        rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
-        rec["ok"] = score(kind, gold, raw, names, scen, leaves, rec, accept)
-    summary = summarize(model, os.environ.get("NODE_SERVE_IMAGE"), recs, down >= MAX_DOWN)
-    write(args.out, summary, recs)
+            for kind, question, gold, accept in items:
+                rec = {"kind": kind, "question": question, "gold": gold}
+                try:
+                    raw, secs, usage, finish = ask(url, model, system, question, fmt)
+                except (OSError, http.client.HTTPException, ValueError, KeyError, IndexError, TypeError) as e:
+                    # the server failed, not the model: counted apart so an outage cannot pass for a bad model
+                    down += 1
+                    rec.update(ok=False, error=repr(e), transport=True)
+                else:
+                    down = 0
+                    rec.update(raw=raw, secs=round(secs, 2), usage=usage, finish_reason=finish)
+                    rec["ok"] = score(kind, gold, raw, names, scen, leaves, rec, accept)
+                recs.append(rec)
+                log.write(line(rec))
+                log.flush()
+                if down >= MAX_DOWN:
+                    break
+        finally:
+            summary = summarize(model, os.environ.get("NODE_SERVE_IMAGE"), recs, down >= MAX_DOWN)
+            write_summary(args.out, summary)
     return [summary]
 
 
@@ -369,8 +381,8 @@ def main(argv=None):
     if args.rescore:
         try:
             summaries = rescore(args.out, items, names, scen, leaves)
-        except ValueError as e:
-            print(f"error: {e}", file=sys.stderr)
+        except (OSError, ValueError, KeyError, TypeError) as e:  # a log that is not ask_eval.py's
+            print(f"error: cannot rescore: {e!r}", file=sys.stderr)
             return 3
     else:
         summaries = run(args, items, names, scen, leaves)

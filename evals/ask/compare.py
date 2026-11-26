@@ -6,8 +6,8 @@ server errors and items missing from either run. For each pair of runs and each 
 n, both scores, the discordant counts (b: only the first run right, c: only the second), the
 difference in accuracy with a Bonett-Price 95% CI, the exact McNemar p and, over all pairs of a
 kind, the Holm-adjusted p. Below 15 paired items no p-value is given. With --flips, for repeat
-runs of one model, it prints per kind how many items did not get the same result in every run.
-Stdlib only.
+runs of one model, it prints per kind how many items were not scored the same (right or wrong)
+in every run. Stdlib only.
 """
 
 import argparse
@@ -18,9 +18,7 @@ import math
 import sys
 from pathlib import Path
 
-# the same values as in ask_eval.py (a test checks), kept here so the script runs on its own
-Z95 = 1.959963984540054
-SMALL_N = 15
+from ask_eval import SMALL_N, Z95
 
 EPILOG = """\
 examples:

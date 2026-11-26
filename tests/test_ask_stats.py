@@ -14,10 +14,6 @@ from ask_eval import report, wilson
 TOL = 5e-4
 
 
-def test_shared_constants():
-    assert (compare.Z95, compare.SMALL_N) == (ask_eval.Z95, ask_eval.SMALL_N)
-
-
 @pytest.mark.parametrize(
     ("correct", "n", "lo", "hi"),
     [
@@ -193,12 +189,18 @@ def test_report_flags_small_n():
 
 
 def test_compare_flips(tmp_path, capsys):
-    (tmp_path / "r2").mkdir()
-    a = write(tmp_path / "m.jsonl", [{"kind": "view", "question": f"v{j}", "ok": j != 0} for j in range(4)])
-    b = write(tmp_path / "r2" / "m.jsonl", [{"kind": "view", "question": f"v{j}", "ok": j != 1} for j in range(4)])
-    # v0 and v1 changed between the runs; repeat runs may share a file name
-    assert compare.main(["--flips", str(a), str(b)]) == 0
-    assert capsys.readouterr().out == "view       n 4  flipped 2  rate 0.500\n"
+    def run(name, view_ok, none_ok):
+        (tmp_path / name).mkdir()
+        recs = [{"kind": "view", "question": f"v{j}", "ok": ok} for j, ok in enumerate(view_ok)]
+        recs += [{"kind": "none", "question": f"n{j}", "ok": ok} for j, ok in enumerate(none_ok)]
+        return str(write(tmp_path / name / "m.jsonl", recs))  # repeat runs share a file name
+
+    # v0 flips only in the third run; v3 is missing from r3, so it is not counted; n1 flips
+    r1 = run("r1", [True, True, False, True], [True, False])
+    r2 = run("r2", [True, True, False, False], [True, True])
+    r3 = run("r3", [False, True, False], [True, False])
+    assert compare.main(["--flips", r1, r2, r3]) == 0
+    assert capsys.readouterr().out == "none       n 2  flipped 1  rate 0.500\nview       n 3  flipped 1  rate 0.333\n"
 
 
 # a catalogue small enough to read: section i covers leaf i, product 2 and region 3 are aliases
@@ -239,6 +241,35 @@ def score(raw, accept=()):
     return ask_eval.score("paraphrase", "steel", raw, NAMES, SCEN, LEAVES, rec, accept), rec
 
 
+TWO = {  # a scenario with two levers, glass listed before steel, both into all industries in Europe
+    "label": "two",
+    "model_details": [SCEN["steel"]["model_details"][0] | {"product": [p]} for p in (3, 1)],
+}
+
+
+def lever(product):
+    return json.loads(answer(product=product))["levers"][0]
+
+
+@pytest.mark.parametrize(
+    ("kind", "gold", "got", "ok"),
+    [
+        ("paraphrase", "two", {"action": "whatif", "levers": [lever("Glass"), lever("Steel")]}, True),
+        ("paraphrase", "two", {"action": "whatif", "levers": [lever("Steel")]}, False),
+        ("paraphrase", "two", {"action": "whatif", "levers": [lever("Steel"), lever("Steel")]}, False),
+        ("paraphrase", "two", {"action": "view", "levers": [lever("Steel"), lever("Glass")]}, False),
+        ("paraphrase", "two", {"action": "none", "levers": []}, False),
+        ("none", None, {"action": "view", "indicator": "ghg", "region": None}, False),
+        ("none", None, {"action": "none"}, True),
+        ("view", ("ghg", None), {"action": "whatif", "indicator": "ghg", "region": None}, False),
+    ],
+)
+def test_score_checks_action_and_every_lever(kind, gold, got, ok):
+    rec = {}
+    assert ask_eval.score(kind, gold, json.dumps(got), NAMES, SCEN | {"two": TWO}, LEAVES, rec, []) is ok
+    assert "error" not in rec  # a well-formed wrong answer is a miss, not a parse error
+
+
 def test_score_by_leaves_and_accept_list():
     assert score(answer(product="Steel (alias)", consumed_region="Europe (alias)"))[0]
     ok, rec = score(answer(consumed_by=["S: 5"]))
@@ -272,11 +303,13 @@ def items_file(tmp_path, **extra):
 
 
 def test_load_items_rejects_bad_gold(tmp_path):
-    items = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN, LEAVES)
-    assert [(k, a) for k, _, _, a in items] == [("label", []), ("paraphrase", [])]
+    fewshot = {sid: SCEN["steel"] | {"label": sid} for sid in ask_eval.FEWSHOT}
+    items = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN | fewshot, LEAVES)
+    assert [(k, a) for k, _, _, a in items] == [("label", []), ("paraphrase", [])]  # no few-shot label
     bad_lever = json.loads(answer(product="Steel typo"))["levers"][0]
     for extra, error, message in [
         ({"paraphrase": [{"question": "q", "scenario": "nope"}]}, ValueError, "not a scored scenario"),
+        ({"paraphrase": [{"question": "q", "scenario": ask_eval.FEWSHOT[0]}]}, ValueError, "not a scored scenario"),
         ({"paraphrase": [{"question": "q", "scenario": "steel", "accept": [[bad_lever]]}]}, KeyError, "Steel typo"),
         ({"view": [{"question": "q", "indicator": None, "region": "Mars"}]}, ValueError, "schema allows"),
         ({"view": [{"question": "q", "indicator": None, "region": "Europe"}]}, ValueError, "schema allows"),
@@ -289,7 +322,7 @@ def test_load_items_rejects_bad_gold(tmp_path):
         ({"none": [{"question": "q"}, {"question": "q"}]}, ValueError, "repeated item"),
     ]:
         with pytest.raises(error, match=message):
-            ask_eval.load_items(items_file(tmp_path, **extra), NAMES, SCEN, LEAVES)
+            ask_eval.load_items(items_file(tmp_path, **extra), NAMES, SCEN | fewshot, LEAVES)
 
 
 def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, capsys):
@@ -303,18 +336,26 @@ def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, 
             {
                 "kind": "paraphrase",
                 "question": "Europe cuts steel by a tenth",
+                "gold": "old",
                 "ok": False,
                 "raw": answer(product="Steel (alias)"),
                 "secs": 1.0,
+                "fields": {"product": [False]},
+                "error": "stale",
             },
             {"kind": "label", "question": SCEN["steel"]["label"], "ok": True, "raw": answer(product="Glass")},
         ],
     )
+    (out / "m.summary.json").write_text(json.dumps({"model": "org/m", "stopped_early": True}))
     args = ["manifest", "results", str(out), "--items", str(items_file(tmp_path)), "--rescore"]
     assert ask_eval.main(args) == 1  # 0 of 1 label questions is below the gate
     recs = [json.loads(line) for line in (out / "m.jsonl").read_text().splitlines()]
     assert [r["ok"] for r in recs] == [True, False]
+    assert recs[0]["gold"] == "steel"
+    assert "fields" not in recs[0]
+    assert "error" not in recs[0]
     summary = json.loads((out / "m.summary.json").read_text())
+    assert (summary["model"], summary["stopped_early"]) == ("org/m", True)
     assert [summary["paraphrase"][k] for k in ("correct", "n", "median_s")] == [1, 1, 1.0]
     assert summary["label"]["fields_wrong"] == {
         "product": 1,
@@ -323,13 +364,74 @@ def test_rescore_replaces_a_stale_ok_and_gates_on_labels(tmp_path, monkeypatch, 
         "consumed_region": 0,
         "change": 0,
     }
-    # a log from another --items (the held-out run) is refused and left as it was
+    # a log from another --items (the held-out run) is refused, and no log in OUT is rewritten
     with (out / "m.jsonl").open("a") as log:
         log.write(json.dumps({"kind": "none", "question": "held out", "ok": True, "raw": "{}"}) + "\n")
-    before = (out / "m.jsonl").read_bytes()
+    write(out / "a.jsonl", [{"kind": "label", "question": SCEN["steel"]["label"], "ok": True, "raw": "{}"}])
+    before = {p: p.read_bytes() for p in out.iterdir()}
     assert ask_eval.main(args) == 3
-    assert (out / "m.jsonl").read_bytes() == before
+    assert {p: p.read_bytes() for p in out.iterdir()} == before
     assert "1 items not in the gold set" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("bad", ["[1]", '{"kind": "label"}', "not json"])
+def test_rescore_refuses_a_log_it_cannot_read(tmp_path, monkeypatch, bad):
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    (tmp_path / "out").mkdir()
+    (tmp_path / "out" / "m.jsonl").write_text(bad + "\n\n")
+    assert ask_eval.main(["m", "r", str(tmp_path / "out"), "--items", str(items_file(tmp_path)), "--rescore"]) == 3
+
+
+@pytest.mark.parametrize(
+    ("label_ok", "transport", "code"), [(True, False, 0), (False, False, 1), (True, True, 3), (False, True, 3)]
+)
+def test_exit_codes_at_the_gate(tmp_path, monkeypatch, label_ok, transport, code):
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    monkeypatch.setattr(ask_eval, "LABEL_GATE", 1)  # the one label question must be right
+    out = tmp_path / "out"
+    out.mkdir()
+    recs = [{"kind": "label", "question": SCEN["steel"]["label"], "raw": answer() if label_ok else "{}"}]
+    recs += [{"kind": "none", "question": "q", "transport": True, "ok": False}] * transport
+    items = items_file(tmp_path, none=[{"question": "q"}])
+    write(out / "m.jsonl", recs)
+    assert ask_eval.main(["m", "r", str(out), "--items", str(items), "--rescore"]) == code
+
+
+def serve(monkeypatch, answers):
+    """Stand in for the server: each call takes the next answer, or raises it when it is an exception."""
+    monkeypatch.setattr(ask_eval, "load", lambda *_: (NAMES, SCEN, LEAVES))
+    monkeypatch.setattr(ask_eval, "system_prompt", lambda *_: "")
+    monkeypatch.setenv("NODE_SERVE_URL", "http://127.0.0.1:1/v1")
+    monkeypatch.setenv("NODE_SERVE_NAME", "org/m")
+    it = iter(answers)
+
+    def ask(*_):
+        a = next(it)
+        if isinstance(a, Exception):
+            raise a
+        return a, 0.5, {}, "stop"
+
+    monkeypatch.setattr(ask_eval, "ask", ask)
+
+
+def test_run_stops_after_three_server_errors_and_counts_them_apart(tmp_path, monkeypatch):
+    items = items_file(tmp_path, none=[{"question": f"q{i}"} for i in range(5)])
+    serve(monkeypatch, [answer(), answer(), *[OSError("refused")] * 3, '{"action": "none"}'])
+    assert ask_eval.main(["m", "r", str(tmp_path / "out"), "--items", str(items)]) == 3
+    summary = json.loads((tmp_path / "out" / "m.summary.json").read_text())
+    assert (summary["server_errors"], summary["stopped_early"]) == (3, True)
+    assert (summary["label"]["n"], summary["paraphrase"]["n"]) == (1, 1)
+    assert "none" not in summary  # the three server errors are not wrong answers
+    assert len((tmp_path / "out" / "m.jsonl").read_text().splitlines()) == 5
+
+
+def test_run_keeps_the_answers_before_a_crash(tmp_path, monkeypatch):
+    serve(monkeypatch, [answer(), RuntimeError("bug")])
+    with pytest.raises(RuntimeError):
+        ask_eval.main(["m", "r", str(tmp_path / "out"), "--items", str(items_file(tmp_path))])
+    log = (tmp_path / "out" / "m.jsonl").read_text().splitlines()
+    assert [json.loads(r)["ok"] for r in log] == [True]
+    assert json.loads((tmp_path / "out" / "m.summary.json").read_text())["label"]["correct"] == 1
 
 
 def test_rescore_of_an_empty_folder_fails(tmp_path, monkeypatch, capsys):
@@ -359,12 +461,14 @@ def test_eval_needs_a_server_url_and_name(tmp_path, monkeypatch, env):
 
 
 REPO_ITEMS = ask_eval.ITEMS
-MANIFEST = Path("data/browser-engine/manifest-v3.json")
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST = ROOT / "data/browser-engine/manifest-v3.json"
+RESULTS = ROOT / "data/results.json"
 
 
 @pytest.mark.skipif(not MANIFEST.exists(), reason="needs the browser store")
 def test_repo_items_load_against_the_catalogue():
-    names, scen, leaves = ask_eval.load(MANIFEST, "data/results.json")
+    names, scen, leaves = ask_eval.load(MANIFEST, RESULTS)
     items = ask_eval.load_items(REPO_ITEMS, names, scen, leaves)
     paraphrased = [g for k, _, g, _ in items if k == "paraphrase"]
     assert len(paraphrased) == len(set(paraphrased))  # one scenario each, so a split by scenario holds
@@ -372,7 +476,7 @@ def test_repo_items_load_against_the_catalogue():
 
 def test_paraphrases_do_not_copy_a_label():
     # token Jaccard above 0.5 against any label (few-shot examples included) tests copying, not reading
-    labels = [s["label"] for s in json.loads(Path("data/results.json").read_text())["scenarios"]]
+    labels = [s["label"] for s in json.loads(RESULTS.read_text())["scenarios"]]
 
     def toks(s):
         return set(re.findall(r"[a-z0-9]+", s.lower()))
