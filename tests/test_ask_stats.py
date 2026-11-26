@@ -34,6 +34,7 @@ def test_wilson(correct, n, lo, hi):
     [
         (3, 0, 0.25),  # 2 * (1/2)^3
         (1, 9, 0.021484375),  # 2 * (1 + 10) / 2^10
+        (0, 10, 0.001953125),  # 2 / 2^10, unclipped
         (4, 4, 1.0),
         (0, 0, 1.0),
     ],
@@ -46,12 +47,16 @@ def test_bonett_price_hand_worked():
     # b 3, c 0, n 8: p12 = 4/10, p21 = 1/10, d = 0.3, var = (0.5 - 0.09) / 10 = 0.041,
     # half = 1.96 * sqrt(0.041) = 0.3969
     assert compare.bonett_price(3, 0, 8) == pytest.approx((-0.0969, 0.6969), abs=TOL)
+    assert compare.bonett_price(0, 3, 8) == pytest.approx((-0.6969, 0.0969), abs=TOL)
 
 
 def test_bonett_price_is_clipped():
     lo, hi = compare.bonett_price(20, 0, 20)
     assert hi == 1.0
     assert lo > 0
+    lo, hi = compare.bonett_price(0, 20, 20)
+    assert lo == -1.0
+    assert hi < 0
 
 
 def test_holm():
@@ -110,6 +115,25 @@ def test_compare_holm_over_three_runs(tmp_path):
     assert by["x", "z"]["p_holm"] == 1.0
 
 
+def test_compare_holm_within_kind():
+    def run(ok):
+        return {**{("view", f"v{i}"): i < ok for i in range(20)}, **{("none", f"n{i}"): i < ok for i in range(3)}}
+
+    rows = compare.compare({"x": run(20), "y": run(10)})
+    by = {r["kind"]: r for r in rows}
+    # one tested pair in view, so Holm leaves its p alone; none is below 15 items and gets no p
+    assert by["view"]["p_holm"] == by["view"]["p"]
+    assert by["none"]["p"] is None
+    assert "p_holm" not in by["none"]
+
+
+def test_fmt_keeps_the_sign_of_a_small_bound():
+    ok = {("label", f"l{i}"): True for i in range(153)}
+    worse = {**ok, **{("label", f"l{i}"): False for i in range(5)}}
+    (row,) = compare.compare({"x": ok, "y": worse})
+    assert "95% CI -0.001 to +0.065" in compare.fmt(row)
+
+
 def test_compare_usage_errors(tmp_path, capsys):
     with pytest.raises(SystemExit) as e:
         compare.main([str(tmp_path / "a.jsonl")])
@@ -117,6 +141,37 @@ def test_compare_usage_errors(tmp_path, capsys):
     assert "at least two" in capsys.readouterr().err
     assert compare.main([str(tmp_path / "a.jsonl"), str(tmp_path / "b.jsonl")]) == 3
     assert capsys.readouterr().err.startswith("error: cannot read")
+    with pytest.raises(SystemExit) as e:
+        compare.main([str(tmp_path / "a.jsonl"), str(tmp_path / "sub" / "a.jsonl")])
+    assert e.value.code == 2
+    assert "file name 'a'" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("lines", "message"),
+    [
+        (["[1]"], "line 1 is not a JSON object"),
+        (
+            [json.dumps({"kind": "none", "question": "q", "ok": True})] * 2,
+            "line 2 repeats item ('none', 'q')",
+        ),
+    ],
+)
+def test_compare_rejects_bad_lines(tmp_path, capsys, lines, message):
+    a = tmp_path / "a.jsonl"
+    a.write_text("\n".join(lines) + "\n")
+    b = write(tmp_path / "b.jsonl", [{"kind": "none", "question": "q", "ok": True}])
+    assert compare.main([str(a), str(b)]) == 3
+    assert message in capsys.readouterr().err
+
+
+def test_compare_runs_with_no_shared_items(tmp_path, capsys):
+    a = write(tmp_path / "a.jsonl", [{"kind": "none", "question": "q1", "ok": True}])
+    b = write(tmp_path / "b.jsonl", [{"kind": "none", "question": "q2", "ok": True}])
+    assert compare.main([str(a), str(b)]) == 3
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert "share no scored items" in err
 
 
 def test_report_flags_small_n():
@@ -130,6 +185,6 @@ def test_report_flags_small_n():
     }
     head, label, para = report(summary).splitlines()
     assert "server_errors 2" in head
-    assert "151/153" in label
+    assert "151/153  95% CI 0.954-0.996" in label
     assert "n < 15" not in label
-    assert "0.41-0.93  n < 15" in para
+    assert "0.409-0.929  n < 15" in para

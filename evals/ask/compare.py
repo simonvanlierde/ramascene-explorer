@@ -24,7 +24,8 @@ EPILOG = """\
 example:
   compare.py out/qwen3.8-27b.jsonl out/gemma-4-26b-a4b.jsonl out/qwen3.5-9b.jsonl
 
-exit codes: 0 report printed; 2 usage error; 3 a file could not be read or parsed"""
+exit codes: 0 report printed; 2 usage error; 3 a file could not be read or parsed, or the
+runs share no items"""
 
 
 def mcnemar(b, c):
@@ -59,13 +60,18 @@ def holm(ps):
 
 
 def load_run(path):
-    """(kind, question) -> scored ok, skipping server errors."""
+    """(kind, question) -> scored ok, skipping server errors; ValueError on a bad or repeated item."""
     run = {}
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for i, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
         if line.strip():
             rec = json.loads(line)
+            if not isinstance(rec, dict):
+                raise ValueError(f"line {i} is not a JSON object")
+            key = rec["kind"], rec["question"]
+            if key in run:
+                raise ValueError(f"line {i} repeats item {key!r}")
             if not rec.get("transport"):
-                run[rec["kind"], rec["question"]] = bool(rec["ok"])
+                run[key] = bool(rec["ok"])
     return run
 
 
@@ -106,7 +112,7 @@ def fmt(row):
     p = f"p -  (n < {SMALL_N})" if row["p"] is None else f"p {row['p']:.3g}  Holm {row['p_holm']:.3g}"
     return (
         f"{row['kind']:<11}{row['a']} vs {row['b_run']}  n {row['n']}  {row['a_correct']} vs {row['b_correct']}"
-        f"  b {row['b']} c {row['c']}  diff {row['diff']:+.2f} (95% CI {lo:+.2f} to {hi:+.2f})  {p}"
+        f"  b {row['b']} c {row['c']}  diff {row['diff']:+.2f} (95% CI {lo:+.3f} to {hi:+.3f})  {p}"
     )
 
 
@@ -125,7 +131,8 @@ def main(argv=None):
         parser.error("give at least two RUN.jsonl files")
     names = [p.name.removesuffix(".jsonl") for p in args.runs]
     if len(set(names)) < len(names):
-        parser.error("two runs share a file name; the name labels the run in the report")
+        dup = next(n for n in names if names.count(n) > 1)
+        parser.error(f"two runs share the file name {dup!r}; the name labels the run in the report")
     runs = {}
     for name, path in zip(names, args.runs, strict=True):
         try:
@@ -137,7 +144,10 @@ def main(argv=None):
     for name, run in runs.items():
         if missing := len(every - run.keys()):
             print(f"note: {missing} items not scored in {name}; left out of its pairs", file=sys.stderr)
-    for row in compare(runs):
+    if not (rows := compare(runs)):
+        print("error: the runs share no scored items", file=sys.stderr)
+        return 3
+    for row in rows:
         print(fmt(row))
     return 0
 

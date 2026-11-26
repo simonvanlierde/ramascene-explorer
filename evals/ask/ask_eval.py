@@ -76,7 +76,7 @@ def report(summary):
         if isinstance(v, dict):
             lo, hi = v["ci95"]
             flag = f"  n < {SMALL_N}" if v["n"] < SMALL_N else ""
-            lines.append(f"  {kind:<11}{v['correct']:>4}/{v['n']:<4} 95% CI {lo:.2f}-{hi:.2f}{flag}")
+            lines.append(f"  {kind:<11}{v['correct']:>4}/{v['n']:<4} 95% CI {lo:.3f}-{hi:.3f}{flag}")
     return "\n".join(lines)
 
 
