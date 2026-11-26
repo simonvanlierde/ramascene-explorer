@@ -8,6 +8,12 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `pipeline/numpy_engine.py` runs browser scenarios from Python with numpy and scipy, on the same
+  store and with the same maths as the page. It matches the page's engine to 1.6e-15 and RaMa-Scene's
+  published results to 5.5e-9 on all 155 scenarios (the float32 storage floor). See
+  [browser-engine.md](docs/browser-engine.md#use-the-engine-from-python).
+- The agreement table in `brightway-check/` gains a scenario table: the numpy engine and pymrio on the
+  155 published scenarios.
 - In a browser with WebMCP (Chrome's origin trial or flag), the page registers three tools for
   an agent in that browser: `find_names`, `show_view` and `run_whatif`, the Ask panel's contract
   without a model server. With `?api=` it registers none. See

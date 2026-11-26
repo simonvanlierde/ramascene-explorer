@@ -27,11 +27,12 @@ py:
     uv run pytest --cov=precompute --cov=compare_data
     uv run python brightway-check/table.py --check
 
-# ci.yml's page job: lint and format, the page logic over the coverage floor, the browser store against Brightway.
+# ci.yml's page job: lint and format, the page logic over the coverage floor, the browser store against Brightway and the numpy engine.
 page:
     pnpm exec biome ci .
     pnpm test
     [ -z "$BROWSER_ENGINE_DATA" ] || node brightway-check/browser_check.js "$BROWSER_ENGINE_DATA"
+    [ -z "$BROWSER_ENGINE_DATA" ] || uv run pytest tests/test_numpy_engine.py
 
 # ci.yml's engine job: the Rust kernel, linted for wasm32 too, where its JavaScript exports compile. Needs cargo-nextest and cargo-deny.
 [working-directory('engine')]

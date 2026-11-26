@@ -182,6 +182,31 @@ The first command checks all 155 scenarios against `data/results.json` at relati
 relative 1e-6. The browser test checks the worker, map, source label, retry and
 absence of external requests.
 
+## Use the engine from Python
+
+`pipeline/numpy_engine.py` runs the same calculation on the local store with numpy and scipy, so
+there is no Rust or WebAssembly to build. Run it from the repository root:
+
+```sh
+uv run python - <<'EOF'
+import sys
+sys.path.insert(0, "pipeline")
+import numpy_engine as ne
+
+store = ne.open_store("data/browser-engine")
+flows = ne.scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
+                                   "consumedReg": [2], "techChange": [-20]}])
+print(flows.shape)  # (2205, 49): indicator x producer x section, by consumer
+EOF
+```
+
+The steps and the flows are the page's. `tests/test_numpy_engine.py` runs the 155 scenarios against
+`data/results.json` when `BROWSER_ENGINE_DATA` is set (relative 1e-8 gate, 5.5e-9 measured, the same
+float32 storage floor as the page's test). The page's budgets on download, memory and work are not applied.
+Measured on 26 November 2026, the Python decode of the gzip chunks took 0.9 times the WebAssembly decode
+time on the three large workloads, and the correction and fold match the WebAssembly engine to
+1.6e-15 elementwise on all 156 runs, so the maths is the same and a Rust wheel gains no speed here.
+
 ## What to precompute
 
 The page uses a hybrid approach. The published scenarios and their map flows
