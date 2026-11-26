@@ -385,25 +385,23 @@ def test_store_refuses_an_unsupported_manifest(tmp_path, over):
     not STORE and not os.environ.get("CI"),
     reason="set BROWSER_ENGINE_DATA to the browser store (docs/browser-engine.md)",
 )
-def test_published_scenarios_match_ramascene():
+def test_published_scenarios_match_ramascene(monkeypatch):
     assert STORE, "BROWSER_ENGINE_DATA is not set; fetch the browser store, see docs/browser-engine.md"
     assert (Path(STORE) / "manifest-v3.json").exists(), f"no manifest-v3.json in {STORE}"
+    # brightway-check/scenario_check.py scores the scenarios as its numpy route does
+    monkeypatch.syspath_prepend(ROOT / "brightway-check")
+    import scenario_check  # ty: ignore[import-not-found]
+
     store = ne.open_store(STORE)
-    meta = store.meta
     reference = json.loads((ROOT / "data/results.json").read_text())
-    scenarios = [s for s in reference["scenarios"] if s["id"] != "baseline"]
-    assert len(scenarios) == 155
-    baseline = {"id": "baseline", "model_details": [{**scenarios[0]["model_details"][0], "techChange": [0]}]}
-    regions = [r for r in meta["catalog"]["regions"] if 2 <= r["id"] <= 6]
+    runs = scenario_check.scenarios(reference)
+    assert len(runs) == 156
+    regions = [r for r in store.meta["catalog"]["regions"] if 2 <= r["id"] <= 6]
     worst = 0.0
-    for scenario in [baseline, *scenarios]:
-        flows = ne.scenario_flows(store, scenario["model_details"])
-        cube = flows.reshape(len(meta["indicators"]), meta["countries"], len(meta["sections"]), meta["countries"])
-        for i, indicator in enumerate(meta["indicators"]):
-            for region in regions:
-                got = cube[i, region["leaves"]].sum()
-                want = reference["results"][scenario["id"]][str(indicator)][region["name"]]
-                worst = max(worst, abs(got - want) / max(abs(want), 1e-12))
+    for s in runs:
+        for (indicator, region), got in scenario_check.numpy_totals(store, s["model_details"], regions).items():
+            want = reference["results"][s["id"]][str(indicator)][region]
+            worst = max(worst, abs(got - want) / max(abs(want), 1e-12))
     print(f"worst relative difference: {worst:.2e}")
     # NOTE: the page's own test measures 5.5e-9 against the same results (float32 store); 1e-8 catches a regression
     assert worst <= 1e-8
