@@ -274,8 +274,7 @@ def items_file(tmp_path, **extra):
 def test_load_items_rejects_bad_gold(tmp_path):
     items = ask_eval.load_items(items_file(tmp_path), NAMES, SCEN, LEAVES)
     assert [(k, a) for k, _, _, a in items] == [("label", []), ("paraphrase", [])]
-    bad_lever = {"product": "Steel typo", "origin_region": "Total", "consumed_by": ["All industries"]}
-    bad_lever |= {"consumed_region": "Europe", "change_percent": -10}
+    bad_lever = json.loads(answer(product="Steel typo"))["levers"][0]
     for extra, error, message in [
         ({"paraphrase": [{"question": "q", "scenario": "nope"}]}, ValueError, "not a scored scenario"),
         ({"paraphrase": [{"question": "q", "scenario": "steel", "accept": [[bad_lever]]}]}, KeyError, "Steel typo"),
