@@ -405,8 +405,16 @@ def test_store_reads_the_fixture(tmp_path, residual):
         {"baseline_flows": [0.0] * 49 * 48},
         {"baseline_flows": [float("inf")] + [0.0] * (49 * 49 - 1)},
     ],
-    ids=["version", "products", "countries", "residual too large", "residual NaN", "residual missing",
-         "baseline too short", "baseline not finite"],  # fmt: skip
+    ids=[
+        "version",
+        "products",
+        "countries",
+        "residual too large",
+        "residual NaN",
+        "residual missing",
+        "baseline too short",
+        "baseline not finite",
+    ],
 )
 def test_store_refuses_an_unsupported_manifest(tmp_path, over):
     with pytest.raises(ValueError, match="unsupported browser dataset"):
