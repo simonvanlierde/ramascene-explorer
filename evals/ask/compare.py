@@ -10,6 +10,7 @@ Stdlib only.
 """
 
 import argparse
+import io
 import itertools
 import json
 import math
@@ -117,7 +118,8 @@ def fmt(row):
 
 
 def main(argv=None):
-    sys.stdout.reconfigure(encoding="utf-8", newline="\n")  # ty: ignore[unresolved-attribute]
+    if isinstance(sys.stdout, io.TextIOWrapper):  # not under pytest capture
+        sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     parser = argparse.ArgumentParser(
         prog="compare.py",
         description=__doc__.split("\n\n")[0],
