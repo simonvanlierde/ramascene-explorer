@@ -23,6 +23,15 @@ const home = await get(url(""));
 assert.equal(home.status, 200);
 assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
+// the full policy is a header, as a <meta> one does not govern the dedicated workers
+const csp = home.headers.get("Content-Security-Policy") ?? "";
+for (const part of [
+	"script-src 'self' 'wasm-unsafe-eval'",
+	"worker-src 'self'",
+	`connect-src 'self' ${new URL(data).origin}`,
+])
+	assert.ok(csp.includes(part), `Content-Security-Policy lacks ${part}: ${csp}`);
+assert.ok(csp.includes("frame-ancestors 'none'"), csp);
 // hashed build files are cached for good, so a returning visitor asks for none of them again
 const script = (await home.text()).match(/assets\/[\w.-]+\.js/)?.[0];
 assert.ok(script, "the page names no built script");

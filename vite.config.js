@@ -38,6 +38,10 @@ const staticFiles = {
 	},
 };
 
+// The host sends the page's Content-Security-Policy from public/_headers; the preview sends the
+// same line, so the browser tests run under it (workers included).
+const csp = readFileSync("public/_headers", "utf8").match(/^\s+Content-Security-Policy: (.+)$/m)?.[1];
+
 // Platforms cache a preview by image URL, so the card URL carries the PNG's hash.
 const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
 const ogCardVersion = {
@@ -52,5 +56,5 @@ export default defineConfig({
 	plugins: [svelte(), staticFiles, ogCardVersion],
 	// source maps only for pnpm measure-coverage, so the published build stays as it is
 	build: { outDir: "dist", sourcemap: !!process.env.COVERAGE },
-	preview: { host: "127.0.0.1", port: 4180, strictPort: true },
+	preview: { host: "127.0.0.1", port: 4180, strictPort: true, headers: { "Content-Security-Policy": csp } },
 });
