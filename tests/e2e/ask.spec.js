@@ -233,6 +233,31 @@ test("a run the Custom form starts clears the last answer", async ({ page, isMob
 	await expect(page.locator("#ask-answer")).toHaveText("");
 });
 
+test("an answer that lands while a Custom form run computes is cleared too", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(120_000);
+	let release;
+	const held = new Promise((resolve) => {
+		release = resolve;
+	});
+	const none = { action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." };
+	await page.route(`${MODEL}/models`, (route) => route.fulfill({ json: { data: [{ id: "test-model" }] } }));
+	await page.route(`${MODEL}/chat/completions`, async (route) => {
+		await held;
+		await route.fulfill({ json: { choices: [{ message: { content: JSON.stringify(none) } }] } });
+	});
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What is the capital of France?");
+	await page.locator("#ask-go").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.locator("#live-run").click();
+	release();
+	await expect(page.locator("#ask-go")).not.toHaveAttribute("aria-disabled", "true", { timeout: 60_000 });
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+	await expect(page.locator("#ask-answer")).toHaveText("");
+});
+
 test("an off-topic answer only replies; an unknown action is an error", async ({ page, isMobile }) => {
 	needData();
 	const none = { action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." };

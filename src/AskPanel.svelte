@@ -2,7 +2,6 @@
 // Ask: a question to a model the reader runs (?ask=), answered as a view change or a custom
 // scenario. The model only picks catalogue names; the page's engine computes, through the
 // custom form's own worker. Everything the model sends is rendered as text, never markup.
-import { untrack } from "svelte";
 import { applyView, ask, askSchema, leverText, systemPrompt, toModelDetails } from "./lib/ask.js";
 import { ui } from "./view.svelte.js";
 
@@ -16,9 +15,11 @@ let error = $state("");
 let answer = $state.raw(null);
 // set while busy: Cancel aborts the model call through it
 let stop = null;
-// a run the Custom form starts itself replaces what the map shows, so the last answer no longer holds
+// a run the Custom form starts itself replaces what the map shows, so the last answer no longer
+// holds; busy is tracked too, for an answer that lands while such a run computes. Ask's own runs
+// end (running false) before busy does, so they keep theirs.
 $effect(() => {
-	if (panel.isRunning() && !untrack(() => busy)) answer = null;
+	if (panel.isRunning() && !busy) answer = null;
 });
 
 async function submit(event) {
