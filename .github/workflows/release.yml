@@ -3,16 +3,17 @@ name: release
 # Build provenance for what a release ships, so anyone can check a file came
 # from this repository's workflow. How to verify: docs/assurance-case.md, C4.
 #
-# - A published v* release: builds dist/ with cloudflare.yml's data checks, packs it as a
-#   tarball with a CycloneDX SBOM of its npm packages, attests both and uploads them,
-#   their SHA256SUMS and the Sigstore bundles to the release. It runs on the release being published, the same
-#   event Zenodo archives, so a tag pushed without a release attests nothing.
+# - A pushed v* tag: builds dist/ with cloudflare.yml's data checks, packs it as a
+#   tarball with a CycloneDX SBOM of its npm packages, attests both, uploads them, their
+#   SHA256SUMS and the Sigstore bundles to the tag's draft release, then publishes the
+#   draft, which makes Zenodo archive it. Immutable releases take no assets once
+#   published, so write the notes as a draft for the tag first (docs/publishing.md#release).
 # - Run by hand: attests embodied.parquet on the data-2011-r2 release, after
 #   checking it against data/embodied.sha256, and uploads the bundle there.
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch:
 
 permissions:
@@ -25,15 +26,14 @@ concurrency:
 jobs:
   build:
     name: build dist
-    # data-* releases hold precomputed data, not code.
-    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Read-only: pnpm install runs third-party code.
     permissions:
       contents: read
     env:
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -83,12 +83,12 @@ jobs:
           retention-days: 1
 
   upload:
-    name: attest and upload to the release
+    name: attest, upload and publish the release
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: write # add assets to the release
+      contents: write # add assets to the draft and publish it
       id-token: write # Sigstore signs the attestation with the run's OIDC identity
       attestations: write # store the attestation on the repository
       artifact-metadata: write # actions/attest records where the attested file is stored
@@ -108,7 +108,7 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: out/*.tar.gz
-          sbom-path: ${{ format('out/ramascene-explorer-{0}-dist.cdx.json', github.event.release.tag_name) }}
+          sbom-path: ${{ format('out/ramascene-explorer-{0}-dist.cdx.json', github.ref_name) }}
 
       # The .intoto.jsonl copy is the same bundle on one line: Scorecard counts a release as
       # carrying provenance only under that name.
@@ -116,17 +116,34 @@ jobs:
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
           SBOM_BUNDLE: ${{ steps.attest-sbom.outputs.bundle-path }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           cp "$BUNDLE" "out/ramascene-explorer-$TAG-dist.tar.gz.sigstore.json"
           jq -c . "$BUNDLE" > "out/ramascene-explorer-$TAG-dist.tar.gz.intoto.jsonl"
           cp "$SBOM_BUNDLE" "out/ramascene-explorer-$TAG-dist.cdx.json.sigstore.json"
 
-      - env:
+      # Re-run only this job after saving a missing draft: the build artifact is kept a day.
+      - name: upload to the draft and publish it
+        env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" out/* --repo "$GITHUB_REPOSITORY" --clobber
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Only "release not found" means there is none: another error (a rate limit, a 5xx) stops the job.
+          if ! state=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>&1); then
+            case $state in
+              *"release not found"*) echo "::error::$TAG has no draft release: save its notes as a draft for $TAG, then re-run this job"; exit 1 ;;
+              *) echo "$state" >&2; exit 1 ;;
+            esac
+          fi
+          if [ "$state" != true ]; then
+            echo "::error::$TAG is already published and takes no more assets: release a new version"
+            exit 1
+          fi
+          gh release upload "$TAG" out/* --clobber
+          gh release edit "$TAG" --draft=false
 
   data:
     name: attest embodied.parquet

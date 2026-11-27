@@ -52,7 +52,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Range: bytes=0-1' "https://ramascen
 ## Check a release file
 
 `release.yml` attests what a release ships: the `dist` tarball with its
-`SHA256SUMS` when a `v*` release is published, and `embodied.parquet` on
+`SHA256SUMS` when a `v*` tag is pushed, and `embodied.parquet` on
 `data-2011-r2` when run by hand from `main`. From v0.7.0 on, a release also carries
 `<tarball>.cdx.json`, a CycloneDX SBOM of the npm packages the page ships, attested
 against the tarball. To check a downloaded file:
@@ -64,6 +64,20 @@ gh attestation verify <file> --repo simonvanlierde/ramascene-explorer --signer-w
 For `embodied.parquet`, add `--source-ref refs/heads/main`. Add
 `--bundle <file>.sigstore.json` to check against the downloaded bundle instead
 of GitHub's attestation store.
+
+## Release
+
+Releases are immutable once published, so `release.yml` attaches the files to a draft and
+publishes it:
+
+1. Write the notes and save them as a draft release for the new tag, `vX.Y.Z`. Do not
+   publish it.
+2. Push the signed tag (below). `release.yml` builds and attests the files, uploads them to
+   the draft and publishes it, and Zenodo archives the published release.
+
+If the tag went out before the draft, save the draft and re-run the failed job. A published
+release cannot be fixed: release a new version. A `data-*` release is made by hand: upload
+its files to the draft before you publish it.
 
 ## Tags
 
