@@ -12,24 +12,17 @@ data from the [data host](publishing.md#data-host) by hash
 ([page.md](page.md#live-scenarios-optional)). How those files are built and
 checked is in [publishing.md](publishing.md).
 
-The Content-Security-Policy is the `<meta>` tag in `index.html`. It allows
-scripts, styles and fonts from the page's own origin only (plus inline styles).
-`connect-src` also allows any `https:` origin, because `?api=` can name any
-https job API and `?ask=` any https model server, and loopback over http. The page renders data as text, never
-through `innerHTML` or Svelte's `{@html}`, so a job API's text cannot add
-markup.
+The Content-Security-Policy is a header, set in `public/_headers`, so it also governs the
+dedicated workers (a `<meta>` policy does not). It allows scripts, workers, styles and fonts from the
+page's own origin only (plus inline styles), and `'wasm-unsafe-eval'` for scripts: the workers compile
+the WebAssembly kernel. `connect-src` allows any `https:` origin, the data host among them,
+because `?api=` can name any https job API and `?ask=` any https model server, and loopback over
+http. The page renders data as text, never through `innerHTML` or Svelte's `{@html}`, so a job API's
+text cannot add markup. `vite preview` sends the same header, so the browser tests run under it;
+`vite dev` sends none.
 
-`public/_headers` adds `Content-Security-Policy: frame-ancestors 'none'; object-src 'none';
-base-uri 'none'` and `X-Frame-Options: DENY`, so no other site can frame the page, and
-`Strict-Transport-Security` for one year. `frame-ancestors` works only as a
-header, so it sits there and not in the `<meta>` tag.
-
-The `<meta>` policy covers the page, not the custom-scenario worker: a worker
-takes its policy from its own response, and the host sends only those three directives. The worker
-compiles the WebAssembly kernel, so a Content-Security-Policy header served for
-the whole site (for example from a host's `_headers` file) needs
-`'wasm-unsafe-eval'` in `script-src` for `browser-worker`'s script. Leave it out
-of the page's own policy, which compiles no WebAssembly.
+`public/_headers` also sets `frame-ancestors 'none'`, `object-src 'none'` and `base-uri 'none'`,
+`X-Frame-Options: DENY`, and `Strict-Transport-Security` for one year, so no other site can frame the page.
 
 The custom-scenario worker reads only the page's own browser dataset.
 It sends no scenario to an external service. Matrix dimensions, finite values,
@@ -114,7 +107,6 @@ The [Cloudflare deployment](publishing.md#cloudflare) and its pull-request previ
 `Cross-Origin-Opener-Policy: same-origin` and
 `Cross-Origin-Embedder-Policy: require-corp`. The browser can then use shared memory;
 the [threaded kernel](browser-engine.md#browser-threads) uses it for broad dense calculations.
-The app keeps its existing meta CSP.
 
 The hosting Worker runs no code and has no bindings: it serves the built files only. The
 bucket is public, read-only, on its own hostname, with CORS for any origin: keep only

@@ -44,7 +44,7 @@ good one from a bad one, so it labels a live result with its origin.
   The browser archive must match `data/browser-engine-zarr.sha256`. Its store
   path includes a hash of every file, so deployment cannot silently mix exports.
 - **Small attack surface.** No server, cookies or login. The
-  Content-Security-Policy in `index.html` allows scripts and fonts from the
+  Content-Security-Policy header (`public/_headers`) allows scripts and fonts from the
   page's own origin only.
 - **Reviewed changes.** `main` takes changes only through pull requests with
   the required checks, and refuses force-pushes and deletion.

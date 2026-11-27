@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { chromium, expect, firefox, webkit } from "@playwright/test";
 
 const base = process.argv[2];
@@ -23,10 +24,19 @@ const home = await get(url(""));
 assert.equal(home.status, 200);
 assert.equal(home.headers.get("Cross-Origin-Opener-Policy"), "same-origin");
 assert.equal(home.headers.get("Cross-Origin-Embedder-Policy"), "require-corp");
+// the full policy is a header, as a <meta> one does not govern the dedicated workers, which
+// take the policy of their own script's response: check the page and a script against the file
+const csp = readFileSync(new URL("../public/_headers", import.meta.url), "utf8").match(
+	/^\s+Content-Security-Policy: (.+)$/m,
+)?.[1];
+assert.ok(csp, "public/_headers has no Content-Security-Policy line");
+assert.equal(home.headers.get("Content-Security-Policy"), csp);
 // hashed build files are cached for good, so a returning visitor asks for none of them again
 const script = (await home.text()).match(/assets\/[\w.-]+\.js/)?.[0];
 assert.ok(script, "the page names no built script");
-assert.match((await get(url(script))).headers.get("Cache-Control") ?? "", /\bimmutable\b/, script);
+const built = await get(url(script));
+assert.match(built.headers.get("Cache-Control") ?? "", /\bimmutable\b/, script);
+assert.equal(built.headers.get("Content-Security-Policy"), csp, script);
 // a workers.dev link without the prefix lands on the page; production's root is not this Worker's
 if (new URL(base).hostname.endsWith(".workers.dev")) {
 	const root = await get(new URL("/", base), { redirect: "manual" });
