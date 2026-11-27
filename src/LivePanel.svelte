@@ -117,7 +117,7 @@ export async function catalogue() {
 	while (p !== connecting);
 	return c;
 }
-// For the Ask panel: plans the scenario, then runs it as Run does. Resolves to {ok, text}.
+// For the Ask panel: plans the scenario, then runs it as Run does.
 // Resolves to {ok, text, cancelled}.
 export async function runScenario(scenario) {
 	if (running) return { ok: false, text: "A scenario is already running." };
@@ -131,6 +131,10 @@ export async function runScenario(scenario) {
 		return { ok: false, text };
 	}
 	return execute(scenario);
+}
+// For the Ask panel: true while a run, its own or the form's, is computing.
+export function isRunning() {
+	return running;
 }
 // For the Ask panel's Cancel: stops a run as Cancel here does.
 export function cancelRun() {

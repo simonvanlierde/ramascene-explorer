@@ -191,6 +191,30 @@ test("Cancel during an Ask run says Cancelled", async ({ page, isMobile }) => {
 	await expect(page.locator("#ask-error")).toHaveText("");
 	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "false");
 	await expect(page.locator("#ask-q")).toBeFocused();
+	// a fresh worker replaces the stopped one; its ready message leaves the answer alone
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.");
+});
+
+test("Ask's Cancel leaves a run the Custom form started", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(90_000);
+	await page.route(`${MODEL}/models`, (route) => route.fulfill({ json: { data: [{ id: "test-model" }] } }));
+	// the model never answers, and the form's run never finishes
+	await page.route(`${MODEL}/chat/completions`, () => {});
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
+	await page.locator("#ask-go").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.route("**/browser-engine/store-*/**", () => {});
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computing the scenario", { timeout: 60_000 });
+	await page.locator("#ask-cancel").click();
+	// Ask stops waiting; its "Cancelled." clears at once, as any answer does during a form run
+	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "false", { timeout: 60_000 });
+	await expect(page.locator("#live-state")).toContainText("Computing the scenario");
+	await expect(page.locator("#live-cancel")).toBeVisible();
 });
 
 test("Cancel stops waiting for the model", async ({ page, isMobile }) => {
@@ -205,6 +229,57 @@ test("Cancel stops waiting for the model", async ({ page, isMobile }) => {
 	await page.locator("#ask-cancel").click();
 	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.", { timeout: 60_000 });
 	await expect(page.locator("#ask-cancel")).toHaveCount(0);
+});
+
+test("the example question is a hint the input names, not a placeholder", async ({ page, isMobile }) => {
+	await openAsk(page, isMobile);
+	const input = page.locator("#ask-q");
+	await expect(page.locator("#ask-q-h")).toBeVisible();
+	await expect(input).toHaveAccessibleDescription("For example: What if European car makers used 20% less steel?");
+	await expect(input).not.toHaveAttribute("placeholder");
+});
+
+test("a run the Custom form starts clears the last answer", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(120_000);
+	await mockModel(page, [
+		{ action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." },
+	]);
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What is the capital of France?");
+	await page.locator("#ask-go").click();
+	await expect(page.locator("#ask-reply")).toHaveText("Model: That is not about the map.", { timeout: 60_000 });
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.locator("#live-run").click();
+	await expect(page.locator("#ask-answer")).toHaveText("");
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+	await expect(page.locator("#ask-answer")).toHaveText("");
+});
+
+test("an answer that lands while a Custom form run computes is cleared too", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(120_000);
+	let release;
+	const held = new Promise((resolve) => {
+		release = resolve;
+	});
+	const none = { action: "none", indicator: null, region: null, levers: [], reply: "That is not about the map." };
+	await page.route(`${MODEL}/models`, (route) => route.fulfill({ json: { data: [{ id: "test-model" }] } }));
+	await page.route(`${MODEL}/chat/completions`, async (route) => {
+		await held;
+		await route.fulfill({ json: { choices: [{ message: { content: JSON.stringify(none) } }] } });
+	});
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What is the capital of France?");
+	await page.locator("#ask-go").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.locator("#live-run").click();
+	release();
+	await expect(page.locator("#ask-go")).not.toHaveAttribute("aria-disabled", "true", { timeout: 60_000 });
+	await expect(page.locator("#live-state")).toContainText("Computed in this browser in", { timeout: 90_000 });
+	await expect(page.locator("#ask-answer")).toHaveText("");
 });
 
 test("an off-topic answer only replies; an unknown action is an error", async ({ page, isMobile }) => {

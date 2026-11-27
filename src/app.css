@@ -1828,7 +1828,8 @@ details.more summary {
 #live input:invalid {
   border-color: var(--danger);
 }
-#live .fh {
+#live .fh,
+#ask .fh {
   font-size: 12px;
   color: var(--mut);
   margin-top: 4px;

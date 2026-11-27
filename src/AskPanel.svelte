@@ -15,6 +15,14 @@ let error = $state("");
 let answer = $state.raw(null);
 // set while busy: Cancel aborts the model call through it
 let stop = null;
+// true while Ask's own scenario runs: Cancel stops only that run, never one the Custom form started
+let ownRun = false;
+// a run the Custom form starts itself replaces what the map shows, so the last answer no longer
+// holds; busy is tracked too, for an answer that lands while such a run computes. Ask's own runs
+// end (running false) before busy does, so they keep theirs.
+$effect(() => {
+	if (panel.isRunning() && !busy) answer = null;
+});
 
 async function submit(event) {
 	event.preventDefault();
@@ -33,7 +41,10 @@ async function submit(event) {
 			answer = { reply, levers: [], outcome: applyView(got, meta, ui) };
 		} else if (got.action === "whatif") {
 			const scenario = { label: "custom scenario", model_details: toModelDetails(got.levers, catalog) };
-			const { ok, text, cancelled } = await panel.runScenario(scenario);
+			ownRun = true;
+			const { ok, text, cancelled } = await panel.runScenario(scenario).finally(() => {
+				ownRun = false;
+			});
 			if (cancelled) answer = { reply: "", levers: [], outcome: "Cancelled." };
 			else if (!ok) throw new Error(text);
 			else answer = { reply, levers: got.levers.map(leverText), outcome: text };
@@ -51,7 +62,7 @@ async function submit(event) {
 
 function cancel() {
 	stop?.abort();
-	panel.cancelRun();
+	if (ownRun) panel.cancelRun();
 	document.getElementById("ask-q")?.focus();
 }
 </script>
@@ -62,7 +73,8 @@ function cancel() {
 	</div>
 	<form id="ask-form" onsubmit={submit} aria-busy={busy}>
 		<label for="ask-q">Question</label>
-		<input id="ask-q" type="text" bind:value={question} placeholder="What if European car makers used 20% less steel?" required />
+		<input id="ask-q" type="text" bind:value={question} required aria-describedby="ask-q-h" />
+		<small class="fh" id="ask-q-h">For example: What if European car makers used 20% less steel?</small>
 		<button type="submit" class="go" id="ask-go" aria-disabled={busy}>{busy ? "Asking…" : "Ask"}</button>
 		{#if busy}<button type="button" class="chipb" id="ask-cancel" onclick={cancel}>Cancel</button>{/if}
 	</form>
