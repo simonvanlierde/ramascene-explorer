@@ -355,13 +355,15 @@ test("Reset zoom shows once zoomed and returns to the whole map", async ({ page 
 	await expect(page.getByRole("button", { name: "Reset zoom" })).toHaveCount(0);
 });
 
-test("no flow label sits under the controls or the legend on the map", async ({ page }) => {
+test("no flow label sits under the controls, the legend or the selected country's ring on the map", async ({
+	page,
+}) => {
 	for (const url of ["", "?region=CN", "?region=BR&map=globe&zoom=2", "?region=CN&zoom=2.5,105,32"]) {
 		await page.goto(url);
 		await ready(page);
 		await mapAtRest(page);
 		const clash = await page.evaluate(() => {
-			const boxes = [...document.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote")]
+			const boxes = [...document.querySelectorAll(".mtl, .mtr, .mzm, .lg, .mnote, .ring")]
 				.map((e) => e.getBoundingClientRect())
 				.filter((b) => b.width);
 			const over = (a, b) => !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
@@ -517,6 +519,15 @@ test("refused data and api links keep their pills whole, and the header stays on
 		}));
 		expect(r, `${width} px`).toEqual({ cut: [], over: false });
 	}
+});
+
+test("the selected country's Sankey label keeps a space before its amount", async ({ page }) => {
+	await page.goto("?panel=sankey");
+	const me = page.locator(".sk text.me");
+	await expect(me).toHaveCount(1);
+	// on a phone the amount is its own line, a tspan
+	if (await me.locator("tspan").count()) return;
+	await expect(me).toHaveText(/^Germany \d/);
 });
 
 test("the table and the Sankey give every value in the caption's unit", async ({ page }) => {
@@ -717,6 +728,15 @@ test("a results file the host fails to send asks for a reload, not for a precomp
 	await page.goto("");
 	await expect(page.getByRole("alert").filter({ hasText: "The scenario results could not be loaded" })).toBeVisible();
 	await expect(page.getByText("No precomputed data here yet")).toHaveCount(0);
+});
+
+test("a checkout without results gets a no-data card that leads with the test data", async ({ page }) => {
+	await page.route("**/data/results.json", (route) => route.fulfill({ status: 404, body: "" }));
+	await page.goto("");
+	const card = page.getByRole("region", { name: "No precomputed data here yet" });
+	await expect(card.getByRole("heading", { level: 2 })).toHaveText("No precomputed data here yet");
+	await expect(card.locator("p").first().getByRole("link")).toHaveAttribute("href", "?data=tests/fixture.json");
+	await expectNoAxeViolations(page);
 });
 
 test("map outlines that fail to load say so, and Try again draws the map", async ({ page }) => {
@@ -1237,7 +1257,7 @@ test("Flows says in plain words what the numbers are, and points to What if… o
 	await expectNoAxeViolations(page);
 });
 
-test("a change reads the same on the strip, the sentence and the map: tiny ones as −<0.01%, the largest cell heaviest", async ({
+test("a change reads the same on the strip, the sentence and the map: tiny ones as −<0.01% or in words, the largest cell heaviest", async ({
 	page,
 }) => {
 	for (const q of ["", "&region=world"]) {
@@ -1249,7 +1269,7 @@ test("a change reads the same on the strip, the sentence and the map: tiny ones 
 			.locator(".kpis.k5 .kpi")
 			.evaluateAll((els) => els.map((e) => [e.classList.contains("lead"), e.querySelector(".ks").textContent]));
 		const size = rel.map(([, t]) => {
-			const m = t.match(/(<)?([\d.,]+)%/);
+			const m = t.match(/(<|less than )?([\d.,]+)%/);
 			return m ? (m[1] ? 0.005 : Number(m[2].replace(",", ""))) : 0;
 		});
 		expect(size[rel.findIndex(([lead]) => lead)]).toBe(Math.max(...size));
@@ -1258,6 +1278,9 @@ test("a change reads the same on the strip, the sentence and the map: tiny ones 
 		await expect(page.locator(".lbls text.b.lead")).toHaveCount(labels ? 1 : 0);
 		const text = (await page.locator(".wstrip, .hl").allTextContents()).join(" ");
 		expect(text).not.toMatch(/<0\.01% (decrease|increase)/);
+		// the strip says the change in words, not as a signed figure
+		for (const t of rel.map(([, t]) => t))
+			expect(t).toMatch(/(lower|higher) than in 2011|no change from 2011|no 2011 flow/);
 		const weights = await page
 			.locator(".kpis.k5 .kpi .kv")
 			.evaluateAll((els) =>

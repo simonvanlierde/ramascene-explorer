@@ -347,10 +347,13 @@ $effect(() => {
 	{:else if flowsError || empty}
 		<main class="main solo" id="empty">
 			{#if empty}
-				<p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
-				<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
+				<section class="nodata" aria-labelledby="nodata-heading">
+					<h2 id="nodata-heading">No precomputed data here yet</h2>
+					<p>To check the page itself, <a href="?data=tests/fixture.json">open it with the synthetic test data</a>. A banner marks it as test data.</p>
+					<p>The real results are in <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>. Only a run of the engine on the EXIOBASE dataset makes them:</p>
+					<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
-				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+				</section>
 			{:else if flowsError === "results"}
 				<p role="alert"><strong>The scenario results could not be loaded.</strong> The connection may have dropped while reading <code>{dataPath}</code>. Reload the page to try again.</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}

@@ -46,7 +46,8 @@ Amounts use at most three significant figures, without padded zeros, and two bel
 0.1. Values below 0.0001 use scientific notation to keep labels short. Percentage
 changes use at most three significant figures and two decimal places; nonzero
 changes below 0.01% read "−<0.01%" or "+<0.01%" rather than rounding to a signed
-zero. The strip, the sentence and the map labels use these same rules, and the
+zero. Under a strip cell the same figure reads in words, "less than 0.01% lower than
+in 2011". The strip, the sentence and the map labels use these same rules, and the
 heaviest strip cell and map label are the ones with the largest change: the largest
 amount in Flows, and in What if… the largest change relative to 2011, the only figure the
 map labels carry. When every cell is zero none is heavier.

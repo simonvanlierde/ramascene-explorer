@@ -774,6 +774,21 @@ button.pill:hover {
   font-size: 15px;
   line-height: 1.55;
 }
+.nodata {
+  margin-bottom: 16px;
+  padding: 18px 20px 20px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+.nodata h2 {
+  margin: 0 0 8px;
+  font: 400 22px / 1.25 var(--serif);
+}
+.nodata pre {
+  margin: 0;
+}
 .loading {
   color: var(--mut);
 }
