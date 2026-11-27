@@ -100,7 +100,7 @@ export function pct(v) {
 export function pctWords(v) {
 	const s = pct(v);
 	if (s === "0%") return "no change from 2011";
-	return `${s.slice(1).replace("<", "less than ")} ${s[0] === MINUS ? "lower" : "higher"} than in 2011`;
+	return `${s.slice(1).replace(/^</, "less than ")} ${s[0] === MINUS ? "lower" : "higher"} than in 2011`;
 }
 // A share that is not zero never reads as 0%.
 export function share(a, b) {
