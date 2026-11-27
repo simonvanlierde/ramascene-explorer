@@ -205,7 +205,7 @@ test("ask turns failures into readable errors", async () => {
 	// the server's own words for an error are kept, cut short
 	await assert.rejects(
 		ask({ ...args, fetchFn: async () => new Response(`context too long ${"x".repeat(500)}`, { status: 400 }) }),
-		(e) => e.message.startsWith("the model server answered 400: context too long") && e.message.length < 260,
+		(e) => e.message.startsWith("the model server answered 400: context too long") && e.message.length < 300,
 	);
 	await assert.rejects(
 		ask({

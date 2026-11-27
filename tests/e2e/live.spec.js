@@ -199,7 +199,7 @@ test("a live run never inherits the published calculation checks", async ({ page
 	await page.locator("#live-run").click();
 	await expect(page.locator("#status .basis")).toContainText("computed by the job API");
 	await expect(page.locator("#status .pill.ok")).toHaveCount(0);
-	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not checked");
+	await expect(page.locator("#status .pill.live")).toHaveText("Live job: not covered by checks");
 	await page.locator("#status .pill.live").click();
 	await expect(page.locator("#tab-method")).toHaveAttribute("aria-selected", "true");
 	// the flow check covers the precomputed flows, not the job's

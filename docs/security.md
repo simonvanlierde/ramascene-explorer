@@ -80,7 +80,7 @@ reader types. The panel shows the base URL above the question field: check it be
 ask. A redirect is refused, so the questions cannot move on to another host. The answer
 goes through the same checks as a typed scenario: it must be a JSON object with a known
 action, whose names are in the catalogue and whose changes are within −100 to +1000 percent, and its text is
-shown as text, after "Model:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
+shown as text, after "The model says:", so it cannot pass for the page's own words. The run is computed by the page's own engine and stays out of the link.
 
 ## WebMCP tools
 

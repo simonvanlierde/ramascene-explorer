@@ -24,6 +24,16 @@ $effect(() => {
 	if (panel.isRunning() && !busy) answer = null;
 });
 
+// Errors about the model's answer say what to do next; the same messages serve the WebMCP tools.
+function rephrase(fn) {
+	try {
+		return fn();
+	} catch (e) {
+		e.message += ". Rephrase the question and ask again.";
+		throw e;
+	}
+}
+
 async function submit(event) {
 	event.preventDefault();
 	const q = question.trim();
@@ -34,13 +44,13 @@ async function submit(event) {
 	stop = new AbortController();
 	try {
 		const catalog = await panel.catalogue();
-		if (!catalog) throw new Error("the scenario data did not load; open Custom scenario and try again");
+		if (!catalog) throw new Error("the scenario data did not load. Open Custom scenario, use Try again if it shows, then ask again");
 		const got = await ask({ base, model, system: systemPrompt(catalog), schema: askSchema(catalog), question: q, cancel: stop.signal });
 		const reply = typeof got.reply === "string" ? got.reply : "";
 		if (got.action === "view") {
-			answer = { reply, levers: [], outcome: applyView(got, meta, ui) };
+			answer = { reply, levers: [], outcome: rephrase(() => applyView(got, meta, ui)) };
 		} else if (got.action === "whatif") {
-			const scenario = { label: "custom scenario", model_details: toModelDetails(got.levers, catalog) };
+			const scenario = { label: "custom scenario", model_details: rephrase(() => toModelDetails(got.levers, catalog)) };
 			ownRun = true;
 			const { ok, text, cancelled } = await panel.runScenario(scenario).finally(() => {
 				ownRun = false;
@@ -49,11 +59,14 @@ async function submit(event) {
 			else if (!ok) throw new Error(text);
 			else answer = { reply, levers: got.levers.map(leverText), outcome: text };
 		} else if (got.action === "none") {
-			answer = { reply, levers: [], outcome: "" };
-		} else throw new Error("the model's answer has no action this page knows");
+			answer = { reply, levers: [], outcome: "Nothing was run, and the map is unchanged." };
+		} else throw new Error("the model's answer had no action this page can run. Ask again, in other words");
 	} catch (e) {
 		if (e.name === "AbortError") answer = { reply: "", levers: [], outcome: "Cancelled." };
-		else error = e.message;
+		else {
+				const m = e.message.charAt(0).toUpperCase() + e.message.slice(1);
+				error = /[.!?]$/.test(m) ? m : `${m}.`;
+			}
 	} finally {
 		busy = false;
 		stop = null;
@@ -69,7 +82,7 @@ function cancel() {
 
 <section id="ask" aria-labelledby="ask-title">
 	<div class="run chosen live-card">
-		<span><b id="ask-title">Ask</b><small>A model at {base} turns a question into changes; this page computes them</small></span>
+		<span><b id="ask-title">Ask in plain words</b><small>The model at {base} only picks the changes to make. The engine in this page computes every number.</small></span>
 	</div>
 	<form id="ask-form" onsubmit={submit} aria-busy={busy}>
 		<label for="ask-q">Question</label>
@@ -80,12 +93,12 @@ function cancel() {
 	</form>
 	<div role="status" id="ask-answer">
 		{#if busy}
-			<p class="hint">Asking the model…</p>
+			<p class="hint">Asking the model, then running the engine…</p>
 		{:else if answer}
 			<!-- the model server's words, not this page's: labelled so a crafted ?ask= cannot pass for the site -->
-			{#if answer.reply}<p class="hint" id="ask-reply">Model: {answer.reply}</p>{/if}
+			{#if answer.reply}<p class="hint" id="ask-reply">The model says: {answer.reply}</p>{/if}
 			{#if answer.levers.length}
-				<p class="hint">Ran these changes, so you can check them:</p>
+				<p class="hint">The model chose these changes and the engine ran them. Check them against your question:</p>
 				<ul class="hint" id="ask-levers">
 					{#each answer.levers as l}<li>{l}</li>{/each}
 				</ul>

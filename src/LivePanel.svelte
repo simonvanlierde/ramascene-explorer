@@ -120,7 +120,7 @@ export async function catalogue() {
 // For the Ask panel: plans the scenario, then runs it as Run does.
 // Resolves to {ok, text, cancelled}.
 export async function runScenario(scenario) {
-	if (running) return { ok: false, text: "A scenario is already running." };
+	if (running) return { ok: false, text: "A scenario is already running. Wait for it to finish, then ask again." };
 	// a reconnect (Cancel, a stopped worker) since the Ask panel read the catalogue
 	if (!catalog) return { ok: false, text: "The scenario data is loading again; ask once more." };
 	try {

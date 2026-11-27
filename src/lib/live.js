@@ -275,7 +275,7 @@ export function liveFlows(job, meta) {
 const JOB_SOURCE = {
 	status: LIVE_STATUS,
 	// the trust pill: the page's checks cover the precomputed runs only
-	pill: "Live job: not checked",
+	pill: "Live job: not covered by checks",
 	heading: "This run: computed live",
 	note: "The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.",
 };

@@ -65,12 +65,12 @@ test("a question becomes a what-if the browser engine runs, then a view change",
 	await page.locator("#ask-go").click();
 	await expect(page.locator("#ask-outcome")).toContainText("Computed in this browser in", { timeout: 90_000 });
 	// the reply is text, not markup
-	await expect(page.locator("#ask-reply")).toHaveText("Model: <b>Cut</b> European car demand by 20%.");
+	await expect(page.locator("#ask-reply")).toHaveText("The model says: <b>Cut</b> European car demand by 20%.");
 	await expect(page.locator("#ask-reply b")).toHaveCount(0);
 	await expect(page.locator("#ask-levers li")).toHaveText([
 		"Motor vehicles, trailers and semi-trailers, made in Europe, used by Y: Final Consumption in Europe: −20%",
 	]);
-	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not checked");
+	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not covered by checks");
 	// the link keeps only the view and ?ask=, never the custom run
 	const query = new URL(page.url()).searchParams;
 	expect([...query.keys()].sort()).toEqual(["ask", "mode", "scenario"]);
@@ -117,7 +117,7 @@ test("an unknown name and a failing server show as text", async ({ page, isMobil
 	await page.unroute(`${MODEL}/chat/completions`);
 	await page.route(`${MODEL}/chat/completions`, (route) => route.fulfill({ status: 500, body: "boom" }));
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-error")).toContainText("the model server answered 500");
+	await expect(page.locator("#ask-error")).toContainText("The model server answered 500");
 });
 
 test("a plan too broad for the browser leaves the view and the link as they were", async ({ page, isMobile }) => {
@@ -184,7 +184,7 @@ test("Cancel during an Ask run says Cancelled", async ({ page, isMobile }) => {
 	await openAsk(page, isMobile);
 	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-answer")).toHaveText("Asking the model…");
+	await expect(page.locator("#ask-answer")).toHaveText("Asking the model, then running the engine…");
 	await expect(page.locator("#live-state")).toContainText("Computing the scenario", { timeout: 60_000 });
 	await page.locator("#ask-cancel").click();
 	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.");
@@ -248,7 +248,9 @@ test("a run the Custom form starts clears the last answer", async ({ page, isMob
 	await openAsk(page, isMobile);
 	await page.locator("#ask-q").fill("What is the capital of France?");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-reply")).toHaveText("Model: That is not about the map.", { timeout: 60_000 });
+	await expect(page.locator("#ask-reply")).toHaveText("The model says: That is not about the map.", {
+		timeout: 60_000,
+	});
 	await page.locator("#live-open").click();
 	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
 	await page.locator("#live-run").click();
@@ -290,11 +292,13 @@ test("an off-topic answer only replies; an unknown action is an error", async ({
 	const before = page.url();
 	await page.locator("#ask-q").fill("What is the capital of France?");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-reply")).toHaveText("Model: That is not about the map.", { timeout: 60_000 });
-	await expect(page.locator("#ask-outcome")).toHaveCount(0);
+	await expect(page.locator("#ask-reply")).toHaveText("The model says: That is not about the map.", {
+		timeout: 60_000,
+	});
+	await expect(page.locator("#ask-outcome")).toHaveText("Nothing was run, and the map is unchanged.");
 	expect(page.url()).toBe(before);
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-error")).toContainText("no action this page knows");
+	await expect(page.locator("#ask-error")).toContainText("had no action this page can run");
 	await expect(page.locator("#ask-reply")).toHaveCount(0);
 });
 
