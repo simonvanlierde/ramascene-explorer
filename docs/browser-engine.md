@@ -190,21 +190,36 @@ absence of external requests.
 
 `pipeline/numpy_engine.py` runs the same calculation on the local store with numpy and scipy, so
 there is no Rust or WebAssembly to build. It reads the store in `data/browser-engine` (`just data store`
-fetches it, an 803 MB download). A step names products, regions and consumers by their ids in the manifest's `catalog`, as
-the page does, and `techChange` is a change in percent. Run it from the repository root:
+fetches it, an 803 MB download). It does not read the store from its published URL: zarr needs fsspec
+and aiohttp, or obstore, for HTTP, and the project does not depend on them.
+
+`pipeline/ask.py` takes catalogue names, with the same contract as the page's
+[WebMCP tools](interface.md#webmcp): `find_names(store, kind, query)` and `run_whatif(store, levers)`, with
+the same lever fields, checks and error messages, raised as `ValueError`. `find_names` returns every match,
+not the tool's first 25. `run_whatif` returns the page's result for a browser run: `changes` (each lever in
+words), `model_details` (the steps it ran), `regions` (the 49 countries), `indicators`, `results` (the
+baseline and scenario totals by indicator id and producing country, as Details → Method lists them) and
+`flows` (the baseline and scenario flows as indicator × producer × section × consumer arrays). Run it from
+the repository root:
 
 ```sh
 uv run python - <<'EOF'
 import sys
 sys.path.insert(0, "pipeline")
-import numpy_engine as ne
+import ask, numpy_engine as ne
 
 store = ne.open_store("data/browser-engine")
-flows = ne.scenario_flows(store, [{"product": [180], "originReg": [1], "consumedBy": [198],
-                                   "consumedReg": [2], "techChange": [-20]}])
-print(flows.shape)  # (2205, 49): indicator x producer x section, by consumer
+print(ask.find_names(store, "products", "motor vehicles"))
+run = ask.run_whatif(store, [{"product": "Motor vehicles, trailers and semi-trailers", "origin_region": "Europe",
+                              "consumed_by": ["Y: Final Consumption"], "consumed_region": "Europe",
+                              "change_percent": -20}])
+print(run["results"]["scenario"][5]["Germany"])  # GHG emissions produced in Germany
 EOF
 ```
+
+`numpy_engine.scenario_flows(store, steps)` is the step below: it takes the steps with the catalogue's ids,
+as the page sends them, and `techChange` in percent. `tests/ask-cases.json` holds the name-lookup cases that
+both `tests/ask.test.js` and `tests/test_ask.py` run, so the JavaScript and Python lookups cannot drift.
 
 `tests/test_numpy_engine.py` runs the 155 scenarios and the baseline against `data/results.json` when
 `BROWSER_ENGINE_DATA` is set. It holds the worst relative difference to 1e-8; 5.5e-9 is measured, the

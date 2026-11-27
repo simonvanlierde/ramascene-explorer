@@ -23,7 +23,7 @@ export const askModel = (search) => new URLSearchParams(search).get("askmodel") 
 export const DETAIL = " (detail)";
 // Name to id. A repeated name with the same leaves as its first entry is the same selection and
 // keeps the first id; one with other leaves (the EXIOBASE product under a section of the same
-// name) gets its own name, so the model can still pick it. Same rule as ask_eval.py.
+// name) gets its own name, so the model can still pick it. Same rule as ask_eval.py and pipeline/ask.py.
 // NOTE: one suffix, so a third differing entry of a name collapses into the second.
 function namesOf(catalog) {
 	const out = {};
