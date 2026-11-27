@@ -4,13 +4,14 @@ Checks the store reader on the fixture store, the maths against direct solves, a
 155 published scenarios against RaMa-Scene's results when the browser store is here.
 """
 
-import gzip
 import json
 import os
+import shutil
 from pathlib import Path
 
 import numpy as np
 import pytest
+import zarr
 from numpy.testing import assert_allclose
 
 import numpy_engine as ne
@@ -279,11 +280,27 @@ def test_singular_scenario_is_refused():
         {"techChange": -20},
         {"techChange": ["-20"]},
         {"techChange": [True]},
+        {"product": [True]},
+        {"consumedBy": [np.True_]},
+        {"techChange": [np.True_]},
     ],
 )
 def test_plan_refuses_invalid_steps(bad):
     with pytest.raises(ValueError, match=r"\w"):
         ne.plan(Tiny(A, VIA_ROWS).meta, [step(**bad)])
+
+
+@pytest.mark.parametrize("key", ["product", "originReg", "consumedBy", "consumedReg", "techChange"])
+def test_plan_refuses_a_step_without_a_field(key):
+    with pytest.raises(ValueError, match=r"\w"):
+        ne.plan(Tiny(A, VIA_ROWS).meta, [{k: v for k, v in step().items() if k != key}])
+
+
+def test_plan_accepts_numpy_scalars():
+    meta = Tiny(A, VIA_ROWS).meta
+    numpy = step(product=[np.int64(10)], originReg=[np.int32(1)], consumedBy=[np.int64(21)],
+                 consumedReg=[np.uint8(1)], techChange=[np.float32(-20)])  # fmt: skip
+    assert ne.plan(meta, [numpy]) == ne.plan(meta, [step()])
 
 
 def test_overlapping_ids_in_one_step_select_each_leaf_once():
@@ -304,73 +321,10 @@ def test_plan_refuses_bool_catalog_leaves():
         ne.plan(meta, [step()])
 
 
-def test_reader_matches_the_fixture_store():
+def fixture_store(directory, source=ROOT / "tests/fixture-store", **over):
+    """The arrays in `source` (tests/fixture-store's M and P) as a store with a manifest, `over` replacing fields."""
     info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
-    for name, matrix in (("M", MATRIX), ("P", PAIRS)):
-        reader = ne.ArrayReader(
-            info[name], lambda i, name=name: ROOT / "tests/fixture-store" / name / "c" / str(i) / "0"
-        )
-        want = matrix.astype(np.float32).astype(float)
-        assert np.array_equal(reader.read(range(len(want))), want)
-        # the order asked, repeated rows, and a column subset; row 2 of M is an empty chunk
-        assert np.array_equal(reader.read([3, 2, 0, 3], [2, 0]), want[[3, 2, 0, 3]][:, [2, 0]])
-    with pytest.raises(ValueError, match="invalid matrix row"):
-        reader.read([len(want)])
-
-
-def test_decode_refuses_a_corrupt_chunk():
-    info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
-    reader = ne.ArrayReader(info["M"], lambda i: ROOT / "tests/fixture-store/M/c" / str(i) / "0")
-    data, index = reader._shard(0)  # noqa: SLF001
-    offset, size = (int(v) for v in index[0])
-    chunk = data[offset : offset + size]
-    assert len(ne.decode_chunk(chunk, 12)) == 3
-    with pytest.raises(ValueError, match="invalid matrix chunk"):
-        ne.decode_chunk(chunk, 16)
-    with pytest.raises(ValueError, match="invalid matrix chunk"):
-        ne.decode_chunk(chunk[:-1] + bytes([chunk[-1] ^ 1]), 12)  # the trailer's size field
-
-
-def gzipped(values):
-    return gzip.compress(np.asarray(values, dtype="<f4").tobytes(), mtime=0)
-
-
-@pytest.mark.parametrize(
-    "corrupt",
-    [
-        lambda c: c[:-4],  # the trailer cut short: the values decode, the stream never ends
-        lambda c: c + b"\0",  # bytes after the stream
-    ],
-    ids=["truncated", "padded"],
-)
-def test_decode_refuses_a_truncated_or_padded_chunk(corrupt):
-    chunk = gzipped([1.0, 2.0, 3.0])
-    assert np.array_equal(ne.decode_chunk(chunk, 12), [1.0, 2.0, 3.0])
-    with pytest.raises(ValueError, match="invalid matrix chunk"):
-        ne.decode_chunk(corrupt(chunk), 12)
-
-
-def test_decode_refuses_non_finite_values():
-    with pytest.raises(ValueError, match="invalid matrix values"):
-        ne.decode_chunk(gzipped([1.0, np.nan]), 8)
-
-
-def test_reader_refuses_an_index_past_the_data():
-    info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
-    reader = ne.ArrayReader(info["M"], lambda i: ROOT / "tests/fixture-store/M/c" / str(i) / "0")
-    data, index = reader._shard(0)  # noqa: SLF001
-    index = index.copy()
-    # chunk 0 ends where the index begins, one byte past the chunk data
-    index[0] = [len(data) - 32 - int(index[0, 1]) + 1, index[0, 1]]
-    reader._shard = lambda shard: (data, index)  # noqa: SLF001
-    with pytest.raises(ValueError, match="invalid shard index"):
-        reader.chunk(0)
-
-
-def fixture_store(directory, **over):
-    """tests/fixture-store's M as a store with a manifest, `over` replacing manifest fields."""
-    info = json.loads((ROOT / "tests/fixture-store/info.json").read_text())
-    manifest = {
+    manifest: dict = {
         "version": 3,
         "products": 200,
         "countries": 49,
@@ -379,10 +333,11 @@ def fixture_store(directory, **over):
         "sections": [1],
         "baseline_flows": [0.0] * 49 * 49,
         "store": "f" * 64,
-        "arrays": {"M": info["M"]},
+        "arrays": info,
     } | over
     (directory / f"store-{manifest['store']}").mkdir()
-    (directory / f"store-{manifest['store']}" / "M").symlink_to(ROOT / "tests/fixture-store/M")
+    for name in manifest["arrays"]:
+        (directory / f"store-{manifest['store']}" / name).symlink_to(source / name)
     (directory / "manifest-v3.json").write_text(json.dumps(manifest), encoding="utf-8")
     return directory
 
@@ -391,6 +346,42 @@ def fixture_store(directory, **over):
 def test_store_reads_the_fixture(tmp_path, residual):
     store = ne.open_store(fixture_store(tmp_path, baseline_residual=residual))
     assert np.array_equal(store.read("M", [3, 1], [0, 2]), MATRIX.astype(np.float32).astype(float)[[3, 1]][:, [0, 2]])
+
+
+def test_store_reads_rows_in_the_order_asked(tmp_path):
+    store = ne.open_store(fixture_store(tmp_path))
+    for name, matrix in (("M", MATRIX), ("P", PAIRS)):
+        want = matrix.astype(np.float32).astype(float)
+        assert np.array_equal(store.read(name, range(len(want))), want)
+        # repeated rows and a column subset; row 2 of M is an empty chunk
+        assert np.array_equal(store.read(name, [3, 2, 0, 3], [2, 0]), want[[3, 2, 0, 3]][:, [2, 0]])
+        assert store.read(name, []).shape == (0, 3)
+
+
+@pytest.mark.parametrize(("rows", "columns"), [([4], None), ([-1], None), ([0], [3]), ([0], [-1])])
+def test_store_refuses_an_index_outside_the_matrix(tmp_path, rows, columns):
+    store = ne.open_store(fixture_store(tmp_path))
+    with pytest.raises(IndexError if -1 not in rows + (columns or []) else ValueError):
+        store.read("M", rows, columns)
+
+
+def test_store_refuses_non_finite_values(tmp_path):
+    zarr.create_array(tmp_path / "src/N", shape=(2, 2), chunks=(1, 2), dtype="float32")[:] = [[1, 2], [np.nan, 3]]
+    store = ne.open_store(fixture_store(tmp_path, tmp_path / "src", arrays={"N": {}}))
+    with pytest.raises(ValueError, match="invalid matrix values"):
+        store.read("N", [1])
+
+
+def test_store_refuses_a_corrupt_chunk(tmp_path):
+    copy = tmp_path / "src/M"
+    shutil.copytree(ROOT / "tests/fixture-store/M", copy)
+    shard = copy / "c/0/0"
+    data = bytearray(shard.read_bytes())
+    data[20] ^= 0xFF  # inside chunk 0's gzip member
+    shard.write_bytes(data)
+    store = ne.open_store(fixture_store(tmp_path, tmp_path / "src", arrays={"M": {}}))
+    with pytest.raises(Exception, match=r"\w"):
+        store.read("M", [0])
 
 
 @pytest.mark.parametrize(

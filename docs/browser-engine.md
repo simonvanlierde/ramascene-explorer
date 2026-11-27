@@ -120,9 +120,9 @@ it needs as single byte ranges, merging chunks less than 64 KiB apart. Each
 request is one range, since many static hosts answer a request for several ranges
 with the whole file.
 
-Three readers depend on this layout: the page's `src/lib/browser-engine/browser-data.js`,
-`pipeline/numpy_engine.py`, and zarr-python in `tests/test_browser_export.py`. A change to the
-layout in `pipeline/export_browser.py` needs all three.
+Two readers depend on this layout: the page's `src/lib/browser-engine/browser-data.js`, and
+zarr-python in `pipeline/numpy_engine.py` and `tests/test_browser_export.py`. A change to the
+layout in `pipeline/export_browser.py` needs both.
 
 ## Build or download the data
 
@@ -210,10 +210,12 @@ EOF
 `BROWSER_ENGINE_DATA` is set. It holds the worst relative difference to 1e-8; 5.5e-9 is measured, the
 same float32 storage floor as the page's test. The page's budgets on download, memory and work are not applied.
 
-Two one-off measurements from 26 November 2026, with no script in the repository to repeat them: the
-Python decode of the gzip chunks took 0.9 times the WebAssembly decode time on the three large workloads,
-and the correction and fold matched the WebAssembly engine to 1.6e-15 elementwise on all 156 runs. So
-the maths is the same, and a Rust wheel would gain no speed here.
+One-off measurements, with no script in the repository to repeat them. On 26 November 2026 the
+correction and fold matched the WebAssembly engine to 1.6e-15 elementwise on all 156 runs, and a
+hand-written chunk reader decoded in 0.9 times the WebAssembly decode time on the three large workloads.
+On 27 November, reading through zarr-python instead made the first calculation 1.9 to 2.6 times as slow
+as that hand-written reader on the same host (median of 7 fresh processes, same output). The extra time
+is zarr's per-chunk overhead, not the maths, so a Rust wheel would mostly buy back the reader.
 
 ## What to precompute
 
