@@ -25,6 +25,8 @@ A held-out set (30 paraphrases of other scenarios, 12 view and 15 none questions
 this repository, so that a prompt tuned on the dev items can still be checked on items nobody
 tuned against. Run it only on a frozen prompt, with `--items`; once an item has been looked at
 it moves into `items.json`. Every miss seen in the real Ask panel becomes a dev item.
+CI's page tests load `items.json` against the catalogue and `data/results.json`, so a misspelt
+name or scenario id fails there instead of scoring as a miss.
 
 A what-if is correct when its levers cover the same EXIOBASE products, regions and industries
 as the gold's, with the same change: the selection the engine computes. So two catalogue entries

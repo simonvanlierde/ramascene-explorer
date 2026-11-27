@@ -363,3 +363,23 @@ print(json.dumps([e.system_prompt(names, scen), e.schema(names)], ensure_ascii=F
 	assert.equal(prompt, systemPrompt(real));
 	assert.deepEqual(schema, askSchema(real));
 });
+
+// The Python test of the same check skips in CI's precompute job, which has no store; this job has one
+test("the eval's items name only catalogue entries and scenarios", {
+	skip: noManifest || noResults || noPython,
+}, () => {
+	const code = `import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("e", "evals/ask/ask_eval.py")
+e = importlib.util.module_from_spec(spec); spec.loader.exec_module(e)
+names, scen, leaves = e.load(sys.argv[1], "data/results.json")
+items = e.load_items(e.ITEMS, names, scen, leaves)
+print(json.dumps([k for k, *_ in items]))`;
+	// load_items raises on a view answer the schema does not allow, an accept lever with a name
+	// outside the catalogue, a paraphrase of no scored scenario, or a repeated question
+	const out = spawnSync("python3", ["-I", "-B", "-c", code, MANIFEST], { encoding: "utf8" });
+	assert.equal(out.status, 0, out.stderr);
+	const kinds = JSON.parse(out.stdout);
+	const file = JSON.parse(readFileSync("evals/ask/items.json", "utf8"));
+	for (const kind of ["paraphrase", "view", "none"])
+		assert.equal(kinds.filter((k) => k === kind).length, file[kind].length, kind);
+});
