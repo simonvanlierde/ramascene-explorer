@@ -22,8 +22,8 @@ warn() {
 }
 
 # The address comes from the deploy's output: post only a workers.dev one, never a link the
-# deploy's code could have chosen. A path is allowed: the build sits under /ramascene-explorer/.
-[[ $url =~ ^https://[a-z0-9-]+(\.[a-z0-9-]+)*\.workers\.dev(/[a-z0-9_-][a-z0-9._-]*)*/?$ ]] || warn "unexpected address $url"
+# deploy's code could have chosen.
+[[ $url =~ ^https://[a-z0-9-]+(\.[a-z0-9-]+)*\.workers\.dev/?$ ]] || warn "unexpected address $url"
 
 ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
   --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id") ||

@@ -174,7 +174,8 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           SHA: ${{ github.event.pull_request.head.sha }}
           URL: ${{ needs.upload.outputs.url }}
-        run: '"$GITHUB_WORKSPACE/.github/scripts/preview-comment.sh" "Preview" "$URL"'
+        # the bare workers.dev address, which redirects to /ramascene-explorer/ (public/_redirects)
+        run: '"$GITHUB_WORKSPACE/.github/scripts/preview-comment.sh" "Preview" "${URL%ramascene-explorer/}"'
 
   check:
     name: check ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
