@@ -26,6 +26,10 @@
   // app bypasses main's required review, so its merges need no approval.
   platformAutomerge: false,
 
+  // A group PR can carry a release younger than the week above, and would then sit open
+  // with renovate/stability-days pending. Open it only once that and CI have passed.
+  prCreation: "not-pending",
+
   // Off by default: without it no hook rev in .pre-commit-config.yaml is ever bumped.
   "pre-commit": { enabled: true },
 
@@ -68,6 +72,10 @@
       matchUpdateTypes: ["pin"],
       minimumReleaseAge: null,
     },
+    // Template releases carry no release date, so the week's wait would hold them for good.
+    // The author's own hooks and packages skip it too: whoever can publish those can push here.
+    { matchManagers: ["copier"], minimumReleaseAge: null },
+    { matchPackageNames: ["simonvanlierde/**"], minimumReleaseAge: null },
     // Majors stay manual.
     {
       matchUpdateTypes: ["minor", "patch", "pin", "digest"],

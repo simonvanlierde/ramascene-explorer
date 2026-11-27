@@ -1,5 +1,5 @@
 # Managed by copier. Do not edit by hand. Run: copier update
-_commit: v0.15.0
+_commit: v0.17.0
 _src_path: gh:simonvanlierde/project-templates
 author_email: code@duinlab.nl
 author_name: Simon van Lierde
@@ -18,17 +18,18 @@ project_description: Explore consumption footprints and calculate scenarios usin
     EXIOBASE 2011
 project_name: ramascene-explorer
 public: true
+public_data: false
 python_dir: .
 python_kind: app
 python_layout: flat
 python_version: '3.12'
 site: none
-site_url: https://simonvanlierde.com
+site_url: https://simonvanlierde.com/ramascene-explorer
 stacks:
 - python
 - ts
 ts_dir: .
 ts_kind: web-app
 user_data: browser
-web_framework: preact
+web_framework: svelte
 worker: false

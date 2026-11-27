@@ -151,6 +151,31 @@ jobs:
           fi
           echo "url=$url/ramascene-explorer/" >> "$GITHUB_OUTPUT"
 
+  # Posts the preview's address as one pull request comment, edited on each push. A job of
+  # its own, so the write token never shares a runner with the deploy's code.
+  preview-comment:
+    name: preview link
+    needs: upload
+    if: github.event_name == 'pull_request' && needs.upload.outputs.url != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          URL: ${{ needs.upload.outputs.url }}
+        run: '"$GITHUB_WORKSPACE/.github/scripts/preview-comment.sh" "Preview" "$URL"'
+
   check:
     name: check ${{ github.event_name == 'pull_request' && 'preview' || 'upload' }}
     needs: upload
