@@ -1,0 +1,7 @@
+{
+ "route": "numpy",
+ "scenarios": 156,
+ "worst_relative_difference": 5.505860690897426e-09,
+ "worst_at": "steel-asia-pacific-50: Asia-Pacific, indicator 7",
+ "seconds_per_scenario_median": 0.04799175500011188
+}
