@@ -191,6 +191,30 @@ test("Cancel during an Ask run says Cancelled", async ({ page, isMobile }) => {
 	await expect(page.locator("#ask-error")).toHaveText("");
 	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "false");
 	await expect(page.locator("#ask-q")).toBeFocused();
+	// a fresh worker replaces the stopped one; its ready message leaves the answer alone
+	await expect(page.locator("#live-state")).toHaveText("Ready to compute in this browser.", { timeout: 60_000 });
+	await expect(page.locator("#ask-outcome")).toHaveText("Cancelled.");
+});
+
+test("Ask's Cancel leaves a run the Custom form started", async ({ page, isMobile }) => {
+	needData();
+	test.setTimeout(90_000);
+	await page.route(`${MODEL}/models`, (route) => route.fulfill({ json: { data: [{ id: "test-model" }] } }));
+	// the model never answers, and the form's run never finishes
+	await page.route(`${MODEL}/chat/completions`, () => {});
+	await openAsk(page, isMobile);
+	await page.locator("#ask-q").fill("What if Europeans bought 20% fewer cars?");
+	await page.locator("#ask-go").click();
+	await page.locator("#live-open").click();
+	await expect(page.locator("#live-run")).toBeEnabled({ timeout: 60_000 });
+	await page.route("**/browser-engine/store-*/**", () => {});
+	await page.locator("#live-run").click();
+	await expect(page.locator("#live-state")).toContainText("Computing the scenario", { timeout: 60_000 });
+	await page.locator("#ask-cancel").click();
+	// Ask stops waiting; its "Cancelled." clears at once, as any answer does during a form run
+	await expect(page.locator("#ask-go")).toHaveAttribute("aria-disabled", "false", { timeout: 60_000 });
+	await expect(page.locator("#live-state")).toContainText("Computing the scenario");
+	await expect(page.locator("#live-cancel")).toBeVisible();
 });
 
 test("Cancel stops waiting for the model", async ({ page, isMobile }) => {
