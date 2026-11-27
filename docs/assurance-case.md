@@ -74,6 +74,4 @@ good one from a bad one, so it labels a live result with its origin.
   with that hash, not that it ran `pipeline/precompute.py`: the file is built locally.
 - The deployed site is not checked against the release tarball, since
   `cloudflare.yml` deploys every push to `main`, which may be later than the tag. A `v*` tag is not checked to
-  be on `main`; only the maintainer can publish releases.
-- If immutable releases are turned on, `release.yml` must move to a
-  draft-release flow, because it adds assets after publishing.
+  be on `main`; `release.yml` publishes only a draft release, which only the maintainer can save.
