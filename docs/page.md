@@ -130,8 +130,8 @@ This rebuilds the published scenario `steel-in-vehicles-europe`: European vehicl
 | --- | --- |
 | **Product** | Iron, steel and ferro-alloy products (under Manufacturing, then Manufacture of basic metals) |
 | **Produced in** | World |
-| **Used by** | Motor vehicles and trailers (under Manufacturing) |
-| **Used in** | Europe |
+| **Industry or final demand that uses it** | Motor vehicles and trailers (under Manufacturing) |
+| **Region where it is used** | Europe |
 | **Input or demand change, %** | -20 |
 
 1. Open **What if…**, then select **Set up** on the **Custom scenario** card.
@@ -150,7 +150,7 @@ per unit of output. Every other industry keeps its steel input per unit of outpu
 out the output of every industry again, so the total is a model result.
 
 The featured `coal-power-china` scenario changes all 15 industry sections in China. The form
-takes one **Used by** per change and at most 10 changes, so it cannot rebuild that one exactly.
+takes one industry per change and at most 10 changes, so it cannot rebuild that one exactly.
 For a part of it, choose **Electricity by coal**, produced in **China**, used by **Manufacturing**,
 used in **China**, -20.
 
