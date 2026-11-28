@@ -60,6 +60,14 @@ def test_to_model_details_refuses_more_than_ten_levers():
     assert len(ask.to_model_details([CASES["lever"]] * 10, CATALOG)) == 10
 
 
+def test_to_model_details_rejects_non_finite_and_accepts_tuple_consumers():
+    for bad in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError, match=r"^change 1: the change must be a number \(percent\)$"):
+            ask.to_model_details([CASES["lever"] | {"change_percent": bad}], CATALOG)
+    got = ask.to_model_details([CASES["lever"] | {"consumed_by": ("Y: Final Consumption",)}], CATALOG)
+    assert got[0]["consumedBy"] == [276]
+
+
 @pytest.mark.parametrize("case", CASES["lever_text"], ids=lambda c: c["text"])
 def test_lever_text_matches_the_shared_cases(case):
     assert ask.lever_text(CASES["lever"] | case["lever"]) == case["text"]
@@ -74,13 +82,13 @@ def test_the_eval_names_the_catalogue_as_the_api_does(tmp_path):
 
 
 def test_run_whatif_returns_the_page_result(monkeypatch):
-    # 2 indicators, 2 countries, 1 section; the flows' value is its flat index, so each total is known
+    # 2 indicators, 2 countries, 2 sections; each flow's value is known so multi-section totals are checked
     regions = [{"id": 1, "name": "Total", "leaves": [0, 1]}, {"id": 7, "name": "China", "leaves": [1]},
                {"id": 6, "name": "Austria", "leaves": [0]}]  # fmt: skip
-    meta = {"countries": 2, "indicators": [5, 3], "sections": [1], "catalog": CATALOG | {"regions": regions}}
-    store = SimpleNamespace(meta=meta, baseline=np.zeros(8))
+    meta = {"countries": 2, "indicators": [5, 3], "sections": [1, 2], "catalog": CATALOG | {"regions": regions}}
+    store = SimpleNamespace(meta=meta, baseline=np.arange(16.0, 32.0))
     sent = []
-    monkeypatch.setattr(ne, "scenario_flows", lambda s, steps: sent.append(steps) or np.arange(8.0).reshape(4, 2))
+    monkeypatch.setattr(ne, "scenario_flows", lambda s, steps: sent.append(steps) or np.arange(16.0).reshape(8, 2))
     lever = CASES["lever"] | {"origin_region": "Total", "consumed_region": "Total"}
     got = ask.run_whatif(store, [lever])
     assert sent == [got["model_details"]] == [[{"product": [180], "originReg": [1], "consumedBy": [276],
@@ -88,14 +96,14 @@ def test_run_whatif_returns_the_page_result(monkeypatch):
     assert got["changes"] == ["Motor vehicles, made in all regions, used by Y: Final Consumption in all regions: −20%"]
     assert got["regions"] == ["Austria", "China"]
     assert got["indicators"] == [{"id": 5}, {"id": 3}]
-    # flat index ((indicator * 2 + producer) * 1 + section) * 2 + consumer
+    # flat index ((indicator * 2 + producer) * 2 + section) * 2 + consumer
     assert got["results"] == {
-        "baseline": {5: {"Austria": 0.0, "China": 0.0}, 3: {"Austria": 0.0, "China": 0.0}},
-        "scenario": {5: {"Austria": 1.0, "China": 5.0}, 3: {"Austria": 9.0, "China": 13.0}},
+        "baseline": {5: {"Austria": 70.0, "China": 86.0}, 3: {"Austria": 102.0, "China": 118.0}},
+        "scenario": {5: {"Austria": 6.0, "China": 22.0}, 3: {"Austria": 38.0, "China": 54.0}},
     }
-    assert got["flows"]["scenario"].shape == got["flows"]["baseline"].shape == (2, 2, 1, 2)
-    got["flows"]["baseline"][:] = 1
-    assert not store.baseline.any()
+    assert got["flows"]["scenario"].shape == got["flows"]["baseline"].shape == (2, 2, 2, 2)
+    got["flows"]["baseline"][:] = 0
+    assert store.baseline[0] == 16.0
 
 
 def test_run_whatif_checks_the_levers_before_the_engine(monkeypatch):
@@ -111,6 +119,7 @@ needs_store = pytest.mark.skipif(
 )
 
 
+@pytest.mark.store
 @needs_store
 def test_published_levers_map_to_their_steps():
     # every published scenario, as names, maps back to its own steps on the real catalogue
@@ -133,6 +142,7 @@ PUBLISHED = {
 }  # fmt: skip
 
 
+@pytest.mark.store
 @needs_store
 @pytest.mark.parametrize("scenario", PUBLISHED)
 def test_run_whatif_matches_a_published_scenario(scenario):

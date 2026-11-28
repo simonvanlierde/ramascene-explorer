@@ -25,7 +25,7 @@ hooks:
 py:
     uv run ty check
     # the page job runs the store tests, with the store fetched
-    uv run pytest --cov=precompute --cov=compare_data --cov=numpy_engine --cov=ask --deselect tests/test_numpy_engine.py::test_published_scenarios_match_ramascene --deselect tests/test_ask.py::test_published_levers_map_to_their_steps --deselect tests/test_ask.py::test_run_whatif_matches_a_published_scenario
+    uv run pytest --cov=precompute --cov=compare_data --cov=numpy_engine --cov=ask -m "not store"
     uv run python brightway-check/table.py --check
 
 # ci.yml's page job: lint and format, the page logic over the coverage floor, the browser store against Brightway, the numpy engine and its Python API.

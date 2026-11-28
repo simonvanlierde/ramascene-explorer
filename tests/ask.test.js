@@ -85,6 +85,11 @@ test("names map to ids, or fail naming the change, as the shared cases say", () 
 		if (c.error) assert.throws(run, { message: c.error }, JSON.stringify(c.levers));
 		else assert.deepEqual(run(), c.model_details);
 	}
+	for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+		assert.throws(() => toModelDetails([lever({ change_percent: bad })], catalog), {
+			message: "change 1: the change must be a number (percent)",
+		});
+	}
 	assert.throws(() => toModelDetails(Array(11).fill(lever()), catalog), /more than 10/);
 	assert.equal(toModelDetails(Array(10).fill(lever()), catalog).length, 10);
 });

@@ -44,17 +44,14 @@ def names_of(catalog):
     return out
 
 
-def _find(catalog, kind, query):
-    words = str(query).lower().split()
-    names = [*names_of(catalog)[kind], *([ALL] if kind == "consumers" else [])]
-    return [n for n in names if all(w in n.lower() for w in words)]
-
-
 def find_names(store, kind, query):
     """Names of one kind (products, regions or industries) that contain every word of the query, ignoring case."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {', '.join(KINDS)}")
-    return _find(store.meta["catalog"], KINDS[kind], query)
+    cat_kind = KINDS[kind]
+    words = str(query).lower().split()
+    names = [*names_of(store.meta["catalog"])[cat_kind], *([ALL] if cat_kind == "consumers" else [])]
+    return [n for n in names if all(w in n.lower() for w in words)]
 
 
 def _js(n):
@@ -86,7 +83,7 @@ def to_model_details(levers, catalog):
             return v
 
         by = lever.get("consumed_by")
-        by = by if isinstance(by, list) else []
+        by = by if isinstance(by, list | tuple) else []
         if not by:
             raise ValueError(f"change {n}: no industry given")
         consumers = list(

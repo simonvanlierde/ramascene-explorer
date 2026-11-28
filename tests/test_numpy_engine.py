@@ -413,6 +413,7 @@ def test_store_refuses_an_unsupported_manifest(tmp_path, over):
 
 
 # as tests/browser-parity.test.js: with CI set, a missing store fails instead of skipping
+@pytest.mark.store
 @pytest.mark.skipif(
     not STORE and not os.environ.get("CI"),
     reason="set BROWSER_ENGINE_DATA to the browser store (docs/browser-engine.md)",
