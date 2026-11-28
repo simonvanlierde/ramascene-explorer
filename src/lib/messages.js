@@ -240,17 +240,17 @@ const en = {
 		zoomOut: "Zoom out",
 		resetZoom: "Reset zoom",
 		noteRun: (world, pct) =>
-			`${world ? "Each region’s colour is" : "Bands keep their 2011 width. The colour of each band and country is"} the % change in its flow in this run, drawn ${pct}% of the way from the 2011 baseline. The slider blends the two; it is not a timeline. An engine run on 2011 data, not a forecast.`,
-		noteWorld: (unit, where) => `Country colour: ${unit} per region, by where ${where}.`,
+			`${world ? "Each region’s colour is the % change in its total" : "Bands keep their 2011 width. The colour of each band and country is the % change in its flow"} in this run, drawn ${pct}% of the way from the 2011 baseline. The slider blends the two; it is not a timeline. An engine run on 2011 data, not a forecast.`,
+		noteWorld: (unit, where) => `Colour: ${unit} per region, by where ${where}.`,
 		noteBands: (n, what, unit, section) =>
-			`Bands: the ${n} largest flows ${what}${section === null ? "" : `, ${section} only`}; width shows ${unit}. Country colour: ${unit} per region.`,
+			`Bands: the ${n} largest flows ${what}${section === null ? "" : `, ${section} only`}; width shows ${unit}. Colour: ${unit} per region.`,
 		turn: "Drag to turn the globe, scroll or pinch to zoom.",
 		pinch: "Scroll or pinch to zoom.",
 		largest: (section, share) => `Largest: ${section}, ${share}`,
 		click: "Click to select",
 		changeLegend: "Change in each 2011 flow, %",
 		scale:
-			"Colour grows with the square root of the change. The larger flows set the ends; bigger changes take the end colour.",
+			"Colour deepens with the square root of the change. The larger flows set the ends; changes past either end share the end colour.",
 		bandWidth: (unit) => ` Band width is each flow’s 2011 value, in ${unit}.`,
 		scrub: "From the 2011 baseline to the run",
 		baseline: "2011 baseline",
@@ -292,7 +292,7 @@ const en = {
 	meaning: {
 		heading: "What the numbers mean",
 		flows: (source) =>
-			`The map follows supply chains from final demand, what households, governments and investors buy, back to the industries where ${source}. Consumption adds up the flows behind final demand in the selected country or region, wherever they happen. Production adds up the flows that happen there, wherever the demand is. World adds up every region, so both directions give the same total; the toggle only chooses whether the map colours each region by where ${source} or by where the final demand is.`,
+			`The map follows supply chains from final demand, what households, governments and investors buy, back to the industries where ${source}. Consumption adds up the flows behind final demand in the selected country or region, wherever they happen. Production adds up the flows that happen there, wherever the demand is. World adds up every region, so both directions give the same total. With Consumption, World colours each region by where ${source}. With Production, it colours each region by where the final demand is.`,
 		whatif:
 			"What if… shows how changes in one place ripple through supply chains worldwide. Each change alters the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain. Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound. These are scenarios for the 2011 economy, not forecasts.",
 		method: (dataset, year) =>
@@ -312,7 +312,7 @@ const en = {
 		reference: (tolerance) =>
 			`The engine reproduces the Octave reference files shipped with RaMa-Scene (routes two and four; value added and GHG), ${tolerance}.`,
 		independent: (values, runs, indicators, regions) =>
-			`${values} world-region totals from the engine match a separate sum, B·L·ΣY (indicator intensities, supply-chain requirements, final demand), within relative 1e-9. They cover ${runs} runs, counting the baseline and the 0% control, × ${indicators} indicators × ${regions} world regions. The sum uses the engine’s own L, so it checks the aggregation, not the inverse; brightway-check in the source code compares an independent inverse from pymrio.`,
+			`${values} world-region totals from the engine match a separate sum, B·L·ΣY (indicator intensities, supply-chain requirements, final demand), within relative 1e-9. They cover ${runs} runs, counting the baseline and the 0% control, × ${indicators} indicators × ${regions} world regions. The sum uses the engine’s own L, so it checks the aggregation, not the inverse. The cross-engine comparison in the source code checks the inverse with pymrio.`,
 		control: "A 0% scenario through the same modified-coefficient path reproduces the baseline.",
 		direction: (skipped) =>
 			"Every published scenario changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
@@ -543,8 +543,8 @@ const en = {
 		lever: (n) => `Change ${n}`,
 		product: "Product",
 		origin: "Produced in",
-		consumer: "Industry or final demand that uses it",
-		consumedIn: "Region where it is used",
+		consumer: "Used by (industry or final demand)",
+		consumedIn: "Used in (region)",
 		change: "Input or demand change, %",
 		changeHelp: (min, max) =>
 			`For an industry, this changes its input of the product per unit of output. For final demand, it changes spending on the product. A negative value is a cut. Range: ${min} to +${max}%.`,
@@ -618,7 +618,7 @@ const en = {
 		status: "computed in this browser",
 		pill: "Custom run: not covered by checks",
 		heading: "Custom calculation",
-		note: "The calculation checks below cover the published scenarios, not this custom run. The same browser calculation reproduces every published scenario within relative 1e-6 of RaMa-Scene. A custom run makes the same assumptions as a published one: prices and all other inputs stay fixed, and nothing replaces what is cut.",
+		note: "The calculation checks below cover the published scenarios, not this custom run. The same browser calculation reproduces every published scenario’s world-region totals within relative 1e-6 of RaMa-Scene. A custom run makes the same assumptions as a published one: prices and all other inputs stay fixed, and nothing replaces what is cut.",
 		method: "Float64 Woodbury update on float32 matrices, computed in a worker in this browser",
 		computed: (s) => `${s} s including data reads`,
 		lessThan: "less than 0.01",

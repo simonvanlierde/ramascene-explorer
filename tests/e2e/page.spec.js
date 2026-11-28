@@ -1245,7 +1245,7 @@ test("World's country entry has no code, and its words follow the indicator and 
 	await expect(page.locator(".main .wstrip .regions .gl")).toContainText("where the jobs serve consumption");
 	await page.goto(`${FIXTURE}&region=world&panel=method`);
 	await expect(page.locator("#tp-method")).toContainText(
-		"the toggle only chooses whether the map colours each region by where emissions are released or by where the final demand is",
+		"With Consumption, World colours each region by where emissions are released. With Production, it colours each region by where the final demand is.",
 	);
 });
 
