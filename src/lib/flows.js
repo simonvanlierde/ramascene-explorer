@@ -6,26 +6,10 @@ import { geoDistance } from "d3-geo";
 import { interpolateLab, interpolateRgb, interpolateRgbBasis, piecewise } from "d3-interpolate";
 import { cubicOut } from "svelte/easing";
 import { at } from "./embodied.js";
+import { LOCALE, msg } from "./messages.js";
 
-// The 15 level-2 sections in the Parquet's order, short enough for the rail,
-// and one muted hue each, shared by the rail, the map and the Sankey.
-export const SECTION_SHORT = [
-	"Agriculture",
-	"Fishing",
-	"Mining",
-	"Manufacturing",
-	"Electricity, gas, water",
-	"Construction",
-	"Trade",
-	"Hotels, restaurants",
-	"Transport",
-	"Finance",
-	"Real estate, business",
-	"Public admin",
-	"Education",
-	"Health",
-	"Other services",
-];
+// One muted hue per section, shared by the rail, the map and the Sankey.
+export const SECTION_SHORT = msg.sections;
 export const SECTION_COLOURS = [
 	"#6e9550",
 	"#3f9693",
@@ -45,32 +29,22 @@ export const SECTION_COLOURS = [
 ];
 const CONTINENTS = ["Europe", "Middle-East", "America", "Asia-Pacific", "Africa"];
 
-// Names that read better on the map than the database's.
-const ROW_NAME = {
-	WA: "Rest of Asia–Pacific",
-	WL: "Rest of America",
-	WF: "Rest of Africa",
-	WM: "Rest of Middle East",
-	WE: "Rest of Europe",
-};
 // The choice in the country list that stands for every region at once; ui.who is otherwise an
 // index into the data's regions, so anything that indexes by it checks for this first.
 export const WORLD = -1;
-export const placeName = (meta, k) => (k === WORLD ? "World" : (ROW_NAME[meta.country_codes[k]] ?? meta.countries[k]));
-// The two that are too long for the Sankey's partner column on a phone.
-const ROW_SHORT = { WA: "Rest of Asia–Pac.", WM: "Rest of Mid. East" };
-// The same name after "in" or "from", where these four take "the".
-const THE = new Set(["US", "GB", "NL", "CZ"]);
+export const placeName = (meta, k) =>
+	k === WORLD ? msg.world : (msg.placeNames[meta.country_codes[k]] ?? meta.countries[k]);
+// The same name after "in" or "from".
 export const theName = (meta, k) =>
-	k === WORLD ? "the world" : (THE.has(meta.country_codes[k]) ? "the " : "") + placeName(meta, k);
+	k === WORLD ? msg.theWorld : msg.theName(meta.country_codes[k], placeName(meta, k));
 
 // --- numbers ------------------------------------------------------------------
 
 const MINUS = "−";
-const numbers = new Intl.NumberFormat("en", { maximumSignificantDigits: 3 });
-const small = new Intl.NumberFormat("en", { maximumSignificantDigits: 2 });
-const scientific = new Intl.NumberFormat("en", { notation: "scientific", maximumSignificantDigits: 2 });
-const percentages = new Intl.NumberFormat("en", {
+const numbers = new Intl.NumberFormat(LOCALE, { maximumSignificantDigits: 3 });
+const small = new Intl.NumberFormat(LOCALE, { maximumSignificantDigits: 2 });
+const scientific = new Intl.NumberFormat(LOCALE, { notation: "scientific", maximumSignificantDigits: 2 });
+const percentages = new Intl.NumberFormat(LOCALE, {
 	maximumSignificantDigits: 3,
 	maximumFractionDigits: 2,
 	roundingPriority: "lessPrecision",
@@ -99,117 +73,48 @@ export function pct(v) {
 // pct in words, for a reader new to signed percentages: "less than 0.01% lower than in 2011".
 export function pctWords(v) {
 	const s = pct(v);
-	if (s === "0%") return "no change from 2011";
-	return `${s.slice(1).replace(/^</, "less than ")} ${s[0] === MINUS ? "lower" : "higher"} than in 2011`;
+	if (s === "0%") return msg.noChange;
+	return msg.pctWords(s.slice(1), s[0] === MINUS);
 }
 // A share that is not zero never reads as 0%.
 export function share(a, b) {
 	const p = b > 0 ? (a / b) * 100 : 0;
 	return p > 0 && p < 0.5 ? "<1%" : `${Math.round(p)}%`;
 }
-export const possessive = (name) => (name.endsWith("s") ? "’" : "’s");
+export const possessive = msg.possessive;
 
 // --- indicators ------------------------------------------------------------------
 
-// Display unit and wording per indicator (global ids of the engine database).
-// made: the producer side's label, in the indicator's own word (released,
-// jobs, extracted); here: the legend's start; own(name): what a country does.
-// Values reach these functions already in the display unit (factor applied):
-// Mt for GHG and metal ores, persons for employment.
-const WORDING = {
-	5: {
-		label: "GHG",
-		noun: "greenhouse gases",
-		source: "emissions are released",
-		made: { col: "Released in", here: "Released here to make", own: (n) => `What ${n} releases`, is: "it is released" },
-		total: { in: "Consumption footprint", out: "Emissions released" },
-		consumed: "it is consumed",
-		factor: 1e-9,
-		unit: "Mt CO₂-eq",
-		in: {
-			verb: " consumption was linked to",
-			abroad: "was released abroad",
-			would: " consumption would have been linked to",
-		},
-		out: {
-			verb: " released",
-			abroad: "of it served consumption abroad",
-			would: "emissions released in ",
-			come: " would have come to",
-		},
-	},
-	3: {
-		label: "Employment",
-		noun: "jobs",
-		source: "people work",
-		made: { col: "Jobs in", here: "Jobs here that make", own: (n) => `Jobs in ${n}`, is: "the jobs are" },
-		total: { in: "Jobs behind consumption", out: "Jobs located here" },
-		consumed: "the jobs serve consumption",
-		factor: 1e3,
-		unit: "jobs",
-		in: {
-			verb: " consumption was linked to",
-			abroad: "of them were abroad",
-			would: " consumption would have been linked to",
-		},
-		out: {
-			verb: " had",
-			abroad: "of them served consumption abroad",
-			would: "jobs in ",
-			come: " would have come to",
-		},
-	},
-	7: {
-		label: "Metal ores",
-		noun: "metal ores",
-		source: "metal ores are mined",
-		made: {
-			col: "Extracted in",
-			here: "Extracted here to make",
-			own: (n) => `What ${n} extracts`,
-			is: "it is extracted",
-		},
-		total: { in: "Ores behind consumption", out: "Ores extracted here" },
-		consumed: "it is consumed",
-		factor: 1e-3,
-		unit: "Mt",
-		in: {
-			verb: " consumption required",
-			abroad: "was extracted abroad",
-			would: " consumption would have required metal-ore extraction of",
-		},
-		out: {
-			verb: " extracted",
-			abroad: "of it served consumption abroad",
-			would: "metal-ore extraction in ",
-			come: " would have come to",
-		},
-	},
-};
+// Per indicator (global ids of the engine database): factor takes the engine's values to the
+// display unit (Mt for GHG and metal ores, persons for employment); count marks a count of
+// people, whose unit grows to thousands and millions. The words are in messages.js.
+const FACTOR = { 5: { factor: 1e-9 }, 3: { factor: 1e3, count: true }, 7: { factor: 1e-3 } };
+const WORDING = Object.fromEntries(Object.entries(FACTOR).map(([id, f]) => [id, { ...msg.indicators[id], ...f }]));
 // An id without wording here (a new indicator in the data) is an error, not GHG.
 export function wording(id) {
-	if (!WORDING[id]) throw new Error(`No wording for indicator id ${id}; add it to WORDING in flows.js`);
+	if (!WORDING[id])
+		throw new Error(
+			`No wording for indicator id ${id}; add it to FACTOR in flows.js and the indicators in messages.js`,
+		);
 	return WORDING[id];
 }
 
 // The plain line under the Flows sentence: what the direction shows, for the country in view.
 export function directionHint(meta, who, dir, id) {
 	const w = wording(id);
-	if (who === WORLD) return `Colours the map by where ${dir === "in" ? w.source : w.consumed}.`;
-	return dir === "in"
-		? `Where ${w.source} to make what ${theName(meta, who)} consumes.`
-		: `Where what ${theName(meta, who)} makes is consumed.`;
+	if (who === WORLD) return msg.hintWorld(dir === "in" ? w.source : w.consumed);
+	return dir === "in" ? msg.hintIn(w.source, theName(meta, who)) : msg.hintOut(theName(meta, who));
 }
 
 // [number, unit] for an amount in the indicator's display unit; ref picks the
 // unit (jobs, thousand or million jobs), so numbers that share one unit pass their largest.
 export function amount(v, id, ref = v) {
 	const w = wording(id);
-	if (w.unit !== "jobs") return [fmt(v), w.unit];
+	if (!w.count) return [fmt(v), w.unit];
 	const a = Math.abs(ref);
-	if (a >= 1e6) return [fmt(v / 1e6), "million jobs"];
-	if (a >= 1e3) return [fmt(v / 1e3), "thousand jobs"];
-	return [fmt(v), "jobs"];
+	if (a >= 1e6) return [fmt(v / 1e6), msg.millionJobs];
+	if (a >= 1e3) return [fmt(v / 1e3), msg.thousandJobs];
+	return [fmt(v), w.unit];
 }
 export const amountText = (v, id) => amount(v, id).join(" ");
 
@@ -229,18 +134,10 @@ export function worldTotal(results, run, id) {
 }
 // The same with the unit cut to "Mt" or "k jobs", where space is short (map
 // labels, legend, run cards); the full unit is stated nearby.
-const SHORT_UNIT = {
-	"Mt CO\u2082-eq": "Mt",
-	Mt: "Mt",
-	"million jobs": "M jobs",
-	"thousand jobs": "k jobs",
-	jobs: "jobs",
-};
 export function amountShort(v, id) {
 	const [n, u] = amount(v, id);
-	return SHORT_UNIT[u].startsWith("M ") || SHORT_UNIT[u].startsWith("k ")
-		? `${n}${SHORT_UNIT[u]}`
-		: `${n} ${SHORT_UNIT[u]}`;
+	const short = msg.unitShort[u];
+	return short.startsWith("M ") || short.startsWith("k ") ? `${n}${short}` : `${n} ${short}`;
 }
 
 // --- runs ---------------------------------------------------------------------
@@ -248,30 +145,20 @@ export function amountShort(v, id) {
 // The runs What if… lists first, in order; What if… opens on the first.
 export const FEATURED = ["coal-power-china", "steel-asia-pacific-20", "construction-demand-europe"];
 
-// Plain-language "if …" clause for each run, as the sentence uses it.
-const NAMED = {
-	"vehicle-demand-europe": "European final demand for European-made motor vehicles fell by 20%",
-	"steel-in-vehicles-europe": "European vehicle makers required 20% less steel per unit of output",
-	"cement-in-construction": "construction required 20% less cement per unit of output worldwide",
-	"coal-power-china": "industry in China required 20% less Chinese coal power per unit of output",
-	"construction-demand-europe": "European final demand for construction work fell by 20%",
-};
 // The kind of change, as the chosen card's subtitle names it; a grid cell has none here.
-export const RUN_KIND = {
-	"vehicle-demand-europe": "Final demand",
-	// first use of the term on the page, so it carries its gloss
-	"construction-demand-europe": "Final demand: what households, governments and investors buy",
-	"coal-power-china": "Electricity use",
-};
-const PLACE = { "Middle-East": "the Middle East", America: "the Americas" };
+export const RUN_KIND = msg.runKind;
 export function runText(data, id) {
-	if (NAMED[id]) return NAMED[id];
+	if (msg.runs[id]) return msg.runs[id];
 	const s = data.scenarios.find((x) => x.id === id);
 	if (!s?.grid) return s?.label ?? id;
 	const product = data.grid.products.find((p) => p.slug === s.grid.product);
 	const region = data.grid.regions.find((r) => r.slug === s.grid.region);
 	const name = region?.name ?? s.grid.region;
-	return `every industry in ${PLACE[name] ?? name} required ${Math.abs(s.grid.cut)}% less ${(product?.short ?? s.grid.product).toLowerCase()} per unit of output`;
+	return msg.gridRun(
+		msg.continentIn[name] ?? name,
+		Math.abs(s.grid.cut),
+		(product?.short ?? s.grid.product).toLowerCase(),
+	);
 }
 export const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -588,11 +475,11 @@ export function sankeyLayout(
 	const P = largest.map((k) => {
 		const home = k === sel.who;
 		const name = placeName(meta, k);
-		const short = home ? "At home" : (ROW_SHORT[meta.country_codes[k]] ?? name);
-		return { ks: [k], name: home ? `${name} (home)` : name, short, v: vals[k] };
+		const short = home ? msg.atHome : (msg.placeShort[meta.country_codes[k]] ?? name);
+		return { ks: [k], name: home ? msg.home(name) : name, short, v: vals[k] };
 	});
 	if (rest.length) {
-		const name = `${rest.length} other regions`;
+		const name = msg.otherRegions(rest.length);
 		P.push({ ks: rest, name, short: name, v: rest.reduce((s, k) => s + vals[k], 0) });
 	}
 	const regions = (s) =>
@@ -746,11 +633,11 @@ export function tableRows(meta, sum, on) {
 
 // Column suffix and divisor from the table's display unit.
 const CSV_UNIT = {
-	"Mt CO\u2082-eq": ["mt_co2eq", 1],
-	Mt: ["mt", 1],
-	jobs: ["jobs", 1],
-	"thousand jobs": ["thousand_jobs", 1e3],
-	"million jobs": ["million_jobs", 1e6],
+	[msg.indicators[5].unit]: ["mt_co2eq", 1],
+	[msg.indicators[7].unit]: ["mt", 1],
+	[msg.indicators[3].unit]: ["jobs", 1],
+	[msg.thousandJobs]: ["thousand_jobs", 1e3],
+	[msg.millionJobs]: ["million_jobs", 1e6],
 };
 const slug = (t) =>
 	t
@@ -814,4 +701,4 @@ export function continents(meta, sum) {
 	});
 }
 // "Asia-Pacific" as the strip and the Sankey write it
-export const continentLabel = (name) => name.replace("-", " ");
+export const continentLabel = (name) => msg.continents[name];
