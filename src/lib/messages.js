@@ -122,7 +122,7 @@ const en = {
 			out: {
 				verb: " had",
 				abroad: "of them served consumption abroad",
-				would: "jobs in ",
+				would: "employment in ",
 				come: " would have come to",
 			},
 		},
@@ -240,17 +240,18 @@ const en = {
 		zoomOut: "Zoom out",
 		resetZoom: "Reset zoom",
 		noteRun: (world, pct) =>
-			`${world ? "The fill is" : "Bands keep their 2011 width; their colour and the fill are"} the % change in each ${world ? "region’s" : ""} flow in this run, shown ${pct}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.`,
-		noteWorld: (unit, where) => `Fill: ${unit} per region, by where ${where}.`,
+			`${world ? "Each region’s colour is" : "Bands keep their 2011 width. The colour of each band and country is"} the % change in its flow in this run, drawn ${pct}% of the way from the 2011 baseline. The slider blends the two; it is not a timeline. An engine run on 2011 data, not a forecast.`,
+		noteWorld: (unit, where) => `Country colour: ${unit} per region, by where ${where}.`,
 		noteBands: (n, what, unit, section) =>
-			`Bands: the ${n} largest flows ${what}, width ∝ ${unit}${section === null ? "" : `, ${section} only`}. Fill: ${unit} per region.`,
+			`Bands: the ${n} largest flows ${what}${section === null ? "" : `, ${section} only`}; width shows ${unit}. Country colour: ${unit} per region.`,
 		turn: "Drag to turn the globe, scroll or pinch to zoom.",
 		pinch: "Scroll or pinch to zoom.",
 		largest: (section, share) => `Largest: ${section}, ${share}`,
 		click: "Click to select",
 		changeLegend: "Change in each 2011 flow, %",
-		scale: "Square-root scale, fitted to the larger flows; changes beyond its limits share the end colour.",
-		bandWidth: (unit) => ` Band width: 2011 ${unit}.`,
+		scale:
+			"Colour grows with the square root of the change. The larger flows set the ends; bigger changes take the end colour.",
+		bandWidth: (unit) => ` Band width is each flow’s 2011 value, in ${unit}.`,
 		scrub: "From the 2011 baseline to the run",
 		baseline: "2011 baseline",
 		ofRun: (pct) => `${pct}% of the run`,
@@ -291,7 +292,7 @@ const en = {
 	meaning: {
 		heading: "What the numbers mean",
 		flows: (source) =>
-			`What we consume connects us to environmental impacts across global supply chains. The map follows those links from final demand, what households, governments and investors buy, to the industries where ${source}. Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there. World adds up every region: both directions give the same total, and the toggle only picks whether the map shows where it is released or where it is consumed.`,
+			`The map follows supply chains from final demand, what households, governments and investors buy, back to the industries where ${source}. Consumption adds up the flows behind final demand in the selected country or region, wherever they happen. Production adds up the flows that happen there, wherever the demand is. World adds up every region, so both directions give the same total; the toggle only chooses whether the map colours each region by where ${source} or by where the final demand is.`,
 		whatif:
 			"What if… shows how changes in one place ripple through supply chains worldwide. Each change alters the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain. Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound. These are scenarios for the 2011 economy, not forecasts.",
 		method: (dataset, year) =>
@@ -311,7 +312,7 @@ const en = {
 		reference: (tolerance) =>
 			`The engine reproduces the Octave reference files shipped with RaMa-Scene (routes two and four; value added and GHG), ${tolerance}.`,
 		independent: (values, runs, indicators, regions) =>
-			`${values} world-region totals match within relative 1e-9 when recomputed outside the engine as B·L·ΣY (indicator intensities, supply-chain requirements, final demand). They cover ${runs} runs, counting the baseline and the 0% control, × ${indicators} indicators × ${regions} world regions.`,
+			`${values} world-region totals from the engine match a separate sum, B·L·ΣY (indicator intensities, supply-chain requirements, final demand), within relative 1e-9. They cover ${runs} runs, counting the baseline and the 0% control, × ${indicators} indicators × ${regions} world regions. The sum uses the engine’s own L, so it checks the aggregation, not the inverse; brightway-check in the source code compares an independent inverse from pymrio.`,
 		control: "A 0% scenario through the same modified-coefficient path reproduces the baseline.",
 		direction: (skipped) =>
 			"Every published scenario changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
@@ -542,11 +543,11 @@ const en = {
 		lever: (n) => `Change ${n}`,
 		product: "Product",
 		origin: "Produced in",
-		consumer: "Used by",
-		consumedIn: "Used in",
+		consumer: "Industry or final demand that uses it",
+		consumedIn: "Region where it is used",
 		change: "Input or demand change, %",
 		changeHelp: (min, max) =>
-			`For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: ${min} to +${max}%.`,
+			`For an industry, this changes its input of the product per unit of output. For final demand, it changes spending on the product. A negative value is a cut. Range: ${min} to +${max}%.`,
 		remove: (n) => `Remove change ${n}`,
 		add: "Add a change",
 		atMost: (n) => ` (at most ${n})`,
@@ -609,7 +610,7 @@ const en = {
 			`${users}${where} required ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${origin} per unit of output`,
 		pill: "Live job: not covered by checks",
 		heading: "This run: computed live",
-		note: "The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.",
+		note: "The calculation checks below cover the published scenarios, not this job. The map shows a job the job API computed while you waited, against the baseline from the same job.",
 	},
 
 	// --- custom scenarios computed in the browser --------------------------------------
@@ -617,7 +618,7 @@ const en = {
 		status: "computed in this browser",
 		pill: "Custom run: not covered by checks",
 		heading: "Custom calculation",
-		note: "This run was not checked: the calculation checks below cover the published scenarios only. The browser recalculates the 2011 supply chain with float64 Woodbury updates on matrices stored as float32. Every published scenario matches RaMa-Scene within relative 1e-6 that way. Judge the assumptions of your custom scenario yourself.",
+		note: "The calculation checks below cover the published scenarios, not this custom run. The same browser calculation reproduces every published scenario within relative 1e-6 of RaMa-Scene. A custom run makes the same assumptions as a published one: prices and all other inputs stay fixed, and nothing replaces what is cut.",
 		method: "Float64 Woodbury update on float32 matrices, computed in a worker in this browser",
 		computed: (s) => `${s} s including data reads`,
 		lessThan: "less than 0.01",
