@@ -13,6 +13,10 @@ follow [Semantic Versioning](https://semver.org/).
   155 scenarios and the baseline (the float32 storage floor); a one-off comparison on 26 November 2026 found it 1.6e-15
   from the page's engine. See
   [browser-engine.md](docs/browser-engine.md#use-the-engine-from-python).
+- `pipeline/ask.py` brings the WebMCP tools' `find_names` and `run_whatif` to Python: catalogue names
+  in, the numpy engine's totals and flows out, with the page's checks and error messages. It reads a
+  local copy of the store. See
+  [browser-engine.md](docs/browser-engine.md#use-the-engine-from-python).
 - The agreement table in `brightway-check/` gains a scenario table: the numpy engine and pymrio on the
   155 published scenarios.
 - In a browser with WebMCP (Chrome's origin trial or flag), the page registers three tools for

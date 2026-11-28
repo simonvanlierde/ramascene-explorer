@@ -9,14 +9,14 @@ dependencies = ["numpy>=2", "django>=5.2,<6", "scipy>=1.15"]
 
 [dependency-groups]
 dev = [
-    "pytest>=9",
-    "pytest-cov>=7.1.0",
-    "ruff>=0.17.0",
-    "ty>=0.0.86",
+  "pytest>=9",
+  "pytest-cov>=7.1.0",
+  "ruff>=0.17.0",
+  "ty>=0.0.86",
 ]
 precompute = [
-    "pyarrow>=26.0.0",
-    "zarr>=3.4.1",
+  "pyarrow>=26.0.0",
+  "zarr>=3.4.1",
 ]
 
 [tool.uv]
@@ -35,6 +35,7 @@ minversion = "9"
 pythonpath = [".", "pipeline", "evals/ask"]
 testpaths = ["tests"]
 addopts = ["-ra"]
+markers = ["store: tests that read the browser-engine Zarr store (set BROWSER_ENGINE_DATA)"]
 strict = true
 filterwarnings = ["error"]
 log_level = "INFO"
@@ -64,14 +65,21 @@ src = [".", "pipeline", "evals/ask"]
 select = ["ALL"]
 ignore = [
   "COM812",  # conflicts with the formatter
-  "ANN",     # ty checks the types; annotating every matrix argument adds little
-  "N802", "N803", "N806",  # A, L, Y, B are the input-output notation
-  "RUF001", "RUF002",  # × and − are deliberate in strings and docstrings
-  "EM", "TRY003",  # messages built inline at the raise
-  "PLR0913", "PLR0917",  # the engine calls take Y, B, L and friends positionally
+  "ANN",  # ty checks the types; annotating every matrix argument adds little
+  "N802",
+  "N803",
+  "N806",  # A, L, Y, B are the input-output notation
+  "RUF001",
+  "RUF002",  # × and − are deliberate in strings and docstrings
+  "EM",
+  "TRY003",  # messages built inline at the raise
+  "PLR0913",
+  "PLR0917",  # the engine calls take Y, B, L and friends positionally
   "T201",  # precompute.py is a command-line script
   "CPY001",
-  "D102", "D103", "D107",  # helpers are named for what they return; docstrings where the contract is not obvious
+  "D102",
+  "D103",
+  "D107",  # helpers are named for what they return; docstrings where the contract is not obvious
 ]
 pydocstyle.convention = "google"
 

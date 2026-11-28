@@ -119,6 +119,8 @@ browser) is an error and leaves the view as it was; nothing is clamped. `headlin
 the map could not draw the run. An agent that aborts the call cancels the run. As with every
 custom run, it stays out of the link. `tests/e2e/webmcp.spec.js` drives the tools through a
 stand-in `document.modelContext`, and shows the calls an agent makes.
+`pipeline/ask.py` offers `find_names` and `run_whatif` in Python, on a local copy of the store
+([browser-engine.md](browser-engine.md#use-the-engine-from-python)).
 
 ## Job API
 

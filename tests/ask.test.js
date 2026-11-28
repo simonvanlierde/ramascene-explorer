@@ -28,30 +28,13 @@ const ask = ({ fetchFn, ...opts }) => {
 	return askReal(opts);
 };
 
-const consumers = [
-	...Array.from({ length: 15 }, (_, i) => ({ id: i + 1, name: `S: Section ${i + 1}`, final: false, leaves: [i] })),
-	{ id: 198, name: "S: Manufacture of motor vehicles", final: false, leaves: [198] },
-	{ id: 276, name: "Y: Final Consumption", final: true, leaves: [0] },
-];
-const catalog = {
-	products: [
-		{ id: 180, name: "Motor vehicles" },
-		{ id: 7, name: "Steel" },
-		{ id: 8, name: "Steel" },
-	],
-	regions: ["Total", "Europe", "Middle-East", "America", "Asia-Pacific", "Africa", "Austria", "China"].map(
-		(name, i) => ({ id: i, name }),
-	),
-	consumers,
-};
-const lever = (over = {}) => ({
-	product: "Motor vehicles",
-	origin_region: "Europe",
-	consumed_by: ["Y: Final Consumption"],
-	consumed_region: "Austria",
-	change_percent: -20,
-	...over,
-});
+// tests/test_ask.py runs the same cases on pipeline/ask.py
+const CASES = JSON.parse(readFileSync(new URL("./ask-cases.json", import.meta.url), "utf8"));
+const { catalog } = CASES;
+const detail = { ...catalog, products: CASES.detail_products };
+const caseCatalog = (c) => (c.detail ? detail : catalog);
+const lever = (over = {}) => ({ ...CASES.lever, ...over });
+const isLever = (l) => l !== null && typeof l === "object" && !Array.isArray(l);
 
 test("askUrl accepts https and loopback http, keeps the path, refuses the rest", () => {
 	assert.equal(askUrl("?ask=https://models.example.org/v1/"), "https://models.example.org/v1");
@@ -92,48 +75,27 @@ test("the prompt lists the catalogue and the examples", () => {
 	assert.match(p, /"All industries" means every industry/);
 });
 
-test("names map to ids, and All industries is consumers 1 to 15", () => {
-	const [a, b] = toModelDetails(
-		[lever(), lever({ product: "Steel", consumed_by: [ALL], origin_region: "Total", change_percent: 1000 })],
-		catalog,
-	);
-	assert.deepEqual(a, { product: [180], originReg: [1], consumedBy: [276], consumedReg: [6], techChange: [-20] });
-	assert.deepEqual(
-		b.consumedBy,
-		Array.from({ length: 15 }, (_, i) => i + 1),
-	);
-	assert.deepEqual(b.product, [7]); // a repeated name keeps its first id
-	// a consumer named twice, or inside All industries, is sent once
-	const [c] = toModelDetails(
-		[lever({ consumed_by: [ALL, "S: Section 2", "S: Manufacture of motor vehicles"] })],
-		catalog,
-	);
-	assert.equal(c.consumedBy.length, 16);
-	assert.deepEqual(b.originReg, [0]);
-});
-
-test("unknown names and out-of-range changes are errors naming the change", () => {
-	assert.throws(
-		() => toModelDetails([lever(), lever({ product: "Gold" })], catalog),
-		/change 2: "Gold" is not in the catalogue/,
-	);
-	assert.throws(() => toModelDetails([lever({ consumed_by: ["Nobody"] })], catalog), /Nobody/);
-	assert.throws(() => toModelDetails([lever({ change_percent: -100.5 })], catalog), /change 1: .*outside/);
-	assert.throws(() => toModelDetails([lever({ change_percent: 1001 })], catalog), /outside/);
-	assert.throws(() => toModelDetails([lever({ change_percent: "20" })], catalog), /must be a number/);
-	assert.throws(() => toModelDetails([], catalog), /no changes/);
-	for (const bad of [null, "Steel", 3])
-		assert.throws(() => toModelDetails([lever(), bad], catalog), /change 2 is not a change/);
+// a repeated name keeps its first id, All industries is consumers 1 to 15, and a consumer named
+// twice or inside All industries is sent once; unknown names and out-of-range changes are errors
+// naming the change
+test("names map to ids, or fail naming the change, as the shared cases say", () => {
+	for (const c of CASES.to_model_details) {
+		const levers = c.levers.map((l) => (isLever(l) ? lever(l) : l));
+		const run = () => toModelDetails(levers, caseCatalog(c));
+		if (c.error) assert.throws(run, { message: c.error }, JSON.stringify(c.levers));
+		else assert.deepEqual(run(), c.model_details);
+	}
+	for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+		assert.throws(() => toModelDetails([lever({ change_percent: bad })], catalog), {
+			message: "change 1: the change must be a number (percent)",
+		});
+	}
 	assert.throws(() => toModelDetails(Array(11).fill(lever()), catalog), /more than 10/);
-	assert.equal(toModelDetails([lever({ change_percent: -100 })], catalog)[0].techChange[0], -100);
+	assert.equal(toModelDetails(Array(10).fill(lever()), catalog).length, 10);
 });
 
 test("a lever reads in plain words", () => {
-	assert.equal(
-		leverText(lever({ origin_region: "Total" })),
-		"Motor vehicles, made in all regions, used by Y: Final Consumption in Austria: −20%",
-	);
-	assert.match(leverText(lever({ change_percent: 10 })), /: \+10%$/);
+	for (const c of CASES.lever_text) assert.equal(leverText(lever(c.lever)), c.text);
 });
 
 const meta = {
@@ -151,11 +113,7 @@ test("a view answer maps indicator and region, and leaves the rest unset", () =>
 });
 
 test("findNames matches every word, ignoring case; industries include All industries", () => {
-	assert.deepEqual(findNames(catalog, "products", "steel"), ["Steel"]);
-	assert.deepEqual(findNames(catalog, "consumers", "MOTOR manufacture"), ["S: Manufacture of motor vehicles"]);
-	assert.ok(findNames(catalog, "consumers", "all").includes(ALL));
-	assert.deepEqual(findNames(catalog, "products", "steel zzz"), []);
-	assert.deepEqual(findNames(catalog, "regions", "atlantis"), []);
+	for (const c of CASES.find_names) assert.deepEqual(findNames(caseCatalog(c), c.kind, c.query), c.names, c.query);
 });
 
 test("applyView sets the ui and says what the map shows", () => {
@@ -279,26 +237,13 @@ test("ask refuses redirects", async () => {
 });
 
 test("a repeated name with other leaves gets its own name; one with the same leaves collapses", () => {
-	const c = {
-		...catalog,
-		products: [
-			{ id: 16, name: "Other services", leaves: [1, 2, 3] },
-			{ id: 50, name: "Construction", leaves: [9] },
-			{ id: 51, name: "Construction", leaves: [9] },
-			{ id: 74, name: "Other services", leaves: [3] },
-		],
-	};
-	const s = askSchema(c);
+	const s = askSchema(detail);
 	assert.deepEqual(s.properties.levers.items.properties.product.enum, [
 		"Other services",
 		"Construction",
 		`Other services${DETAIL}`,
 	]);
-	const ids = (product) => toModelDetails([lever({ product })], c)[0].product;
-	assert.deepEqual(ids("Other services"), [16]);
-	assert.deepEqual(ids(`Other services${DETAIL}`), [74]);
-	assert.deepEqual(ids("Construction"), [50]);
-	assert.match(systemPrompt(c), /Products: Other services; Construction; Other services \(detail\)\n/);
+	assert.match(systemPrompt(detail), /Products: Other services; Construction; Other services \(detail\)\n/);
 });
 
 // The real catalogue is a fetched release asset (docs/browser-engine.md), so these skip without it.
