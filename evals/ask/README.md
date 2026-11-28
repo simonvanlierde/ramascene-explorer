@@ -23,8 +23,8 @@ The gold set:
 
 A held-out set (30 paraphrases of other scenarios, 12 view and 15 none questions) is kept out of
 this repository, so that a prompt tuned on the dev items can still be checked on items nobody
-tuned against. Run it only on a frozen prompt, with `--items`; once an item has been looked at
-it moves into `items.json`. Every miss seen in the real Ask panel becomes a dev item.
+tuned against ([how to run it](#held-out-items-and-repeat-runs)). Once an item has been looked
+at, it moves into `items.json`. Every miss seen in the real Ask panel becomes a dev item.
 CI's page tests load `items.json` against the catalogue and `data/results.json`, so a misspelt
 name or scenario id fails there instead of scoring as a miss.
 
@@ -38,7 +38,8 @@ industries" and the 15 sections it stands for.
 
 You need the browser store (`scripts/fetch-data.sh store`, or the export in
 [docs/browser-engine.md](../../docs/browser-engine.md)) and a server that supports
-`response_format` with a JSON schema, such as vLLM:
+`response_format` with a JSON schema, such as vLLM. A run replaces that model's log in its
+output folder, so give each run its own folder.
 
 ```sh
 vllm serve Qwen/Qwen3.5-9B --served-model-name qwen3.5-9b --max-model-len 8192 --language-model-only
@@ -46,28 +47,45 @@ export NODE_SERVE_URL=http://127.0.0.1:8000/v1 NODE_SERVE_NAME=qwen3.5-9b
 python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out
 ```
 
-The prompt is about 5,100 tokens, so 8192 leaves room for the answer. Results go to `out/` and
-are not committed: `<model>.jsonl` holds one line per question, with the raw answer,
-`finish_reason` and timing, and `<model>.summary.json` holds per kind `correct`, `n`, a Wilson
-95% CI (`ci95`) and, for what-ifs, `fields_wrong`: how often each lever field (product, origin,
-consumed_by, consumed_region, change) missed when the lever count was right. `server_errors`
-counts requests the server failed (refused, timed out, not JSON), which are not scored and not
-in `n`; the printed summary shows it beside the scores. After three in a row the run stops.
-The log is written one line per question as the run goes, and a run replaces the logs already in
-its output folder. `run.sh` writes its three dev runs to `out/r1` to `out/r3` and the held-out
-run to `out/heldout`, and records each model's highest exit in `out/status.txt`.
+The prompt is about 5,100 tokens, so 8192 leaves room for the answer. On a 24 GB card the 9B
+and the 27B need `--language-model-only` (the vision encoder does not fit beside them); the 27B
+also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`.
+
+Results go to `out/` and are not committed. The log is written one line per question as the
+run goes:
+
+- `<model>.jsonl` holds one line per question, with the raw answer, `finish_reason` and timing.
+- `<model>.summary.json` holds per kind `correct`, `n`, a Wilson 95% CI (`ci95`) and, for
+  what-ifs, `fields_wrong`: how often each lever field (product, origin, consumed_by,
+  consumed_region, change) missed when the lever count was right.
+- `server_errors` in the summary counts requests the server failed (refused, timed out, not JSON), which are
+  not scored and not in `n`; the printed summary shows it beside the scores. After three in a
+  row the run stops.
+
 Exit codes: 0 scored, 1 fewer than 148 label questions right, 2 usage error, 3 a server error or
 an unreadable gold set or log.
 
+### Held-out items and repeat runs
+
+Score the held-out file only on a frozen prompt: pass it with `--items` and a separate output
+folder.
+
+`run.sh` is one host's script: it serves three models in turn with a local `node-serve`
+wrapper, each with the engine flags that fit a 24 GB card, and runs the dev items three times
+(`out/r1` to `out/r3`), then the held-out items to `out/heldout` if `HELDOUT` names their file.
+It records each model's highest exit in `out/status.txt`, and expects `manifest-v3.json` and
+`results.json` beside it.
+
+## Rescore and compare
+
 A log keeps the `ok` it was scored with. After a change to the scorer or the gold, score the
-logs again from their raw answers, without a model:
+logs again from their raw answers, without a model. `--rescore` rewrites the logs in the
+folder. Pass the `--items` the logs ran with (the held-out file for `out/heldout`): when a log
+in the folder holds an item the gold set lacks, the run exits 3 and rewrites no log.
 
 ```sh
 python3 evals/ask/ask_eval.py data/browser-engine/manifest-v3.json data/results.json evals/ask/out/r1 --rescore
 ```
-
-Pass the `--items` the logs ran with (the held-out file for `out/heldout`): when a log in the
-folder holds an item the gold set lacks, the run exits 3 and rewrites no log.
 
 To compare runs item by item:
 
@@ -112,11 +130,6 @@ What the 2026-11-26 run below can and cannot say:
   paraphrases (4 to 6 and 8 to 5, Holm p 1) and leads Qwen3.5-9B 14 to 3 (Holm p 0.06), with
   Holm across all six pairs. It loses to all three on labels and views (Holm p < 0.01); on
   `none` only the gap to the 27B holds up (Holm p 0.006).
-
-`run.sh` is one host's script: it serves three models in turn with a local `node-serve`
-wrapper, each with the engine flags that fit a 24 GB card, and runs the dev items three times
-(`out/r1` to `out/r3`), then the held-out items if `HELDOUT` names their file. It expects
-`manifest-v3.json` and `results.json` beside it.
 
 ## Results
 
@@ -186,9 +199,6 @@ view       qwen3.5-9b vs qwen3.5-0.8b-ask-lora  n 24  23 vs 13  b 10 c 0  diff +
 ```
 
 </details>
-
-On this card the 9B and the 27B need `--language-model-only` (the vision encoder does not fit
-beside them); the 27B also needs `--max-model-len 7168 --gpu-memory-utilization 0.95`.
 
 A log scored before 2026-11-26 compared catalogue names, not leaves, so "Manufacture of
 electrical machinery and apparatus n.e.c." counted as a miss for "Electrical machinery and

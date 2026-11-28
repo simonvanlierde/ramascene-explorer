@@ -29,7 +29,7 @@ export async function loadKernel(forceSingle = false) {
 }
 
 // Reserve stacks and runtime space. Sparse systems did not benefit in the paired runs, and on
-// four cores the pool slowed first calculations below 10⁹ multiply-adds (docs/browser-engine.md).
+// four cores the pool slowed first calculations below 10⁹ multiply-adds (docs/browser-performance.md).
 export function useThreads({ rows, columns, memory }, force = false) {
 	return (
 		memory + 16 * 1024 ** 2 <= LIMITS.memory &&

@@ -9,7 +9,7 @@ review and the license check; `osv.yml` scans the lockfiles every week and `cold
 sets the project up from nothing.
 
 The 12 tests in `tests/test_engine_plumbing.py` never run in CI: they need a RaMa-Scene
-checkout and its `db.sqlite3`, which CI does not have. This is an accepted gap. They check
+checkout and its `db.sqlite3`, which CI does not have. They check
 the adapter in `pipeline/precompute.py` against the real engine, so run
 `uv run pytest --engine="$ENGINE_DIR"` after changing that adapter or before a precompute run.
 Both test steps fail below a line-coverage floor: `fail_under` in
@@ -250,7 +250,7 @@ Set up once:
 5. Set the `DATA_ORIGIN` variable and run `gh workflow run cloudflare.yml --ref main`.
 
 R2 adds CORS headers only when it answers a read itself, and the edge can serve a copy cached
-without them for a year; that broke production once. The response-header rule sets the
+without them for a year. The response-header rule sets the
 headers on every answer, cached ones included, so the CORS headers have one source. The page
 sends no preflight requests (single-range reads need none), so R2 never has to answer
 `OPTIONS`. `hosting/check.js` reads each data file without `Origin`, with the version's
