@@ -5,6 +5,7 @@
 import { cubicOut } from "svelte/easing";
 import { Tween } from "svelte/motion";
 import { amount, amountText, capitalise, directionHint, displayChange, pct, placeName, possessive, SECTION_SHORT, theName, WORLD, wording } from "./lib/flows.js";
+import { LOCALE, msg } from "./lib/messages.js";
 import { reducedMotion, ui } from "./view.svelte.js";
 
 // text: the shown run's "if …" clause
@@ -14,16 +15,16 @@ const S = SECTION_SHORT.length;
 // one name per region, as the strip and the map write it; "the" goes outside the country button
 const world = $derived(ui.who === WORLD);
 // the world is not a proper noun inside the sentence: "The world’s consumption"
-const name = $derived(world ? "world" : placeName(meta, ui.who));
-const the = $derived(theName(meta, ui.who) === name ? "" : "the ");
+const name = $derived(world ? msg.sentence.world : placeName(meta, ui.who));
+const the = $derived(theName(meta, ui.who) === name ? "" : msg.sentence.the);
 const w = $derived(wording(ui.indicator));
 const out = $derived(ui.dir === "out");
 const scope = $derived(
 	ui.on.size === S
-		? " across all 15 industry sections"
+		? msg.sentence.allSections
 		: ui.on.size === 1
-			? ` through ${SECTION_SHORT[[...ui.on][0]].toLowerCase()}`
-			: ` through ${ui.on.size} of 15 industry sections`,
+			? msg.sentence.through(SECTION_SHORT[[...ui.on][0]].toLowerCase())
+			: msg.sentence.through(msg.someSections(ui.on.size)),
 );
 const year = $derived(data.base_year);
 const top = $derived(sum.others.length ? theName(meta, sum.others[0]) : name);
@@ -32,7 +33,7 @@ const abroad = $derived(
 	sum.total ? (((world ? sum.vals[sum.others[0]] : sum.total - sum.home) ?? 0) / sum.total) * 100 : 0,
 );
 // "was released abroad" becomes "was released in China" for the world, which has no abroad
-const tail = $derived((out ? w.out.abroad : w.in.abroad).split("abroad"));
+const tail = $derived((out ? w.out.abroad : w.in.abroad).split(msg.sentence.abroad));
 // the run's settled change: the replay animates the map, never these numbers
 const dTot = $derived(whatif ? displayChange(sum.dTotal, sum.total) : 0);
 const changed = $derived(sum.changed != null ? theName(meta, sum.changed) : "");
@@ -57,19 +58,19 @@ $effect(() => {
 const shown = $derived(amount(tTotal.current, ui.indicator));
 const delta = $derived(amount(dTot, ui.indicator));
 const dPct = $derived(sum.total ? (dTot / sum.total) * 100 : null);
-const percent = $derived(dPct === null ? "zero 2011 baseline" : pct(dPct));
+const percent = $derived(dPct === null ? msg.sentence.zeroBase : pct(dPct));
 const tone = $derived(dTot < 0 ? "neg" : dTot > 0 ? "pos" : "");
 
 // the settled sentence, for the live region
 const plain = $derived.by(() => {
 	const [n, u] = amount(sum.total + dTot, ui.indicator);
-	const thing = w.unit === "jobs" ? `${n} ${u}` : `${n} ${u} of ${w.noun}`;
+	const thing = w.count ? `${n} ${u}` : `${n} ${u} ${msg.sentence.of} ${w.noun}`;
 	if (!whatif)
-		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} in ${year}${scope}; ${Math.round(abroad)}% ${world ? `${tail[0]}in ${top}${tail[1]}` : out ? w.out.abroad : w.in.abroad}${noneAbroad || world ? "" : `, most in ${top}`}.`;
+		return `${capitalise(the)}${name}${out ? "" : possessive(name)}${out ? w.out.verb : w.in.verb} ${thing} ${msg.sentence.when(year, scope)} ${Math.round(abroad)}% ${world ? `${tail[0]}${msg.sentence.in} ${top}${tail[1]}` : out ? w.out.abroad : w.in.abroad}${noneAbroad || world ? "" : `${msg.sentence.mostIn} ${top}`}.`;
 	// the visible sentence's words, so the name a screen reader hears is what the page shows
-	const detail = changed ? ` The largest change ${out ? "was linked to consumption in" : "occurred in"} ${changed}${abroadToo ? `, and abroad in ${abroadToo}` : ""}.` : dTot === 0 ? " No change at the displayed precision." : "";
-	const d = dTot !== 0 || changed ? `; a change of ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
-	return `In the ${year} economy, if ${text}: ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${capitalise(the)}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${ui.on.size === S ? "" : scope}${d}.${detail}`;
+	const detail = changed ? ` ${msg.sentence.largest(out)} ${changed}${abroadToo ? `${msg.sentence.abroadToo} ${abroadToo}` : ""}.` : dTot === 0 ? ` ${msg.sentence.noChange}.` : "";
+	const d = dTot !== 0 || changed ? `${msg.sentence.aChange} ${dTot > 0 ? "+" : ""}${amountText(dTot, ui.indicator)} (${percent})` : "";
+	return `${msg.sentence.ifStart(year)} ${text}: ${out ? `${w.out.would}${the}${name}${w.out.come}` : `${capitalise(the)}${name}${possessive(name)}${w.in.would}`} ${n} ${u}${ui.on.size === S ? "" : scope}${d}.${detail}`;
 });
 
 // --- the two popovers -----------------------------------------------------------
@@ -77,7 +78,7 @@ let pop = $state(null); // null | "country" | "indicator"
 let opener = null;
 const byName = $derived([
 	WORLD,
-	...[...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b))),
+	...[...meta.countries.keys()].sort((a, b) => placeName(meta, a).localeCompare(placeName(meta, b), LOCALE)),
 ]);
 function openPop(kind, e) {
 	e.stopPropagation();
@@ -116,40 +117,40 @@ function onFocusOut(e) {
 
 <!-- the possessive goes inside the button, on the country's underline and line -->
 {#snippet country(after = "", lead = the)}
-	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label="Country: {name}{after}. Change" onclick={(e) => openPop("country", e)}>{name}{after}</button></span>
+	<span class="u">{lead}<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "country"} aria-label={msg.sentence.country(`${name}${after}`)} onclick={(e) => openPop("country", e)}>{name}{after}</button></span>
 {/snippet}
 
 <div class="hl">
 	{#if !whatif}
 		<h2 id="headline" tabindex="-1" aria-label={plain}>
 			{@render country(out ? "" : possessive(name), capitalise(the))}{out ? w.out.verb : w.in.verb}
-			{#if w.unit === "jobs"}
+			{#if w.count}
 				<span class="u"><span class="n">{shown[0]}</span></span>
-				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {shown[1]}. Change" onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
+				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label={msg.sentence.indicator(shown[1])} onclick={(e) => openPop("indicator", e)}>{shown[1]}</button>
 			{:else}
-				<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span> of
-				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label="Indicator: {w.noun}. Change" onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
+				<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span> {msg.sentence.of}
+				<button type="button" class="tok" aria-controls="sentence-pop" aria-expanded={pop === "indicator"} aria-label={msg.sentence.indicator(w.noun)} onclick={(e) => openPop("indicator", e)}>{w.noun}</button>
 			{/if}
-			in {year}{scope}; <span class="n">{Math.round(tShare.current)}%</span>
-			{#if world}{tail[0]}in <b>{top}</b>{tail[1]}{:else}{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}, most in <b>{top}</b>{/if}{/if}.
+			{msg.sentence.when(year, scope)} <span class="n">{Math.round(tShare.current)}%</span>
+			{#if world}{tail[0]}{msg.sentence.in} <b>{top}</b>{tail[1]}{:else}{out ? w.out.abroad : w.in.abroad}{#if !noneAbroad}{msg.sentence.mostIn} <b>{top}</b>{/if}{/if}.
 		</h2>
 	{:else}
 		<h2 id="headline" tabindex="-1" aria-label={plain}>
-			<span class="scenario-context">In the {year} economy, if <b>{text}</b>:</span>
+			<span class="scenario-context">{msg.sentence.ifStart(year)} <b>{text}</b>:</span>
 			{#if out}{w.out.would}{@render country()}{w.out.come}{:else}{@render country(possessive(name), capitalise(the))}{w.in.would}{/if}
-			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}; a change of
+			<span class="u"><span class="n">{shown[0]}</span> {@render unit(shown[1])}</span>{ui.on.size === S ? "" : scope}{#if dTot !== 0 || changed}{msg.sentence.aChange}
 			<span class="u"><span class="n {tone}">{dTot > 0 ? "+" : ""}{delta[0]}</span> {@render unit(delta[1])}</span>
 			(<span class="n {tone}">{percent}</span>){/if}.
 			{#if changed || dTot === 0}<span class="scenario-context">
-			{#if changed}The largest change {out ? "was linked to consumption in" : "occurred in"}
-				<b>{changed}</b>{#if abroadToo}, and abroad in <b>{abroadToo}</b>{/if}{:else}No change at the displayed precision{/if}.</span>{/if}
+			{#if changed}{msg.sentence.largest(out)}
+				<b>{changed}</b>{#if abroadToo}{msg.sentence.abroadToo} <b>{abroadToo}</b>{/if}{:else}{msg.sentence.noChange}{/if}.</span>{/if}
 		</h2>
 	{/if}
 	<p class="sr-only" aria-live="polite">{plain}</p>
 	{#if ui.mode === "flows"}<p class="direction-cue">{directionHint(meta, ui.who, ui.dir, ui.indicator)}</p>{/if}
 
 	{#if pop === "country"}
-		<div class="pop country" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label="Choose a country">
+		<div class="pop country" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label={msg.sentence.chooseCountry}>
 			{#each byName as i (i)}
 				<button
 					type="button"
@@ -162,7 +163,7 @@ function onFocusOut(e) {
 			{/each}
 		</div>
 	{:else if pop === "indicator"}
-		<div class="pop indicator" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label="Choose an indicator">
+		<div class="pop indicator" id="sentence-pop" role="group" onfocusout={onFocusOut} aria-label={msg.sentence.chooseIndicator}>
 			{#each meta.indicators as i (i.id)}
 				{@const iw = wording(i.id)}
 				<button

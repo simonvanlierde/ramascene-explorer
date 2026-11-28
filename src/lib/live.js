@@ -111,16 +111,18 @@ export function liveProvenance(job, apiOrigin) {
 	const d = p.dataset;
 	const v = job.result.reference_validation;
 	const gib = (b) => `${(b / 2 ** 30).toFixed(2)} GiB`;
-	const t = msg.terms;
 	return [
-		[t.status, LIVE_STATUS],
-		[t.jobApi, msg.live.jobApi(apiOrigin, job.id)],
-		[t.engine, `${e.branch ?? msg.detached} · ${e.commit ?? msg.live.unknown}${e.dirty ? msg.uncommitted : ""}`],
-		[t.dataset, msg.live.dataset(d)],
-		[t.referenceCheck, v ? msg.live.reference(v) : msg.live.noReference],
-		[t.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
-		[t.computed, `${job.started_at} → ${job.finished_at} (${job.duration_s.toFixed(1)} s)`],
-		[t.runtime, msg.runtime({ ...p, rss: gib(job.peak_rss_bytes) })],
+		[msg.terms.status, LIVE_STATUS],
+		[msg.terms.jobApi, msg.live.jobApi(apiOrigin, job.id)],
+		[
+			msg.terms.engine,
+			`${e.branch ?? msg.detached} · ${e.commit ?? msg.live.unknown}${e.dirty ? msg.uncommitted : ""}`,
+		],
+		[msg.terms.dataset, msg.live.dataset(d)],
+		[msg.terms.referenceCheck, v ? msg.live.reference(v) : msg.live.noReference],
+		[msg.terms.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
+		[msg.terms.computed, `${job.started_at} → ${job.finished_at} (${job.duration_s.toFixed(1)} s)`],
+		[msg.terms.runtime, msg.runtime({ ...p, rss: gib(job.peak_rss_bytes) })],
 	];
 }
 
@@ -309,7 +311,7 @@ export async function waitForJob(
 		if (job) {
 			onUpdate?.(job);
 			if (job.status === "succeeded" || job.status === "failed") return job;
-			if (Date.now() > deadline) throw new Error(`job still ${job.status} after ${timeout / 1000} s`);
+			if (Date.now() > deadline) throw new Error(msg.live.stillRunning(job.status, timeout / 1000));
 		}
 		// the wait ends early on abort, so Cancel takes effect at once
 		await new Promise((resolve) => {

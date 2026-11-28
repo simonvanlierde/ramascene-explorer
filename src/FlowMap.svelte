@@ -41,6 +41,7 @@ import {
 	wording,
 } from "./lib/flows.js";
 import { regionForIso, thinTopology } from "./lib/map.js";
+import { msg } from "./lib/messages.js";
 import { reducedMotion, themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
@@ -536,31 +537,33 @@ const other = $derived(placeName(meta, ui.who));
 // inside a phrase: "the United States"
 const otherIn = $derived(theName(meta, ui.who));
 const world = $derived(ui.who === WORLD);
+// what the bands show, for the map's label and its note
+const bandsWhat = $derived(ui.dir === "in" ? msg.map.into(otherIn, possessive(other)) : msg.map.outOf(otherIn));
 const tipText = $derived.by(() => {
 	if (!tip) return null;
 	const k = tip.k;
 	const v = sum.vals[k];
 	const name = placeName(meta, k);
 	// the world has no selected country, so a region's flow is just what it releases or consumes
-	const here = ui.dir === "in" ? wording(ui.indicator).made.col.replace(/ in$/, " here") : "Consumed here";
+	const here = ui.dir === "in" ? wording(ui.indicator).made.at : msg.map.consumedHere;
 	const where =
 		world
 			? here.toLowerCase()
 			: k === ui.who
 			? ui.dir === "in"
-				? "at home, for its own consumption"
-				: "at home and consumed at home"
+				? msg.map.homeIn
+				: msg.map.homeOut
 			: ui.dir === "in"
-				? `here, for consumption in ${otherIn}`
-				: `in ${otherIn}, for consumption here`;
+				? msg.map.hereFor(otherIn)
+				: msg.map.inFor(otherIn);
 	if (whatif) {
 		const p = displayFlowPct(sum, k);
 		const change = displayChange(sum.dv[k], sum.total);
-		if (p === null) return { name, big: "–", line: world ? "Almost no 2011 flow" : `Almost no 2011 flow ${ui.dir === "in" ? `for ${otherIn}` : `from ${otherIn}`}` };
+		if (p === null) return { name, big: "–", line: world ? msg.map.almostNone : msg.map.almostNoneFor(ui.dir === "in", otherIn) };
 		return {
 			name,
 			big: pct(change === 0 ? 0 : p),
-			line: `${change > 0 ? "+" : ""}${amountText(change, ui.indicator)} on a 2011 flow of ${amountText(v, ui.indicator)}${world ? "" : `, ${where}`}`,
+			line: msg.map.changeOn(`${change > 0 ? "+" : ""}${amountText(change, ui.indicator)}`, amountText(v, ui.indicator), world ? null : where),
 		};
 	}
 	const secs = [...ui.on].map((q) => [q, sum.cell(k, q)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
@@ -609,7 +612,7 @@ const glyphs = $derived.by(() => {
 	const a1 = Number((a0 / 5).toPrecision(1));
 	return [a1, a0].filter((v) => v > 0);
 });
-const tickText = (t) => (t >= 1e6 ? `${fmt(t / 1e6)}M` : t >= 1000 ? `${fmt(t / 1000)}k` : fmt(t));
+const tickText = (t) => (t >= 1e6 ? `${fmt(t / 1e6)}${msg.map.million}` : t >= 1000 ? `${fmt(t / 1000)}${msg.map.thousand}` : fmt(t));
 const unit = $derived(wording(ui.indicator).unit);
 </script>
 
@@ -625,7 +628,7 @@ const unit = $derived(wording(ui.indicator).unit);
 			class:live={!whatif}
 			viewBox="0 0 {view.w} {view.h}"
 			role="img"
-			aria-label="Map of {world ? `the world total, by the region where ${ui.dir === 'in' ? wording(ui.indicator).made.is : wording(ui.indicator).consumed}` : `${sum.bands.length} flows ${ui.dir === 'in' ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}`}; the table in Details lists every flow"
+			aria-label={msg.map.label(world ? null : sum.bands.length, ui.dir === "in" ? wording(ui.indicator).made.is : wording(ui.indicator).consumed, bandsWhat)}
 			onpointerdown={down}
 			onpointermove={move}
 			onpointerup={up}
@@ -682,27 +685,27 @@ const unit = $derived(wording(ui.indicator).unit);
 		<div class="mtl">
 			<div class="sel-chip">
 				{#if !world}<span class="sw"></span>{/if}<span>{other}</span>
-				<button type="button" onclick={() => (ui.panel = "sankey")} aria-label="Details for {other}: Sankey, table and method">
-					Details
+				<button type="button" onclick={() => (ui.panel = "sankey")} aria-label={msg.map.detailsFor(other)}>
+					{msg.map.details}
 					<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
 			</div>
 		</div>
 		<div class="mtr">
-			<div class="seg" role="group" aria-label="Map projection">
-				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>Flat</button>
-				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>Globe</button>
+			<div class="seg" role="group" aria-label={msg.map.projection}>
+				<button type="button" aria-pressed={!ui.globe} onclick={() => setGlobe(false)}>{msg.map.flat}</button>
+				<button type="button" aria-pressed={ui.globe} onclick={() => setGlobe(true)}>{msg.map.globe}</button>
 			</div>
 		</div>
-		<div class="seg mzm" role="group" aria-label="Zoom">
-			<button type="button" aria-label="Zoom in" aria-disabled={zk >= ZMAX} onclick={() => zoomAt(2, towardSelection())}>
+		<div class="seg mzm" role="group" aria-label={msg.map.zoom}>
+			<button type="button" aria-label={msg.map.zoomIn} aria-disabled={zk >= ZMAX} onclick={() => zoomAt(2, towardSelection())}>
 				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 			</button>
-			<button type="button" aria-label="Zoom out" aria-disabled={zk <= 1} onclick={() => zoomAt(0.5, towardSelection())}>
+			<button type="button" aria-label={msg.map.zoomOut} aria-disabled={zk <= 1} onclick={() => zoomAt(0.5, towardSelection())}>
 				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 			</button>
 			{#if zk > 1}
-				<button type="button" aria-label="Reset zoom" onclick={(e) => resetZoom(e.currentTarget.parentElement)}>
+				<button type="button" aria-label={msg.map.resetZoom} onclick={(e) => resetZoom(e.currentTarget.parentElement)}>
 					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
 			{/if}
@@ -710,11 +713,11 @@ const unit = $derived(wording(ui.indicator).unit);
 
 		<p class="mnote">
 			{#if whatif}
-				{world ? "The fill is" : "Bands keep their 2011 width; their colour and the fill are"} the % change in each {world ? "region’s" : ""} flow in this run, shown {Math.round(ui.s * 100)}% of the way from the 2011 baseline. An engine run on 2011 data, not a forecast.
+				{msg.map.noteRun(world, Math.round(ui.s * 100))}
 			{:else if world}
-				Fill: {unit} per region, by where {ui.dir === "in" ? wording(ui.indicator).made.is : wording(ui.indicator).consumed}. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
+				{msg.map.noteWorld(unit, ui.dir === "in" ? wording(ui.indicator).made.is : wording(ui.indicator).consumed)} {alpha > 0.5 ? msg.map.turn : msg.map.pinch}
 			{:else}
-				Bands: the {geom.bands.length} largest flows {ui.dir === "in" ? `into ${otherIn}${possessive(other)} consumption` : `out of ${otherIn}`}, width ∝ {unit}{oneSection !== null ? `, ${SECTION_SHORT[oneSection].toLowerCase()} only` : ""}. Fill: {unit} per region. {alpha > 0.5 ? "Drag to turn the globe, scroll or pinch to zoom." : "Scroll or pinch to zoom."}
+				{msg.map.noteBands(geom.bands.length, bandsWhat, unit, oneSection !== null ? SECTION_SHORT[oneSection].toLowerCase() : null)} {alpha > 0.5 ? msg.map.turn : msg.map.pinch}
 			{/if}
 		</p>
 
@@ -723,20 +726,20 @@ const unit = $derived(wording(ui.indicator).unit);
 				<b>{tipText.name}</b><span class="tv">{tipText.big}</span><br />{tipText.line}
 				{#if tipText.secs?.length}
 					<div class="sb">{#each tipText.secs as [q, x] (q)}<i style="width:{(x / tipText.v) * 100}%;background:{SECTION_COLOURS[q]}"></i>{/each}</div>
-					<span class="sw" style="background:{SECTION_COLOURS[tipText.secs[0][0]]}"></span>Largest: {SECTION_SHORT[tipText.secs[0][0]]}, {share(tipText.secs[0][1], tipText.v)}
+					<span class="sw" style="background:{SECTION_COLOURS[tipText.secs[0][0]]}"></span>{msg.map.largest(SECTION_SHORT[tipText.secs[0][0]], share(tipText.secs[0][1], tipText.v))}
 				{/if}
-				<br /><span class="hint">Click to select</span>
+				<br /><span class="hint">{msg.map.click}</span>
 			</div>
 		{/if}
 	</div>
 	<div class="lg">
 		{#if whatif}
-			<div class="lt">Change in each 2011 flow, %</div>
+			<div class="lt">{msg.map.changeLegend}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{divStops})"></div>
 				<div class="tk num">{#each divTicks as t (t)}<span>{t}</span>{/each}</div>
 			</div>
-			<p class="fn">Square-root scale, fitted to the larger flows; changes beyond its limits share the end colour.{world ? "" : ` Band width: 2011 ${unit}.`}</p>
+			<p class="fn">{msg.map.scale}{world ? "" : msg.map.bandWidth(unit)}</p>
 			<div class="scrub">
 				<span>2011</span>
 				<!-- svelte-ignore a11y_no_static_element_interactions: the thumb inside is the keyboard control -->
@@ -755,23 +758,23 @@ const unit = $derived(wording(ui.indicator).unit);
 						class="th"
 						role="slider"
 						tabindex="0"
-						aria-label="From the 2011 baseline to the run"
+						aria-label={msg.map.scrub}
 						aria-valuemin="0"
 						aria-valuemax="100"
 						aria-valuenow={Math.round(ui.s * 100)}
-						aria-valuetext={ui.s === 0 ? "2011 baseline" : `${Math.round(ui.s * 100)}% of the run`}
+						aria-valuetext={ui.s === 0 ? msg.map.baseline : msg.map.ofRun(Math.round(ui.s * 100))}
 						style="left:{ui.s * 100}%"
 						onkeydown={scrubKey}
 					></div>
 				</div>
-				<span>run</span>
+				<span>{msg.map.run}</span>
 				<button type="button" class="play" onclick={play}>
 					<svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z" fill="currentColor" /></svg>
-					Replay
+					{msg.map.replay}
 				</button>
 			</div>
 		{:else}
-			<div class="lt">{ui.dir === "in" ? `${wording(ui.indicator).made.here} what ${otherIn} consumes` : world ? "Consumed here" : `Consumed here, made in ${otherIn}`}</div>
+			<div class="lt">{ui.dir === "in" ? msg.map.legendIn(wording(ui.indicator).made.here, otherIn) : world ? msg.map.consumedHere : msg.map.legendOut(otherIn)}</div>
 			<div>
 				<div class="gb" style="background:linear-gradient(90deg,{seqStops})"></div>
 				<div class="tk num ticks">
@@ -788,9 +791,9 @@ const unit = $derived(wording(ui.indicator).unit);
 			</div>
 			{/if}
 		{/if}
-		{#if geoFailed}<p class="fn runnote" role="alert">The map outlines could not be loaded. <button type="button" class="chipb" onclick={retryShapes}>Try again</button></p>{/if}
+		{#if geoFailed}<p class="fn runnote" role="alert">{msg.map.noOutlines} <button type="button" class="chipb" onclick={retryShapes}>{msg.tryAgain}</button></p>{/if}
 		<!-- always there, so the text it gets is read out; the sidebar shows the same note -->
-		<p class="fn runnote" role="status">{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.{:else if loadingRun && ui.mode === "whatif"}Loading the run’s flows…{/if}</p>
+		<p class="fn runnote" role="status">{#if loadingRun.startsWith("failed:") && ui.mode === "whatif"}{msg.run.failed} <button type="button" class="chipb" onclick={retryHere}>{msg.tryAgain}</button> {msg.run.orAnother}{:else if loadingRun && ui.mode === "whatif"}{msg.run.loading}{/if}</p>
 	</div>
 
 </div>

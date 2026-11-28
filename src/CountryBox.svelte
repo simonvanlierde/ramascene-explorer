@@ -2,6 +2,7 @@
 // The country combobox (WAI-ARIA combobox with a listbox popup): type to
 // filter by name or code, arrows to move, Enter to choose, Escape to close.
 import { placeName, WORLD } from "./lib/flows.js";
+import { LOCALE, msg } from "./lib/messages.js";
 import { ui } from "./view.svelte.js";
 
 let { meta, labelledby } = $props();
@@ -9,7 +10,7 @@ const nm = (i) => placeName(meta, i);
 
 // meta never changes: the page mounts once per load
 // svelte-ignore state_referenced_locally
-const order = [WORLD, ...[...meta.countries.keys()].sort((a, b) => nm(a).localeCompare(nm(b)))];
+const order = [WORLD, ...[...meta.countries.keys()].sort((a, b) => nm(a).localeCompare(nm(b), LOCALE))];
 // svelte-ignore state_referenced_locally
 let text = $state(nm(ui.who));
 let open = $state(false);
@@ -91,7 +92,7 @@ function keys(e) {
 			text = nm(ui.who);
 		}}
 	/>
-	<ul id="country-list" role="listbox" tabindex="-1" aria-label="Countries and regions" bind:this={list} hidden={!open}>
+	<ul id="country-list" role="listbox" tabindex="-1" aria-label={msg.countryBox.list} bind:this={list} hidden={!open}>
 		{#each options as i, j (i)}
 			<!-- svelte-ignore a11y_click_events_have_key_events: the input owns the keyboard -->
 			<li
@@ -108,7 +109,7 @@ function keys(e) {
 				{nm(i)}{#if i !== WORLD}<span>{meta.country_codes[i]}</span>{/if}
 			</li>
 		{:else}
-			<li class="none" role="option" aria-selected="false" aria-disabled="true">No region matches</li>
+			<li class="none" role="option" aria-selected="false" aria-disabled="true">{msg.countryBox.none}</li>
 		{/each}
 	</ul>
 </div>

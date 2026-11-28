@@ -1,6 +1,7 @@
 <script>
 import { lookupGrid, pickerState } from "./lib/explorer.js";
-import { amountShort, capitalise, FEATURED, RUN_KIND, runText, wording, worldTotal } from "./lib/flows.js";
+import { amountShort, capitalise, continentLabel, FEATURED, RUN_KIND, runText, wording, worldTotal } from "./lib/flows.js";
+import { msg } from "./lib/messages.js";
 import CountryBox from "./CountryBox.svelte";
 import Rail from "./Rail.svelte";
 import { ui } from "./view.svelte.js";
@@ -45,7 +46,7 @@ const w = $derived(wording(ui.indicator));
 // a run's world change, every industry, in the scenario list
 function worldChange(id) {
 	const t = worldTotal(data.results, id, ui.indicator);
-	return t ? `world ${t.delta > 0 ? "+" : ""}${amountShort(t.delta, ui.indicator)}` : "";
+	return t ? msg.side.worldChange(`${t.delta > 0 ? "+" : ""}${amountShort(t.delta, ui.indicator)}`) : "";
 }
 
 // radio group: arrow keys move and select, as native radios do
@@ -88,7 +89,7 @@ $effect(() => {
 });
 const chosenText = $derived(capitalise(live ? live.text : runText(data, ui.run)));
 const chosenSub = $derived(
-	live ? capitalise(live.source.status) : `${RUN_KIND[ui.run] ?? "Material efficiency"} · ${worldChange(ui.run)}`,
+	live ? capitalise(live.source.status) : `${RUN_KIND[ui.run] ?? msg.side.efficiency} · ${worldChange(ui.run)}`,
 );
 // a custom run is not a run of the list: ui.run still holds the last published one
 function backToPublished() {
@@ -114,25 +115,25 @@ function chooseRun(v) {
 	class:open={sheet}
 	id="side"
 	{inert}
-	aria-label="Selection"
+	aria-label={msg.side.label}
 	onkeydown={(e) => sheet && e.key === "Escape" && (e.stopPropagation(), onclose())}
 >
 	<div class="sheet-head">
-		<h2>Choose what to show</h2>
-		<button type="button" bind:this={done} onclick={onclose}>Done</button>
+		<h2>{msg.side.heading}</h2>
+		<button type="button" bind:this={done} onclick={onclose}>{msg.side.done}</button>
 	</div>
 	<div class="grp mode" class:flows={ui.mode === "flows"}>
-		<div class="lab">Mode</div>
-		<div class="seg big" role="group" aria-label="Mode">
-			<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>
-			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
+		<div class="lab">{msg.mode.label}</div>
+		<div class="seg big" role="group" aria-label={msg.mode.label}>
+			<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>{msg.mode.flows(data.base_year)}</button>
+			<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>{msg.mode.whatif}</button>
 		</div>
 		{#if ui.mode === "whatif"}
-			<div class="lab sub"><span id="run-l">Scenario</span><small>{live ? "Custom scenario shown" : `${meta.runs.length - 1} published scenarios`}</small></div>
+			<div class="lab sub"><span id="run-l">{msg.side.scenario}</span><small>{live ? msg.side.customShown : msg.side.published(meta.runs.length - 1)}</small></div>
 			{#if !showRuns}
 				<div class="run chosen">
 					<span><b>{chosenText}</b><small>{chosenSub}</small></span>
-					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label="Change the scenario" onclick={() => (showRuns = true)}>Change</button>
+					<button type="button" class="change" bind:this={changeButton} aria-expanded="false" aria-controls="run-list" aria-label={msg.side.changeLabel} onclick={() => (showRuns = true)}>{msg.side.change}</button>
 				</div>
 			{:else}
 			<div class="runs" id="run-list" role="radiogroup" aria-labelledby="run-l">
@@ -150,30 +151,30 @@ function chooseRun(v) {
 					>
 						<span class="dot"></span>
 						{#if v === "grid"}
-							<span><b>Material efficiency, one product</b><small>{grid?.products.length ?? 0} products × 5 regions × {grid?.cuts.length ?? 0} cuts</small></span>
+							<span><b>{msg.side.gridTitle}</b><small>{msg.side.gridSize(grid?.products.length ?? 0, grid?.cuts.length ?? 0)}</small></span>
 						{:else}
-							<span><b>{capitalise(runText(data, v))}</b><small>{RUN_KIND[v] ?? "Material efficiency"} · {worldChange(v)}</small></span>
+							<span><b>{capitalise(runText(data, v))}</b><small>{RUN_KIND[v] ?? msg.side.efficiency} · {worldChange(v)}</small></span>
 						{/if}
 					</button>
 				{/each}
 			</div>
 			{/if}
 			{#if live}
-				<button type="button" class="chipb back" onclick={backToPublished}>Back to published scenarios</button>
+				<button type="button" class="chipb back" onclick={backToPublished}>{msg.side.back}</button>
 			{/if}
 			{#if onGrid && grid && showRuns}
 				<div class="gridpick">
-					<label for="g-product">Input product</label>
+					<label for="g-product">{msg.side.product}</label>
 					<select id="g-product" value={gridPick.scenario} onchange={(e) => pickGrid("scenario", e.currentTarget.value)}>
 						{#each grid.products as p (p.slug)}<option value="grid:{p.slug}">{p.short}</option>{/each}
 					</select>
-					<div class="lab sub2" id="g-region-l">In every industry of</div>
+					<div class="lab sub2" id="g-region-l">{msg.side.region}</div>
 					<div class="seg wrap" role="group" aria-labelledby="g-region-l">
 						{#each grid.regions as r (r.slug)}
-							<button type="button" aria-pressed={gridPick.region === r.slug} onclick={() => pickGrid("region", r.slug)}>{r.name.replace("-", " ")}</button>
+							<button type="button" aria-pressed={gridPick.region === r.slug} onclick={() => pickGrid("region", r.slug)}>{continentLabel(r.name)}</button>
 						{/each}
 					</div>
-					<div class="lab sub2" id="g-cut-l">By</div>
+					<div class="lab sub2" id="g-cut-l">{msg.side.cut}</div>
 					<div class="seg" role="group" aria-labelledby="g-cut-l">
 						{#each grid.cuts as c (c)}
 							<button type="button" aria-pressed={gridPick.cut === String(c)} onclick={() => pickGrid("cut", String(c))}>{Math.abs(c)}%</button>
@@ -181,17 +182,17 @@ function chooseRun(v) {
 					</div>
 					{#if gridMissing}
 						<p class="note" role="status">
-							{gridTarget.failed ? `This combination was run but failed a check, so it is not shown: ${gridTarget.failed}` : "This combination was not precomputed."}
+							{gridTarget.failed ? msg.side.gridFailed(gridTarget.failed) : msg.side.gridMissing}
 						</p>
 					{/if}
-					<button type="button" class="chipb done" aria-label="Done picking the product, region and cut" onclick={foldRuns}>Done</button>
+					<button type="button" class="chipb done" aria-label={msg.side.doneLabel} onclick={foldRuns}>{msg.side.done}</button>
 				</div>
 			{/if}
 			<!-- the map's legend has the same note as a status region, read out also while this sheet is closed -->
 			{#if loadingRun.startsWith("failed:")}
-				<p class="hint">That run could not be loaded. <button type="button" class="chipb" onclick={retryHere}>Try again</button> or pick another.</p>
+				<p class="hint">{msg.run.failed} <button type="button" class="chipb" onclick={retryHere}>{msg.tryAgain}</button> {msg.run.orAnother}</p>
 			{:else if loadingRun}
-				<p class="hint">Loading the run’s flows…</p>
+				<p class="hint">{msg.run.loading}</p>
 			{/if}
 		{/if}
 		<!-- mounted in both modes, so a job keeps running while Flows is shown -->
@@ -199,21 +200,21 @@ function chooseRun(v) {
 	</div>
 
 	<div class="grp">
-		<div class="lab"><span id="cty-l">Country or region</span><small>{meta.countries.length} regions</small></div>
+		<div class="lab"><span id="cty-l">{msg.side.country}</span><small>{msg.side.regions(meta.countries.length)}</small></div>
 		<CountryBox {meta} labelledby="cty-l" />
 	</div>
 
 	<div class="grp">
-		<div class="lab">Direction</div>
-		<div class="seg" role="group" aria-label="Direction">
-			<button type="button" aria-pressed={ui.dir === "in"} onclick={() => (ui.dir = "in")}>Consumption</button>
-			<button type="button" aria-pressed={ui.dir === "out"} onclick={() => (ui.dir = "out")}>Production</button>
+		<div class="lab">{msg.side.direction}</div>
+		<div class="seg" role="group" aria-label={msg.side.direction}>
+			<button type="button" aria-pressed={ui.dir === "in"} onclick={() => (ui.dir = "in")}>{msg.side.consumption}</button>
+			<button type="button" aria-pressed={ui.dir === "out"} onclick={() => (ui.dir = "out")}>{msg.side.production}</button>
 		</div>
 	</div>
 
 	<div class="grp">
-		<div class="lab">Indicator</div>
-		<div class="seg" role="group" aria-label="Indicator">
+		<div class="lab">{msg.indicator}</div>
+		<div class="seg" role="group" aria-label={msg.indicator}>
 			{#each meta.indicators as i (i.id)}
 				<button type="button" aria-pressed={ui.indicator === i.id} onclick={() => (ui.indicator = i.id)}>{wording(i.id).label}</button>
 			{/each}
@@ -221,13 +222,13 @@ function chooseRun(v) {
 	</div>
 
 	<div class="grp">
-		<div class="lab"><span id="rail-l">Industry sections</span><small>share of the {whatif ? "2011 " : ""}flows</small></div>
+		<div class="lab"><span id="rail-l">{msg.side.sections}</span><small>{msg.side.sectionsShare(whatif)}</small></div>
 		<Rail {sum} labelledby="rail-l" />
 	</div>
 
 	{#if tools}
 		<div class="grp sheet-foot">
-			<div class="lab">Theme and source code</div>
+			<div class="lab">{msg.side.tools}</div>
 			<div class="icons">{@render tools()}</div>
 		</div>
 	{/if}

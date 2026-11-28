@@ -10,13 +10,15 @@ const BROWSER_SOURCE = {
 };
 
 export function browserProvenance(job) {
-	const t = msg.terms;
 	return [
-		[t.status, BROWSER_STATUS],
-		[t.dataset, "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
-		[t.method, msg.browser.method],
-		[t.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
-		[t.computed, msg.browser.computed(job.duration_s < 0.01 ? msg.browser.lessThan : job.duration_s.toFixed(2))],
+		[msg.terms.status, BROWSER_STATUS],
+		[msg.terms.dataset, "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
+		[msg.terms.method, msg.browser.method],
+		[msg.terms.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
+		[
+			msg.terms.computed,
+			msg.browser.computed(job.duration_s < 0.01 ? msg.browser.lessThan : job.duration_s.toFixed(2)),
+		],
 	];
 }
 

@@ -4,6 +4,7 @@
 // custom form's own worker. Everything the model sends is rendered as text, never markup.
 import { applyView, ask, askSchema, leverText, systemPrompt, toModelDetails } from "./lib/ask.js";
 import { capitalise } from "./lib/flows.js";
+import { msg } from "./lib/messages.js";
 import { ui } from "./view.svelte.js";
 
 // base: the model server's base URL; model: its name, or null for the first one it lists;
@@ -30,7 +31,7 @@ function rephrase(fn) {
 	try {
 		return fn();
 	} catch (e) {
-		e.message += ". Rephrase the question and ask again.";
+		e.message += msg.ask.rephrase;
 		throw e;
 	}
 }
@@ -45,7 +46,7 @@ async function submit(event) {
 	stop = new AbortController();
 	try {
 		const catalog = await panel.catalogue();
-		if (!catalog) throw new Error("the scenario data did not load. Open Custom scenario, use Try again if it shows, then ask again");
+		if (!catalog) throw new Error(msg.ask.noData);
 		const got = await ask({ base, model, system: systemPrompt(catalog), schema: askSchema(catalog), question: q, cancel: stop.signal });
 		const reply = typeof got.reply === "string" ? got.reply : "";
 		if (got.action === "view") {
@@ -56,14 +57,14 @@ async function submit(event) {
 			const { ok, text, cancelled } = await panel.runScenario(scenario).finally(() => {
 				ownRun = false;
 			});
-			if (cancelled) answer = { reply: "", levers: [], outcome: "Cancelled." };
+			if (cancelled) answer = { reply: "", levers: [], outcome: msg.cancelled };
 			else if (!ok) throw new Error(text);
 			else answer = { reply, levers: got.levers.map(leverText), outcome: text };
 		} else if (got.action === "none") {
-			answer = { reply, levers: [], outcome: "Nothing was run, and the map is unchanged." };
-		} else throw new Error("the model's answer had no action this page can run. Ask again, in other words");
+			answer = { reply, levers: [], outcome: msg.ask.nothing };
+		} else throw new Error(msg.ask.noAction);
 	} catch (e) {
-		if (e.name === "AbortError") answer = { reply: "", levers: [], outcome: "Cancelled." };
+		if (e.name === "AbortError") answer = { reply: "", levers: [], outcome: msg.cancelled };
 		else {
 			const m = capitalise(e.message);
 			error = /[.!?]$/.test(m) ? m : `${m}.`;
@@ -83,23 +84,23 @@ function cancel() {
 
 <section id="ask" aria-labelledby="ask-title">
 	<div class="run chosen live-card">
-		<span><b id="ask-title">Ask in plain words</b><small>The model at {base} only picks the changes to make. The engine in this page computes every number.</small></span>
+		<span><b id="ask-title">{msg.ask.title}</b><small>{msg.ask.who(base)}</small></span>
 	</div>
 	<form id="ask-form" onsubmit={submit} aria-busy={busy}>
-		<label for="ask-q">Question</label>
+		<label for="ask-q">{msg.ask.question}</label>
 		<input id="ask-q" type="text" bind:value={question} required aria-describedby="ask-q-h" />
-		<small class="fh" id="ask-q-h">For example: What if European car makers used 20% less steel?</small>
-		<button type="submit" class="go" id="ask-go" aria-disabled={busy}>{busy ? "Asking…" : "Ask"}</button>
-		{#if busy}<button type="button" class="chipb" id="ask-cancel" onclick={cancel}>Cancel</button>{/if}
+		<small class="fh" id="ask-q-h">{msg.ask.example}</small>
+		<button type="submit" class="go" id="ask-go" aria-disabled={busy}>{busy ? msg.ask.asking : msg.ask.ask}</button>
+		{#if busy}<button type="button" class="chipb" id="ask-cancel" onclick={cancel}>{msg.cancel}</button>{/if}
 	</form>
 	<div role="status" id="ask-answer">
 		{#if busy}
-			<p class="hint">Asking the model, then running the engine…</p>
+			<p class="hint">{msg.ask.busy}</p>
 		{:else if answer}
 			<!-- the model server's words, not this page's: labelled so a crafted ?ask= cannot pass for the site -->
-			{#if answer.reply}<p class="hint" id="ask-reply">The model says: {answer.reply}</p>{/if}
+			{#if answer.reply}<p class="hint" id="ask-reply">{msg.ask.says(answer.reply)}</p>{/if}
 			{#if answer.levers.length}
-				<p class="hint">The model chose these changes and the engine ran them. Check them against your question:</p>
+				<p class="hint">{msg.ask.chose}</p>
 				<ul class="hint" id="ask-levers">
 					{#each answer.levers as l}<li>{l}</li>{/each}
 				</ul>

@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { msg } from "../src/lib/messages.js";
 
 // Every msg.a.b the page's code reads. A key read by index (msg.runs[id]) counts as
-// reading msg.runs whole.
+// reading msg.runs whole; msg.newTab.trim resolves through the string's own method.
 const files = (dir) =>
 	readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
 		e.isDirectory() ? files(join(dir, e.name)) : /\.(js|svelte)$/.test(e.name) ? [join(dir, e.name)] : [],
@@ -18,10 +18,8 @@ const used = new Set(
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
 test("every message the code reads exists", () => {
-	assert.ok(used.size > 20, `found only ${used.size} msg.… reads`);
-	const missing = [...used].filter(
-		(path) => path.split(".").reduce((o, k) => (plain(o) ? o[k] : undefined), msg) === undefined,
-	);
+	assert.ok(used.size > 200, `found only ${used.size} msg.… reads`);
+	const missing = [...used].filter((path) => path.split(".").reduce((o, k) => o?.[k], msg) === undefined);
 	assert.deepEqual(missing, []);
 });
 
