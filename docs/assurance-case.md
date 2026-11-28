@@ -7,8 +7,9 @@ See [security.md](security.md) for URL validation and [publishing.md](publishing
 ## Threat model
 
 The page is static: files served as a Cloudflare Worker's static assets, with no Worker
-code, and the published data from a public R2 hostname by hash, with no login
-or stored data. It has four threats:
+code, and the published data from a public R2 hostname by hash, with no login.
+It sets no cookies; the only thing it stores is the reader's theme choice, in their browser.
+It has four threats:
 
 1. **A crafted link** whose `?api=`, `?ask=` or `?data=` makes the page load data from
    somewhere else, send the reader's questions there, or show it as a real result.

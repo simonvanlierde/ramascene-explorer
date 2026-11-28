@@ -44,9 +44,18 @@ dependencies and checks the licenses of everything that ships (the allow-list is
 Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
 change or have the right to submit it under the MIT license: the
 [Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
-adds it. `git rebase --signoff upstream/main` (the branch you started from) adds it to commits you already made.
-The `dco` workflow fails any pull request with a commit that lacks it, the maintainer's
-included. Only commits a bot wrote in a bot's pull request (Renovate) are skipped.
+adds it. To add it to commits you already made, rebase them onto `main`, then update the
+pushed branch:
+
+```sh
+git fetch origin && git rebase --signoff origin/main
+git push --force-with-lease
+```
+
+In a fork, use the remote that points at this repository, often `upstream`, in place of
+`origin` in the first line. The `dco` workflow fails any pull request with a commit that
+lacks it, the maintainer's included. Only commits a bot wrote in a bot's pull request
+(Renovate) are skipped.
 
 ## Who maintains this
 

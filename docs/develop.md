@@ -5,32 +5,54 @@ and the checks to run before you push.
 
 ## View
 
-Use the Node version in `.node-version`, pnpm and [just](https://just.systems). Install once
-with `pnpm install`. The custom-scenario kernel
-in `engine/` is Rust built to WebAssembly: with [rustup](https://rustup.rs/) and
-`wasm-bindgen-cli` at the version of the `wasm-bindgen` crate in `engine/Cargo.lock`
-(`cargo install wasm-bindgen-cli --version <that version> --locked`), run
-`pnpm engine` once, and again after changing `engine/`. It writes `engine/pkg/` and `engine/pkg-threads/`, which `pnpm dev`, `pnpm build` and `pnpm test` import. The threaded build installs
-the pinned nightly and `rust-src` declared in `engine/threads/rust-toolchain.toml`.
-It rebuilds the standard library with WebAssembly atomics. The map flows and the
-custom-scenario store are release assets, not in git. `scripts/fetch-data.sh` fetches
-them into `data/` with curl, checks them against `data/*.sha256`, and checks that
-`data/results.json` names the same embodied flows:
+1. Install the Node version in `.node-version`, pnpm, [just](https://just.systems) and
+   [rustup](https://rustup.rs/). Then install the page's packages:
 
-```sh
-scripts/fetch-data.sh embodied   # the map flows (52 MB); enough to view the page
-scripts/fetch-data.sh store      # the custom-scenario store (an 803 MB tar)
-```
+   ```sh
+   pnpm install
+   ```
 
-Then:
+2. Install `wasm-bindgen-cli` at the version of the `wasm-bindgen` crate in
+   `engine/Cargo.lock`. The first command prints that version after the `@`:
 
-```sh
-pnpm dev        # dev server with live reload, on http://localhost:5173/
-pnpm build      # static site in dist/, with relative paths
-pnpm preview    # serves dist/ on http://127.0.0.1:4180/
-```
+   ```sh
+   cargo pkgid --locked --manifest-path engine/Cargo.toml wasm-bindgen
+   cargo install wasm-bindgen-cli --version <that version> --locked
+   ```
 
-Open `?mode=whatif&scenario=coal-power-china` or
+3. Build the custom-scenario kernel, which is Rust built to WebAssembly. Run this again
+   after you change `engine/`:
+
+   ```sh
+   pnpm engine
+   ```
+
+   It writes `engine/pkg/` and `engine/pkg-threads/`, which `pnpm dev`, `pnpm build` and
+   `pnpm test` import. It stops with "needs wasm-bindgen-cli" when the version from step 2
+   does not match. The threaded build installs the pinned nightly and `rust-src` declared in
+   `engine/threads/rust-toolchain.toml`, and rebuilds the standard library with WebAssembly
+   atomics.
+
+4. Fetch the data. The map flows and the custom-scenario store are release assets, not in
+   git. `scripts/fetch-data.sh` fetches them into `data/` with curl, checks them against
+   `data/*.sha256`, and checks that `data/results.json` names the same embodied flows:
+
+   ```sh
+   scripts/fetch-data.sh embodied   # the map flows (52 MB); enough to view the page
+   scripts/fetch-data.sh store      # the custom-scenario store (an 803 MB tar)
+   ```
+
+5. Start the page:
+
+   ```sh
+   pnpm dev        # dev server with live reload, on http://localhost:5173/
+   pnpm build      # static site in dist/, with relative paths
+   pnpm preview    # serves dist/ on http://127.0.0.1:4180/
+   ```
+
+6. With `pnpm dev` running, open <http://localhost:5173/>. The map opens on Germany, with no red synthetic-data banner.
+
+Then try `?mode=whatif&scenario=coal-power-china` or
 `?region=CN&dir=out&indicator=7&sections=2`. Add `data=tests/fixture.json` to
 see the page on the synthetic fixture.
 The URL stores the filters and the published scenario. It does not store a custom

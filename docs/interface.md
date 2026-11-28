@@ -47,15 +47,17 @@ Amounts use at most three significant figures, without padded zeros, and two bel
 changes use at most three significant figures and two decimal places; nonzero
 changes below 0.01% read "−<0.01%" or "+<0.01%" rather than rounding to a signed
 zero. Under a strip cell the same figure reads in words, "less than 0.01% lower than
-in 2011". The strip, the sentence and the map labels use these same rules, and the
-heaviest strip cell and map label are the ones with the largest change: the largest
-amount in Flows, and in What if… the largest change relative to 2011, the only figure the
-map labels carry. When every cell is zero none is heavier.
-A change from a zero baseline has no percentage; the display says so.
+in 2011". A change from a zero baseline has no percentage; the display says so.
+The strip, the sentence and the map labels use these same rules.
 
 For display, differences no larger than a trillionth of the baseline are treated
-as zero and do not name a largest change. This is a display rule, not an uncertainty
-estimate. The calculations and downloadable CSV retain the original values.
+as zero. This is a display rule, not an uncertainty estimate. The calculations and
+downloadable CSV retain the original values.
+
+The heaviest strip cell and map label mark the largest figure: the largest amount in
+Flows, and in What if… the largest change relative to 2011, the only figure the map labels
+carry. A difference treated as zero is never the largest change. When every cell is zero,
+none is heavier.
 
 ## Ask
 
@@ -139,6 +141,8 @@ own CORS headers. The page makes these calls (`src/LivePanel.svelte`, `src/lib/l
 | `POST /jobs` | starts a job. Body: `{"label": string, "model_details": [{"product": [id], "originReg": [id], "consumedBy": [id], "consumedReg": [id], "techChange": [percent]}]}`, with 1 to 10 entries in `model_details`. Answers with an object that has an `id`. |
 | `GET /jobs/{id}` | polled every 2 seconds, for up to 30 minutes, until `status` is `succeeded` or `failed`. |
 
+Each request fails after 30 s without an answer. One failed poll does not stop the wait;
+three in a row do. Cancel stops the page waiting, but the job may still finish on the API.
 If nothing answers, or the browser blocks the answer for lack of CORS headers,
 the status line says the job API is "not reachable (offline)". An HTTP error
 shows its status and the API's `detail`, and a failed job shows its `error`.
@@ -148,9 +152,10 @@ A succeeded job returns `result` with `provenance`, `regions`, `indicators`,
 (indicator, producer, section, consumer) and `baseline` and `scenario` arrays
 in that order, in each indicator's unit. Producers and consumers follow the
 precomputed file's country order (EXIOBASE's), and every value is a finite
-number. The page draws these
-flows only when the shape matches the precomputed file; otherwise the result
-stays in the panel. `liveFlows` in
+number. Indicators follow `result.indicators` and are matched to the page's by `id`.
+The page draws these flows only when the shape matches the precomputed file (the
+indicators, 49 countries and regions, 15 sections, 49 countries and regions); otherwise the
+result stays in the panel. `liveFlows` in
 `src/lib/live.js` does the check. How a live run is shown is in
 [page.md](page.md#live-scenarios-optional).
 
