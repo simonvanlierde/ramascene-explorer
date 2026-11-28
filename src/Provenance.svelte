@@ -62,7 +62,7 @@ const checks = $derived.by(() => {
 		],
 		[
 			verified,
-			`${regionValues.toLocaleString("en")} world-region totals (${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} world regions), recomputed outside the engine from indicator intensities (B), supply-chain requirements (L) and final demand (ΣY), match within relative 1e-9.`,
+			`${regionValues.toLocaleString("en")} world-region totals match within relative 1e-9 when recomputed outside the engine as B·L·ΣY (indicator intensities, supply-chain requirements, final demand). They cover ${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} world regions.`,
 		],
 		[control.passed, "A 0% scenario through the same modified-coefficient path reproduces the baseline."],
 		[
@@ -81,6 +81,7 @@ const checks = $derived.by(() => {
 
 <section class="part" id="verification" aria-labelledby="verification-heading">
 	<h2 id="verification-heading">Calculation checks</h2>
+	{#if live}<p><strong>These checks cover the published scenarios, not the custom run on screen.</strong></p>{/if}
 	<p>These checks test numerical consistency. They do not establish whether a scenario is realistic or desirable. A fall in employment, for example, is a model result rather than a benefit.</p>
 	<p>Reference, baseline and control failures stop publication. Individual scenarios that fail a check are excluded, with the reason recorded below.</p>
 	<ul class="checks" id="checks">

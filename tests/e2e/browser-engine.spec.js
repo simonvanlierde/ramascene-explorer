@@ -38,7 +38,7 @@ test("a browser scenario draws its own flows without a job server", async ({ pag
 	await expect(page.locator("#status .basis")).toContainText("computed in this browser");
 	// one name for a custom run: the card, the header pills and the sidebar count
 	await expect(page.locator("#live .live-card")).toContainText("Computed in this browser");
-	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not checked");
+	await expect(page.locator("#status .pill.live")).toHaveText("Custom run: not covered by checks");
 	await expect(page.locator("#status")).not.toContainText("Browser method");
 	await expect(page.locator("#side .lab.sub small")).toHaveText("Custom scenario shown");
 	await expect(page.locator(".bands path").first()).toBeVisible();

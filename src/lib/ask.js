@@ -179,9 +179,10 @@ const SAYS = { ghg: "greenhouse-gas emissions", jobs: "jobs", metal_ores: "metal
 // Applies a view answer to ui; the sentence saying what the map now shows. Throws as toView does,
 // and when the answer changes nothing.
 export function applyView(answer, meta, ui) {
-	if (!meta) throw new Error("the map did not load, so its view cannot change");
+	if (!meta) throw new Error("the map did not load, so it cannot change");
 	const view = toView(answer, meta);
-	if (!Object.keys(view).length) throw new Error("the view changes nothing: give an indicator or a region");
+	if (!Object.keys(view).length)
+		throw new Error("the view changes nothing on the map: it needs an indicator or a region");
 	Object.assign(ui, view);
 	const shows = [SAYS[answer.indicator], answer.region === "World" ? "the world" : answer.region].filter(Boolean);
 	return `The map now shows ${shows.join(" for ")}.`;
@@ -223,16 +224,24 @@ export async function ask({ base, model, system, schema, question, cancel }) {
 			if (r.ok) return await r.json();
 		} catch (e) {
 			if (e.name === "AbortError") throw e;
-			if (e.name === "TimeoutError") throw new Error(`the model did not answer within ${TIMEOUT_MS / 1000} s`);
-			if (e.name === "SyntaxError") throw new Error(`the model server's reply to ${path} was not JSON`);
-			throw new Error(`could not reach the model at ${base} (${e.message})`);
+			if (e.name === "TimeoutError")
+				throw new Error(
+					`the model did not answer within ${TIMEOUT_MS / 1000} s. Check that the model server is running, then ask again.`,
+				);
+			if (e.name === "SyntaxError")
+				throw new Error(
+					`the model server's reply to ${path} was not JSON. Check that ?ask= names a chat-completions server.`,
+				);
+			throw new Error(
+				`could not reach the model at ${base} (${e.message}). Check that the server is running, then ask again.`,
+			);
 		}
 		// the body usually names the cause (context too long, model still loading)
 		const why = (await r.text().catch(() => "")).trim().slice(0, 200);
-		throw new Error(`the model server answered ${r.status}${why ? `: ${why}` : ""}`);
+		throw new Error(`the model server answered ${r.status}${why ? `: ${why}` : ""}. Check the server, then ask again.`);
 	};
 	const name = model ?? (await post("/models", {})).data?.[0]?.id;
-	if (!name) throw new Error("the model server lists no model; name one with ?askmodel=");
+	if (!name) throw new Error("the model server lists no model. Name one with ?askmodel=.");
 	const body = {
 		model: name,
 		temperature: 0,
@@ -250,7 +259,7 @@ export async function ask({ base, model, system, schema, question, cancel }) {
 		body: JSON.stringify(body),
 	});
 	if (data.choices?.[0]?.finish_reason === "length")
-		throw new Error("the model's answer was cut off before it finished");
+		throw new Error("the model's answer was cut off before it finished. Ask again with a shorter question.");
 	let got;
 	try {
 		got = JSON.parse(data.choices[0].message.content);
@@ -258,6 +267,6 @@ export async function ask({ base, model, system, schema, question, cancel }) {
 		got = null;
 	}
 	if (got === null || typeof got !== "object" || Array.isArray(got))
-		throw new Error("the model's answer was not valid JSON");
+		throw new Error("the model's answer was not valid JSON. Ask again.");
 	return got;
 }
