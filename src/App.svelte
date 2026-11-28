@@ -295,7 +295,7 @@ $effect(() => {
 	</a>
 {/snippet}
 
-<a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
+<a class="skip" href={ready ? "#app" : flowsError || empty ? "#empty" : "#loading"} inert={ui.panel !== null}>{ready ? "Skip to the map" : "Skip to main content"}</a>
 <div class="shell" style:--header-h={headerH ? `${headerH}px` : null} style:--banner-h={bannerH ? `${bannerH}px` : null}>
 	<!-- on a wide screen Details sits beside the header and the sidebar, so both stay live; on a phone it is modal -->
 	<header class="top" inert={ui.panel !== null && !wide.current} bind:offsetHeight={headerH}>
@@ -345,7 +345,7 @@ $effect(() => {
 			</button>
 		</nav>
 	{:else if flowsError || empty}
-		<main class="main solo" id="empty">
+		<main class="main solo" id="empty" tabindex="-1">
 			{#if empty}
 				<section class="nodata" aria-labelledby="nodata-heading">
 					<h2 id="nodata-heading">No precomputed data here yet</h2>
@@ -367,6 +367,6 @@ $effect(() => {
 			{@render livePanel()}
 		</main>
 	{:else}
-		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
+		<main class="main solo" id="loading" tabindex="-1" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
 	{/if}
 </div>

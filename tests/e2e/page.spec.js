@@ -521,13 +521,18 @@ test("refused data and api links keep their pills whole, and the header stays on
 	}
 });
 
-test("the selected country's Sankey label keeps a space before its amount", async ({ page }) => {
+test("the selected country's Sankey label keeps a space before its amount", async ({ page, isMobile }) => {
 	await page.goto("?panel=sankey");
 	const me = page.locator(".sk text.me");
 	await expect(me).toHaveCount(1);
-	// on a phone the amount is its own line, a tspan
-	if (await me.locator("tspan").count()) return;
-	await expect(me).toHaveText(/^Germany \d/);
+	if (isMobile) {
+		// on a phone the amount sits on its own tspan line below the country name
+		await expect(me.locator("tspan")).toHaveCount(1);
+		await expect(me.locator("tspan")).toHaveText(/^\d/);
+	} else {
+		await expect(me.locator("tspan")).toHaveCount(0);
+		await expect(me).toHaveText(/^Germany \d/);
+	}
 });
 
 test("the table and the Sankey give every value in the caption's unit", async ({ page }) => {
@@ -736,6 +741,10 @@ test("a checkout without results gets a no-data card that leads with the test da
 	const card = page.getByRole("region", { name: "No precomputed data here yet" });
 	await expect(card.getByRole("heading", { level: 2 })).toHaveText("No precomputed data here yet");
 	await expect(card.locator("p").first().getByRole("link")).toHaveAttribute("href", "?data=tests/fixture.json");
+	await expect(page.locator("a.skip")).toHaveAttribute("href", "#empty");
+	await page.locator("a.skip").focus();
+	await page.keyboard.press("Enter");
+	await expect(page.locator("#empty")).toBeFocused();
 	await expectNoAxeViolations(page);
 });
 
@@ -1281,6 +1290,11 @@ test("a change reads the same on the strip, the sentence and the map: tiny ones 
 		// the strip says the change in words, not as a signed figure
 		for (const t of rel.map(([, t]) => t))
 			expect(t).toMatch(/(lower|higher) than in 2011|no change from 2011|no 2011 flow/);
+		if (q === "") {
+			await expect(page.locator(".kpi.world .ks")).toHaveText(
+				/(lower|higher) than in 2011|no change from 2011|no 2011 total/,
+			);
+		}
 		const weights = await page
 			.locator(".kpis.k5 .kpi .kv")
 			.evaluateAll((els) =>

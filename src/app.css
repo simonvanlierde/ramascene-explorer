@@ -1506,7 +1506,7 @@ svg.map.live .rg {
   color: var(--ok);
 }
 .ph .copied:empty {
-  display: none;
+  margin: 0;
 }
 .ph .link {
   width: 100%;
