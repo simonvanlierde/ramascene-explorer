@@ -19,6 +19,7 @@ import {
 } from "./lib/live.js";
 import { plan } from "./lib/browser-engine/browser-engine.js";
 import { fmt } from "./lib/flows.js";
+import { msg } from "./lib/messages.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Picker from "./Picker.svelte";
 import { ui } from "./view.svelte.js";
@@ -67,7 +68,7 @@ async function addLever() {
 // focus goes to the previous lever (or the new first one), never to the removed row
 async function removeLever(i) {
 	levers.splice(i, 1);
-	say(`Change ${i + 1} removed.`);
+	say(msg.form.removed(i + 1));
 	await tick();
 	document.getElementById(at("product", Math.max(i - 1, 0)))?.focus();
 }
@@ -120,13 +121,13 @@ export async function catalogue() {
 // For the Ask panel: plans the scenario, then runs it as Run does.
 // Resolves to {ok, text, cancelled}.
 export async function runScenario(scenario) {
-	if (running) return { ok: false, text: "A scenario is already running. Wait for it to finish, then try again." };
+	if (running) return { ok: false, text: msg.form.busy };
 	// a reconnect (Cancel, a stopped worker) since the Ask panel read the catalogue
-	if (!catalog) return { ok: false, text: "The scenario data is loading again; try again." };
+	if (!catalog) return { ok: false, text: msg.form.reloading };
 	try {
 		plan({ catalog, ...catalog.size }, scenario.model_details);
 	} catch (e) {
-		const text = broad(e.message) || e.message;
+		const text = broad(e) || e.message;
 		say(text, true);
 		return { ok: false, text };
 	}
@@ -140,10 +141,10 @@ export function isRunning() {
 export function cancelRun() {
 	if (running) stop();
 }
-const broad = (message) => (message.startsWith("too broad") ? `This selection is ${message}` : "");
+const broad = (e) => (e.tooBroad ? msg.form.broad(e.message) : "");
 const trees = $derived({
-	products: catalogTree(rootNamed(catalog?.products, "All products")),
-	regions: catalogTree(rootNamed(catalog?.regions, "World")),
+	products: catalogTree(rootNamed(catalog?.products, msg.form.allProducts)),
+	regions: catalogTree(rootNamed(catalog?.regions, msg.world)),
 	consumers: catalogTree(catalog?.consumers),
 });
 const body = () =>
@@ -158,12 +159,12 @@ const planned = $derived.by(() => {
 		return { download: plan({ catalog, ...catalog.size }, body().model_details).download };
 	} catch (e) {
 		// other errors surface on Run
-		return { tooBroad: broad(e.message) };
+		return { tooBroad: broad(e) };
 	}
 });
 const tooBroad = $derived(planned.tooBroad ?? "");
 // said only above 5 MB, where the download is what a reader on a phone may wait for
-const download = $derived(planned.download > 5e6 ? `This selection downloads about ${fmt(planned.download / 1e6)} MB of data.` : "");
+const download = $derived(planned.download > 5e6 ? msg.form.download(fmt(planned.download / 1e6)) : "");
 
 // the map went back to a published scenario: the last result message no longer holds
 let wasOnscreen = false;
@@ -171,7 +172,7 @@ $effect(() => {
 	if (onscreen) wasOnscreen = true;
 	else if (wasOnscreen) {
 		wasOnscreen = false;
-		say("Back on the published scenario. Run again to see the custom result.");
+		say(msg.form.back);
 	}
 });
 function say(text, bad = false) {
@@ -185,7 +186,7 @@ function connect({ quiet = false } = {}) {
 	const attempt = ++connection;
 	unreachable = false;
 	outdated = false;
-	if (!quiet) say(browser ? "Loading browser scenario data…" : `Connecting to ${api}…`);
+	if (!quiet) say(browser ? msg.form.loading : msg.form.connecting(api));
 	// the client's own file gone (a deploy since the page loaded) is as stale as a missing worker
 	let gone = false;
 	const loading = browser
@@ -196,14 +197,14 @@ function connect({ quiet = false } = {}) {
 			return client.request();
 		}, () => {
 			gone = true;
-			throw new Error("The browser scenario code could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.");
+			throw new Error(msg.form.codeGone);
 		})
 		: fetchJson(`${api}/catalog`);
 	connecting = loading.then(
 		(c) => {
 			if (attempt !== connection) return null;
 			catalog = c;
-			if (!quiet) say(browser ? "Ready to compute in this browser." : `Connected to ${api}.`);
+			if (!quiet) say(browser ? msg.form.ready : msg.form.connected(api));
 			return c;
 		},
 		(e) => {
@@ -211,7 +212,7 @@ function connect({ quiet = false } = {}) {
 			// Try again would load the same missing worker files: only a reload helps
 			outdated = browser && (gone || client?.outdated === true);
 			unreachable = !outdated;
-			say(outdated ? e.message : browser ? `Browser data could not load: ${e.message}. Try again.` : unreachableMessage(api, e), true);
+			say(outdated ? e.message : browser ? msg.form.dataFailed(e.message) : unreachableMessage(api, e), true);
 			return null;
 		},
 	);
@@ -245,7 +246,7 @@ function stop() {
 		connect();
 	} else {
 		stopJob?.abort();
-		say("Cancelled. The job API may still finish the job, and runs one job at a time.");
+		say(msg.form.cancelledJob);
 	}
 }
 function cancel() {
@@ -281,7 +282,7 @@ async function execute(scenario) {
 	elapsed = 0;
 	const started = performance.now();
 	const tick = setInterval(() => (elapsed = (performance.now() - started) / 1000), 100);
-	say(browser ? "Computing the scenario in this browser…" : "Sending the scenario…");
+	say(browser ? msg.form.computing : msg.form.sending);
 	const controller = new AbortController();
 	stopJob = controller;
 	const { signal } = controller;
@@ -294,25 +295,25 @@ async function execute(scenario) {
 		});
 		const done = browser ? await client.request(scenario) : await waitForJob((url) => fetchJson(url, { signal }), `${api}/jobs/${submitted.id}`, {
 			signal,
-			onUpdate: (j) => say(`Job ${j.id}: ${j.status}…`),
+			onUpdate: (j) => say(msg.form.jobStatus(j)),
 		});
 		if (done.status === "failed") throw new Error(done.error);
 		job = done;
 		mapped = false;
-		const duration = done.duration_s < 0.1 ? "less than 0.1" : done.duration_s.toFixed(1);
-		let text = browser ? `Computed in this browser in ${duration} s.` : `Job ${done.id} finished in ${duration} s.`;
+		const duration = done.duration_s < 0.1 ? msg.form.lessThan : done.duration_s.toFixed(1);
+		let text = browser ? msg.form.computed(duration) : msg.form.finished(done.id, duration);
 		try {
 			mapped = onflows?.(done, liveText(done, catalog), liveClauses(done, catalog)) === true;
 			if (mapped)
-				text += `${ui.mode === "whatif" ? " The map shows its flows." : " What if… shows its flows on the map."} Details → Method lists the totals by region.`;
+				text += msg.form.mapped(ui.mode === "whatif");
 		} catch (e) {
-			text += ` Its flows are not on the map: ${e.message}`;
+			text += msg.form.unmapped(e.message);
 		}
 		say(text);
 		result = { ok: true, text };
 	} catch (e) {
-		if (cancelled) return { ok: false, text: "Cancelled.", cancelled: true };
-		result = { ok: false, text: `${browser ? "Scenario" : "Job"} failed: ${e.message}` };
+		if (cancelled) return { ok: false, text: msg.cancelled, cancelled: true };
+		result = { ok: false, text: msg.form.failed(browser, e.message) };
 		say(result.text, true);
 		// a trap or a timeout stopped the worker: start a fresh one for the next Run
 		if (browser && client?.stopped) {
@@ -330,45 +331,45 @@ async function execute(scenario) {
 <!-- the visible status line; App reads the same messages out -->
 {#snippet state()}
 	<p id="live-state" class="hint" class:bad={failed}>{message}</p>
-	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={retryConnect}>Try again</button>{/if}
+	{#if unreachable}<button type="button" class="chipb" id="live-retry" onclick={retryConnect}>{msg.tryAgain}</button>{/if}
 {/snippet}
 
 <section id="live" aria-labelledby="live-title">
 	<div class="run chosen live-card">
-		<span><b id="live-title">Custom scenario</b><small>{browser ? "Computed in this browser" : `Calculated by the job API at ${api}`}</small></span>
-		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={toggle}>{open ? "Close" : "Set up"}</button>
+		<span><b id="live-title">{msg.form.title}</b><small>{browser ? msg.form.inBrowser : msg.form.onApi(api)}</small></span>
+		<button type="button" class="change" id="live-open" aria-expanded={open} aria-controls="live-body" onclick={toggle}>{open ? msg.form.close : msg.form.open}</button>
 	</div>
 	{#if !open}{@render state()}{/if}
 	<div id="live-body" class="live-body" hidden={!open}>
 		<!-- the card already says where a browser run is computed -->
-		{#if !browser}<p class="live-label" id="live-label">Results are {status}.</p>{/if}
-		<p class="hint">{browser ? "Changes to the 2011 economy, against the published baseline. Nothing is sent to a server." : "Changes to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job."}</p>
+		{#if !browser}<p class="live-label" id="live-label">{msg.form.status(status)}</p>{/if}
+		<p class="hint">{browser ? msg.form.browserIntro : msg.form.apiIntro}</p>
 		<!-- the pickers need the catalog; without it the status line says why -->
 		<form id="live-form" onsubmit={submit} aria-busy={running} hidden={!catalog}>
 			{#each levers as l, i (l.key)}
 				<fieldset class="lever">
-					<legend>Change {i + 1}</legend>
-					<Picker id={at("product", i)} label="Product" tree={trees.products} bind:value={l.product} />
-					<Picker id={at("origin", i)} label="Produced in" tree={trees.regions} bind:value={l.origin} />
-					<Picker id={at("consumer", i)} label="Used by" tree={trees.consumers} bind:value={l.consumer} />
-					<Picker id={at("consumed-reg", i)} label="Used in" tree={trees.regions} bind:value={l.consumedReg} />
-					<label for={at("change", i)}>Input or demand change, %</label>
+					<legend>{msg.form.lever(i + 1)}</legend>
+					<Picker id={at("product", i)} label={msg.form.product} tree={trees.products} bind:value={l.product} />
+					<Picker id={at("origin", i)} label={msg.form.origin} tree={trees.regions} bind:value={l.origin} />
+					<Picker id={at("consumer", i)} label={msg.form.consumer} tree={trees.consumers} bind:value={l.consumer} />
+					<Picker id={at("consumed-reg", i)} label={msg.form.consumedIn} tree={trees.regions} bind:value={l.consumedReg} />
+					<label for={at("change", i)}>{msg.form.change}</label>
 					<input id={at("change", i)} type="number" step="any" min={range.min} max={range.max} value={l.change} oninput={(e) => (l.change = e.currentTarget.value)} required aria-describedby="live-change-h" />
-					{#if i === 0}<small class="fh" id="live-change-h">For an industry: inputs per unit of output. For final demand: spending. Negative values reduce it. Range: {minus(range.min)} to +{range.max}%.</small>{/if}
-					{#if levers.length > 1}<button type="button" class="chipb remove" id={at("remove", i)} onclick={() => removeLever(i)}>Remove change {i + 1}</button>{/if}
+					{#if i === 0}<small class="fh" id="live-change-h">{msg.form.changeHelp(minus(range.min), range.max)}</small>{/if}
+					{#if levers.length > 1}<button type="button" class="chipb remove" id={at("remove", i)} onclick={() => removeLever(i)}>{msg.form.remove(i + 1)}</button>{/if}
 				</fieldset>
 			{/each}
-			<button type="button" class="chipb add" id="live-add" disabled={levers.length >= MAX_LEVERS} onclick={addLever}>Add a change{levers.length >= MAX_LEVERS ? ` (at most ${MAX_LEVERS})` : ""}</button>
-			{#if levers.length > 1}<small class="fh" id="live-overlap">Changes to the same input or spending multiply: two cuts of 20% leave 64%, not 60%.</small>{/if}
+			<button type="button" class="chipb add" id="live-add" disabled={levers.length >= MAX_LEVERS} onclick={addLever}>{msg.form.add}{levers.length >= MAX_LEVERS ? msg.form.atMost(MAX_LEVERS) : ""}</button>
+			{#if levers.length > 1}<small class="fh" id="live-overlap">{msg.form.overlap}</small>{/if}
 			<!-- always present, so a screen reader announces the message as it comes and goes -->
 			<p class="hint bad" id="live-broad" role="status">{tooBroad}</p>
 			{#if download}<p class="hint" id="live-download">{download}</p>{/if}
-			<button type="submit" class="go" id="live-run" disabled={unreachable || outdated || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : download ? "live-download" : undefined} aria-disabled={running}>{running ? "Running…" : "Run scenario"}</button>
+			<button type="submit" class="go" id="live-run" disabled={unreachable || outdated || !catalog || tooBroad !== ""} aria-describedby={tooBroad ? "live-broad" : download ? "live-download" : undefined} aria-disabled={running}>{running ? msg.form.running : msg.form.run}</button>
 			{#if running}
 				<p class="hint live-elapsed">
 					<!-- the status line announces the start and the result; the count is for sighted readers -->
 					<span aria-hidden="true">{elapsed.toFixed(1)} s</span>
-					<button type="button" class="chipb" id="live-cancel" onclick={cancel}>Cancel</button>
+					<button type="button" class="chipb" id="live-cancel" onclick={cancel}>{msg.cancel}</button>
 				</p>
 			{/if}
 		</form>
@@ -379,11 +380,11 @@ async function execute(scenario) {
 			<div id="live-result">
 				<LiveTotals {job} {browser} ids="live-job" />
 				<details>
-					<summary>Provenance ({browser ? "browser computation" : "live job"})</summary>
+					<summary>{msg.form.provenance(browser)}</summary>
 					<dl id="live-provenance">
 						{#each browser ? browserProvenance(job) : liveProvenance(job, api) as [k, v]}
 							<dt>{k}</dt>
-							<dd>{#if k === "Scenario parameters"}<pre>{v}</pre>{:else}{v}{/if}</dd>
+							<dd>{#if k === msg.terms.parameters}<pre>{v}</pre>{:else}{v}{/if}</dd>
 						{/each}
 					</dl>
 				</details>

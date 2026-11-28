@@ -44,6 +44,7 @@ modules in `src/lib/`, so `node --test` can test it:
 
 | module | what it holds |
 | --- | --- |
+| `src/lib/messages.js` | the page's text, in one `en` object (the Ask panel's wording and the data-reload error stay outside), and the `LOCALE` every number and sort uses |
 | `src/lib/explorer.js` | where the data file is (`?data=`), the synthetic-data banner, run matching |
 | `src/lib/embodied.js` | reading the Parquet file by range request |
 | `src/lib/range.js` | one byte-range read, with its stall timer and one retry, for the Parquet file and the Zarr store |
@@ -55,7 +56,7 @@ modules in `src/lib/`, so `node --test` can test it:
 | `src/lib/browser-engine/browser-data.js` | reading the Zarr store: shard indexes, coalesced range requests, row cache |
 | `src/lib/browser-engine/browser-kernel.js` | loading the WebAssembly kernel, threaded where the page allows it |
 | `src/lib/data-origin.js` | where a deployed build reads the large data (`DATA_ORIGIN`) |
-| `src/lib/browser-engine/browser-results.js` | browser source labels, provenance and result shape |
+| `src/lib/browser-engine/browser-results.js` | browser provenance and result shape |
 
 `browser-client.js` sends requests to `browser-worker.js` (both in `src/lib/browser-engine/`), which loads the data
 and computes off the main thread. The existing custom-scenario form uses either

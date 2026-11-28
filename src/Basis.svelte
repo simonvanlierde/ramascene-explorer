@@ -2,6 +2,7 @@
 // The header's basis pill and what it opens: where the numbers on screen come
 // from. A live run names its own source, never the precomputed file's.
 import { shortCommit } from "./lib/explorer.js";
+import { msg } from "./lib/messages.js";
 import { ui } from "./view.svelte.js";
 
 // live: {source, rows, …} for a run that is not precomputed, else null
@@ -11,8 +12,8 @@ let { data, live, away = {} } = $props();
 const p = $derived(data.provenance);
 const d = $derived(p.dataset);
 // the live rows that say where the run came from; its parameters and runtime stay in Method
-const liveRows = $derived(live ? live.rows.filter(([term]) => ["Job API", "Engine", "Dataset", "Method", "Computed"].includes(term)) : []);
-const newTab = $derived(away.target ? " (opens in new tab)" : "");
+const liveRows = $derived(live ? live.rows.filter(([term]) => [msg.terms.jobApi, msg.terms.engine, msg.terms.dataset, msg.terms.method, msg.terms.computed].includes(term)) : []);
+const newTab = $derived(away.target ? msg.newTab : "");
 
 let open = $state(false);
 let pill = $state();
@@ -41,7 +42,7 @@ function toMethod() {
      closes it only from outside, by the pointerdown above. -->
 <span class="basis-w" onfocusout={(e) => open && e.relatedTarget && !e.relatedTarget.closest(".basis-w") && close(false)}>
 	<button type="button" class="pill basis" bind:this={pill} aria-expanded={open} aria-controls="basis-pop" onclick={toggle}>
-		<span class="ds">{d.name} · {data.base_year} ·{" "}</span><span class="cav">{live ? `${live.source.status} · not forecasts` : "Published scenarios · not forecasts"}</span>
+		<span class="ds">{d.name} · {data.base_year} ·{" "}</span><span class="cav">{live ? msg.basis.liveCaveat(live.source.status) : msg.basis.caveat}</span>
 		<svg class="chev" width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
 	</button>
 	{#if open}
@@ -54,27 +55,27 @@ function toMethod() {
 			bind:this={box}
 		>
 			{#if live}
-				<p class="bt" id="basis-title">This run: {live.source.status}</p>
+				<p class="bt" id="basis-title">{msg.basis.thisRun(live.source.status)}</p>
 				<dl>
 					{#each liveRows as [term, desc]}<dt>{term}</dt><dd>{desc}</dd>{/each}
 				</dl>
-				<p>A custom scenario for the {data.base_year} economy, not a forecast. The published scenarios' checks do not cover it.</p>
+				<p>{msg.basis.liveNote(data.base_year)}</p>
 			{:else}
-				<p class="bt" id="basis-title">Where these numbers come from</p>
+				<p class="bt" id="basis-title">{msg.basis.title}</p>
 				<dl>
-					<dt>Dataset</dt>
+					<dt>{msg.terms.dataset}</dt>
 					<dd>{d.name}, {d.year}{#if d.doi} · <a href="https://doi.org/{d.doi}" {...away}>doi:{d.doi}{newTab}</a>{/if}</dd>
-					<dt>Engine</dt>
+					<dt>{msg.terms.engine}</dt>
 					<dd>RaMa-Scene {p.engine.label ?? shortCommit(p.engine.commit)}</dd>
-					<dt>Model</dt>
-					<dd>Demand-pull Leontief input–output model</dd>
-					{#if p.generated_at}<dt>Generated</dt><dd>{p.generated_at.slice(0, 10)}</dd>{/if}
+					<dt>{msg.terms.model}</dt>
+					<dd>{msg.basis.model}</dd>
+					{#if p.generated_at}<dt>{msg.terms.generated}</dt><dd>{p.generated_at.slice(0, 10)}</dd>{/if}
 				</dl>
-				<p>Each published scenario changes one thing in the {data.base_year} economy and recalculates every supply chain, with prices and all other inputs fixed. They show what that change would have done then, not what will happen.</p>
+				<p>{msg.basis.note(data.base_year)}</p>
 			{/if}
 			<p class="ba">
-				<button type="button" class="chipb" onclick={toMethod}>Method and checks</button>
-				<a href="https://github.com/simonvanlierde/ramascene-explorer" {...away}>Source code by Simon van Lierde{newTab}</a>
+				<button type="button" class="chipb" onclick={toMethod}>{msg.basis.toMethod}</button>
+				<a href="https://github.com/simonvanlierde/ramascene-explorer" {...away}>{msg.basis.source}{newTab}</a>
 			</p>
 		</div>
 	{/if}

@@ -4,6 +4,7 @@
 // From "all", a click isolates one section; after that, clicks add or
 // remove; emptying the selection returns to all.
 import { amountText, SECTION_COLOURS, SECTION_SHORT, share } from "./lib/flows.js";
+import { msg } from "./lib/messages.js";
 import { ui } from "./view.svelte.js";
 
 let { sum, labelledby } = $props();
@@ -39,7 +40,7 @@ function toggle(q) {
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions: arrow keys move focus between the buttons inside -->
 <div class="rail" role="group" aria-labelledby={labelledby} onkeydown={keys}>
 	<button type="button" class="all" aria-pressed={all} tabindex={current === -1 ? 0 : -1} onfocus={() => (current = -1)} onclick={() => (ui.on = new Set(SECTION_SHORT.keys()))}>
-		<span>All {S} sections</span><span class="num">{amountText(all ? sum.total : sum.sec.reduce((a, b) => a + b, 0), ui.indicator)}</span>
+		<span>{msg.rail.all(S)}</span><span class="num">{amountText(all ? sum.total : sum.sec.reduce((a, b) => a + b, 0), ui.indicator)}</span>
 	</button>
 	{#each SECTION_SHORT as name, q (q)}
 		{@const on = ui.on.has(q)}
@@ -51,7 +52,7 @@ function toggle(q) {
 			onfocus={() => (current = q)}
 			style="--c:{SECTION_COLOURS[q]};--f:{on ? sum.sec[q] / total : 0}"
 			title="{name}: {amountText(sum.sec[q], ui.indicator)}"
-			aria-label="{name}{on ? ` ${share(sum.sec[q], total)} of the selection` : ', off'}, {amountText(sum.sec[q], ui.indicator)}"
+			aria-label="{name}{on ? msg.rail.share(share(sum.sec[q], total)) : msg.rail.off}, {amountText(sum.sec[q], ui.indicator)}"
 			onclick={() => toggle(q)}
 		>
 			<i></i><span>{name}</span> <em class="num">{on ? share(sum.sec[q], total) : ""}</em>

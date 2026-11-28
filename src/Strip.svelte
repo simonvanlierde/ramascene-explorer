@@ -4,6 +4,7 @@
 // five world regions, each its change in emissions (or jobs, or ores) released there.
 // With World selected, Flows has the same shape: the world total, then its split over the five regions.
 import { amount, capitalise, continentLabel, displayChange, divFill, pctWords, placeName, SECTION_SHORT, share, theName, WORLD, wording } from "./lib/flows.js";
+import { msg } from "./lib/messages.js";
 import { themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, conts, worldCard, whatif, extent } = $props();
@@ -13,7 +14,7 @@ const name = $derived(placeName(meta, ui.who));
 // inside a phrase: "the United States"
 const nameIn = $derived(theName(meta, ui.who));
 const sections = $derived(
-	ui.on.size === SECTION_SHORT.length ? "All 15 industry sections" : `${ui.on.size} of 15 industry sections`,
+	ui.on.size === SECTION_SHORT.length ? msg.strip.allSections : msg.someSections(ui.on.size),
 );
 const total = $derived(amount(sum.total, ui.indicator));
 const abroad = $derived(amount(sum.total - sum.home, ui.indicator));
@@ -41,15 +42,15 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 			<div class="ks">{sections}, 2011</div>
 		</div>
 		<div class="kpi">
-			<div class="kl">{ui.dir === "in" ? "Abroad" : "For consumption abroad"}</div>
+			<div class="kl">{ui.dir === "in" ? msg.strip.abroad : msg.strip.forAbroad}</div>
 			<div class="kv num">{share(sum.total - sum.home, sum.total)}</div>
-			<div class="ks">{abroad.join(" ")} outside {nameIn}</div>
+			<div class="ks">{msg.strip.outside(abroad.join(" "), nameIn)}</div>
 		</div>
 		<div class="kpi">
-			<div class="kl">Largest flow</div>
+			<div class="kl">{msg.strip.largest}</div>
 			<div class="kv num">{largest[0]}<small>{largest[1]}</small></div>
 			<div class="ks">
-				{#if k != null}{ui.dir === "in" ? `${placeName(meta, k)} → ${name}` : `${name} → ${placeName(meta, k)}`} · {share(sum.vals[k], sum.total)}{:else}No flow abroad{/if}
+				{#if k != null}{ui.dir === "in" ? `${placeName(meta, k)} → ${name}` : `${name} → ${placeName(meta, k)}`} · {share(sum.vals[k], sum.total)}{:else}{msg.strip.noneAbroad}{/if}
 			</div>
 		</div>
 	</div>
@@ -57,27 +58,27 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 	<div class="wstrip">
 		{#if !whatif}
 			<div class="kpi world">
-				<div class="kl">World total</div>
+				<div class="kl">{msg.strip.worldTotal}</div>
 				<div class="kv num">{total[0]}<small>{total[1]}</small></div>
 				<div class="ks">{sections}, 2011</div>
 			</div>
 		{:else if worldCard}
 			<div class="kpi world">
-				<div class="kl">World total</div>
+				<div class="kl">{msg.strip.worldTotal}</div>
 				<div class="kv num">{wd > 0 ? "+" : ""}{wa[0]}<small>{wa[1]}</small></div>
-				<div class="ks">{worldCard.base ? pctWords((wd / worldCard.base) * 100) : "no 2011 total"}, all countries and industries</div>
+				<div class="ks">{worldCard.base ? pctWords((wd / worldCard.base) * 100) : msg.strip.noTotal}{msg.strip.everywhere}</div>
 			</div>
 		{/if}
 		<div class="regions">
-			<div class="gl">{whatif ? `${capitalise(nameIn)}’s change, by where ${where}` : `By where ${where}`} <small>({regionUnit})</small></div>
-			<div class="kpis k5" role="group" aria-label="{whatif ? `The change in ${nameIn}${ui.dir === 'in' ? '’s consumption' : ''}` : 'The world total'}, by the world region where {where}">
+			<div class="gl">{whatif ? msg.strip.changeBy(capitalise(nameIn), where) : msg.strip.by(where)} <small>({regionUnit})</small></div>
+			<div class="kpis k5" role="group" aria-label={msg.strip.regions(whatif, nameIn, ui.dir === "in", where)}>
 				{#each conts as c, i (c.name)}
 					{@const v = regionChanges[i]}
 					{@const p = c.base ? (v / c.base) * 100 : 0}
 					<div class="kpi" class:lead={i === topCell}>
-						<div class="kl">{#if whatif}<span class="sw" style="background:{fill(p)}"></span>{/if}<span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{continentLabel(c.name)}</span></div>
+						<div class="kl">{#if whatif}<span class="sw" style="background:{fill(p)}"></span>{/if}<span><span class="pre">{`${ui.dir === "in" ? wording(ui.indicator).made.col : msg.consumedIn} `}</span>{continentLabel(c.name)}</span></div>
 						<div class="kv num">{whatif && v > 0 ? "+" : ""}{amount(v, ui.indicator, regionRef)[0]}<span class="sr-only"> {regionUnit}</span></div>
-						<div class="ks">{whatif ? (c.base ? pctWords(p) : "no 2011 flow") : `${share(c.base, sum.total)} of the total`}</div>
+						<div class="ks">{whatif ? (c.base ? pctWords(p) : msg.strip.noFlow) : msg.strip.ofTotal(share(c.base, sum.total))}</div>
 					</div>
 				{/each}
 			</div>

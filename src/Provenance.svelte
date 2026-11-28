@@ -1,5 +1,6 @@
 <script>
 import { runSummary } from "./lib/explorer.js";
+import { LOCALE, msg } from "./lib/messages.js";
 
 // meta: the embodied flows' metadata, for their own check
 // scenario: the shown one, or the excluded record whose parameters are listed
@@ -28,26 +29,28 @@ const skipped = $derived(direction.rise_check_skipped_indicators);
 const items = $derived.by(() => {
 	const rows = [
 		["data_kind", data.data_kind, data.data_kind !== "exiobase-v3"],
-		["Status", data.status],
+		[msg.terms.status, data.status],
 		[
-			"Engine",
-			`${e.label ? `${e.label} · ` : ""}${e.repository ?? "(no remote)"} · ${e.branch ?? "(detached)"} · ${e.commit}${e.dirty ? " · uncommitted changes" : ""}`,
+			msg.terms.engine,
+			`${e.label ? `${e.label} · ` : ""}${e.repository ?? msg.provenance.noRemote} · ${e.branch ?? msg.detached} · ${e.commit}${e.dirty ? msg.uncommitted : ""}`,
 		],
 	];
-	if (run) rows.push(["Run", `${runSummary(run)} · generated ${p.generated_at}`, Boolean(run.failed)]);
-	if (data.failed?.length) rows.push(["Failed scenarios"]);
+	if (run) rows.push([msg.terms.run, msg.provenance.run(runSummary(run), p.generated_at), Boolean(run.failed)]);
+	if (data.failed?.length) rows.push([msg.terms.failed]);
 	rows.push(
+		[msg.terms.dataset, msg.provenance.dataset(d)],
+		[msg.terms.breakdown, data.breakdown],
+		[msg.terms.parameters],
+		[msg.terms.command],
+		[msg.terms.generated, p.generated_at],
 		[
-			"Dataset",
-			`${d.name} (${(d.creators ?? []).join(", ")}; Zenodo ${d.version}, ${d.published}) · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`,
-		],
-		["Breakdown", data.breakdown],
-		["Scenario parameters"],
-		["Command"],
-		["Generated", p.generated_at],
-		[
-			"Runtime",
-			`Python ${p.python ?? "—"} · numpy ${p.numpy ?? "—"} · Django ${p.django ?? "—"} · peak RSS ${p.peak_rss_bytes ? `${(p.peak_rss_bytes / 2 ** 30).toFixed(2)} GiB` : "—"}`,
+			msg.terms.runtime,
+			msg.runtime({
+				python: p.python ?? "—",
+				numpy: p.numpy ?? "—",
+				django: p.django ?? "—",
+				rss: p.peak_rss_bytes ? `${(p.peak_rss_bytes / 2 ** 30).toFixed(2)} GiB` : "—",
+			}),
 		],
 	);
 	return rows;
@@ -56,49 +59,42 @@ const items = $derived.by(() => {
 // [passed, text, verdict]
 const checks = $derived.by(() => {
 	const rows = [
-		[
-			v.passed,
-			`The engine reproduces the Octave reference files shipped with RaMa-Scene (routes two and four; value added and GHG), ${v.tolerance}.`,
-		],
+		[v.passed, msg.provenance.reference(v.tolerance)],
 		[
 			verified,
-			`${regionValues.toLocaleString("en")} world-region totals match within relative 1e-9 when recomputed outside the engine as B·L·ΣY (indicator intensities, supply-chain requirements, final demand). They cover ${runs} runs, counting the baseline and the 0% control, × ${data.indicators.length} indicators × ${data.regions.length} world regions.`,
+			msg.provenance.independent(regionValues.toLocaleString(LOCALE), runs, data.indicators.length, data.regions.length),
 		],
-		[control.passed, "A 0% scenario through the same modified-coefficient path reproduces the baseline."],
-		[
-			directionOk,
-			"Every published scenario changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
-				(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")}).` : "."),
-		],
+		[control.passed, msg.provenance.control],
+		[directionOk, msg.provenance.direction(skipped)],
 	];
 	// precompute writes no flows that fail this, so it is listed only when the flows recorded it
 	const flows = !live && data.data_kind === "exiobase-v3" ? meta.checks?.producer_by_country : null;
-	if (flows) rows.push([flows.passed, "The flows the map draws add up to the engine's country totals within relative 1e-9."]);
-	if (run) rows.push([!run.failed, `${runSummary(run)}.`, run.failed ? `${run.failed} excluded` : "Passed"]);
-	return rows.map(([ok, text, verdict]) => [ok, text, verdict ?? (ok ? "Passed" : "Not passed")]);
+	if (flows) rows.push([flows.passed, msg.provenance.flows]);
+	if (run) rows.push([!run.failed, `${runSummary(run)}.`, run.failed ? msg.provenance.excluded(run.failed) : msg.provenance.passed]);
+	return rows.map(([ok, text, verdict]) => [ok, text, verdict ?? (ok ? msg.provenance.passed : msg.provenance.notPassed)]);
 });
 </script>
 
 <section class="part" id="verification" aria-labelledby="verification-heading">
-	<h2 id="verification-heading">Calculation checks</h2>
-	{#if live}<p><strong>These checks cover the published scenarios, not the custom run on screen.</strong></p>{/if}
-	<p>These checks test numerical consistency. They do not establish whether a scenario is realistic or desirable. A fall in employment, for example, is a model result rather than a benefit.</p>
-	<p>Reference, baseline and control failures stop publication. Individual scenarios that fail a check are excluded, with the reason recorded below.</p>
+	<h2 id="verification-heading">{msg.provenance.heading}</h2>
+	{#if live}<p><strong>{msg.provenance.notLive}</strong></p>{/if}
+	<p>{msg.provenance.scope}</p>
+	<p>{msg.provenance.policy}</p>
 	<ul class="checks" id="checks">
 		{#each checks as [ok, text, verdict]}
 			<li><span class="verdict {ok ? 'pass' : 'fail'}">{verdict}</span> <span>{text}</span></li>
 		{/each}
 	</ul>
 	<details class="more" id="provenance-panel">
-		<summary>Data and reproduction details</summary>
+		<summary>{msg.provenance.details}</summary>
 		<dl id="provenance">
 			{#each items as [term, text, failed]}
 				<dt>{term}</dt>
-				{#if term === "Failed scenarios"}
-					<dd><span>Excluded from this page, with the recorded reason:</span><pre>{data.failed.map((f) => `${f.id}: ${f.reason}`).join("\n")}</pre></dd>
-				{:else if term === "Scenario parameters"}
-					<dd><span>Exact RaMa-Scene parameters (model_details). IDs refer to the engine catalogue; techChange is a percentage:</span><pre>{(scenario.model_details ?? []).map((step) => JSON.stringify(step)).join("\n")}</pre></dd>
-				{:else if term === "Command"}
+				{#if term === msg.terms.failed}
+					<dd><span>{msg.provenance.failedNote}</span><pre>{data.failed.map((f) => `${f.id}: ${f.reason}`).join("\n")}</pre></dd>
+				{:else if term === msg.terms.parameters}
+					<dd><span>{msg.provenance.parametersNote}</span><pre>{(scenario.model_details ?? []).map((step) => JSON.stringify(step)).join("\n")}</pre></dd>
+				{:else if term === msg.terms.command}
 					<dd><code>{p.command}</code></dd>
 				{:else}
 					<dd class={failed ? "fail" : undefined}>{text}</dd>

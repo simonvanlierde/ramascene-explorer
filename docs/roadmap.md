@@ -23,6 +23,10 @@ What is planned for the next year (to late 2027), in rough order. None of it has
 - **World** in the country list: the map, strip and Sankey show the world total and its split
   over the five regions (`?region=world`).
 - Up to 10 changes in one custom scenario, in the browser and on the job API.
+- **One message catalog.** The page's text is in `src/lib/messages.js`, and every number is
+  formatted for its one `LOCALE`, so a translation is mostly a second object there. The Ask
+  panel's wording (`src/lib/ask.js`) and the data-reload error stay outside it. Translations
+  are not planned, but contributed ones are welcome.
 
 ## Not planned
 
@@ -30,4 +34,3 @@ What is planned for the next year (to late 2027), in rough order. None of it has
   stay opt-in behind `?api=` ([interface.md](interface.md)).
 - Forecasts. Every scenario changes final demand or technical coefficients in the 2011
   economy; there is no projection step.
-- Languages other than English.

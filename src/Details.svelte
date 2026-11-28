@@ -21,6 +21,7 @@ import {
 	wording,
 } from "./lib/flows.js";
 import { BROWSER_STATUS } from "./lib/browser-engine/browser-results.js";
+import { LOCALE, msg } from "./lib/messages.js";
 import LiveTotals from "./LiveTotals.svelte";
 import Provenance from "./Provenance.svelte";
 import { ui, wide } from "./view.svelte.js";
@@ -30,9 +31,9 @@ import { ui, wide } from "./view.svelte.js";
 let { data, meta, sum, mirror, whatif, run, text, live } = $props();
 
 const TABS = [
-	["sankey", "Sankey"],
-	["table", "Table"],
-	["method", "Method"],
+	["sankey", msg.details.sankey],
+	["table", msg.details.table],
+	["method", msg.terms.method],
 ];
 const open = $derived(ui.panel !== null);
 const world = $derived(ui.who === WORLD);
@@ -115,19 +116,19 @@ const heads = $derived(
 	world
 		? [
 				[lay?.x.L + lay?.nw, "end", w.made.col],
-				[lay?.x.M, "start", "Industry"],
-				[lay?.x.R, "start", "Consumed in"],
+				[lay?.x.M, "start", msg.details.industry],
+				[lay?.x.R, "start", msg.consumedIn],
 			]
 		: ui.dir === "in"
 		? [
 				[lay?.x.L + lay?.nw, "end", w.made.col],
-				[lay?.x.M, "start", "Industry"],
-				[lay?.x.R + lay?.nw, "end", "Consumed in"],
+				[lay?.x.M, "start", msg.details.industry],
+				[lay?.x.R + lay?.nw, "end", msg.consumedIn],
 			]
 		: [
 				[lay?.x.L, "start", w.made.col],
-				[lay?.x.M + lay?.nw, "end", "Industry"],
-				[lay?.x.R, "start", "Consumed in"],
+				[lay?.x.M + lay?.nw, "end", msg.details.industry],
+				[lay?.x.R, "start", msg.consumedIn],
 			],
 );
 // the shortest node that gets a label, in layout units
@@ -180,16 +181,16 @@ const rows = $derived.by(() => {
 	return list.sort((a, b) => {
 		const x = a[key];
 		const y = b[key];
-		return (typeof x === "string" ? x.localeCompare(y) : (x ?? -Infinity) - (y ?? -Infinity)) * sortD;
+		return (typeof x === "string" ? x.localeCompare(y, LOCALE) : (x ?? -Infinity) - (y ?? -Infinity)) * sortD;
 	});
 });
 const maxV = $derived(Math.max(...rows.map((r) => r.v), 1e-12));
 const cols = $derived([
-	["n", ui.dir === "in" ? w.made.col : "Consumed in"],
+	["n", ui.dir === "in" ? w.made.col : msg.consumedIn],
 	["v", unit],
-	["sh", "Share"],
-	["ind", "Largest industry"],
-	...(whatif ? [["c", "Change"]] : []),
+	["sh", msg.details.share],
+	["ind", msg.details.largest],
+	...(whatif ? [["c", msg.details.change]] : []),
 ]);
 function sortBy(k) {
 	if (sortK === k) sortD = -sortD;
@@ -221,11 +222,11 @@ async function copyLink() {
 	try {
 		await navigator.clipboard.writeText(href);
 		linkBox = null;
-		copied = "Link copied";
+		copied = msg.details.copied;
 	} catch {
 		// no Clipboard API (or it was refused): select the link for a manual copy
 		linkBox = href;
-		copied = "Link selected: press Ctrl+C or ⌘C to copy it";
+		copied = msg.details.selected;
 		await tick();
 		linkInput?.select();
 	}
@@ -254,23 +255,23 @@ async function copyLink() {
 		<div>
 			<h2 class="pt" id="pan-title">{name}</h2>
 			<p class="ps">
-				{ui.dir === "in" ? `What ${nameIn} consumes` : w.made.own(nameIn)}{whatif ? ` · if ${text}` : ""} · {amountText(sum.total, ui.indicator)} · {all ? "all 15 industry sections" : `${ui.on.size} of 15 industry sections`} · {data.base_year}
+				{ui.dir === "in" ? msg.details.consumes(nameIn) : w.made.own(nameIn)}{whatif ? msg.details.ifRun(text) : ""} · {amountText(sum.total, ui.indicator)} · {all ? msg.details.allSections : msg.someSections(ui.on.size)} · {data.base_year}
 			</p>
-			{#if live}<p class="ps">Copy link shares the filters and last published scenario. It does not include this custom result.</p>{/if}
+			{#if live}<p class="ps">{msg.details.linkNote}</p>{/if}
 			<p class="copied" role="status">{copied}</p>
-			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label="Link to this view" onfocus={(e) => e.currentTarget.select()} />{/if}
+			{#if linkBox}<input bind:this={linkInput} class="link" readonly value={linkBox} aria-label={msg.details.link} onfocus={(e) => e.currentTarget.select()} />{/if}
 		</div>
 		<div class="pa">
 			<button type="button" class="chipb" onclick={copyLink}>
 				<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5l3-3M7 4.5l1.3-1.3a2.6 2.6 0 0 1 3.7 3.7L10.7 8.2M9 11.5l-1.3 1.3a2.6 2.6 0 0 1-3.7-3.7L5.3 7.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-				Copy link
+				{msg.details.copy}
 			</button>
-			<button type="button" class="x" aria-label="Close details" onclick={close}>
+			<button type="button" class="x" aria-label={msg.details.close} onclick={close}>
 				<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
 			</button>
 		</div>
 	</div>
-	<div class="tabs" role="tablist" aria-label="Detail view">
+	<div class="tabs" role="tablist" aria-label={msg.details.tabs}>
 		{#each TABS as [id, label], i (id)}
 			<button
 				type="button"
@@ -288,7 +289,7 @@ async function copyLink() {
 	<div class="pb" id="tp-sankey" role="tabpanel" tabindex="0" aria-labelledby="tab-sankey" hidden={ui.panel !== "sankey"}>
 		{#if lay}
 			<div class="skw" bind:clientWidth={skW}>
-			<svg class="sk" style="--k:{k}" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label="Sankey of {amountText(sum.total, ui.indicator)}: {w.made.col.toLowerCase()}, industry, consumed in. The Table tab lists the same flows.">
+			<svg class="sk" style="--k:{k}" viewBox="0 0 {lay.width} {lay.height}" width="100%" role="img" aria-label={msg.details.sankeyLabel(amountText(sum.total, ui.indicator), w.made.col)}>
 				{#each heads as [x, a, t] (t)}<text class="h" {x} y={11 * k} text-anchor={a}>{t}</text>{/each}
 				{#each lay.links as l, i (i)}<path class="lk" d={l.d} fill={SECTION_COLOURS[l.q]}><title>{l.from} → {l.to}: {amountText(l.v, ui.indicator)}</title></path>{/each}
 				{#each lay.left as n (n.name)}<rect x={lay.x.L} y={n.y} width={lay.nw} height={n.h} fill="var(--slate)"><title>{n.name}: {amountText(n.v, ui.indicator)}</title></rect>{/each}
@@ -309,7 +310,7 @@ async function copyLink() {
 				{/each}
 			</svg>
 			</div>
-			<p class="skc">{unit}, {data.base_year}{whatif ? " baseline flows" : ""}. Middle column: {all ? "the 15" : `${lay.mid.length} of the 15`} industry sections, in the same colours as the section buttons. Hover a band for its value; the Table tab lists every flow.</p>
+			<p class="skc">{unit}, {data.base_year}{whatif ? msg.details.baseline : ""}. {msg.details.middle(all ? null : lay.mid.length)}</p>
 		{/if}
 	</div>
 
@@ -318,11 +319,11 @@ async function copyLink() {
 			<div class="tbar">
 				<button type="button" class="chipb" onclick={downloadCsv}>
 					<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-					Download CSV
+					{msg.details.csv}
 				</button>
 			</div>
 			<table id="flows-table">
-				<caption>{rows.length} regions · {unit}, {data.base_year}{whatif ? " · change: this run" : ""}{all ? "" : ` · ${ui.on.size} of 15 sections`}</caption>
+				<caption>{msg.side.regions(rows.length)} · {unit}, {data.base_year}{whatif ? msg.details.thisRun : ""}{all ? "" : ` · ${msg.app.someSections(ui.on.size)}`}</caption>
 				<thead>
 					<tr>
 						{#each cols as [k, label] (k)}
@@ -335,7 +336,7 @@ async function copyLink() {
 				<tbody>
 					{#each rows as r (r.k)}
 						<tr class:me={r.k === ui.who}>
-							<th scope="row">{placeName(meta, r.k)}{r.k === ui.who ? " (home)" : ""}</th>
+							<th scope="row">{r.k === ui.who ? msg.home(placeName(meta, r.k)) : placeName(meta, r.k)}</th>
 							<td class="num"><span class="mb" style="width:{(r.v / maxV) * 42}px"></span>{fmtV(r.v)}</td>
 							<td class="num">{share(r.v, sum.total)}</td>
 							<td class="ind2"><i style="background:{SECTION_COLOURS[r.ts]}"></i>{r.ind}</td>
@@ -349,28 +350,12 @@ async function copyLink() {
 
 	<div class="pb" id="tp-method" role="tabpanel" aria-labelledby="tab-method" hidden={ui.panel !== "method"}>
 		<section class="part" aria-labelledby="meaning-heading">
-			<h2 id="meaning-heading">What the numbers mean</h2>
-			<p>
-				What we consume connects us to environmental impacts across global supply chains.
-				The map follows those links from final demand, what households, governments and investors buy, to the industries where {w.source}.
-				Consumption adds up the flows that serve the selected country or region. Production adds up the flows that start there.
-				World adds up every region: both directions give the same total, and the toggle only picks whether the map shows where it is released or where it is consumed.
-			</p>
-			<p>
-				What if… shows how changes in one place ripple through supply chains worldwide.
-				Each change alters the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain.
-				Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound.
-				These are scenarios for the 2011 economy, not forecasts.
-			</p>
-			<p>
-				Method: RaMa-Scene calculates these links with a demand-pull Leontief input–output model, using {data.provenance.dataset.name} for {data.base_year}.
-				A scenario scales the selected technical coefficients or final demand, then solves the model again.
-			</p>
-			<p>
-				GHG means greenhouse-gas emissions, measured in megatonnes of CO₂-equivalent. Metal ores are measured in megatonnes extracted.
-				Employment counts people employed who are attributed to the selected demand. The label “jobs” does not mean full-time equivalents or net job creation.
-			</p>
-			<p>Choose a country, follow its consumption footprint on the map, then try a published scenario in What if… to compare it with the baseline.</p>
+			<h2 id="meaning-heading">{msg.meaning.heading}</h2>
+			<p>{msg.meaning.flows(w.source)}</p>
+			<p>{msg.meaning.whatif}</p>
+			<p>{msg.meaning.method(data.provenance.dataset.name, data.base_year)}</p>
+			<p>{msg.meaning.units}</p>
+			<p>{msg.meaning.start}</p>
 		</section>
 		{#if live}
 			<section class="part" aria-labelledby="live-provenance-heading">
@@ -380,7 +365,7 @@ async function copyLink() {
 				<dl id="live-run-provenance">
 					{#each live.rows as [term, desc]}
 						<dt>{term}</dt>
-						<dd>{#if term === "Scenario parameters" || term === "Changes"}<pre>{desc}</pre>{:else}{desc}{/if}</dd>
+						<dd>{#if term === msg.terms.parameters || term === msg.terms.changes}<pre>{desc}</pre>{:else}{desc}{/if}</dd>
 					{/each}
 				</dl>
 			</section>

@@ -3,6 +3,7 @@
 // The dense products and the small solve run in engine/ (Rust, built to wasm);
 // the caller loads that module before the first scenario.
 import { correction, fold } from "../../../engine/pkg/ramascene_engine.js";
+import { LOCALE, msg } from "../messages.js";
 
 // The export stores float32, so a pivot this close to zero, relative to the
 // system's scale, cannot be told apart from a singular system.
@@ -13,13 +14,13 @@ export const FLOW_TOTALS = 2205;
 const H_BATCH = 256;
 
 function expand(list, ids, bound) {
-	if (!Array.isArray(ids) || !ids.length) throw new Error("select at least one id");
+	if (!Array.isArray(ids) || !ids.length) throw new Error(msg.engine.noId);
 	const leaves = ids.flatMap((id) => {
 		const item = list.find((v) => v.id === id);
-		if (!item) throw new Error(`unknown id ${id}`);
+		if (!item) throw new Error(msg.engine.unknownId(id));
 		return item.leaves;
 	});
-	if (!leaves.every((v) => Number.isInteger(v) && v >= 0 && v < bound)) throw new Error("invalid catalog indices");
+	if (!leaves.every((v) => Number.isInteger(v) && v >= 0 && v < bound)) throw new Error(msg.engine.badIndices);
 	return [...new Set(leaves)].sort((a, b) => a - b);
 }
 
@@ -35,16 +36,15 @@ function selection(meta, step) {
 		step.techChange[0] < -100 ||
 		step.techChange[0] > 1000
 	)
-		throw new Error("change must be between -100 and 1000 percent");
-	if (!Array.isArray(step.consumedBy) || !step.consumedBy.length) throw new Error("select a consumer");
+		throw new Error(msg.engine.range);
+	if (!Array.isArray(step.consumedBy) || !step.consumedBy.length) throw new Error(msg.engine.noConsumer);
 	const consumers = step.consumedBy.map((id) => {
 		const item = catalog.consumers.find((v) => v.id === id);
-		if (!item) throw new Error(`unknown consumer ${id}`);
+		if (!item) throw new Error(msg.engine.unknownConsumer(id));
 		return item;
 	});
 	const final = consumers[0].final === true;
-	if (consumers.some((v) => (v.final === true) !== final))
-		throw new Error("cannot mix final demand and intermediate consumers");
+	if (consumers.some((v) => (v.final === true) !== final)) throw new Error(msg.engine.mixed);
 	const indices = (regions, products) => regions.flatMap((r) => products.map((p) => r * meta.products + p));
 	return {
 		products: products.length,
@@ -69,8 +69,7 @@ export const LIMITS = { download: 160 * 1024 ** 2, memory: 256 * 1024 ** 2, work
 // scenario exceeds the browser budgets, so the form can check a selection with
 // the catalogue alone (meta: {catalog, products, countries, arrays?}).
 export function plan(meta, steps) {
-	if (!Array.isArray(steps) || !steps.length || steps.length > 10)
-		throw new Error("a scenario needs 1 to 10 interventions");
+	if (!Array.isArray(steps) || !steps.length || steps.length > 10) throw new Error(msg.engine.steps);
 	const C = meta.countries;
 	const F = FLOW_TOTALS;
 	const edits = steps.map((step) => selection(meta, step)).filter((s) => s.factor !== 1);
@@ -107,10 +106,11 @@ export function plan(meta, steps) {
 			Math.min(J.length, 2 * H_BATCH) * F);
 	if (work > LIMITS.work || memory > LIMITS.memory || (meta.arrays && download > LIMITS.download)) {
 		const one = steps.length === 1 && edits.length === 1;
-		const detail = one ? ` (${edits[0].products} products × ${edits[0].origins} producing countries)` : "";
-		throw new Error(
-			`too broad to compute in the browser: it changes ${J.length.toLocaleString("en")} product–country pairs${detail}. Choose a narrower product, fewer producing countries, or fewer industries or regions that use it${steps.length > 1 ? " or remove a change; the limits apply to all changes together" : ""}.`,
-		);
+		const detail = one ? msg.engine.tooBroadDetail(edits[0].products, edits[0].origins) : "";
+		const e = new Error(msg.engine.tooBroad(J.length.toLocaleString(LOCALE), detail, steps.length > 1));
+		// the form says why before Run, from plan() alone
+		e.tooBroad = true;
+		throw e;
 	}
 	return { edits, technical, rows, columns, finals, J, byRows, download, memory };
 }
@@ -218,7 +218,7 @@ export async function scenarioFlows(data, steps, ahead = null, kernel = { correc
 			const h = await (start ? data.read("H", batch, undefined, controller.signal) : reads.firstH);
 			kernel.fold(out, h, Z.subarray(start * C, (start + batch.length) * C), F, C);
 		}
-		if (!out.every(Number.isFinite)) throw new Error("non-finite scenario output");
+		if (!out.every(Number.isFinite)) throw new Error(msg.engine.nonFinite);
 		return out;
 	} catch (e) {
 		// A failed read or calculation stops this run's other downloads and waits for them, so

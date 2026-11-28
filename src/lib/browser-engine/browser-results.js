@@ -1,20 +1,24 @@
 import { liveFlows } from "../live.js";
+import { msg } from "../messages.js";
 
-export const BROWSER_STATUS = "computed in this browser";
+export const BROWSER_STATUS = msg.browser.status;
 const BROWSER_SOURCE = {
 	status: BROWSER_STATUS,
-	pill: "Custom run: not covered by checks",
-	heading: "Custom calculation",
-	note: "This run was not checked: the calculation checks below cover the published scenarios only. The browser recalculates the 2011 supply chain with float64 Woodbury updates on matrices stored as float32. Every published scenario matches RaMa-Scene within relative 1e-6 that way. Judge the assumptions of your custom scenario yourself.",
+	pill: msg.browser.pill,
+	heading: msg.browser.heading,
+	note: msg.browser.note,
 };
 
 export function browserProvenance(job) {
 	return [
-		["Status", BROWSER_STATUS],
-		["Dataset", "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
-		["Method", "Float64 Woodbury update on float32 matrices, computed in a worker in this browser"],
-		["Scenario parameters", job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
-		["Computed", `${job.duration_s < 0.01 ? "less than 0.01" : job.duration_s.toFixed(2)} s including data reads`],
+		[msg.terms.status, BROWSER_STATUS],
+		[msg.terms.dataset, "EXIOBASE v3.3.sm · doi:10.5281/zenodo.3533196 · 2011 · CC BY 4.0"],
+		[msg.terms.method, msg.browser.method],
+		[msg.terms.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
+		[
+			msg.terms.computed,
+			msg.browser.computed(job.duration_s < 0.01 ? msg.browser.lessThan : job.duration_s.toFixed(2)),
+		],
 	];
 }
 

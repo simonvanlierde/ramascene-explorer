@@ -7,6 +7,7 @@ import { embodiedUrl, flowsFailure, flowsUrl, openEmbodiedUrl, readRun } from ".
 import { continents, fitExtent, parseView, placeName, runText, summarise, viewSearch, WORLD, wording, worldTotal } from "./lib/flows.js";
 import { apiUrl, ignoredApi, jobRun, liveData } from "./lib/live.js";
 import { askModel, askUrl } from "./lib/ask.js";
+import { msg } from "./lib/messages.js";
 import { runCache } from "./lib/run-cache.js";
 import { browserRun } from "./lib/browser-engine/browser-results.js";
 import Basis from "./Basis.svelte";
@@ -122,11 +123,11 @@ const showRun = (run) => show(run, () => precomputedRun(run));
 // the last live run sent to the map; settles once it is on screen
 let drawing = Promise.resolve();
 function showLive(job, text, clauses, browser = false) {
-	if (!ready) throw new Error("the precomputed flows are not loaded, so the page has no layout for them");
+	if (!ready) throw new Error(msg.app.notReady);
 	const next = browser ? browserRun(job, meta, text) : jobRun(job, meta, api, text);
 	if (!next) return false;
 	// the headline says only how many changes there are; Details lists them
-	if (clauses.length > 2) next.live.rows.unshift(["Changes", clauses.join("\n")]);
+	if (clauses.length > 2) next.live.rows.unshift([msg.terms.changes, clauses.join("\n")]);
 	if (ui.mode !== "whatif") {
 		drawing = show(next.run, async () => next);
 		return true;
@@ -194,7 +195,7 @@ function closeSheet() {
 }
 const summary = $derived(
 	ready
-		? `${placeName(meta, ui.who)} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? "all sections" : `${ui.on.size} of 15 sections`}`
+		? `${placeName(meta, ui.who)} · ${wording(ui.indicator).label} · ${ui.on.size === 15 ? msg.app.allSections : msg.app.someSections(ui.on.size)}`
 		: "",
 );
 
@@ -277,47 +278,47 @@ $effect(() => {
 			{/await}
 		{/if}
 	{:catch}
-		<p role="alert">The custom scenario form could not load. Reload the page; it may have been updated since you opened it, or the connection dropped.</p>
+		<p role="alert">{msg.app.formGone}</p>
 	{/await}
 {/snippet}
 
 <!-- the theme toggle and the source link: in the header, and on a phone in the selection sheet -->
 {#snippet tools()}
-	<button type="button" class="pill gh" onclick={toggleTheme} aria-pressed={themeName() === "dark"} aria-label="Dark theme" title="Dark theme">
+	<button type="button" class="pill gh" onclick={toggleTheme} aria-pressed={themeName() === "dark"} aria-label={msg.app.dark} title={msg.app.dark}>
 		{#if themeName() === "dark"}
 			<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M13.6 10.4A6 6 0 0 1 5.6 2.4a6 6 0 1 0 8 8Z" /></svg>
 		{:else}
 			<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="currentColor" /><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
 		{/if}
 	</button>
-	<a class="pill gh" href="https://github.com/simonvanlierde/ramascene-explorer" {...away} aria-label={`Source code on GitHub${away.target ? " (opens in new tab)" : ""}`} title={`Source code on GitHub${away.target ? " (opens in new tab)" : ""}`}>
+	<a class="pill gh" href="https://github.com/simonvanlierde/ramascene-explorer" {...away} aria-label={`${msg.app.github}${away.target ? msg.newTab : ""}`} title={`${msg.app.github}${away.target ? msg.newTab : ""}`}>
 		<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" /></svg>
 	</a>
 {/snippet}
 
-<a class="skip" href={ready ? "#app" : flowsError || empty ? "#empty" : "#loading"} inert={ui.panel !== null}>{ready ? "Skip to the map" : "Skip to main content"}</a>
+<a class="skip" href={ready ? "#app" : flowsError || empty ? "#empty" : "#loading"} inert={ui.panel !== null}>{ready ? msg.app.skipMap : msg.app.skipMain}</a>
 <div class="shell" style:--header-h={headerH ? `${headerH}px` : null} style:--banner-h={bannerH ? `${bannerH}px` : null}>
 	<!-- on a wide screen Details sits beside the header and the sidebar, so both stay live; on a phone it is modal -->
 	<header class="top" inert={ui.panel !== null && !wide.current} bind:offsetHeight={headerH}>
 		<div class="brand">
 			<svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--acc)" /><g fill="#fff"><polygon points="6.68,25.16 7.18,23.84 7.71,22.59 8.26,21.43 8.85,20.33 9.46,19.32 10.09,18.39 10.74,17.53 11.41,16.76 12.1,16.06 12.8,15.45 13.51,14.91 14.23,14.44 14.95,14.05 15.68,13.72 16.41,13.46 17.15,13.26 17.9,13.11 18.66,13.02 19.43,12.98 20.23,12.98 21.05,13.04 21.89,13.14 22.77,13.29 23.68,13.49 24.32,4.51 22.93,4.61 21.58,4.78 20.26,5.03 18.99,5.35 17.77,5.75 16.59,6.23 15.47,6.78 14.41,7.41 13.4,8.1 12.46,8.86 11.58,9.68 10.77,10.56 10.02,11.49 9.34,12.47 8.71,13.5 8.14,14.58 7.63,15.7 7.16,16.86 6.75,18.08 6.38,19.33 6.05,20.64 5.77,21.99 5.52,23.39 5.32,24.84" /><circle cx="24" cy="9" r="4.5" /></g></svg>
 			<h1>RaMa-Scene Explorer</h1>
-			<span class="by">by <a href="https://simonvanlierde.com" {...away}>Simon van Lierde{#if away.target}<span class="sr-only"> (opens in new tab)</span>{/if}</a></span>
+			<span class="by">{msg.app.by} <a href="https://simonvanlierde.com" {...away}>Simon van Lierde{#if away.target}<span class="sr-only">{msg.newTab.trim()}</span>{/if}</a></span>
 		</div>
 		<div class="rt" id="status">
-			{#if ignored !== null}<span class="pill fail" title={`ignored data=${ignored}`}>ignored data={ignored}</span>{/if}
-			{#if refusedApi !== null}<span class="pill fail" title={`ignored api=${refusedApi}`}>ignored api={refusedApi}</span>{/if}
+			{#if ignored !== null}<span class="pill fail" title={msg.app.ignored("data", ignored)}>{msg.app.ignored("data", ignored)}</span>{/if}
+			{#if refusedApi !== null}<span class="pill fail" title={msg.app.ignored("api", refusedApi)}>{msg.app.ignored("api", refusedApi)}</span>{/if}
 			{#if data}
 				<Basis {data} {live} {away} />
 				{#if live}
 					<button type="button" class="pill live" onclick={() => (ui.panel = "method")}>{live.source.pill}</button>
 				{:else if verified}
-					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label="Checks passed: view calculation checks and method">
+					<button type="button" class="pill ok" onclick={() => (ui.panel = "method")} aria-label={msg.app.checkedLabel}>
 						<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M4.8 8.3l2.1 2.1 4.3-4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-						Checks passed
+						{msg.app.checked}
 					</button>
 				{:else}
-					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>Checks unavailable: {flag?.synthetic ? "test data" : "a check failed"}</button>
+					<button type="button" class="pill unverified" onclick={() => (ui.panel = "method")}>{msg.app.unchecked(flag?.synthetic)}</button>
 				{/if}
 			{/if}
 			<span class="icons">{@render tools()}</span>
@@ -331,42 +332,42 @@ $effect(() => {
 		<main class="main" id="app" tabindex="-1" inert={ui.panel !== null}>
 			<Sentence {data} {meta} {sum} {whatif} {text} />
 			<Strip {meta} {sum} {conts} {worldCard} {whatif} {extent} />
-			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => cueToWhatif()}>See what one change does <span aria-hidden="true">→</span> What if…</button></p>{/if}
+			{#if ui.mode === "flows"}<p class="whatif-cue"><button type="button" onclick={() => cueToWhatif()}>{msg.app.cue} <span aria-hidden="true">→</span> {msg.mode.whatif}</button></p>{/if}
 			<FlowMap {meta} {sum} {whatif} {extent} {play} {stop} {loadingRun} {retry} />
 		</main>
 		<Details {data} {meta} {sum} {mirror} {whatif} {run} {text} {live} />
-		<nav class="dock" aria-label="Mode and selection" inert={ui.panel !== null}>
-			<div class="seg big" role="group" aria-label="Mode">
-				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>Flows, {data.base_year}</button>
-				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>What if…</button>
+		<nav class="dock" aria-label={msg.app.dock} inert={ui.panel !== null}>
+			<div class="seg big" role="group" aria-label={msg.mode.label}>
+				<button type="button" aria-pressed={ui.mode === "flows"} onclick={() => setMode("flows")}>{msg.mode.flows(data.base_year)}</button>
+				<button type="button" aria-pressed={ui.mode === "whatif"} onclick={() => setMode("whatif")}>{msg.mode.whatif}</button>
 			</div>
 			<button type="button" class="filters" bind:this={sheetOpener} aria-expanded={sheet} aria-controls="side" onclick={() => (sheet = true)}>
-				<span class="fl">{ui.mode === "whatif" ? "Run and filters" : "Filters"}</span><span class="fs">{ui.mode === "whatif" && run ? `If ${text} · ` : ""}{summary}</span>
+				<span class="fl">{ui.mode === "whatif" ? msg.app.runFilters : msg.app.filters}</span><span class="fs">{ui.mode === "whatif" && run ? msg.app.ifRun(text) : ""}{summary}</span>
 			</button>
 		</nav>
 	{:else if flowsError || empty}
 		<main class="main solo" id="empty" tabindex="-1">
 			{#if empty}
 				<section class="nodata" aria-labelledby="nodata-heading">
-					<h2 id="nodata-heading">No precomputed data here yet</h2>
-					<p>To check the page itself, <a href="?data=tests/fixture.json">open it with the synthetic test data</a>. A banner marks it as test data.</p>
-					<p>The real results are in <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>. Only a run of the engine on the EXIOBASE dataset makes them:</p>
+					<h2 id="nodata-heading">{msg.empty.heading}</h2>
+					<p>{msg.empty.check} <a href="?data=tests/fixture.json">{msg.empty.fixture}</a>{msg.empty.banner}</p>
+					<p>{msg.empty.resultsIn} <code>data/results.json</code> {msg.empty.flowsIn} <code>data/embodied.parquet</code>{msg.empty.onlyEngine}</p>
 					<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
 				</section>
 			{:else if flowsError === "results"}
-				<p role="alert"><strong>The scenario results could not be loaded.</strong> The connection may have dropped while reading <code>{dataPath}</code>. Reload the page to try again.</p>
+				<p role="alert"><strong>{msg.empty.noResults}</strong> {msg.empty.dropped} <code>{dataPath}</code>{msg.empty.reload}</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}
-				<p><strong>The embodied flows are not here.</strong> <code>{embodiedUrl(dataPath)}</code> ships as a release asset, not in git. Fetch it next to <code>results.json</code>:</p>
+				<p><strong>{msg.empty.noFlows}</strong> <code>{embodiedUrl(dataPath)}</code> {msg.empty.asset} <code>results.json</code>:</p>
 				<pre>scripts/fetch-data.sh embodied</pre>
 			{:else if flowsError === "failed" || flowsError === "missing"}
-				<p role="alert"><strong>The 2011 flows could not be loaded.</strong> The connection may have dropped while reading <code>{flowsUrl(dataPath, data, DATA_ORIGIN)}</code>. Reload the page to try again.</p>
+				<p role="alert"><strong>{msg.empty.flowsFailed}</strong> {msg.empty.dropped} <code>{flowsUrl(dataPath, data, DATA_ORIGIN)}</code>{msg.empty.reload}</p>
 			{:else}
-				<p><strong>The embodied flows come from a different run</strong> than <code>{dataPath}</code> (dataset, engine commit or time differ), so they are not shown next to it. Regenerate both in one precompute run.</p>
+				<p><strong>{msg.empty.mismatch}</strong> {msg.empty.than} <code>{dataPath}</code> {msg.empty.regenerate}</p>
 			{/if}
 			{@render livePanel()}
 		</main>
 	{:else}
-		<main class="main solo" id="loading" tabindex="-1" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
+		<main class="main solo" id="loading" tabindex="-1" aria-busy="true"><p class="loading">{msg.app.loading}</p></main>
 	{/if}
 </div>

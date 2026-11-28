@@ -3,6 +3,7 @@
 // search button that opens a box narrowing the options to the matches and their parents.
 import { tick, untrack } from "svelte";
 import { catalogName, filterTree } from "./lib/live.js";
+import { msg } from "./lib/messages.js";
 
 // tree: catalogTree(items); value: the picked item's id, as a string
 let { id, label, tree, value = $bindable(), disabled = false } = $props();
@@ -35,7 +36,7 @@ const indent = (n) => (String(n.item.id) === value ? "" : "   ".repeat(n.dept
 <div class="pick-l">
 	<label for={id}>{label}</label>
 	{#if tree.length > 10}
-		<button type="button" class="pick-s" aria-expanded={searching} aria-label="Search {label.toLowerCase()}" {disabled} onclick={toggle}>
+		<button type="button" class="pick-s" aria-expanded={searching} aria-label={msg.picker.search(label)} {disabled} onclick={toggle}>
 			<svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10.4 10.4l3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
 		</button>
 	{/if}
@@ -46,12 +47,12 @@ const indent = (n) => (String(n.item.id) === value ? "" : "   ".repeat(n.dept
 		class="pick-q"
 		bind:this={box}
 		bind:value={query}
-		placeholder="Type to narrow the list"
-		aria-label="Search {label.toLowerCase()}"
+		placeholder={msg.picker.placeholder}
+		aria-label={msg.picker.search(label)}
 		aria-controls={id}
 		onkeydown={(e) => e.key === "Escape" && (e.stopPropagation(), toggle())}
 	/>
-	{#if none}<small class="fh" role="status">No match for “{query.trim()}”.</small>{/if}
+	{#if none}<small class="fh" role="status">{msg.picker.none(query.trim())}</small>{/if}
 {/if}
 <!-- a narrow select cuts the picked name short; its title keeps the whole -->
 <select {id} required {disabled} bind:value title={picked ? catalogName(picked.item) : undefined}>

@@ -1,8 +1,9 @@
 // Shared custom-scenario logic for the browser worker and optional job API.
 
 import { at, cells } from "./embodied.js";
+import { LOCALE, msg } from "./messages.js";
 
-export const LIVE_STATUS = "computed by the job API";
+export const LIVE_STATUS = msg.live.status;
 // The change the job API accepts, in percent. GET /catalog states it as
 // tech_change_percent; these are its values, for a job API that does not.
 export const CHANGE_RANGE = { min: -100, max: 1000 };
@@ -42,16 +43,16 @@ export function ignoredApi(search) {
 // answers (no tunnel, laptop offline); anything else is the API's own error.
 export function unreachableMessage(api, error) {
 	if (error instanceof TypeError) {
-		return `Live job API not reachable (offline): nothing answers at ${api}. The precomputed runs are unaffected.`;
+		return msg.live.offline(api);
 	}
-	return `Job API at ${api} answered with an error: ${error.message}`;
+	return msg.live.apiError(api, error.message);
 }
 
 // Form levers (strings from <select>/<input>) to a POST /jobs body in the
 // explorer's model_details format, one entry per lever. Throws on no lever, or a change
 // that is not a finite number or is outside range ({min, max} in percent, the job API's).
 export function scenarioBody(levers, range = CHANGE_RANGE) {
-	if (!levers.length) throw new Error("add at least one change");
+	if (!levers.length) throw new Error(msg.live.noChange);
 	const id = (v) => {
 		const n = Number(v);
 		if (!Number.isInteger(n)) throw new Error(`not an id: ${v}`);
@@ -59,9 +60,9 @@ export function scenarioBody(levers, range = CHANGE_RANGE) {
 	};
 	const step = ({ product, originReg, consumedBy, consumedReg, techChange }) => {
 		const change = Number(techChange);
-		if (techChange === "" || !Number.isFinite(change)) throw new Error("the change must be a finite number (percent)");
+		if (techChange === "" || !Number.isFinite(change)) throw new Error(msg.live.notFinite);
 		if (change < range.min || change > range.max)
-			throw new Error(`the change must be between ${minus(range.min)} and ${minus(range.max)} percent`);
+			throw new Error(msg.live.outOfRange(minus(range.min), minus(range.max)));
 		return {
 			product: id(product),
 			originReg: id(originReg),
@@ -77,7 +78,7 @@ export function scenarioBody(levers, range = CHANGE_RANGE) {
 				return step(lever);
 			} catch (e) {
 				// the form's 1-based number, so the message names the change to fix
-				throw new Error(`change ${n + 1}: ${e.message}`);
+				throw new Error(msg.live.inChange(n + 1, e.message));
 			}
 		}),
 	};
@@ -111,32 +112,25 @@ export function liveProvenance(job, apiOrigin) {
 	const v = job.result.reference_validation;
 	const gib = (b) => `${(b / 2 ** 30).toFixed(2)} GiB`;
 	return [
-		["Status", LIVE_STATUS],
-		["Job API", `${apiOrigin} · job ${job.id}`],
-		["Engine", `${e.branch ?? "(detached)"} · ${e.commit ?? "(unknown)"}${e.dirty ? " · uncommitted changes" : ""}`],
-		["Dataset", `${d.name} · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`],
+		[msg.terms.status, LIVE_STATUS],
+		[msg.terms.jobApi, msg.live.jobApi(apiOrigin, job.id)],
 		[
-			"Reference check",
-			v
-				? `Octave reference, on this job's matrices: ${v.passed ? "passed" : "not passed"} (${v.values} values, ${v.tolerance})`
-				: "not requested for this job (it reproduces only for a 0% change)",
+			msg.terms.engine,
+			`${e.branch ?? msg.detached} · ${e.commit ?? msg.live.unknown}${e.dirty ? msg.uncommitted : ""}`,
 		],
-		["Scenario parameters", job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
-		["Computed", `${job.started_at} → ${job.finished_at} (${job.duration_s.toFixed(1)} s)`],
-		["Runtime", `Python ${p.python} · numpy ${p.numpy} · Django ${p.django} · peak RSS ${gib(job.peak_rss_bytes)}`],
+		[msg.terms.dataset, msg.live.dataset(d)],
+		[msg.terms.referenceCheck, v ? msg.live.reference(v) : msg.live.noReference],
+		[msg.terms.parameters, job.scenario.model_details.map((s) => JSON.stringify(s)).join("\n")],
+		[msg.terms.computed, `${job.started_at} → ${job.finished_at} (${job.duration_s.toFixed(1)} s)`],
+		[msg.terms.runtime, msg.runtime({ ...p, rss: gib(job.peak_rss_bytes) })],
 	];
 }
 
 // Keep the catalogue names in the form; hide the engine's category prefixes.
 export function catalogName(item) {
-	if (item?.final || item?.name === "Y: Final Consumption") return "Final demand";
+	if (item?.final || item?.name === "Y: Final Consumption") return msg.live.finalDemand;
 	const name = item?.name.replace(/^[A-Z]: /, "");
-	return (
-		{
-			"Basic iron and steel and of ferro-alloys and first products thereof": "Iron, steel and ferro-alloy products",
-			"Motor vehicles, trailers and semi-trailers": "Motor vehicles and trailers",
-		}[name] ?? name
-	);
+	return msg.live.shortNames[name] ?? name;
 }
 
 // The catalogue lists each level in turn (sections, divisions, then products;
@@ -165,7 +159,7 @@ export function catalogTree(items = []) {
 	for (const [i, p] of parent.entries()) (p < 0 ? roots : children[p]).push(i);
 	const order = (a, b) =>
 		Number(items[b].final === true) - Number(items[a].final === true) ||
-		catalogName(items[a]).localeCompare(catalogName(items[b]), "en");
+		catalogName(items[a]).localeCompare(catalogName(items[b]), LOCALE);
 	const out = [];
 	const walk = (i, depth) => {
 		out.push({ item: items[i], depth, parent: parent[i] < 0 ? null : items[parent[i]].id });
@@ -202,13 +196,13 @@ export const liveClauses = (job, catalog) => job.scenario.model_details.map((ste
 export function liveText(job, catalog) {
 	const clauses = liveClauses(job, catalog);
 	return clauses.length <= 2
-		? new Intl.ListFormat("en", { type: "conjunction" }).format(clauses)
-		: `${clauses.length} changes were made together`;
+		? new Intl.ListFormat(LOCALE, { type: "conjunction" }).format(clauses)
+		: msg.live.manyChanges(clauses.length);
 }
 
 // The job API's 422 text names a change as model_details.3 or model_details[3] (0-based); the form says "change 4".
 export const formChange = (text) =>
-	text.replace(/model_details(?:\.(\d+)|\[(\d+)\])/g, (_, a, b) => `change ${Number(a ?? b) + 1}`);
+	text.replace(/model_details(?:\.(\d+)|\[(\d+)\])/g, (_, a, b) => msg.live.change(Number(a ?? b) + 1));
 
 function leverText(step, catalog) {
 	const item = (list, [id]) => catalog?.[list]?.find((x) => x.id === id);
@@ -216,14 +210,16 @@ function leverText(step, catalog) {
 	const where = (prefix, ids) => (name("regions", ids) === "Total" ? "" : `${prefix}${name("regions", ids)}`);
 	const change = step.techChange[0];
 	const product = name("products", step.product).toLowerCase();
-	const origin = where(" from ", step.originReg);
+	const origin = where(msg.live.from, step.originReg);
 	const by = step.consumedBy;
-	if (by.length === 1 && catalogName(item("consumers", by)) === "Final demand")
-		return `final demand${where(" in ", step.consumedReg)} for ${product}${origin} ${change < 0 ? "fell" : change > 0 ? "rose" : "changed"} by ${Math.abs(change)}%`;
+	if (by.length === 1 && catalogName(item("consumers", by)) === msg.live.finalDemand)
+		return msg.live.demandClause(where(msg.live.in, step.consumedReg), product, origin, change);
 	// sections 1 to 15 are every industry (the Ask panel's "All industries"); else each one by name
 	const all = by.length === 15 && by.every((id, i) => id === i + 1);
-	const users = all ? "All industries" : new Intl.ListFormat("en").format(by.map((id) => name("consumers", [id])));
-	return `${users}${where(" in ", step.consumedReg)} required ${Math.abs(change)}% ${change < 0 ? "less" : "more"} ${product}${origin} per unit of output`;
+	const users = all
+		? msg.live.allIndustries
+		: new Intl.ListFormat(LOCALE).format(by.map((id) => name("consumers", [id])));
+	return msg.live.inputClause(users, where(msg.live.in, step.consumedReg), product, origin, change);
 }
 
 // A job's flows as the page's {base, delta}: dense arrays in meta's layout, the
@@ -275,9 +271,9 @@ export function liveFlows(job, meta) {
 const JOB_SOURCE = {
 	status: LIVE_STATUS,
 	// the trust pill: the page's checks cover the precomputed runs only
-	pill: "Live job: not covered by checks",
-	heading: "This run: computed live",
-	note: "The map shows a job the job API computed while you waited, against the baseline from the same job. The checks below cover the precomputed runs, not this one.",
+	pill: msg.live.pill,
+	heading: msg.live.heading,
+	note: msg.live.note,
 };
 
 // A finished job as a run the page shows: {run, base, delta, live: {source, text,
@@ -315,7 +311,7 @@ export async function waitForJob(
 		if (job) {
 			onUpdate?.(job);
 			if (job.status === "succeeded" || job.status === "failed") return job;
-			if (Date.now() > deadline) throw new Error(`job still ${job.status} after ${timeout / 1000} s`);
+			if (Date.now() > deadline) throw new Error(msg.live.stillRunning(job.status, timeout / 1000));
 		}
 		// the wait ends early on abort, so Cancel takes effect at once
 		await new Promise((resolve) => {
