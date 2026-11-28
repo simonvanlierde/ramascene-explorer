@@ -381,7 +381,7 @@ export function bandGeometry(lines, B, { k: widthK, dir, minWidth = 0.8 }) {
 			Math.hypot(L[n - 1][0] - e1[0], L[n - 1][1] - e1[1]) < Math.hypot(L[n - 1][0] - e2[0], L[n - 1][1] - e2[1]);
 		L[n] = near ? e1 : e2;
 		Rt[n] = near ? e2 : e1;
-		return { k, v, widths, d: outline(L, Rt) };
+		return { k, v, widths, d: outline(L, Rt), ends: [P[0], E] };
 	});
 	return { R, bands };
 }
@@ -415,7 +415,7 @@ const outline = (L, Rt) => `M${L.map(xy).join("L")}L${[...Rt].reverse().map(xy).
 export function horizonBands(lines, { k: widthK, dir, minWidth = 0.8 }) {
 	return lines.map(({ k, v, P, ts }) => {
 		const { L, Rt, widths } = ribbon(P, Math.max(minWidth, v * widthK), dir, ts);
-		return { k, v, widths, d: outline(L, Rt) };
+		return { k, v, widths, d: outline(L, Rt), ends: [P[0], P.at(-1)] };
 	});
 }
 

@@ -56,6 +56,8 @@ Under the sentence, **World total** comes first: the change in the whole world's
 or ores), over every country's consumption and every industry, whatever sections or country you
 picked. Beside it, the selected country's own change is split over the five world regions where it occurs.
 The scrubber moves between the baseline and the scenario, and replays when you pick another scenario.
+During the replay, the new colour runs along each band that changes, from where the flow is released
+to where it is consumed, led by a darker front; at the end the map is still.
 
 The colour scale fits the flows on screen and uses a square-root scale.
 Its limit is the 90th percentile of the absolute percentage changes among the flows
