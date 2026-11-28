@@ -218,6 +218,9 @@ $effect(() => {
 const hits = (a, b) => !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
 const labels = $derived.by(() => {
 	const placed = [...blocks];
+	// the selected country's ring: a near neighbour's label would cover it, most on a phone
+	const r = geom.R + 3;
+	if (geom.shown && geom.R) placed.push([geom.B[0] - r, geom.B[1] - r, geom.B[0] + r, geom.B[1] + r]);
 	const out = [];
 	for (const b of [...geom.bands].sort((x, y) => y.v - x.v)) {
 		const p = proj(shapes[b.k].at);

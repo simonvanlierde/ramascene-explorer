@@ -23,6 +23,7 @@ import {
 	niceUp,
 	parseView,
 	pct,
+	pctWords,
 	placeName,
 	runText,
 	SECTION_SHORT,
@@ -419,6 +420,9 @@ test("small changes do not produce long decimals or signed zero", () => {
 	assert.equal(pct(-0.0007), "−<0.01%");
 	assert.equal(pct(0.0007), "+<0.01%");
 	assert.equal(pct(-0.02), "−0.02%");
+	assert.equal(pctWords(-0.0007), "less than 0.01% lower than in 2011");
+	assert.equal(pctWords(4.88), "4.88% higher than in 2011");
+	assert.equal(pctWords(-7e-13), "no change from 2011");
 	assert.equal(fmt(-7e-12), "−7e−12");
 	assert.equal(fmt(1001.4), "1,000");
 });

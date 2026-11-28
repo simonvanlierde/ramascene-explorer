@@ -295,7 +295,7 @@ $effect(() => {
 	</a>
 {/snippet}
 
-<a class="skip" href="#app" inert={ui.panel !== null}>Skip to the map</a>
+<a class="skip" href={ready ? "#app" : flowsError || empty ? "#empty" : "#loading"} inert={ui.panel !== null}>{ready ? "Skip to the map" : "Skip to main content"}</a>
 <div class="shell" style:--header-h={headerH ? `${headerH}px` : null} style:--banner-h={bannerH ? `${bannerH}px` : null}>
 	<!-- on a wide screen Details sits beside the header and the sidebar, so both stay live; on a phone it is modal -->
 	<header class="top" inert={ui.panel !== null && !wide.current} bind:offsetHeight={headerH}>
@@ -345,12 +345,15 @@ $effect(() => {
 			</button>
 		</nav>
 	{:else if flowsError || empty}
-		<main class="main solo" id="empty">
+		<main class="main solo" id="empty" tabindex="-1">
 			{#if empty}
-				<p><strong>No precomputed data here yet.</strong> The page reads <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>, which only a run of the engine on the EXIOBASE dataset produces:</p>
-				<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
+				<section class="nodata" aria-labelledby="nodata-heading">
+					<h2 id="nodata-heading">No precomputed data here yet</h2>
+					<p>To check the page itself, <a href="?data=tests/fixture.json">open it with the synthetic test data</a>. A banner marks it as test data.</p>
+					<p>The real results are in <code>data/results.json</code> and the embodied flows in <code>data/embodied.parquet</code>. Only a run of the engine on the EXIOBASE dataset makes them:</p>
+					<pre>uv run python pipeline/precompute.py --run --engine "$ENGINE_DIR" --data "$DATASETS_DIR" \
     --out data/results.json --out-embodied data/embodied.parquet</pre>
-				<p>To check the page itself, open it with <code>?data=tests/fixture.json</code> (synthetic, bannered).</p>
+				</section>
 			{:else if flowsError === "results"}
 				<p role="alert"><strong>The scenario results could not be loaded.</strong> The connection may have dropped while reading <code>{dataPath}</code>. Reload the page to try again.</p>
 			{:else if flowsError === "missing" && !DATA_ORIGIN}
@@ -364,6 +367,6 @@ $effect(() => {
 			{@render livePanel()}
 		</main>
 	{:else}
-		<main class="main solo" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
+		<main class="main solo" id="loading" tabindex="-1" aria-busy="true"><p class="loading">Loading the 2011 flows…</p></main>
 	{/if}
 </div>

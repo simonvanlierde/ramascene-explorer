@@ -96,6 +96,12 @@ export function pct(v) {
 	if (a > 0 && a < 0.01) return `${sign(value)}<0.01%`;
 	return `${sign(value)}${percentages.format(a)}%`;
 }
+// pct in words, for a reader new to signed percentages: "less than 0.01% lower than in 2011".
+export function pctWords(v) {
+	const s = pct(v);
+	if (s === "0%") return "no change from 2011";
+	return `${s.slice(1).replace(/^</, "less than ")} ${s[0] === MINUS ? "lower" : "higher"} than in 2011`;
+}
 // A share that is not zero never reads as 0%.
 export function share(a, b) {
 	const p = b > 0 ? (a / b) * 100 : 0;

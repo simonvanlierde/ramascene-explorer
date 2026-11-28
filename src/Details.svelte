@@ -298,7 +298,7 @@ async function copyLink() {
 					{#each col as n (n.name)}
 						{#if n.me}
 							{@const x = side === "L" ? lay.x.L + lay.nw + 4 : lay.x.R - 4}
-							<text class="me" {x} y={(11 + SK_LINE) * k} text-anchor={side === "L" ? "start" : "end"}>{n.name}{#if narrow}<tspan {x} dy={SK_LINE * k}>{amountText(n.v, ui.indicator)}</tspan>{:else} {amountText(n.v, ui.indicator)}{/if}</text>
+							<text class="me" {x} y={(11 + SK_LINE) * k} text-anchor={side === "L" ? "start" : "end"}>{n.name}{#if narrow}<tspan {x} dy={SK_LINE * k}>{amountText(n.v, ui.indicator)}</tspan>{:else}{` ${amountText(n.v, ui.indicator)}`}{/if}</text>
 						{:else if labelled.has(n)}
 							<text x={side === "L" ? lay.x.L - 5 : lay.x.R + lay.nw + 5} y={(labelY.get(n) ?? n.y + n.h / 2) + 3.5 * k} text-anchor={side === "L" ? "end" : "start"}>{narrow ? n.short : n.name} <tspan class="v">{fmtV(n.v)}</tspan></text>
 						{/if}

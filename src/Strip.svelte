@@ -3,7 +3,7 @@
 // country's consumption and every industry, then the selected country's change split over the
 // five world regions, each its change in emissions (or jobs, or ores) released there.
 // With World selected, Flows has the same shape: the world total, then its split over the five regions.
-import { amount, capitalise, continentLabel, displayChange, divFill, pct, placeName, SECTION_SHORT, share, theName, WORLD, wording } from "./lib/flows.js";
+import { amount, capitalise, continentLabel, displayChange, divFill, pctWords, placeName, SECTION_SHORT, share, theName, WORLD, wording } from "./lib/flows.js";
 import { themeName, ui } from "./view.svelte.js";
 
 let { meta, sum, conts, worldCard, whatif, extent } = $props();
@@ -65,7 +65,7 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 			<div class="kpi world">
 				<div class="kl">World total</div>
 				<div class="kv num">{wd > 0 ? "+" : ""}{wa[0]}<small>{wa[1]}</small></div>
-				<div class="ks">{worldCard.base ? `${pct((wd / worldCard.base) * 100)} relative to 2011` : "no 2011 total"}, all countries and industries</div>
+				<div class="ks">{worldCard.base ? pctWords((wd / worldCard.base) * 100) : "no 2011 total"}, all countries and industries</div>
 			</div>
 		{/if}
 		<div class="regions">
@@ -77,7 +77,7 @@ const regionUnit = $derived(amount(regionRef, ui.indicator)[1]);
 					<div class="kpi" class:lead={i === topCell}>
 						<div class="kl">{#if whatif}<span class="sw" style="background:{fill(p)}"></span>{/if}<span><span class="pre">{ui.dir === "in" ? `${wording(ui.indicator).made.col} ` : "Consumed in "}</span>{continentLabel(c.name)}</span></div>
 						<div class="kv num">{whatif && v > 0 ? "+" : ""}{amount(v, ui.indicator, regionRef)[0]}<span class="sr-only"> {regionUnit}</span></div>
-						<div class="ks">{whatif ? (c.base ? `${pct(p)} relative to 2011` : "no 2011 flow") : `${share(c.base, sum.total)} of the total`}</div>
+						<div class="ks">{whatif ? (c.base ? pctWords(p) : "no 2011 flow") : `${share(c.base, sum.total)} of the total`}</div>
 					</div>
 				{/each}
 			</div>
