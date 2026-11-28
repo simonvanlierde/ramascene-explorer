@@ -8,6 +8,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The What if… replay runs the new colour along each band that changes, from where the flow is
+  released to where it is consumed, once; with reduced motion the bands fade as before.
 - `pipeline/numpy_engine.py` runs browser scenarios from Python with numpy and scipy, on the same
   store and with the same maths as the page. It matches RaMa-Scene's published results to 5.5e-9 on the
   155 scenarios and the baseline (the float32 storage floor); a one-off comparison on 26 November 2026 found it 1.6e-15

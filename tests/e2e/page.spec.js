@@ -701,6 +701,34 @@ test("with reduced motion the replay jumps to the run", async ({ page }) => {
 	await expect(page.getByRole("slider")).toHaveAttribute("aria-valuenow", "100", { timeout: 400 });
 });
 
+test("the replay runs a crest along the changing bands, once, and ends on plain fills", async ({ page }) => {
+	await page.goto(`${FIXTURE}&mode=whatif&scenario=cement-in-construction`);
+	await ready(page);
+	const slider = page.getByRole("slider");
+	await expect(slider).toHaveAttribute("aria-valuenow", "100");
+	const crested = page.locator('.bands path[fill^="url(#crest-"]');
+	// at rest the bands are plain fills, with no gradients left behind
+	await expect(crested).toHaveCount(0);
+	await expect(page.locator('linearGradient[id^="crest-"]')).toHaveCount(0);
+	await slider.focus();
+	await page.keyboard.press("Home");
+	await expect(crested).toHaveCount(0);
+	await page.keyboard.press("PageUp");
+	await page.keyboard.press("PageUp");
+	await expect(crested.first()).toBeAttached();
+	const n = await crested.count();
+	await expect(page.locator('linearGradient[id^="crest-"]')).toHaveCount(n);
+	await page.keyboard.press("End");
+	await expect(crested).toHaveCount(0);
+	// reduced motion: the same frame fades, as before
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.keyboard.press("Home");
+	await page.keyboard.press("PageUp");
+	await page.keyboard.press("PageUp");
+	await expect(slider).toHaveAttribute("aria-valuenow", "50");
+	await expect(crested).toHaveCount(0);
+});
+
 // The two failure tests use the shipped data: the preview serves it with Range
 // support, as GitHub Pages does, so each run is its own request to fail.
 test("a run that fails to load says so, and picking it again works", async ({ page }) => {

@@ -147,6 +147,21 @@ function fillOf(k) {
 	if (k === ui.who) return pal.self;
 	return sum.vals[k] < lo / 10 ? pal.land : seq(sum.vals[k]);
 }
+// --- the scenario crest ----------------------------------------------------------------
+// While the replay runs, each band that changes takes its new colour behind a front that
+// runs from where the flow is released to where it is consumed, led by a short stretch of
+// its arm's darkest colour. A function of ui.s alone: the scrubber shows any frame, and at
+// s = 1 the bands are plain fills again. Under reduced motion the bands fade as before.
+const CREST = 0.14; // the lead's length, as a share of the band
+const cresting = $derived(whatif && ui.s > 0 && ui.s < 1 && !reducedMotion());
+const changes = (k) => (displayFlowPct(sum, k) ?? 0) !== 0;
+function crest(b) {
+	const p = displayFlowPct(sum, b.k) ?? 0;
+	const [a, c] = ui.dir === "in" ? b.ends : [b.ends[1], b.ends[0]];
+	const f = -CREST + ui.s * (1 + 2 * CREST);
+	const at = (t) => Math.max(0, Math.min(1, t));
+	return { a, c, stops: [at(f - CREST), at(f), at(f + 0.01)], now: fb(p), lead: fb(Math.sign(p) * extent), was: fb(0) };
+}
 const bandColour = (k) =>
 	whatif ? fb((displayFlowPct(sum, k) ?? 0) * ui.s) : oneSection !== null ? SECTION_COLOURS[oneSection] : pal.band;
 
@@ -672,7 +687,23 @@ const unit = $derived(wording(ui.indicator).unit);
 				</defs>
 			{/if}
 			<g class="bands" mask={reveal < 1 && geom.B ? "url(#reveal)" : undefined}>
-				{#each geom.bands as b (b.k)}<path d={b.d} fill={bandColour(b.k)} data-region={meta.country_codes[b.k]} />{/each}
+				{#if cresting}
+					<defs>
+						{#each geom.bands.filter((b) => changes(b.k)) as b (b.k)}
+							{@const g = crest(b)}
+							<linearGradient id="crest-{b.k}" gradientUnits="userSpaceOnUse" x1={g.a[0]} y1={g.a[1]} x2={g.c[0]} y2={g.c[1]}>
+								<stop offset={g.stops[0]} stop-color={g.now} />
+								<stop offset={g.stops[1]} stop-color={g.lead} />
+								<stop offset={g.stops[2]} stop-color={g.was} />
+							</linearGradient>
+						{/each}
+					</defs>
+				{/if}
+				{#each geom.bands as b (b.k)}<path
+						d={b.d}
+						fill={cresting && changes(b.k) ? `url(#crest-${b.k})` : bandColour(b.k)}
+						data-region={meta.country_codes[b.k]}
+					/>{/each}
 			</g>
 			{#if geom.R}<circle class="ring" cx={geom.B[0]} cy={geom.B[1]} r={geom.R} opacity={geom.shown ? 1 : 0} />{/if}
 			<g class="lbls">
