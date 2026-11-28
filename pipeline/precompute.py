@@ -29,11 +29,12 @@ stock engine returns its own L. Each run records the class of the L it got
 
 Nothing is written unless the engine first reproduces the four Octave
 reference files shipped with RaMa-Scene on the matrices given (checked before
-any solve), the baseline matches an independent B . (L . sum Y) per region and the
-0% control reproduces the baseline. A scenario that fails a per-scenario check
-(non-finite output, regional mismatch, no change, a rise) is recorded as
-failed with its reason and left out of the published results; it is never
-dropped silently. data_kind is "exiobase-v3" only for output that passed.
+any solve), the baseline matches B . (L . sum Y) per region (summed outside
+Analyze, with the engine's own L) and the 0% control reproduces the baseline.
+A scenario that fails a per-scenario check (non-finite output, regional
+mismatch, no change, a rise) is recorded as failed with its reason and left out
+of the published results; it is never dropped silently. data_kind is
+"exiobase-v3" only for output that passed.
 
 --out-embodied adds the flows embodied in final demand (producer country x
 section x consumer country) for the baseline and every published scenario,
@@ -665,7 +666,7 @@ def compute(engine, scenarios, indicators, embodied=False):
 
     Run-level failures raise ValueError before anything is written: a failed
     Octave reference check (before any solve), a baseline that does not match
-    the independent calculation, a leaky 0% control, or no scenario left.
+    B . (L . sum Y) per region, a leaky 0% control, or no scenario left.
     Scenario-level failures (engine error, non-finite output, regional
     mismatch, no change, a rise) go into "failed" with the reason; the
     scenario is not in "results".

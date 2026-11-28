@@ -217,7 +217,7 @@ for (const engine of names.map((n) => engines[n])) {
 			const meta = await (await fetch(new URL("data/browser-engine/manifest-v3.json", base))).json();
 			const w = new Worker(workerUrls[0], { type: "module" });
 			// A trap in a pool thread leaves a call waiting, and page.evaluate with it, so dump()
-			// would never run. The slowest scenario in docs/browser-engine.md takes about 10 s.
+			// would never run. The slowest scenario in docs/browser-performance.md takes about 10 s.
 			const call = (body) =>
 				new Promise((resolve, reject) => {
 					setTimeout(() => reject(new Error("a parity call took over 5 minutes")), 300_000);
