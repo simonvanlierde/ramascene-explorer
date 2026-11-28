@@ -14,6 +14,22 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
+  # A copier update that cannot merge a file leaves conflict markers or a .rej file: neither may reach main.
+  - repo: local
+    hooks:
+      - id: copier-update-conflict
+        name: a copier update left conflict markers
+        # \r? for a CRLF file, where Copier writes CRLF markers. A .rej file is the other hook's.
+        entry: '^(<<<<<<< before updating|>>>>>>> after updating)\r?$'
+        language: pygrep
+        types: [text]
+        exclude: '\.rej$'
+      - id: copier-update-rej
+        name: a copier update left a .rej file (resolve its hunks in the file next to it, then delete it)
+        entry: delete this file once its hunks are resolved
+        language: fail
+        files: '\.rej$'
+
   # .json files are read as JSON5, so comments and trailing commas pass;
   # syntax errors and duplicate keys fail.
   - repo: https://github.com/simonvanlierde/jsonvet

@@ -123,7 +123,8 @@ Each ready pull request from this repository gets its own preview Worker,
 `ramascene-explorer-pr-<number>`, deployed from `wrangler.preview.jsonc` and checked in
 Chromium only (`CHECK_BROWSERS`). Its only address,
 `https://ramascene-explorer-pr-<number>.<subdomain>.workers.dev/ramascene-explorer/`, shows
-on the pull request as the `cloudflare` environment's deployment; the bare address redirects
+on the pull request as the `cloudflare` environment's deployment and in one comment that each
+push edits (`.github/scripts/preview-comment.sh`); the bare address redirects
 there (`public/_redirects`). Version URLs are off for these Workers, so nothing else serves
 the build. Previews add `X-Robots-Tag: noindex` to their `_headers`; production is indexed.
 
