@@ -38,6 +38,12 @@ follow [Semantic Versioning](https://semver.org/).
   fields per kind; the label set gates the run (exit 1 below 148 of 153). `compare.py --flips`
   counts items scored differently between repeat runs.
 
+### Changed
+
+- The page's text is in one message catalog, `src/lib/messages.js`, and every number and sorted
+  list uses its one `LOCALE`, so a translation needs no other code change. Contributed
+  translations are welcome ([roadmap](docs/roadmap.md)). The page reads as before.
+
 ### Fixed
 
 - The Ask eval README gave Gemma-4-26B-A4B 135 of 153 label questions; the logs had been
