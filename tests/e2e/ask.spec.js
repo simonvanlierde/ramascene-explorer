@@ -113,11 +113,15 @@ test("an unknown name and a failing server show as text", async ({ page, isMobil
 	await openAsk(page, isMobile);
 	await page.locator("#ask-q").fill("No such thing");
 	await page.locator("#ask-go").click();
-	await expect(page.locator("#ask-error")).toContainText('"Unobtainium" is not in the catalogue', { timeout: 60_000 });
+	await expect(page.locator("#ask-error")).toHaveText(
+		'Change 1: "Unobtainium" is not in the catalogue. Rephrase the question and ask again.',
+		{ timeout: 60_000 },
+	);
 	await page.unroute(`${MODEL}/chat/completions`);
 	await page.route(`${MODEL}/chat/completions`, (route) => route.fulfill({ status: 500, body: "boom" }));
 	await page.locator("#ask-go").click();
 	await expect(page.locator("#ask-error")).toContainText("The model server answered 500");
+	await expect(page.locator("#ask-error")).not.toContainText("..");
 });
 
 test("a plan too broad for the browser leaves the view and the link as they were", async ({ page, isMobile }) => {

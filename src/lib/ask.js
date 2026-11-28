@@ -130,8 +130,7 @@ ${shots.join("\n\n")}`;
 // The answer's levers as the engine's model_details. Throws, naming the change, on a name the
 // catalogue does not have or a change outside the engine's range; nothing is clamped.
 export function toModelDetails(levers, catalog) {
-	if (!Array.isArray(levers) || !levers.length)
-		throw new Error("the answer has no changes to run; it needs a product, a region and a percent");
+	if (!Array.isArray(levers) || !levers.length) throw new Error("the answer has no changes to run");
 	if (levers.length > MAX_LEVERS) throw new Error(`the answer has more than ${MAX_LEVERS} changes`);
 	const names = namesOf(catalog);
 	return levers.map((l, n) => {
@@ -183,7 +182,7 @@ export function applyView(answer, meta, ui) {
 	if (!meta) throw new Error("the map did not load, so it cannot change");
 	const view = toView(answer, meta);
 	if (!Object.keys(view).length)
-		throw new Error("the answer changes nothing on the map: it needs an indicator or a region");
+		throw new Error("the view changes nothing on the map: it needs an indicator or a region");
 	Object.assign(ui, view);
 	const shows = [SAYS[answer.indicator], answer.region === "World" ? "the world" : answer.region].filter(Boolean);
 	return `The map now shows ${shows.join(" for ")}.`;

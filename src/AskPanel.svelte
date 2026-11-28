@@ -3,6 +3,7 @@
 // scenario. The model only picks catalogue names; the page's engine computes, through the
 // custom form's own worker. Everything the model sends is rendered as text, never markup.
 import { applyView, ask, askSchema, leverText, systemPrompt, toModelDetails } from "./lib/ask.js";
+import { capitalise } from "./lib/flows.js";
 import { ui } from "./view.svelte.js";
 
 // base: the model server's base URL; model: its name, or null for the first one it lists;
@@ -48,7 +49,7 @@ async function submit(event) {
 		const got = await ask({ base, model, system: systemPrompt(catalog), schema: askSchema(catalog), question: q, cancel: stop.signal });
 		const reply = typeof got.reply === "string" ? got.reply : "";
 		if (got.action === "view") {
-			answer = { reply, levers: [], outcome: rephrase(() => applyView(got, meta, ui)) };
+			answer = { reply, levers: [], outcome: meta ? rephrase(() => applyView(got, meta, ui)) : applyView(got, meta, ui) };
 		} else if (got.action === "whatif") {
 			const scenario = { label: "custom scenario", model_details: rephrase(() => toModelDetails(got.levers, catalog)) };
 			ownRun = true;
@@ -64,9 +65,9 @@ async function submit(event) {
 	} catch (e) {
 		if (e.name === "AbortError") answer = { reply: "", levers: [], outcome: "Cancelled." };
 		else {
-				const m = e.message.charAt(0).toUpperCase() + e.message.slice(1);
-				error = /[.!?]$/.test(m) ? m : `${m}.`;
-			}
+			const m = capitalise(e.message);
+			error = /[.!?]$/.test(m) ? m : `${m}.`;
+		}
 	} finally {
 		busy = false;
 		stop = null;

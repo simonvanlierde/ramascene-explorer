@@ -205,6 +205,9 @@ test("a live run never inherits the published calculation checks", async ({ page
 	// the flow check covers the precomputed flows, not the job's
 	await expect(page.locator("#checks")).toBeVisible();
 	await expect(page.locator("#checks")).not.toContainText("flows the map draws");
+	await expect(page.locator("#verification")).toContainText(
+		"These checks cover the published scenarios, not the custom run on screen.",
+	);
 	await page.keyboard.press("Escape");
 	// the basis popover names the job API, not the precomputed file, as the source
 	await page.locator("#status .pill.basis").click();
@@ -215,6 +218,10 @@ test("a live run never inherits the published calculation checks", async ({ page
 	// back to a precomputed run: checks passed again
 	await page.getByRole("button", { name: "Flows, 2011" }).first().click();
 	await expect(page.locator("#status .pill.ok")).toHaveCount(1);
+	await page.locator("#status .pill.ok").click();
+	await expect(page.locator("#verification")).not.toContainText(
+		"These checks cover the published scenarios, not the custom run on screen.",
+	);
 });
 
 test("the change field holds to the job API's range", async ({ page }) => {
