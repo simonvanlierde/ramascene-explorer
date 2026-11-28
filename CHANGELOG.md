@@ -41,9 +41,9 @@ follow [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The page's text is in one message catalog, `src/lib/messages.js`, and every number and sorted
-  list uses its one `LOCALE`. The Ask panel's wording stays in `src/lib/ask.js`, which the eval
-  reads too. Contributed
-  translations are welcome ([roadmap](docs/roadmap.md)). The page reads as before.
+  list uses its one `LOCALE`. The Ask panel's wording (`src/lib/ask.js`, which the eval reads
+  too) and the data-reload error stay outside it. Contributed translations are welcome
+  ([roadmap](docs/roadmap.md)). The page reads as before.
 
 ### Fixed
 
