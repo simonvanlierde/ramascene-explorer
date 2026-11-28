@@ -2,6 +2,8 @@
 // pickers, and the comparison the live panel uses. Units and number formats
 // live in flows.js.
 
+import { msg } from "./messages.js";
+
 const DEFAULT_DATA = "data/results.json";
 // Relative path segments of word characters, dots and dashes, ending in .json.
 const SAFE_DATA = /^[\w-]+(\/[\w.-]+)*\.json$/;
@@ -20,8 +22,8 @@ export function ignoredData(search) {
 // Fail safe: only an explicit "exiobase-v3" escapes the synthetic banner.
 export function banner(data) {
 	return data.data_kind === "exiobase-v3"
-		? { synthetic: false, text: "EXIOBASE v3 · engine output" }
-		: { synthetic: true, text: "SYNTHETIC TEST DATA: NOT A RESULT" };
+		? { synthetic: false, text: msg.bannerReal }
+		: { synthetic: true, text: msg.bannerSynthetic };
 }
 
 // The embodied flows (their Parquet footer) belong next to results.json only if
@@ -97,15 +99,9 @@ const fmtGiB = (b) => `${(b / 2 ** 30).toFixed(2)} GiB`;
 // One line on the run: counts, wall and peak RSS, from provenance.run.
 export function runSummary(run) {
 	if (!run) return "";
-	const parts = [
-		`${run.scenarios_run} scenarios run, ${run.passed} passed every check, ${run.failed} failed (excluded)`,
-	];
-	if (run.wall_s)
-		parts.push(`wall time per scenario job median ${fmtSeconds(run.wall_s.median)}, max ${fmtSeconds(run.wall_s.max)}`);
-	if (run.peak_rss_bytes)
-		parts.push(
-			`peak RSS per worker median ${fmtGiB(run.peak_rss_bytes.median)}, max ${fmtGiB(run.peak_rss_bytes.max)}`,
-		);
+	const parts = [msg.runCounts(run)];
+	if (run.wall_s) parts.push(msg.runWall(fmtSeconds(run.wall_s.median), fmtSeconds(run.wall_s.max)));
+	if (run.peak_rss_bytes) parts.push(msg.runRss(fmtGiB(run.peak_rss_bytes.median), fmtGiB(run.peak_rss_bytes.max)));
 	return parts.join(" · ");
 }
 

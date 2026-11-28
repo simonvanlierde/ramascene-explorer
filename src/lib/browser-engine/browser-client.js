@@ -1,3 +1,5 @@
+import { msg } from "../messages.js";
+
 export function browserClient() {
 	let worker;
 	let single;
@@ -36,11 +38,7 @@ export function browserClient() {
 			// of its imports did not load: after a deploy, the hashed file names this tab knows
 			// are gone.
 			outdated = !(event instanceof ErrorEvent);
-			close(
-				outdated
-					? "The browser worker could not load. Reload the page; it may have been updated since you opened it."
-					: undefined,
-			);
+			close(outdated ? msg.browser.workerGone : undefined);
 		};
 	}
 	start();

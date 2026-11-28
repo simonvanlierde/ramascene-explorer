@@ -126,7 +126,7 @@ export async function runScenario(scenario) {
 	try {
 		plan({ catalog, ...catalog.size }, scenario.model_details);
 	} catch (e) {
-		const text = broad(e.message) || e.message;
+		const text = broad(e) || e.message;
 		say(text, true);
 		return { ok: false, text };
 	}
@@ -140,7 +140,7 @@ export function isRunning() {
 export function cancelRun() {
 	if (running) stop();
 }
-const broad = (message) => (message.startsWith("too broad") ? `This selection is ${message}` : "");
+const broad = (e) => (e.tooBroad ? `This selection is ${e.message}` : "");
 const trees = $derived({
 	products: catalogTree(rootNamed(catalog?.products, "All products")),
 	regions: catalogTree(rootNamed(catalog?.regions, "World")),
@@ -158,7 +158,7 @@ const planned = $derived.by(() => {
 		return { download: plan({ catalog, ...catalog.size }, body().model_details).download };
 	} catch (e) {
 		// other errors surface on Run
-		return { tooBroad: broad(e.message) };
+		return { tooBroad: broad(e) };
 	}
 });
 const tooBroad = $derived(planned.tooBroad ?? "");
