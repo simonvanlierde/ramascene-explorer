@@ -536,7 +536,8 @@ const en = {
 		close: "Close",
 		open: "Set up",
 		status: (status) => `Results are ${status}.`,
-		browserIntro: "Changes to the 2011 economy, against the published baseline. Nothing is sent to a server.",
+		browserIntro:
+			"Changes to the 2011 economy, against the published baseline. This form's changes are computed in this browser and are not sent to a server.",
 		apiIntro:
 			"Changes to the 2011 economy, sent to the job API named in the page address and computed by the RaMa-Scene engine while you wait (a few seconds; one job runs at a time). The result is compared with the baseline computed in the same job.",
 		lever: (n) => `Change ${n}`,
@@ -564,7 +565,7 @@ const en = {
 		noAction: "the model's answer had no action this page can run. Ask again, in other words",
 		title: "Ask in plain words",
 		who: (base) =>
-			`The model at ${base} only picks the changes to make. The engine in this page computes every number.`,
+			`Your question is sent to the model at ${base}, which only picks the changes to make. The engine in this page computes every number.`,
 		question: "Question",
 		example: "For example: What if European car makers used 20% less steel?",
 		asking: "Asking…",
