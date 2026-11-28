@@ -296,7 +296,7 @@ const en = {
 		whatif:
 			"What if… shows how changes in one place ripple through supply chains worldwide. Each change alters the spending on one product, or the input of one product per unit of output, and the model recalculates every supply chain. Prices and all other input requirements stay fixed, and nothing replaces what is cut, so there is no substitution or rebound. These are scenarios for the 2011 economy, not forecasts.",
 		method: (dataset, year) =>
-			`Method: RaMa-Scene calculates these links with a demand-pull Leontief input–output model, using ${dataset} for ${year}. A scenario scales the selected technical coefficients or final demand, then solves the model again.`,
+			`Method: RaMa-Scene calculates these links with a demand-pull Leontief input–output model, using ${dataset} for ${year}. A scenario scales the selected technical coefficients or final demand, then recalculates every supply chain: a change to coefficients updates the Leontief inverse, and a change to final demand reuses it.`,
 		units:
 			"GHG means greenhouse-gas emissions, measured in megatonnes of CO₂-equivalent. Metal ores are measured in megatonnes extracted. Employment counts people employed who are attributed to the selected demand. The label “jobs” does not mean full-time equivalents or net job creation.",
 		start:
@@ -310,10 +310,11 @@ const en = {
 		dataset: (d) =>
 			`${d.name} (${(d.creators ?? []).join(", ")}; Zenodo ${d.version}, ${d.published}) · doi:${d.doi} · EXIOBASE year ${d.year}, files *_${d.file_suffix}.npy`,
 		reference: (tolerance) =>
-			`The engine reproduces the Octave reference files shipped with RaMa-Scene (routes two and four; value added and GHG), ${tolerance}.`,
+			`For the unchanged 2011 economy, the engine reproduces the Octave reference files shipped with RaMa-Scene (routes two and four; value added and GHG), ${tolerance}.`,
 		independent: (values, runs, indicators, regions) =>
 			`${values} world-region totals from the engine match a separate sum, B·L·ΣY (indicator intensities, supply-chain requirements, final demand), within relative 1e-9. They cover ${runs} runs, counting the baseline and the 0% control, × ${indicators} indicators × ${regions} world regions. The sum uses the engine’s own L, so it checks the aggregation, not the inverse. The cross-engine comparison in the source code checks the inverse with pymrio.`,
-		control: "A 0% scenario through the same modified-coefficient path reproduces the baseline.",
+		control:
+			"A 0% change through the same modified-coefficient path returns the baseline. It tests that path, not the solver.",
 		direction: (skipped) =>
 			"Every published scenario changes at least one indicator total. Reductions do not raise totals for indicators with non-negative inputs" +
 			(skipped.length ? ` (rise check skipped for indicators ${skipped.join(", ")}).` : "."),
@@ -324,7 +325,7 @@ const en = {
 		heading: "Calculation checks",
 		notLive: "These checks cover the published scenarios, not the custom run on screen.",
 		scope:
-			"These checks test numerical consistency. They do not establish whether a scenario is realistic or desirable. A fall in employment, for example, is a model result rather than a benefit.",
+			"These checks test numerical consistency. They do not test the 2011 EXIOBASE data against observations, or establish whether a scenario is realistic or desirable. A fall in employment, for example, is a model result rather than a benefit.",
 		policy:
 			"Reference, baseline and control failures stop publication. Individual scenarios that fail a check are excluded, with the reason recorded below.",
 		details: "Data and reproduction details",

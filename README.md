@@ -8,7 +8,7 @@
 
 Pick a country and follow its consumption back through global supply chains.
 The map shows the greenhouse-gas emissions, metal-ore extraction and employment linked
-to it, at home and abroad. Then change one thing in the economy and compare the result with the baseline.
+to it, at home and abroad: what was emitted, mined or worked to make what it bought. Then change one thing in the economy and compare the result with the baseline.
 RaMa-Scene Explorer maps these links for 49 countries and regions in 2011.
 
 **[Open the explorer](https://simonvanlierde.com/ramascene-explorer/)**

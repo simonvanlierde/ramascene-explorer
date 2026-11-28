@@ -64,10 +64,10 @@ its `IOSystem` from the arrays.
 pycirk does not start from the arrays. `pycirk_check.py` rebuilds the table from
 pycirk's EXIOBASE v3.3 supply and use tables, the way v3.3.sm was made: secondary
 materials split out with `make_secondary`, then product by product with the
-industry-technology assumption (method 0). So it checks how RaMa-Scene's A was
+industry-technology assumption (method 0). So it can test how RaMa-Scene's A was
 made, not only the algebra on it. Its footprint is 1.1e-9 below the shipped L
-column's, and its L column matches the shipped one to 2.6e-10. Its A matches less
-well: 2,586,408 entries differ by more than 1e-12, the largest by 28.09. The cause
+column's, and its L column matches the shipped one within an absolute 2.6e-10. Its A
+does not match: 2,586,408 entries differ by more than 1e-12, the largest by 28.09. The cause
 is not known. Columns with almost no output do not explain it: only 261,622
 non-zero entries sit in columns with a total output below 1e-3 M EUR. Nor does the
 unmerged [pycirk PR #8](https://github.com/CMLPlatform/pycirk/pull/8), since

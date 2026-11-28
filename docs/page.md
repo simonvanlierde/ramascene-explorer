@@ -140,10 +140,13 @@ This rebuilds the published scenario `steel-in-vehicles-europe`: European vehicl
 | **Input or demand change, %** | -20 |
 
 1. Open **What if…**, then select **Set up** on the **Custom scenario** card.
-2. Wait for "Ready to compute in this browser.", then check the five values above.
-3. Select **Run scenario**. The map and the headline now show the custom result.
+2. Wait until the line below **Run scenario** reads "Ready to compute in this browser.".
+   Then check the five values above.
+3. Select **Run scenario**, then choose **Metal ores**. The map and the headline now show
+   the custom result, and the **World total** falls by about 0.04%.
    **Copy link** would not keep it: its link opens the last published scenario.
-4. Open `?scenario=steel-in-vehicles-europe` in another tab to see the published run.
+4. Open the page again in another tab, with `?scenario=steel-in-vehicles-europe` added to
+   its address. What if… does not list this scenario, but the link opens it.
    Select a country (not World) and the same indicator in both tabs.
    Then compare the two **World total** figures under the headline.
 
@@ -153,9 +156,8 @@ and the worst case within 1e-8. So the printed changes agree to about their last
 ([the checks](browser-engine.md#check-the-calculations)).
 That is agreement between two calculations, not evidence that the scenario is realistic.
 
-With **Metal ores** selected, the **World total** falls by about 0.04%, far less than 20%.
-Only European vehicle makers use less steel per unit of output.
-Every other industry keeps its steel input per unit of output.
+Why about 0.04% and not 20%? Only European vehicle makers use less steel per unit of output,
+and they use a small share of the world's steel. Every other industry keeps its steel input.
 The model then works out the output of every industry again, so the total is a model result.
 
 The featured `coal-power-china` scenario changes all 15 industry sections in China. The form
