@@ -61,8 +61,8 @@ The [URL reference](interface.md#url-parameters) lists every parameter.
 
 ## Social card
 
-`public/og.png` is rendered by `scripts/og-card.js`: it opens the built page on Germany, takes the
-globe, and sets it in a 1200 x 630 poster with the headline figure read from the page's own
+`scripts/og-card.js` renders `public/og.png`. It opens the built page on Germany and takes the
+globe. It sets the globe in a 1200 x 630 poster, with the headline figure read from the page's own
 sentence. Run `pnpm build`, then `node scripts/og-card.js`, after the map's look or the sample
 numbers change. It needs `data/embodied.parquet`.
 

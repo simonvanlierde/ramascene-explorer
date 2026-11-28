@@ -36,15 +36,15 @@ change to `A` without solving the whole system again ([Solver](#solver)).
 
 The shipped files come from engine commit `d9113ca9ad38bc29d2a96392dabf74d70abf830e`
 (clean tree) and the EXIOBASE v3.3.sm arrays above. `data/run-log.md` logs that run, and
-`data/precompute-time.txt` holds its `/usr/bin/time -v` output: 155 scenarios
-with the embodied flows, 1 min 59 s wall time and 1.64 GB (1.53 GiB)
-maximum RSS, under `nice -n 10` with BLAS capped at 8 threads on a 32-core
-machine (2026-11-01).
+`data/precompute-time.txt` holds its `/usr/bin/time -v` output (2026-11-01):
+
+- 155 scenarios, with the embodied flows;
+- 1 min 59 s wall time and 1.64 GB (1.53 GiB) maximum RSS;
+- run under `nice -n 10`, with BLAS capped at 8 threads on a 32-core machine.
 
 That commit is the head of branch `split/3-performance` of the fork
 <https://github.com/simonvanlierde/ramascene>, which is pull request
-[#74](https://github.com/CMLPlatform/ramascene/pull/74), stacked on #73 (the Django 5.2
-upgrade). The 153 scenarios that the previous run (2026-10-14) also had kept every value
+[#74](https://github.com/CMLPlatform/ramascene/pull/74). The 153 scenarios that the previous run (2026-10-14) also had kept every value
 exactly (`pipeline/compare_data.py`, identical values).
 
 Each file's `provenance` block records the engine commit, the dataset
@@ -104,7 +104,8 @@ held to:
 - each region's value matches `B_i ∘ (L · ΣY)`, computed outside the engine's `Analyze`
   step and summed over that region's countries (relative 1e-9). It uses the `L` the engine
   returned for that scenario (the `LowRankLeontief` or `LeontiefSolve` of
-  [Solver](#solver)), so it checks the aggregation, not the inverse. The pymrio route in the
+  [Solver](#solver)) or, for final-demand scenarios and the baseline, the stored `L`. So it
+  checks the aggregation, not the inverse. The pymrio route in the
   [cross-engine comparison](../brightway-check/README.md#scenarios) inverts each changed
   economy itself;
 - the control reproduces the baseline (relative 1e-9);
@@ -125,11 +126,7 @@ time, peak RSS and check outcome.
 value by value (every number in the three files, except provenance, run
 timings and check residuals; relative 1e-12 by default).
 
-Against an earlier run with engine `perf/lu-reuse-solve-order @ f876faa`
-(2026-09-27, unpublished), the largest relative difference is 3.4e-14 in
-`results.json` and 4.1e-13 in `regions.json`. In `flows.json` it is 3.1e-10, on
-the change in a flow, which is a difference of two nearly equal values. 120 of
-its 638 values differ by more than 1e-12, and none by more than 1e-9.
+Against an earlier, unpublished run, no value differed by more than relative 1e-9.
 
 ## Embodied flows
 
@@ -172,7 +169,9 @@ Nothing is written unless:
 - for every run, the flows summed by producer and world-region aggregate match
   that run's values in `results.json`, and so do the world totals (relative
   1e-9);
-- for the baseline and the five named scenarios, the flows summed by
+- for the baseline and the five named scenarios (the three
+  [original interventions](scenarios.md#the-original-interventions), `coal-power-china` and
+  `construction-demand-europe`; `--scenarios named` runs them), the flows summed by
   producer country match the engine's 49-region values (relative 1e-9);
 - the float32 values sum to within relative 1e-6 of the float64 ones, per
   producer and in total, relative to the run's total or total change. The
@@ -184,7 +183,7 @@ shipped run none rose, the largest difference in the first two checks was
 
 ## Detail files (sidecars)
 
-The precompute still writes and checks two detail files:
+The precompute writes and checks two detail files:
 
 - `data/regions.json` (`--out-regions`): the 49-region values of the baseline
   and the five named scenarios. They match the region check's B·L·ΣY (relative 1e-9).

@@ -50,6 +50,11 @@ zero. Under a strip cell the same figure reads in words, "less than 0.01% lower 
 in 2011". A change from a zero baseline has no percentage; the display says so.
 The strip, the sentence and the map labels use these same rules.
 
+In What if…, the map's colour scale is square-root and fits the flows on screen.
+`fitExtent` in `src/lib/flows.js` sets its end from the 90th percentile of the changes in flows
+worth at least 0.1% of the selected total, rounded up to a readable step, or ±1% when they all
+round to zero. Changes beyond the end share the end colour.
+
 For display, differences no larger than a trillionth of the baseline are treated
 as zero. This is a display rule, not an uncertainty estimate. The calculations and
 downloadable CSV retain the original values.
@@ -141,7 +146,7 @@ own CORS headers. The page makes these calls (`src/LivePanel.svelte`, `src/lib/l
 | `POST /jobs` | starts a job. Body: `{"label": string, "model_details": [{"product": [id], "originReg": [id], "consumedBy": [id], "consumedReg": [id], "techChange": [percent]}]}`, with 1 to 10 entries in `model_details`. Answers with an object that has an `id`. |
 | `GET /jobs/{id}` | polled every 2 seconds, for up to 30 minutes, until `status` is `succeeded` or `failed`. |
 
-Each request fails after 30 s without an answer. One failed poll does not stop the wait;
+Each request fails after 30 s without an answer (Safari 17.4 and later; older Safari waits until Cancel). One failed poll does not stop the wait;
 three in a row do. Cancel stops the page waiting, but the job may still finish on the API.
 If nothing answers, or the browser blocks the answer for lack of CORS headers,
 the status line says the job API is "not reachable (offline)". An HTTP error

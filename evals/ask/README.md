@@ -38,7 +38,7 @@ industries" and the 15 sections it stands for.
 
 You need the browser store (`scripts/fetch-data.sh store`, or the export in
 [docs/browser-engine.md](../../docs/browser-engine.md)) and a server that supports
-`response_format` with a JSON schema, such as vLLM. A run replaces the logs already in its
+`response_format` with a JSON schema, such as vLLM. A run replaces that model's log in its
 output folder, so give each run its own folder.
 
 ```sh

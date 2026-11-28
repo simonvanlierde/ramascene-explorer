@@ -49,9 +49,10 @@ itself. Both are compared with `../data/results.json`, relative to each value.
 <!-- /scenario-table -->
 
 The numpy engine's gap is the float32 storage of the store. The WebAssembly engine on the same store is also
-5.5e-9 from RaMa-Scene, and a one-off comparison on 26 November 2026 found the two engines 1.6e-15 apart
+5.5e-9 from RaMa-Scene. A one-off comparison on 26 November 2026 found the two engines 1.6e-15 apart
 elementwise on all 156 runs.
-With float64 inputs and an independent inverse, pymrio reproduces RaMa-Scene to rounding, so the maths of the scenario edits agrees across all three.
+With float64 inputs and an independent inverse, pymrio reproduces RaMa-Scene to rounding.
+So RaMa-Scene, pymrio and the numpy engine agree on the maths of the scenario edits.
 
 Before the footprint run, the engine passed its four Octave reference files:
 122 values, 0 mismatches. The engine route reads the same shipped L as the row
@@ -120,14 +121,16 @@ uv run python pymrio_check.py --data "$DATASETS_DIR" --out results/pymrio.json
 uv run --project .. python scenario_check.py numpy --store ../data/browser-engine --out results/scenarios-numpy.json
 uv run python scenario_check.py pymrio --data "$DATASETS_DIR" --store ../data/browser-engine \
   --out results/scenarios-pymrio.json  # about 20 s and 5 GiB per scenario
+node browser_check.js ../data/browser-engine results/browser.json
 uv run python table.py  # rewrites the tables above from results/
 ```
 
 The case (functional unit, GHG row, array paths) lives in `case.py`. CI reruns
-`node brightway-check/browser_check.js data/browser-engine` using the exported
-float32 store, so the browser row agrees to float32 storage, and the check holds
-it to relative 1e-6. The browser's modified-coefficient path is checked separately
-on every published scenario at relative 1e-6. The other routes still need
+`node brightway-check/browser_check.js data/browser-engine` on the exported
+float32 store. The browser row agrees to float32 storage, and the check holds
+it to relative 1e-6. Without a second argument, the script prints its result and
+leaves `results/browser.json` as it is. The browser's modified-coefficient path is
+checked separately on every published scenario, at relative 1e-6 per world-region total. The other routes still need
 the original arrays; CI checks their committed results against this table.
 
 `engine.py` runs in the explorer's environment, as `pipeline/precompute.py` does.

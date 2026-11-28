@@ -5,10 +5,12 @@ Each scenario asks how one change would have affected the 2011 economy.
 ## The 2011 baseline
 
 The baseline is the unchanged EXIOBASE v3.3.sm economy for 2011, as RaMa-Scene's engine computes
-it from the original inputs: no input requirement, final demand or indicator intensity changed.
-Every published scenario is compared with the published baseline run. A custom scenario computed
-in the browser is compared with that same published baseline; one computed by a job API is
-compared with the baseline from its own job.
+it from the original inputs. No input requirement, final demand or indicator intensity is changed.
+
+- Every published scenario is compared with the published baseline run.
+- A custom scenario computed in the browser is compared with the browser store's copy of the
+  published baseline, held within relative 1e-6 of it.
+- A custom scenario computed by a job API is compared with the baseline from its own job.
 
 ## Two kinds of change
 
@@ -26,8 +28,10 @@ Each scenario is one RaMa-Scene `model_details` intervention, stored exactly in 
 The engine path in the tables below is one of two:
 
 - `Modelling.model_intermediates` changes `A`, the input coefficients. A Woodbury update then
-  recomputes `L` from the stored `L` for that small change to `A`, without solving the whole
-  system again ([the terms](precompute.md) are defined there).
+  recomputes `L` from the stored `L` for that small change to `A`. It does not solve the whole
+  system again ([the terms](precompute.md) are defined there). Every shipped scenario of this
+  kind took the Woodbury update. Above 2,000 changed rows, or when the result fails the
+  engine's residual check, the engine uses `LeontiefSolve` instead ([Solver](precompute.md#solver)).
 - `Modelling.model_final_demand` changes `Y`, final demand, and uses the stored `L` as it is.
 
 ## Featured scenarios
@@ -45,8 +49,8 @@ which together hold all 200 industries.
 
 ## The original interventions
 
-The three interventions the first version of the page published. They still open
-from a link, such as `?scenario=cement-in-construction`, but What if… no longer lists them.
+What if… used to list these three. They still open from a link, such as
+`?scenario=cement-in-construction`, but What if… no longer lists them.
 
 | id | What it changes | Engine path |
 | --- | --- | --- |

@@ -17,12 +17,13 @@ These are supply-chain links, not shipping routes or direct trade between two co
 
 The headline gives the selected total and the share that occurs abroad.
 Bands show the largest flows, and each band widens toward its destination.
-A region's fill also counts flows that are too small or too close to draw as a band.
+A region's colour also counts flows that are too small or too close to draw as a band.
 
 Choose **World**, the first entry in the country list, to see every region at once.
-No country is selected, so the map has no bands: each region's fill is what it releases (**Consumption**)
-or what it consumes (**Production**) across all of the world's supply chains, and the total is the same either way.
-The numbers under the sentence give that total and its split over the five world regions.
+No country is selected, so the map has no bands, and the total is the same in both directions.
+With **Consumption**, each region's colour is what it releases for consumption anywhere.
+With **Production**, each region's colour is what it consumes, wherever that was released.
+The numbers under the headline give that total and its split over the five world regions.
 In **Details**, the diagram runs from the five regions where it is released, through the industries, to the five where it is consumed.
 In the link, World is `?region=world`.
 
@@ -48,24 +49,24 @@ Three scenarios come first:
    World greenhouse-gas emissions fall by 0.44%, employment by 0.36% and metal-ore extraction by 0.32%.
 
 Below them, **Material efficiency, one product** offers 150 scenarios, the steel one above among them.
-Choose the **Input product** (one of ten), the world region whose industries use it
-(**In every industry of**, one of five), and how much to cut it (**By** 10%, 20% or 50%).
+Choose the **Input product** (one of ten) and the world region whose industries use it
+(**In every industry of**, one of five). Then choose how much to cut it (**By** 10%, 20% or 50%).
 [What each scenario changes](scenarios.md) gives the exact definition of every one.
 
 The bands keep their 2011 width. Their colour shows the change from the 2011 baseline, in percent.
-Under the sentence, **World total** comes first: the change in the whole world's emissions (or jobs,
-or ores), over every country's consumption and every industry, whatever sections or country you
-picked. Beside it, the selected country's own change is split over the five world regions where it occurs.
-The scrubber moves between the baseline and the scenario, and replays when you pick another scenario.
+Under the headline, **World total** comes first: the change in the whole world's emissions (or jobs,
+or ores), over every country's consumption and every industry.
+It ignores the sections and the country you picked.
+Beside it, the selected country's own change is split over the five world regions where it occurs.
+The slider moves between the baseline and the scenario, and replays when you pick another scenario.
 
 The colour scale fits the flows on screen, so two selections can have different scales.
-Compare their printed percentages, not their colours. Changes beyond the end of the scale share its end colour.
-(`fitExtent` in `src/lib/flows.js` sets that end from the 90th percentile of the changes
-in flows worth at least 0.1% of the selected total, or ±1% when they all round to zero; the scale is square-root.)
+Compare their printed percentages, not their colours.
+[Number display](interface.md#number-display) says how the scale is set.
 
 These are changes to the 2011 economy, not forecasts.
-Prices and all other input requirements stay fixed, and nothing replaces what a scenario cuts:
-the model has no substitution or rebound.
+Prices and all other input requirements stay fixed, and nothing replaces what a scenario cuts.
+The model has no substitution and no rebound: nothing else is bought instead, and money saved is not spent elsewhere.
 A fall in an indicator is a model result. Whether it is good depends on the indicator and the context:
 fewer jobs, for example, is not a benefit.
 
@@ -76,10 +77,14 @@ fewer jobs, for example, is not a benefit.
 - **Employment:** the people employed to meet the demand, shown as “jobs”. It is not full-time equivalents or new jobs.
 
 The source data records these in kg CO₂-eq, kilotonnes and thousands of people.
-The **Published scenarios · not forecasts** pill in the header opens a short note:
-the dataset and its DOI, the engine version, the model, when the results were generated,
-and links to the method and the source code. For a custom scenario it names where that run
-was computed instead. Escape closes it.
+The **Published scenarios · not forecasts** pill in the header opens a short note with:
+
+- the dataset and its DOI;
+- the engine version and the model;
+- when the results were generated;
+- links to the method and the source code.
+
+For a custom scenario, the note names where that run was computed instead. Escape closes it.
 **Details → Method** explains the model and the numerical checks.
 **Checks passed** means those calculation checks passed. It does not mean that a scenario is realistic.
 
@@ -93,8 +98,8 @@ On phones (760 px wide or less), scrolling moves the page:
 hold Ctrl or ⌘ to zoom with the wheel. One finger scrolls past the unzoomed flat map.
 **Reset zoom** shows the whole map again.
 
-Partners within 5° (about 550 km) of the selected region get no band, but their fill still shows the flow.
-Other bands appear when they fit outside the collar around the selected region,
+Partners within 5° (about 550 km) of the selected region get no band, but their colour still shows the flow.
+Other bands appear when they fit outside the ring around the selected region,
 and zooming in can show more of them. On the globe, a flow from beyond the horizon starts at the edge,
 and when the selected region turns out of view, its bands end at the edge.
 Labels keep clear of the map controls and the legend.
@@ -102,7 +107,7 @@ Labels keep clear of the map controls and the legend.
 **Copy link** shares the filters, the map position and the selected published scenario.
 The URL does not store a custom result: its link opens the last published scenario with the current filters.
 The [URL parameter reference](interface.md#url-parameters) lists every parameter.
-Links from the first version still open their published scenario.
+Older links that name a published scenario still open it.
 
 ## Custom scenarios
 
@@ -130,31 +135,33 @@ This rebuilds the published scenario `steel-in-vehicles-europe`: European vehicl
 | --- | --- |
 | **Product** | Iron, steel and ferro-alloy products (under Manufacturing, then Manufacture of basic metals) |
 | **Produced in** | World |
-| **Industry or final demand that uses it** | Motor vehicles and trailers (under Manufacturing) |
-| **Region where it is used** | Europe |
+| **Used by (industry or final demand)** | Motor vehicles and trailers (under Manufacturing, then Manufacture of motor vehicles, trailers and semi-trailers) |
+| **Used in (region)** | Europe |
 | **Input or demand change, %** | -20 |
 
 1. Open **What if…**, then select **Set up** on the **Custom scenario** card.
 2. Wait for "Ready to compute in this browser.", then check the five values above.
-3. Select **Run scenario**. The map and the sentence now show the custom result.
-4. Open `?scenario=steel-in-vehicles-europe` in another tab to see the published run. With the same
-   country selected in both, compare the two **World total** figures under the sentence.
+3. Select **Run scenario**. The map and the headline now show the custom result.
+   **Copy link** would not keep it: its link opens the last published scenario.
+4. Open `?scenario=steel-in-vehicles-europe` in another tab to see the published run.
+   Select a country (not World) and the same indicator in both tabs.
+   Then compare the two **World total** figures under the headline.
 
-Both runs are compared with the same published 2011 baseline. The browser recomputes the change
-itself, from matrices stored as float32, and CI checks that it matches every published scenario within a relative
-1e-6. So the printed figures should agree. That is agreement between two calculations, not
-evidence that the scenario is realistic.
+The browser compares its run with its own copy of the published 2011 baseline.
+Tests hold its world-region totals within relative 1e-6 of RaMa-Scene for every published scenario,
+and the worst case within 1e-8. So the printed changes agree to about their last digit
+([the checks](browser-engine.md#check-the-calculations)).
+That is agreement between two calculations, not evidence that the scenario is realistic.
 
-The world's steel use falls by far less than 20%. Only European vehicle makers use less steel
-per unit of output. Every other industry keeps its steel input per unit of output, and the model then works
-out the output of every industry again, so the total is a model result.
+With **Metal ores** selected, the **World total** falls by about 0.04%, far less than 20%.
+Only European vehicle makers use less steel per unit of output.
+Every other industry keeps its steel input per unit of output.
+The model then works out the output of every industry again, so the total is a model result.
 
 The featured `coal-power-china` scenario changes all 15 industry sections in China. The form
-takes one industry per change and at most 10 changes, so it cannot rebuild that one exactly.
+takes one industry, section or final demand per change and at most 10 changes, so it cannot rebuild that one exactly.
 For a part of it, choose **Electricity by coal**, produced in **China**, used by **Manufacturing**,
 used in **China**, -20.
-
-**Copy link** does not keep a custom result: the link opens the last published scenario.
 
 ### Several changes
 
@@ -172,11 +179,12 @@ change removed as well as narrowed. An error names the change it is about.
 
 ### Limits and results
 
-Your device calculates within [download, memory and arithmetic budgets](browser-engine.md). A pair
-is one product from one producing country. Manufacturing from every country used by electricity
-(85 × 49 = 4,165 pairs) fits, and takes several seconds; every product from every country does not,
-and the card says so before you run it. Choose a narrower product, fewer producing countries, or
-fewer industries or regions that use it (or remove a change), or use the job API.
+Your device calculates within [download, memory and arithmetic budgets](browser-engine.md).
+A pair is one product from one producing country.
+Manufacturing from every country used by electricity (85 × 49 = 4,165 pairs) fits, and takes several seconds.
+Every product from every country does not fit, and the card says so before you run it.
+Then choose a narrower product, fewer producing countries, or fewer industries or regions that use it.
+You can also remove a change, or use the job API.
 
 Above 5 MB, the card says how much the selection downloads.
 While it runs, the card shows the seconds elapsed and a **Cancel** button.
@@ -186,8 +194,8 @@ the same job ([the 2011 baseline](scenarios.md#the-2011-baseline)).
 **Back to published scenarios** in the sidebar shows the last published scenario again.
 **Details → Method** lists its totals by producing region.
 Choose a published scenario to return to the stored results.
-While a custom result is shown, links to other sites open in a new tab and say so, since leaving
-the page would lose the result.
+While a custom result is shown, links to other sites open in a new tab and say so.
+Leaving the page would lose the result.
 
 ## Live scenarios (optional)
 
@@ -197,7 +205,7 @@ The [API reference](interface.md#job-api) lists the calls, and the
 [security guide](security.md#what-api-accepts) says which `?api=` values the page accepts.
 
 If the API cannot be reached, the panel offers **Try again**, and the published scenarios stay available.
-A request with no answer fails after 30 s. The page stops waiting after three failed status checks in a row.
+A request with no answer fails after 30 s (Safari 17.4 and later; older Safari waits until **Cancel**). The page stops waiting after three failed status checks in a row.
 **Cancel** stops the page waiting; the job may still finish on the API.
 
 The result is labelled “computed by the job API”. Its provenance records the API origin,
@@ -220,8 +228,9 @@ See [loading measurements](architecture.md#first-load-size) for transfer sizes a
 
 ## Map geometry
 
-The map uses Natural Earth outlines. Malta is too small to have one at this scale, so it has no fill
-and cannot be selected on the map: choose it in the country selector. When it is selected, its ring sits at Valletta, and its bands meet there.
+The map uses Natural Earth outlines. Malta is too small to have one at this scale, so it has no colour
+and cannot be selected on the map: choose it in the country selector.
+When it is selected, its ring sits at Valletta, and its bands meet there.
 The five “Rest of …” regions combine their Natural Earth countries, as `REST_OF` in `src/lib/map.js` lists them.
 Those boundaries can differ from EXIOBASE's country groups at the edges.
 See the [geometry source and processing](architecture.md#map-geometry).

@@ -41,9 +41,9 @@ dependencies and checks the licenses of everything that ships (the allow-list is
 
 ## Sign off your commits
 
-Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
-change or have the right to submit it under the MIT license: the
-[Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
+Every commit in a pull request carries a `Signed-off-by:` line. It says you wrote the
+change or have the right to submit it under the MIT license, as the
+[Developer Certificate of Origin 1.1](https://developercertificate.org/) sets out. `git commit -s`
 adds it. To add it to commits you already made, rebase them onto `main`, then update the
 pushed branch:
 

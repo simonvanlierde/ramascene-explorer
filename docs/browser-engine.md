@@ -1,31 +1,25 @@
 # Compute a scenario in the browser
 
-The page can compute a custom scenario on your device, with no server. This page covers how
-to run one and what limits it has, how to get the data and use the same engine from Python,
-how the results are checked, and the method behind them. Recorded timings are in
+The page can compute a custom scenario on your device, with no server. Recorded timings are in
 [browser-performance.md](browser-performance.md).
 
 ## Run a custom scenario
 
-Switch to What if…, then open Custom scenario.
-Choose a product, its origin, a consuming industry and region, and a percentage
-change. Run scenario computes the result on your device. Choose **Final demand**
-to change spending. An industry selection changes inputs per unit of monetary
-output.
-The catalogue records this final-demand category as `Y: Final Consumption`.
+[Custom scenarios](page.md#custom-scenarios) shows how to fill in the form.
+The catalogue records its **Final demand** category as `Y: Final Consumption`.
 If `?api=` is also present, the job API takes precedence.
 
-The result lights the map, sentence, world-region totals and Details. Its label says
+The result lights the map, headline, world-region totals and Details. Its label says
 "computed in this browser". The shared link keeps the last
-precomputed scenario, so reopening it does not reconstruct the custom calculation.
+published scenario, so reopening it does not reconstruct the custom calculation.
 
 The model has the same scope as the [published scenarios](scenarios.md): changes
 to the 2011 economy, without forecasts, substitution or rebound. It accepts up
-to ten interventions. Broad changes and singular systems are refused with an
+to ten interventions. The engine refuses broad changes and singular systems with an
 error instead of returning a result.
 
 The 155 published scenarios match RaMa-Scene's shipped results at relative 1e-6
-in CI. That checks the implementation, not a custom scenario's assumptions.
+per world-region total in CI. That checks the implementation, not a custom scenario's assumptions.
 
 ### Downloads, waits and errors
 
@@ -76,10 +70,13 @@ Europe's manufacturing feeding every European industry, does not: choose a narro
 product, fewer producing countries, or fewer industries or regions that use it. The
 [job API](interface.md#job-api) remains available for work outside the browser budget.
 
-In the terms of [Data and method](#data-and-method), the memory estimate includes the matrix
-copies used for the coefficient update, transpose, solve and final-demand changes, the
-WebAssembly kernel's own copies of ΔA, L[K, R] and X₀[K, :], plus two batches of H rows, one of
-them read early beside the other matrices. It excludes the baseline, metadata, row caches and
+In the terms of [Data and method](#data-and-method), the memory estimate includes:
+
+- the matrix copies used for the coefficient update, transpose, solve and final-demand changes;
+- the WebAssembly kernel's own copies of ΔA, L[K, R] and X₀[K, :];
+- two batches of H rows, one of them read early beside the other matrices.
+
+It excludes the baseline, metadata, row caches and
 decoder buffers; it is not a total browser memory limit.
 
 A broad scenario can take several seconds on a desktop, and longer on a phone:
@@ -147,11 +144,17 @@ and aiohttp, or obstore, for HTTP, and the project does not depend on them.
 `pipeline/ask.py` takes catalogue names, with the same contract as the page's
 [WebMCP tools](interface.md#webmcp): `find_names(store, kind, query)` and `run_whatif(store, levers)`, with
 the same lever fields, checks and error messages, raised as `ValueError`. `find_names` returns every match,
-not the tool's first 25. `run_whatif` returns the page's result for a browser run: `changes` (each lever in
-words), `model_details` (the steps it ran), `regions` (the 49 countries), `indicators`, `results` (the
-baseline and scenario totals by indicator id and producing country, as Details → Method lists them) and
-`flows` (the baseline and scenario flows as indicator × producer × section × consumer arrays). Run it from
-the repository root:
+not the tool's first 25. `run_whatif` returns the page's result for a browser run:
+
+- `changes`: each lever in words;
+- `model_details`: the steps it ran;
+- `regions`: the 49 countries;
+- `indicators`;
+- `results`: the baseline and scenario totals by indicator id and producing country, as
+  Details → Method lists them;
+- `flows`: the baseline and scenario flows, as indicator × producer × section × consumer arrays.
+
+Run it from the repository root:
 
 ```sh
 uv run python - <<'EOF'
@@ -185,7 +188,7 @@ CI=1 pnpm exec playwright test tests/e2e/browser-engine.spec.js
 ```
 
 The first command checks the 155 scenarios and the baseline against `data/results.json`
-at relative 1e-6 per value, with the worst held to 1e-8. The second checks the agreement table's Dutch cement footprint, from H, at
+at relative 1e-6 per world-region total, with the worst held to 1e-8. The second checks the agreement table's Dutch cement footprint, from H, at
 relative 1e-6. The browser test checks the worker, map, source label, retry and
 absence of external requests.
 
@@ -285,9 +288,9 @@ The WebAssembly kernel does the small system's dense products with its own
 decodes the stored chunks, with flate2's zlib-rs backend. A browser without wasm SIMD
 (before Chrome 91, Firefox 89 or Safari 16.4) cannot load the kernel, so custom
 scenarios fail there and the published ones still work. WebAssembly memory grows to the
-largest scenario run in a tab and is not returned until the worker restarts. Persistent
-browser storage and GPU kernels have no measured bottleneck to justify them
-([measurements](browser-performance.md#kernel-and-decoder)).
+largest scenario run in a tab and is not returned until the worker restarts. The page uses
+no persistent browser storage and no GPU kernel
+([measurements](browser-performance.md#float32-maths-sparse-rows-and-a-gpu-kernel)).
 
 ## Browser threads
 

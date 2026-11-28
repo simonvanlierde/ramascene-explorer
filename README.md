@@ -6,9 +6,9 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/ramascene-explorer/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/ramascene-explorer)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16003/badge)](https://www.bestpractices.dev/projects/16003)
 
-Pick a country and follow its consumption back through global supply chains to the
-greenhouse-gas emissions, metal-ore extraction and employment linked to it, at home and
-abroad. Then change one thing in the economy and compare the result with the baseline.
+Pick a country and follow its consumption back through global supply chains.
+The map shows the greenhouse-gas emissions, metal-ore extraction and employment linked
+to it, at home and abroad. Then change one thing in the economy and compare the result with the baseline.
 RaMa-Scene Explorer maps these links for 49 countries and regions in 2011.
 
 **[Open the explorer](https://simonvanlierde.com/ramascene-explorer/)**
@@ -21,12 +21,14 @@ RaMa-Scene Explorer maps these links for 49 countries and regions in 2011.
 ## Try it
 
 1. Choose a country. The map shows where the selected indicator (emissions, employment or
-   metal-ore extraction) occurs in the supply chains that serve the country's final demand.
+   metal-ore extraction) occurs in the supply chains behind what the country's households,
+   governments and investors buy.
    Choose World instead to see every region's total at once.
 2. Open **What if…**. In the first scenario, every industry in China uses 20% less coal power
-   made in China per unit of its output. World greenhouse-gas emissions fall, almost all of the
-   cut happens in China, and it shrinks the footprint of every country that buys from China.
-   [Read the map](docs/page.md#compare-a-scenario) gives the figures for each featured scenario.
+   made in China per unit of its output. World greenhouse-gas emissions fall by 735 Mt CO₂-eq
+   (1.9%), and almost all of that cut happens in China. The greenhouse-gas footprint of every
+   one of the 49 countries and regions shrinks.
+   The [reading guide](docs/page.md#compare-a-scenario) gives the figures for each featured scenario.
 3. Try the others, or set up your own scenario in the **Custom scenario** card below the list,
    with up to ten changes together.
 
@@ -64,8 +66,8 @@ The code is under the MIT licence (`LICENSE`), © 2026 Simon van Lierde.
 
 The result files in `data/` are computed from **EXIOBASE v3.3.sm** by Franco
 Donati and Arjan de Koning (Zenodo, version V1, 2019-11-08,
-[doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)), which
-the Zenodo record publishes under
+[doi:10.5281/zenodo.3533196](https://doi.org/10.5281/zenodo.3533196)).
+The Zenodo record publishes it under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 The result files hold scenario totals and flows. The optional
 [browser export](docs/browser-engine.md) also includes matrices and derived

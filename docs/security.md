@@ -32,9 +32,9 @@ inside a shard whose size the manifest records, and a server that ignores Range
 is refused, for the matrices and the embodied-flows Parquet file alike. Shard indexes must point inside their shard. The WebAssembly
 kernel decodes each chunk and stops one byte past the row's size, and the
 chunk's gzip size field and CRC-32 must match, so a crafted chunk cannot grow
-past one row. All range reads in one thread (the page, or the custom-scenario worker) share
-one activity clock: a read is aborted once no read in that thread has received data for
-60 s, then tried once more on a fresh request, and fails if that try stalls too. The first load
+past one row. The page and the custom-scenario worker each keep one activity clock for all their range
+reads. Each aborts a read once none of its reads has received data for 60 s.
+It then tries the read once more on a fresh request, and the read fails if that try stalls too. The first load
 fails after two minutes, and a threaded calculation call that runs over two minutes
 is retried once on one thread. The data archive is pinned by `data/browser-engine-zarr.sha256` in CI
 and publishing.
