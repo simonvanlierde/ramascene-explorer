@@ -701,4 +701,4 @@ export function continents(meta, sum) {
 	});
 }
 // "Asia-Pacific" as the strip and the Sankey write it
-export const continentLabel = (name) => msg.continents[name];
+export const continentLabel = (name) => msg.continents[name] ?? name;

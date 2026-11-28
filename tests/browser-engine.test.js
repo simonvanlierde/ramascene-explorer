@@ -358,7 +358,10 @@ test("broad and mixed scenarios are refused before reading any matrix", async ()
 		/1,641 product–country pairs\. Choose/,
 	);
 	// the form runs the same check on the catalogue alone
-	assert.throws(() => plan(meta, [broad]), /too broad/);
+	assert.throws(
+		() => plan(meta, [broad]),
+		(e) => e.tooBroad === true && /too broad/.test(e.message),
+	);
 	assert.equal(plan(meta, [{ ...broad, product: [82] }]).rows.length, 8);
 	// with byte costs, a selection that fits the arithmetic can exceed the download
 	const heavy = { A: { chunk_bytes: 1e8 }, L: { chunk_bytes: 1 }, LC: { chunk_bytes: 1 }, H: { chunk_bytes: 1 } };

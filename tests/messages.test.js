@@ -36,3 +36,14 @@ test("every message in the catalogue is read somewhere", () => {
 	walk(msg, "");
 	assert.deepEqual(unused, []);
 });
+
+// keys read through msg.indicators[id] and msg.unitShort[unit] are invisible to the scan above
+test("every indicator has the same messages, and every unit has a short form", () => {
+	const keys = (o, path = "") =>
+		Object.entries(o)
+			.flatMap(([k, v]) => (plain(v) ? keys(v, `${path}${k}.`) : [`${path}${k}`]))
+			.sort();
+	for (const id of Object.keys(msg.indicators)) assert.deepEqual(keys(msg.indicators[id]), keys(msg.indicators[5]), id);
+	for (const u of [...Object.values(msg.indicators).map((w) => w.unit), msg.thousandJobs, msg.millionJobs])
+		assert.ok(u in msg.unitShort, u);
+});

@@ -24,8 +24,8 @@ What is planned for the next year (to late 2027), in rough order. None of it has
   over the five regions (`?region=world`).
 - Up to 10 changes in one custom scenario, in the browser and on the job API.
 - **One message catalog.** The page's text is in `src/lib/messages.js`, and every number is
-  formatted for its one `LOCALE`, so a translation is a second object there and needs no
-  other code change. Translations are not planned, but contributed ones are welcome.
+  formatted for its one `LOCALE`, so a translation is mostly a second object there; the Ask
+  panel's wording stays in `src/lib/ask.js`. Translations are not planned, but contributed ones are welcome.
 
 ## Not planned
 

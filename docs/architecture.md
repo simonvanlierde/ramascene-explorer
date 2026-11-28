@@ -44,7 +44,7 @@ modules in `src/lib/`, so `node --test` can test it:
 
 | module | what it holds |
 | --- | --- |
-| `src/lib/messages.js` | every word the page shows, in one `en` object, and the `LOCALE` every number and sort uses |
+| `src/lib/messages.js` | the page's text, in one `en` object (the Ask panel's stays in `ask.js`), and the `LOCALE` every number and sort uses |
 | `src/lib/explorer.js` | where the data file is (`?data=`), the synthetic-data banner, run matching |
 | `src/lib/embodied.js` | reading the Parquet file by range request |
 | `src/lib/range.js` | one byte-range read, with its stall timer and one retry, for the Parquet file and the Zarr store |
