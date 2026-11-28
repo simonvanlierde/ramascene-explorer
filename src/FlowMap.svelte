@@ -47,8 +47,9 @@ let { meta, sum, whatif, extent, play, stop, loadingRun, retry } = $props();
 
 // --- geometry: the 49 regions merged from Natural Earth countries -----------------
 let shapes = $state.raw([]);
-// where a region's label and bands meet, where its centroid misleads
-const ANCHOR = { WA: [100, 20], WL: [-62, -12], US: [-98, 39], WF: [20, 2], WM: [45, 25], WE: [25, 47], NO: [9, 61], FR: [2.5, 46.5], RU: [60, 58], CA: [-100, 56] };
+// where a region's label and bands meet, where its centroid misleads; Malta has no 110m
+// outline, so its centroid would be NaN
+const ANCHOR = { MT: [14.4, 35.9], WA: [100, 20], WL: [-62, -12], US: [-98, 39], WF: [20, 2], WM: [45, 25], WE: [25, 47], NO: [9, 61], FR: [2.5, 46.5], RU: [60, 58], CA: [-100, 56] };
 let geoFailed = $state(false);
 function loadShapes() {
 	geoFailed = false;
