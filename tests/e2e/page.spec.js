@@ -221,6 +221,14 @@ test("the globe draws Germany's bands from Britain and Italy, not from its close
 		await expect(page.locator(`.bands path[data-region="${code}"]`)).toHaveCount(0);
 });
 
+// Malta is too small for the 110m outlines, so only its anchor places the ring and bands
+test("Malta, which has no outline, still gets its ring and bands", async ({ page }) => {
+	await page.goto("?region=MT");
+	await ready(page);
+	await expect(page.locator("circle.ring")).toHaveCount(1);
+	await expect(page.locator(".bands path").first()).toBeVisible();
+});
+
 test("once the map stops moving it draws the full outlines", async ({ page }) => {
 	// a moving map draws thinned outlines; the globe it settles on must match one opened directly
 	const outlines = () => page.locator(".mapc .rg").evaluateAll((ps) => ps.map((p) => p.getAttribute("d")).join(""));
